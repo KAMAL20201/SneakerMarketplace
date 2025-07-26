@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
 
 export interface CartItem {
   id: string;
@@ -20,8 +20,10 @@ interface CartContextType {
   setIsOpen: (isOpen: boolean) => void;
   addToCart: (item: any) => void;
   removeItem: (item: any) => void;
+  updateQuantity: (id: string, quantity: number) => void;
   toggleCart: () => void;
   clearCart: () => void;
+  totalPrice: number;
 }
 
 export const CartContext = createContext<CartContextType>({
@@ -30,8 +32,10 @@ export const CartContext = createContext<CartContextType>({
   setIsOpen: () => {},
   addToCart: () => {},
   removeItem: () => {},
+  updateQuantity: () => {},
   toggleCart: () => {},
   clearCart: () => {},
+  totalPrice: 0,
 });
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
@@ -46,6 +50,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setItems(items.filter((i) => i.id !== id));
   };
 
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeItem(id);
+    } else {
+      setItems(
+        items.map((item) => (item.id === id ? { ...item, quantity } : item))
+      );
+    }
+  };
+
   const toggleCart = () => {
     setIsOpen(!isOpen);
   };
@@ -53,6 +67,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const clearCart = () => {
     setItems([]);
   };
+
+  const totalPrice = useMemo(() => {
+    return items.reduce((total, item) => total + item.price * item.quantity, 0);
+  }, [items]);
 
   return (
     <CartContext.Provider
@@ -62,8 +80,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         setIsOpen,
         addToCart,
         removeItem,
+        updateQuantity,
         toggleCart,
         clearCart,
+        totalPrice,
       }}
     >
       {children}

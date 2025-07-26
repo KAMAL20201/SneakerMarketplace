@@ -18,7 +18,7 @@ import { Link } from "react-router";
 import { useCart } from "@/contexts/CartContext";
 
 export function CartSidebar() {
-  const { items, toggleCart, clearCart, removeItem, isOpen } = useCart();
+  const { items, toggleCart, clearCart, removeItem, isOpen, updateQuantity, totalPrice } = useCart();
 
   if (!isOpen) return null;
   return (
