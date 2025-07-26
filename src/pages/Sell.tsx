@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
-  Plus,
   Package,
   Shirt,
   Watch,
@@ -270,7 +269,7 @@ export default function SellPage() {
       const filePath = `${userId}/${listingId}/${fileName}`;
 
       // Upload to storage
-      const { data, error: uploadError } = await supabase.storage
+      const { data: _data, error: uploadError } = await supabase.storage
         .from("product-images")
         .upload(filePath, file);
 
