@@ -18,7 +18,6 @@ import { useAuth } from "@/contexts/AuthContext";
 export function Navbar() {
   const { user, signOut } = useAuth();
 
-  console.log(user);
   const handleLogout = () => {
     signOut();
     toast.success("Logged out successfully");
