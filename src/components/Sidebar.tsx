@@ -21,6 +21,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router";
 
@@ -38,16 +39,6 @@ const data = {
           title: "Browse",
           url: "/browse",
           icon: Search,
-        },
-        {
-          title: "Trending",
-          url: "/trending",
-          icon: TrendingUp,
-        },
-        {
-          title: "Categories",
-          url: "/categories",
-          icon: Tag,
         },
       ],
     },
@@ -90,6 +81,7 @@ const data = {
 };
 
 export function AppSidebar() {
+  const { toggleSidebar } = useSidebar();
   return (
     <Sidebar variant="inset" className="border-0">
       <SidebarHeader className="p-4">
@@ -130,6 +122,10 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       className="glass-button rounded-xl border-0 mx-1 my-0.5 hover:bg-white/20"
+                      onClick={() => {
+                        //close the sidebar
+                        toggleSidebar();
+                      }}
                     >
                       <Link to={item.url} className="text-gray-700">
                         <item.icon className="h-4 w-4" />
@@ -143,7 +139,7 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-     
+
       <SidebarRail />
     </Sidebar>
   );

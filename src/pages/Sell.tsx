@@ -11,11 +11,6 @@ import {
   ArrowRight,
   Sparkles,
   Package,
-  Shirt,
-  Watch,
-  Headphones,
-  Gamepad2,
-  Book,
   Check,
   Eye,
 } from "lucide-react";
@@ -37,6 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { supabase } from "@/lib/supabase";
+import { categories } from "@/constants/sellConstants";
 
 export default function SellPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -57,137 +53,6 @@ export default function SellPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const categories = [
-    {
-      id: "sneakers",
-      name: "Sneakers & Shoes",
-      icon: Package,
-      brands: [
-        "Nike",
-        "Adidas",
-        "Jordan",
-        "Converse",
-        "Vans",
-        "New Balance",
-        "Puma",
-        "Reebok",
-      ],
-      sizes: [
-        "US 6",
-        "US 6.5",
-        "US 7",
-        "US 7.5",
-        "US 8",
-        "US 8.5",
-        "US 9",
-        "US 9.5",
-        "US 10",
-        "US 10.5",
-        "US 11",
-        "US 11.5",
-        "US 12",
-        "US 13",
-      ],
-      hasSize: true,
-      hasBrand: true,
-      hasModel: true,
-    },
-    {
-      id: "clothing",
-      name: "Clothing & Apparel",
-      icon: Shirt,
-      brands: [
-        "Nike",
-        "Adidas",
-        "Supreme",
-        "Off-White",
-        "Stone Island",
-        "Kith",
-        "Fear of God",
-        "Essentials",
-      ],
-      sizes: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
-      hasSize: true,
-      hasBrand: true,
-      hasModel: false,
-    },
-    {
-      id: "accessories",
-      name: "Accessories",
-      icon: Watch,
-      brands: [
-        "Rolex",
-        "Omega",
-        "Casio",
-        "G-Shock",
-        "Apple",
-        "Samsung",
-        "Louis Vuitton",
-        "Gucci",
-      ],
-      sizes: [],
-      hasSize: false,
-      hasBrand: true,
-      hasModel: true,
-    },
-    {
-      id: "electronics",
-      name: "Electronics",
-      icon: Headphones,
-      brands: [
-        "Apple",
-        "Samsung",
-        "Sony",
-        "Bose",
-        "Nintendo",
-        "PlayStation",
-        "Xbox",
-        "Google",
-      ],
-      sizes: [],
-      hasSize: false,
-      hasBrand: true,
-      hasModel: true,
-    },
-    {
-      id: "gaming",
-      name: "Gaming",
-      icon: Gamepad2,
-      brands: [
-        "Nintendo",
-        "PlayStation",
-        "Xbox",
-        "Steam",
-        "Razer",
-        "Logitech",
-        "Corsair",
-        "SteelSeries",
-      ],
-      sizes: [],
-      hasSize: false,
-      hasBrand: true,
-      hasModel: true,
-    },
-    {
-      id: "collectibles",
-      name: "Collectibles & Art",
-      icon: Book,
-      brands: [
-        "Funko",
-        "Hot Toys",
-        "KAWS",
-        "Bearbrick",
-        "Pokemon",
-        "Marvel",
-        "DC Comics",
-        "Disney",
-      ],
-      sizes: [],
-      hasSize: false,
-      hasBrand: true,
-      hasModel: true,
-    },
-  ];
 
   const conditions = ["New", "Like New", "Good", "Fair", "Poor"];
 

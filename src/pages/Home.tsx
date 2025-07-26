@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router";
+import { categories } from "@/constants/sellConstants";
+import { supabaseUrl } from "@/lib/supabase";
 
 const Home = () => {
   const featuredSneakers = [
@@ -100,7 +102,7 @@ const Home = () => {
       </section>
 
       {/* Categories */}
-      {/* <section className="px-4 py-6">
+      <section className="px-4 py-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Shop by Category
         </h2>
@@ -112,27 +114,29 @@ const Home = () => {
             >
               <CardContent className="p-0">
                 <div
-                  className={`h-28 bg-gradient-to-br ${category.gradient} relative overflow-hidden`}
+                  className={`h-40 bg-gradient-to-br relative overflow-hidden`}
                 >
+                  <img
+                    src={`${supabaseUrl}${category.image}`}
+                    alt={category.name}
+                    className="w-full h-full object-cover"
+                  />
                   <div className="absolute inset-0 bg-white/10 group-hover:bg-white/5 transition-colors" />
                   <div className="absolute bottom-4 left-4">
                     <div className="w-8 h-8 bg-white/30 rounded-full backdrop-blur-sm"></div>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-gray-800">{category.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    {category.count} items
-                  </p>
+                <div className="px-4 py-2 absolute opacity-50 bottom-0 bg-white w-full">
+                  <h3 className="font-bold text-black">{category.name}</h3>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </section> */}
+      </section>
 
       {/* Trending Section */}
-      <section className="px-4 py-6">
+      {/* <section className="px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-2xl border-0 bg-gradient-to-br from-purple-500 to-pink-500">
@@ -208,7 +212,7 @@ const Home = () => {
             </Link>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* Featured Products */}
       <section className="px-4 py-6">
