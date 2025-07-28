@@ -121,7 +121,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className="glass-button rounded-xl border-0 mx-1 my-0.5 hover:bg-white/20"
+                      className=" rounded-xl border-0 mx-1 my-0.5 hover:bg-white/20"
                       onClick={() => {
                         //close the sidebar
                         toggleSidebar();

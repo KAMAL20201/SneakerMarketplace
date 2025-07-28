@@ -1,5 +1,3 @@
-"use client";
-
 import type React from "react";
 
 import { useRef, useState } from "react";
@@ -125,12 +123,14 @@ export default function SellPage() {
     file: File,
     userId: string,
     listingId: string,
-    imageOrder = 0
+    isMainImage = false
   ) => {
     try {
       // Generate file path
       const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}-${imageOrder}.${fileExt}`;
+      const fileName = `${Date.now()}-${
+        isMainImage ? "main" : "other"
+      }.${fileExt}`;
       const filePath = `${userId}/${listingId}/${fileName}`;
 
       // Upload to storage
@@ -152,7 +152,7 @@ export default function SellPage() {
           product_id: listingId,
           image_url: publicUrl,
           storage_path: filePath,
-          image_order: imageOrder,
+          is_poster_image: isMainImage,
           file_size: file.size,
         })
         .select()
@@ -162,13 +162,48 @@ export default function SellPage() {
 
       return { success: true, data: imageData, url: publicUrl };
     } catch (error: any) {
-      return { success: false, error: error.message };
+      console.error("Error uploading image:", error);
+      throw error;
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const ensureSellerProfile = async (user: any) => {
+    try {
+      // Check if seller profile exists
+      const { data: existingSeller, error: checkError } = await supabase
+        .from("sellers")
+        .select("id")
+        .eq("id", user.id)
+        .single();
 
+      if (checkError && checkError.code !== "PGRST116") {
+        throw checkError;
+      }
+
+      // If doesn't exist, create it
+      if (!existingSeller) {
+        const { error: insertError } = await supabase.from("sellers").insert({
+          id: user.id,
+          display_name:
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split("@")[0] ||
+            "Anonymous Seller",
+          profile_image_url: user.user_metadata?.avatar_url,
+          // Add more fields as needed
+        });
+
+        if (insertError) throw insertError;
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error ensuring seller profile:", error);
+      return { success: false, error };
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!user) {
       toast.error("Please sign in to list your items");
       navigate("/login");
@@ -178,6 +213,12 @@ export default function SellPage() {
     setIsLoading(true);
 
     try {
+      // Ensure seller profile exists
+      const sellerResult = await ensureSellerProfile(user);
+      if (!sellerResult.success) {
+        toast.error("Failed to create seller profile. Please try again.");
+        return;
+      }
       const { data: listing, error: listingError } = await supabase
         .from("product_listings")
         .insert({
@@ -199,7 +240,7 @@ export default function SellPage() {
 
       if (images && images.length > 0) {
         for (let i = 0; i < images.length; i++) {
-          await uploadImage(files[i], user.id, listing.id, i);
+          await uploadImage(files[i], user.id, listing.id, i === 0);
         }
       }
       toast.success("Listing created successfully");
@@ -326,7 +367,7 @@ export default function SellPage() {
         </Card>
 
         {/* Step Content */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
           {/* Step 1: Category Selection */}
           {currentStep === 1 && (
             <Card className="glass-card border-0 rounded-3xl shadow-lg">
@@ -342,7 +383,7 @@ export default function SellPage() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   {categories.map((category) => (
                     <Button
                       key={category.id}
@@ -383,8 +424,9 @@ export default function SellPage() {
                   Add Photos
                 </CardTitle>
                 <p className="text-sm md:text-base text-gray-600">
-                  Add up to 8 high-quality photos of your item. The first photo
-                  will be your main image.
+                  Add up to 8 high-quality photos of your item. <br />
+                  <b>The first photo will be your main image</b> that will be
+                  displayed on listing page.
                 </p>
               </CardHeader>
               <CardContent>
@@ -822,7 +864,7 @@ export default function SellPage() {
                         )}
 
                         <p>
-                          <strong>Price:</strong> ${formData.price || "0.00"}
+                          <strong>Price:</strong> ₹ {formData.price || "0.00"}
                         </p>
                       </div>
                     </div>
@@ -869,7 +911,8 @@ export default function SellPage() {
               </Button>
             ) : (
               <Button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={isLoading}
                 className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0 rounded-2xl px-6 md:px-8 py-2 md:py-3 text-base md:text-lg font-bold shadow-2xl"
               >
@@ -893,7 +936,7 @@ export default function SellPage() {
           <p className="text-gray-600 text-center mt-4 font-medium text-xs md:text-sm">
             🔒 By listing, you agree to our Terms of Service and Privacy Policy
           </p>
-        </form>
+        </div>
 
         {/* Bottom spacing */}
         <div className="h-8"></div>

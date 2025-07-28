@@ -1,5 +1,3 @@
-"use client";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +23,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full glass-navbar">
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className=" flex h-16 items-center justify-between px-4">
         {/* Left side - Sidebar trigger */}
         <div className="flex items-center">
           <SidebarTrigger className="-ml-1 glass-button rounded-xl p-2 border-0" />
@@ -72,7 +70,7 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-10 w-10 rounded-2xl glass-button border-0"
+                  className="relative h-10 w-10 rounded-full  border-0"
                 >
                   <Avatar className="h-9 w-9">
                     <AvatarImage
@@ -88,7 +86,7 @@ export function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-56 glass-card rounded-2xl border-0 mt-2"
+                className="w-56  rounded-2xl border-0 mt-2"
                 align="end"
                 forceMount
               >
@@ -108,20 +106,20 @@ export function Navbar() {
                     Profile
                   </Link>
                 </DropdownMenuItem> */}
-                <DropdownMenuItem asChild className="rounded-xl mx-1 my-1">
+                <DropdownMenuItem asChild className="rounded-xl mx-1 my-1 cursor-pointer">
                   <Link to="/my-listings" className="text-gray-700">
                     My Listings
                   </Link>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator className="bg-white/30" />
-                <DropdownMenuItem asChild className="rounded-xl mx-1 my-1">
+                <DropdownMenuItem asChild className="rounded-xl mx-1 my-1 cursor-pointer">
                   <Link to="/settings" className="text-gray-700">
                     Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="rounded-xl mx-1 my-1 text-red-600 hover:text-red-700 hover:bg-red-50/80"
+                  className="rounded-xl mx-1 my-1 text-red-600 hover:text-red-700 hover:bg-red-50/80 cursor-pointer"
                   onClick={handleLogout}
                 >
                   Log out

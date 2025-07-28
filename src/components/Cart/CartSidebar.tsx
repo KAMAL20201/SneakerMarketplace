@@ -1,5 +1,3 @@
-"use client";
-
 import {
   X,
   Plus,
@@ -20,6 +18,7 @@ import { useCart } from "@/contexts/CartContext";
 export function CartSidebar() {
   const { items, toggleCart, clearCart, removeItem, isOpen, updateQuantity, totalPrice } = useCart();
 
+  console.log("kamal", items);
   if (!isOpen) return null;
   return (
     <>

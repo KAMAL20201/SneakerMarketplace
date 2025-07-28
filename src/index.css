@@ -151,6 +151,9 @@
     color: hsl(var(--foreground));
     min-height: 100vh;
   }
+  button {
+    cursor: pointer;
+  }
 }
 
 /* Glass morphism effects */

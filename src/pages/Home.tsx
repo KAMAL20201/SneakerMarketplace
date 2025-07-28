@@ -1,63 +1,25 @@
-import { Sparkles, Search, Plus, TrendingUp, Heart, Star } from "lucide-react";
+import { Sparkles, Search, Plus,  Heart} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router";
 import { categories } from "@/constants/sellConstants";
-import { supabaseUrl } from "@/lib/supabase";
+import { supabase, supabaseUrl } from "@/lib/supabase";
+import { useEffect, useState } from "react";
 
 const Home = () => {
-  const featuredSneakers = [
-    {
-      id: 1,
-      name: "Air Jordan 1 Retro High",
-      brand: "Nike",
-      price: 170,
-      originalPrice: 200,
-      condition: "New",
-      size: "US 9",
-      rating: 4.8,
-      trending: true,
-      image: "/placeholder.svg?height=200&width=200&text=Air+Jordan+1",
-    },
-    {
-      id: 2,
-      name: "Yeezy Boost 350 V2",
-      brand: "Adidas",
-      price: 220,
-      originalPrice: 220,
-      condition: "Like New",
-      size: "US 10",
-      rating: 4.9,
-      trending: true,
-      image: "/placeholder.svg?height=200&width=200&text=Yeezy+350",
-    },
-    {
-      id: 3,
-      name: "Dunk Low Panda",
-      brand: "Nike",
-      price: 110,
-      originalPrice: 140,
-      condition: "Good",
-      size: "US 8.5",
-      rating: 4.7,
-      trending: false,
-      image: "/placeholder.svg?height=200&width=200&text=Dunk+Low",
-    },
-    {
-      id: 4,
-      name: "Chuck Taylor All Star",
-      brand: "Converse",
-      price: 65,
-      originalPrice: 80,
-      condition: "New",
-      size: "US 9.5",
-      rating: 4.6,
-      trending: false,
-      image: "/placeholder.svg?height=200&width=200&text=Chuck+Taylor",
-    },
-  ];
+  const [featuredSneakers, setFeaturedSneakers] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchFeaturedSneakers = async () => {
+      const { data, error } = await supabase
+        .from("listings_with_images")
+        .select("*");
+      if (error) console.error(error);
+      setFeaturedSneakers(data ?? []);
+    };
+    fetchFeaturedSneakers();
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -219,29 +181,32 @@ const Home = () => {
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Featured Listings
         </h2>
-        <div className="space-y-4">
-          {featuredSneakers.slice(2).map((sneaker) => (
-            <Link to="/product/dunk-low-panda" key={sneaker.id}>
+        <div className="flex flex-col gap-4">
+          {featuredSneakers.slice(0, 2).map((sneaker) => (
+            <Link
+              to={`/product/${sneaker.product_id}`}
+              key={sneaker.product_id}
+            >
               <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="flex">
+                  <div className="flex p-4 gap-2">
                     <div className="relative w-28 h-28 flex-shrink-0">
                       <img
-                        src={sneaker.image || "/placeholder.svg"}
+                        src={sneaker.image_url || "/placeholder.svg"}
                         alt={sneaker.name}
                         width={112}
                         height={112}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex-1 p-4">
+                    <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="text-xs text-purple-600 font-semibold">
+                          <p className="text-xs text-purple-600 font-semibold capitalize">
                             {sneaker.brand}
                           </p>
-                          <h3 className="font-bold text-gray-800">
-                            {sneaker.name}
+                          <h3 className="font-bold text-gray-800 capitalize">
+                            {sneaker.title}
                           </h3>
                         </div>
                         <Button
@@ -253,18 +218,18 @@ const Home = () => {
                         </Button>
                       </div>
                       <div className="flex items-center gap-2 mb-3">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        {/* <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm text-gray-700 font-medium">
                           {sneaker.rating}
-                        </span>
-                        <Badge className="glass-button border-0 text-gray-700 text-xs rounded-xl ml-auto">
+                        </span> */}
+                        <Badge className="glass-button border-0 text-gray-700 text-xs rounded-xl ml-auto capitalize">
                           {sneaker.condition}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="font-bold text-gray-800 text-lg">
-                            ${sneaker.price}
+                            ₹ {sneaker.price}
                           </span>
                           {sneaker.originalPrice > sneaker.price && (
                             <span className="text-sm text-gray-500 line-through ml-2">
@@ -272,8 +237,8 @@ const Home = () => {
                             </span>
                           )}
                         </div>
-                        <Badge className="glass-button border-0 text-gray-700 rounded-xl">
-                          {sneaker.size}
+                        <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
+                          {sneaker.size_value}
                         </Badge>
                       </div>
                     </div>
