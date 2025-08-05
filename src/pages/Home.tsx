@@ -1,4 +1,4 @@
-import { Sparkles, Search, Plus,  Heart} from "lucide-react";
+import { Sparkles, Search, Plus, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,12 +39,12 @@ const Home = () => {
         </div>
 
         {/* Mobile Search - Only visible on mobile */}
-        <div className="md:hidden mb-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-600" />
+        <div className="mb-8">
+          <div className="relative flex items-center justify-center border rounded-2xl pl-2">
+            <Search className=" h-5 w-5 text-gray-600" />
             <Input
               placeholder="Search sneakers, brands..."
-              className="pl-12 glass-input rounded-2xl border-0 h-12 text-gray-700 placeholder:text-gray-500"
+              className="h-12 text-gray-700 placeholder:text-gray-500 !border-none !outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         </div>

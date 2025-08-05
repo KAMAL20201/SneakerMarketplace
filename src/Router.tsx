@@ -6,6 +6,7 @@ import SignupPage from "./pages/SignUp";
 import SellPage from "./pages/Sell";
 import MyListings from "./pages/MyListings";
 import EditListing from "./pages/EditListing";
+import Browse from "./pages/Browse";
 
 const Router = () => {
   return (
@@ -17,6 +18,7 @@ const Router = () => {
       <Route path="/sell" element={<SellPage />} />
       <Route path="/my-listings" element={<MyListings />} />
       <Route path="/edit-listing/:id" element={<EditListing />} />
+      <Route path="/browse" element={<Browse />} />
     </Routes>
   );
 };
