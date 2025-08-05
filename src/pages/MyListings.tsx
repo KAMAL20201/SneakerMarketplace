@@ -9,13 +9,12 @@ import {
   ChevronRight,
   Package,
   Calendar,
-  DollarSign,
   AlertCircle,
   CheckCircle,
   Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -49,6 +48,7 @@ interface Listing {
 const MyListings = () => {
   const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
+  console.log("kamal", listings);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -359,7 +359,7 @@ const MyListings = () => {
                           asChild
                           className="flex-1 glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30"
                         >
-                          <Link to={`/edit-listing/${listing.product_id}`}>
+                          <Link to={`/edit-listing/${listing.id}`}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </Link>

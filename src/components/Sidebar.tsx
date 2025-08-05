@@ -5,8 +5,6 @@ import {
   User,
   Settings,
   ShoppingBag,
-  TrendingUp,
-  Tag,
   CreditCard,
 } from "lucide-react";
 

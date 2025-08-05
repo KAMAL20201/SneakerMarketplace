@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
 import {
   Search,
-  Filter,
   Grid3X3,
   List,
   Heart,
   Eye,
-  Star,
   DollarSign,
   Package,
   Calendar,
@@ -15,19 +12,11 @@ import {
   X,
   SlidersHorizontal,
   SortAsc,
-  SortDesc,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
