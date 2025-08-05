@@ -18,7 +18,7 @@ interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  addToCart: (item: any) => void;
+  addToCart: (item: any) => boolean;
   removeItem: (item: any) => void;
   updateQuantity: (id: string, quantity: number) => void;
   toggleCart: () => void;
@@ -30,7 +30,7 @@ export const CartContext = createContext<CartContextType>({
   isOpen: false,
   items: [],
   setIsOpen: () => {},
-  addToCart: () => {},
+  addToCart: () => false,
   removeItem: () => {},
   updateQuantity: () => {},
   toggleCart: () => {},
@@ -43,7 +43,20 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const addToCart = (item: any) => {
+    // Check if item already exists in cart (by productId and sellerId)
+    const existingItem = items.find(
+      (cartItem) => 
+        cartItem.productId === item.productId && 
+        cartItem.sellerId === item.sellerId
+    );
+    
+    if (existingItem) {
+      // Item already in cart, don't add again
+      return false;
+    }
+    
     setItems([...items, item]);
+    return true;
   };
 
   const removeItem = (id: string) => {

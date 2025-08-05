@@ -22,14 +22,13 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState("US 9");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
   const [listing, setListing] = useState<any>(null);
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleAddToCart = (seller: any) => {
-    console.log("kamal", seller, listing);
     const cartItem = {
       id: `${listing?.id}`,
       productId: listing?.id,
@@ -41,10 +40,26 @@ export default function ProductDetailPage() {
       image: images?.[0]?.image_url,
       sellerId: seller?.id?.toString(),
       sellerName: seller?.display_name,
+      quantity: 1,
     };
 
-    addToCart(cartItem);
-    toast.success(`Added ${listing?.title} (${selectedSize}) to cart!`);
+    const success = addToCart(cartItem);
+    if (success) {
+      toast.success(`Added ${listing?.title} (${selectedSize}) to cart!`);
+    } else {
+      toast.error("This item is already in your cart!");
+    }
+  };
+
+  // Check if item is already in cart
+  const isItemInCart = () => {
+    if (!listing || !listing.seller_details) return false;
+
+    return items.some(
+      (cartItem) =>
+        cartItem.productId === listing.id &&
+        cartItem.sellerId === listing.seller_details.id?.toString()
+    );
   };
 
   const fetchProductDetails = async () => {
@@ -313,10 +328,15 @@ export default function ProductDetailPage() {
           size="lg"
           variant="outline"
           onClick={() => handleAddToCart(listing?.seller_details)}
-          className="bg-white  text-gray-700 border-0 rounded-2xl shadow-lg h-12"
+          disabled={isItemInCart()}
+          className={`border-0 rounded-2xl shadow-lg h-12 ${
+            isItemInCart()
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-white text-gray-700 hover:bg-gray-50"
+          }`}
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
-          Add to Cart
+          {isItemInCart() ? "In Cart" : "Add to Cart"}
         </Button>
         <Button
           size="lg"

@@ -1,12 +1,4 @@
-import {
-  X,
-  Plus,
-  Minus,
-  Trash2,
-  ShoppingBag,
-  CreditCard,
-  ArrowRight,
-} from "lucide-react";
+import { X, Trash2, ShoppingBag, CreditCard, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +8,14 @@ import { Link } from "react-router";
 import { useCart } from "@/contexts/CartContext";
 
 export function CartSidebar() {
-  const { items, toggleCart, clearCart, removeItem, isOpen, updateQuantity, totalPrice } = useCart();
+  const {
+    items,
+    toggleCart,
+    clearCart,
+    removeItem,
+    isOpen,
+    totalPrice,
+  } = useCart();
 
   console.log("kamal", items);
   if (!isOpen) return null;
@@ -133,43 +132,17 @@ export function CartSidebar() {
                             </Badge>
                           </div>
 
-                          {/* Price and Quantity */}
+                          {/* Price */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity - 1)
-                                }
-                                className="h-8 w-8 p-0 bg-gray-100/80 hover:bg-gray-200/80 rounded-xl border-0"
-                                disabled={item.quantity <= 1}
-                              >
-                                <Minus className="h-3 w-3 text-gray-700" />
-                              </Button>
-                              <span className="w-8 text-center font-bold text-gray-900">
-                                {item.quantity}
+                              <span className="text-sm text-gray-600 font-medium">
+                                Quantity: 1
                               </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity + 1)
-                                }
-                                className="h-8 w-8 p-0 bg-gray-100/80 hover:bg-gray-200/80 rounded-xl border-0"
-                              >
-                                <Plus className="h-3 w-3 text-gray-700" />
-                              </Button>
                             </div>
                             <div className="text-right">
                               <p className="font-bold text-gray-900 text-lg">
-                                ${(item.price * item.quantity).toFixed(2)}
+                                ₹ {item.price.toFixed(2)}
                               </p>
-                              {item.quantity > 1 && (
-                                <p className="text-xs text-gray-600">
-                                  ${item.price} each
-                                </p>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -200,7 +173,7 @@ export function CartSidebar() {
               <div className="flex justify-between items-center py-2">
                 <span className="text-xl font-bold text-gray-900">Total</span>
                 <span className="text-3xl font-bold text-gray-900">
-                  ${totalPrice.toFixed(2)}
+                  ₹{totalPrice.toFixed(2)}
                 </span>
               </div>
 
