@@ -8,14 +8,8 @@ import { Link } from "react-router";
 import { useCart } from "@/contexts/CartContext";
 
 export function CartSidebar() {
-  const {
-    items,
-    toggleCart,
-    clearCart,
-    removeItem,
-    isOpen,
-    totalPrice,
-  } = useCart();
+  const { items, toggleCart, clearCart, removeItem, isOpen, totalPrice } =
+    useCart();
 
   console.log("kamal", items);
   if (!isOpen) return null;
@@ -66,7 +60,7 @@ export function CartSidebar() {
                   Your cart is empty
                 </h3>
                 <p className="text-gray-600 mb-8 text-lg">
-                  Add some sneakers to get started!
+                  Add some items to get started!
                 </p>
                 <Button
                   onClick={toggleCart}
@@ -202,9 +196,18 @@ export function CartSidebar() {
               </div>
 
               {/* Security Note */}
-              <p className="text-sm text-gray-600 text-center font-medium">
-                🔒 Secure checkout with buyer protection
-              </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <p className="text-sm text-green-600 font-medium">
+                    🔒 100% Secure Checkout
+                  </p>
+                </div>
+                <p className="text-xs text-gray-500 text-center">
+                  Buyer protection • Money-back guarantee • Authenticity
+                  verified
+                </p>
+              </div>
             </div>
           )}
         </div>

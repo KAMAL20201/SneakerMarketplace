@@ -118,13 +118,17 @@ export default function LoginPage() {
                   className="h-8 w-8 text-white"
                   fill="currentColor"
                 >
-                  <path d="M2 18h20l-2-4H10l-1-2H7l-1 2H4l-2 4zm20-6c0-1.1-.9-2-2-2H10c-1.1 0-2 .9-2 2v1h14v-1zm-8-4c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm4 0c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1z" />
+                  <path d="M16.5 3c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v4c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V3zM11 3c0-.83-.67-1.5-1.5-1.5S8 2.17 8 3v4c0 .83.67 1.5 1.5 1.5S11 7.83 11 7V3zM6 8.5C6 7.12 7.12 6 8.5 6h7C16.88 6 18 7.12 18 8.5v2c0 .28-.22.5-.5.5h-1v2c0 2.21-1.79 4-4 4s-4-1.79-4-4v-2h-1c-.28 0-.5-.22-.5-.5v-2zm6 10.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-1.5-.67-1.5-1.5-.67-1.5-1.5-1.5S12 18.17 12 19z" />
                 </svg>
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-gray-800">
-              SneakHub
+              The Plug Market
             </CardTitle>
+            <div className="flex justify-center items-center gap-2 mt-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-green-600 text-sm font-medium">Secure Login</span>
+            </div>
           </CardHeader>
 
           <CardContent className="space-y-6">

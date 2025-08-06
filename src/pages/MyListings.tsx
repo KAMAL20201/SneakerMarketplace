@@ -178,7 +178,7 @@ const MyListings = () => {
               <h1 className="text-3xl font-bold gradient-text mb-2">
                 My Listings
               </h1>
-              <p className="text-gray-600">Manage your sneaker listings</p>
+              <p className="text-gray-600">Manage your item listings</p>
             </div>
             <Button
               asChild
@@ -259,7 +259,7 @@ const MyListings = () => {
                 No Listings Yet
               </h3>
               <p className="text-gray-600 mb-6">
-                Start selling your sneakers by creating your first listing
+                Start selling your items by creating your first listing
               </p>
               <Button
                 asChild

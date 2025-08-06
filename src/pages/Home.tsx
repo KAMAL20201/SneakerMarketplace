@@ -30,12 +30,39 @@ const Home = () => {
             <Sparkles className="h-6 w-6 text-purple-500" />
           </div>
           <h1 className="text-4xl font-bold mb-3">
-            Find Your Perfect
-            <span className="gradient-text block mt-2">Sneakers</span>
+            Discover the Hottest
+            <span className="gradient-text block mt-2">
+              Drops & Collectibles
+            </span>
           </h1>
-          <p className="text-gray-700 text-lg">
-            Buy and sell authentic sneakers with style
+          <p className="text-gray-700 text-lg mb-2">
+            Connect with collectors and sellers across India for hyped sneakers,
+            streetwear, collectibles & more
           </p>
+
+          {/* Trust & Safety Features */}
+          <div className="flex flex-wrap justify-center gap-4 mb-6">
+            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-full border border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-green-700 text-sm font-medium">
+                100% Authentic Guarantee
+              </span>
+            </div>
+            <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-full border border-blue-200">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-blue-700 text-sm font-medium">
+                Buyer Protection
+              </span>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-full border border-purple-200">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-purple-700 text-sm font-medium">
+                Secure Payments
+              </span>
+            </div>
+          </div>
+
+   
         </div>
 
         {/* Mobile Search - Only visible on mobile */}
@@ -43,7 +70,7 @@ const Home = () => {
           <div className="relative flex items-center justify-center border rounded-2xl pl-2">
             <Search className=" h-5 w-5 text-gray-600" />
             <Input
-              placeholder="Search sneakers, brands..."
+              placeholder="Search sneakers, streetwear, collectibles..."
               className="h-12 text-gray-700 placeholder:text-gray-500 !border-none !outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
@@ -66,7 +93,7 @@ const Home = () => {
       {/* Categories */}
       <section className="px-4 py-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
-          Shop by Category
+          Explore Categories
         </h2>
         <div className="grid grid-cols-2 gap-4">
           {categories.map((category) => (
@@ -94,6 +121,111 @@ const Home = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+      </section>
+
+      {/* Trust & Safety Section */}
+      <section className="px-4 py-8 bg-gradient-to-br from-green-50 to-blue-50 mx-4 rounded-3xl mb-6">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 mb-3">
+            <div className="p-2 bg-green-500 rounded-full">
+              <svg
+                className="w-5 h-5 text-white"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold mb-2 text-gray-800">
+            Shop with Complete Peace of Mind
+          </h2>
+          <p className="text-gray-600">
+            Your safety is our priority. Every transaction is protected.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          {/* Authenticity Guarantee */}
+          <div className="flex items-start gap-4 bg-white/60 p-4 rounded-2xl backdrop-blur-sm">
+            <div className="p-2 bg-green-100 rounded-full flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-green-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 mb-1">
+                100% Authenticity Guaranteed
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Every item is verified for authenticity. Get your money back if
+                it's fake.
+              </p>
+            </div>
+          </div>
+
+          {/* Buyer Protection */}
+          <div className="flex items-start gap-4 bg-white/60 p-4 rounded-2xl backdrop-blur-sm">
+            <div className="p-2 bg-blue-100 rounded-full flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-blue-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 mb-1">
+                Complete Buyer Protection
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Your money is safe until you receive and approve your item.
+              </p>
+            </div>
+          </div>
+
+          {/* Verified Sellers */}
+          <div className="flex items-start gap-4 bg-white/60 p-4 rounded-2xl backdrop-blur-sm">
+            <div className="p-2 bg-purple-100 rounded-full flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-purple-600"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 mb-1">
+                Verified Sellers Only
+              </h3>
+              <p className="text-gray-600 text-sm">
+                All sellers are ID verified and rated by the community.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

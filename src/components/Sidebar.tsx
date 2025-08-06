@@ -92,14 +92,14 @@ export function AppSidebar() {
             >
               <Link to="/">
                 <div className="flex aspect-square size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 text-white shadow-lg">
-                  <span className="text-lg font-bold">S</span>
+                  <span className="text-lg font-bold">⚡</span>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold text-gray-800">
-                    SneakHub
+                    The Plug Market
                   </span>
                   <span className="truncate text-xs text-gray-600">
-                    Marketplace
+                    Your Connect
                   </span>
                 </div>
               </Link>

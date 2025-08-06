@@ -295,18 +295,32 @@ const Browse = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">
-            Browse Sneakers
+            Browse Items
           </h1>
-          <p className="text-gray-600 text-sm md:text-base">
-            Discover amazing sneakers from our community
+          <p className="text-gray-600 text-sm md:text-base mb-3">
+            Discover amazing items from our collector community
           </p>
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+              <span className="text-green-700 text-xs font-medium">
+                Authenticity Guaranteed
+              </span>
+            </div>
+            <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+              <span className="text-blue-700 text-xs font-medium">
+                Verified Sellers
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Search Bar - Full Width on Mobile */}
         <div className="relative flex items-center justify-center border rounded-2xl pl-2 mb-8">
           <Search className=" h-5 w-5 text-gray-600" />
           <Input
-            placeholder="Search sneakers, brands..."
+            placeholder="Search items, brands, categories..."
             className="h-12 text-gray-700 placeholder:text-gray-500 !border-none !outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>

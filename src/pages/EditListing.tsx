@@ -107,7 +107,7 @@ const EditListing = () => {
           <h1 className="text-3xl font-bold gradient-text mb-2">
             Edit Listing
           </h1>
-          <p className="text-gray-600">Update your sneaker listing details</p>
+                      <p className="text-gray-600">Update your listing details</p>
         </div>
 
         {/* Listing Preview */}
