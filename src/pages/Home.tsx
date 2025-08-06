@@ -14,7 +14,10 @@ const Home = () => {
     const fetchFeaturedSneakers = async () => {
       const { data, error } = await supabase
         .from("listings_with_images")
-        .select("*");
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(10);
       if (error) console.error(error);
       setFeaturedSneakers(data ?? []);
     };
@@ -61,8 +64,6 @@ const Home = () => {
               </span>
             </div>
           </div>
-
-   
         </div>
 
         {/* Mobile Search - Only visible on mobile */}

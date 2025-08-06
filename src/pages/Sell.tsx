@@ -61,7 +61,7 @@ export default function SellPage() {
     { id: 3, title: "Basic Info", description: "Tell us about your item" },
     { id: 4, title: "Details", description: "Item details and condition" },
     { id: 5, title: "Price", description: "Set your price and description" },
-    { id: 6, title: "Review", description: "Review and publish" },
+    { id: 6, title: "Review", description: "Review and submit for approval" },
   ];
 
   const selectedCategory = categories.find(
@@ -133,9 +133,7 @@ export default function SellPage() {
           ...compressionResults.map((result) => result.compressedFile),
         ]);
 
-        toast.success(
-          `${filesArray.length} photo(s) added! `
-        );
+        toast.success(`${filesArray.length} photo(s) added! `);
       } catch (error) {
         console.error("Image compression failed:", error);
         toast.error("Failed to compress images. Please try again.");
@@ -274,7 +272,7 @@ export default function SellPage() {
           condition: formData.condition,
           price: parseFloat(formData.price),
           description: formData.description,
-          status: "active",
+          status: "under_review",
         })
         .select()
         .single();
@@ -286,7 +284,9 @@ export default function SellPage() {
           await uploadImage(files[i], user.id, listing.id, i === 0);
         }
       }
-      toast.success("Listing created successfully");
+      toast.success(
+        "Listing submitted for review! You'll be notified once it's approved."
+      );
       navigate("/my-listings");
       return { success: true, listing };
     } catch (error) {
@@ -320,10 +320,16 @@ export default function SellPage() {
                     Sell Your Items
                   </h1>
                 </div>
-                <p className="text-sm md:text-base text-gray-600">
+                <p className="text-sm md:text-base text-gray-600 mb-2">
                   Step {currentStep} of {steps.length}:{" "}
                   {steps[currentStep - 1].description}
                 </p>
+                <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-full border border-blue-200 inline-flex">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-blue-700 text-xs font-medium">
+                    All listings are reviewed before going live
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -857,9 +863,24 @@ export default function SellPage() {
                   </div>
                   Review Your Listing
                 </CardTitle>
-                <p className="text-sm md:text-base text-gray-600">
-                  Review all details before publishing your listing
+                <p className="text-sm md:text-base text-gray-600 mb-3">
+                  Review all details before submitting for approval
                 </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full mt-1.5"></div>
+                    <div>
+                      <p className="text-yellow-800 text-sm font-medium mb-1">
+                        Review Process
+                      </p>
+                      <p className="text-yellow-700 text-xs">
+                        Your listing will be reviewed by our team within 24
+                        hours to ensure quality and authenticity. You'll be
+                        notified once it's approved and live.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Preview */}
@@ -970,14 +991,16 @@ export default function SellPage() {
                 {isLoading ? (
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-white"></div>
-                    <span className="hidden sm:inline">Publishing...</span>
-                    <span className="sm:hidden">Publishing...</span>
+                    <span className="hidden sm:inline">
+                      Submitting for Review...
+                    </span>
+                    <span className="sm:hidden">Submitting...</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
                     <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
-                    <span className="hidden sm:inline">Publish Listing</span>
-                    <span className="sm:hidden">Publish</span>
+                    <span className="hidden sm:inline">Submit for Review</span>
+                    <span className="sm:hidden">Submit</span>
                   </div>
                 )}
               </Button>

@@ -81,6 +81,14 @@ export function Footer() {
               </li>
               <li>
                 <Link
+                  to="/review-process"
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  Review Process
+                </Link>
+              </li>
+              <li>
+                <Link
                   to="/safety-tips"
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >

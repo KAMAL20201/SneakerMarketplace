@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
+  FileSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,7 +121,22 @@ const MyListings = () => {
         return (
           <Badge className="bg-green-100 text-green-700 border-0 rounded-xl px-3 py-1">
             <CheckCircle className="h-3 w-3 mr-1" />
-            Active
+            Live
+          </Badge>
+        );
+      case "under_review":
+      case "pending":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-700 border-0 rounded-xl px-3 py-1">
+            <FileSearch className="h-3 w-3 mr-1" />
+            Under Review
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge className="bg-red-100 text-red-700 border-0 rounded-xl px-3 py-1">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Needs Changes
           </Badge>
         );
       case "sold":
@@ -130,18 +146,11 @@ const MyListings = () => {
             Sold
           </Badge>
         );
-      case "pending":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-700 border-0 rounded-xl px-3 py-1">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        );
       default:
         return (
           <Badge className="bg-gray-100 text-gray-700 border-0 rounded-xl px-3 py-1">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Unknown
+            <Clock className="h-3 w-3 mr-1" />
+            Pending
           </Badge>
         );
     }
@@ -178,7 +187,27 @@ const MyListings = () => {
               <h1 className="text-3xl font-bold gradient-text mb-2">
                 My Listings
               </h1>
-              <p className="text-gray-600">Manage your item listings</p>
+              <p className="text-gray-600 mb-2">Manage your item listings</p>
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-200">
+                  <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div>
+                  <span className="text-yellow-700 text-xs font-medium">
+                    Under Review
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 bg-green-50 px-2 py-1 rounded-full border border-green-200">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  <span className="text-green-700 text-xs font-medium">
+                    Live
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded-full border border-red-200">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                  <span className="text-red-700 text-xs font-medium">
+                    Needs Changes
+                  </span>
+                </div>
+              </div>
             </div>
             <Button
               asChild

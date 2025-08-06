@@ -118,17 +118,19 @@ const Browse = () => {
     try {
       setLoading(true);
 
-      // Get total count for pagination
+      // Get total count for pagination (only active listings)
       const { count } = await supabase
         .from("listings_with_images")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
 
       setTotalPages(Math.ceil((count || 0) / itemsPerPage));
 
-      // Get paginated listings
+      // Get paginated listings (only active listings)
       const { data, error } = await supabase
         .from("listings_with_images")
         .select("*")
+        .eq("status", "active")
         .order("created_at", { ascending: false })
         .range(
           (currentPage - 1) * itemsPerPage,
@@ -298,7 +300,8 @@ const Browse = () => {
             Browse Items
           </h1>
           <p className="text-gray-600 text-sm md:text-base mb-3">
-            Discover amazing items from our collector community
+            Discover amazing items from our collector community - all listings
+            are manually reviewed and approved
           </p>
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
@@ -311,6 +314,12 @@ const Browse = () => {
               <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
               <span className="text-blue-700 text-xs font-medium">
                 Verified Sellers
+              </span>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+              <span className="text-purple-700 text-xs font-medium">
+                Quality Approved
               </span>
             </div>
           </div>

@@ -87,6 +87,7 @@ export default function ProductDetailPage() {
       `
         )
         .eq("id", productId)
+        .eq("status", "active")
         .single();
 
       if (listingError) throw listingError;
