@@ -44,7 +44,7 @@ const data = {
       title: "My Account",
       items: [
         {
-          title: "Sell Sneakers",
+          title: "Sell Items",
           url: "/sell",
           icon: Plus,
         },

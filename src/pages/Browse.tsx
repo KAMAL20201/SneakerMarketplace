@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Link } from "react-router";
 import {
   Popover,
   PopoverContent,
@@ -619,125 +620,130 @@ const Browse = () => {
             }
           >
             {filteredListings.map((listing) => (
-              <Card
-                key={listing.id}
-                className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group"
+              <Link
+                to={`/product/${listing.product_id}`}
+                key={listing.product_id}
               >
-                <CardContent className="p-0">
-                  {filters.viewMode === "grid" ? (
-                    // Grid View
-                    <>
-                      <div className="relative h-40 sm:h-48 overflow-hidden">
-                        <img
-                          src={listing.image_url || "/placeholder.svg"}
-                          alt={listing.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="absolute top-2 right-2 h-8 w-8 p-0 glass-button border-0 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30"
-                        >
-                          <Heart className="h-4 w-4 text-white" />
-                        </Button>
-                      </div>
-                      <div className="p-3 md:p-4">
-                        <div className="flex items-start justify-between mb-2 md:mb-3">
-                          <div className="flex-1">
-                            <p className="text-xs text-purple-600 font-semibold capitalize mb-1">
-                              {listing.brand}
-                            </p>
-                            <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
-                              {listing.title}
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                          <div className="flex items-center gap-1 md:gap-2">
-                            <span className="font-bold text-gray-800 text-base md:text-lg">
-                              ₹{listing.price.toLocaleString()}
-                            </span>
-                          </div>
-                          <Badge
-                            className={`${getConditionColor(
-                              listing.condition
-                            )} border-0 rounded-xl text-xs capitalize`}
-                          >
-                            {listing.condition}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs">
-                            {listing.size_value}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <Eye className="h-3 w-3" />
-                            {listing.views || 0}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    // List View
-                    <div className="flex p-3 md:p-4 gap-3 md:gap-4">
-                      <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
-                        <img
-                          src={listing.image_url || "/placeholder.svg"}
-                          alt={listing.title}
-                          className="w-full h-full object-cover rounded-xl"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-purple-600 font-semibold capitalize">
-                              {listing.brand}
-                            </p>
-                            <h3 className="font-bold text-gray-800 text-sm md:text-base truncate">
-                              {listing.title}
-                            </h3>
-                          </div>
+                <Card
+                  key={listing.id}
+                  className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group"
+                >
+                  <CardContent className="p-0">
+                    {filters.viewMode === "grid" ? (
+                      // Grid View
+                      <>
+                        <div className="relative h-40 sm:h-48 overflow-hidden">
+                          <img
+                            src={listing.image_url || "/placeholder.svg"}
+                            alt={listing.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0 glass-button border-0 rounded-xl flex-shrink-0"
+                            className="absolute top-2 right-2 h-8 w-8 p-0 glass-button border-0 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30"
                           >
-                            <Heart className="h-4 w-4 text-gray-500" />
+                            <Heart className="h-4 w-4 text-white" />
                           </Button>
                         </div>
-                        <div className="flex items-center gap-2 md:gap-4 mb-2 md:mb-3 flex-wrap">
-                          <Badge
-                            className={`${getConditionColor(
-                              listing.condition
-                            )} border-0 rounded-xl text-xs capitalize`}
-                          >
-                            {listing.condition}
-                          </Badge>
-                          <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs">
-                            {listing.size_value}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <Eye className="h-3 w-3" />
-                            {listing.views || 0} views
+                        <div className="p-3 md:p-4">
+                          <div className="flex items-start justify-between mb-2 md:mb-3">
+                            <div className="flex-1">
+                              <p className="text-xs text-purple-600 font-semibold capitalize mb-1">
+                                {listing.brand}
+                              </p>
+                              <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
+                                {listing.title}
+                              </h3>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mb-2 md:mb-3">
+                            <div className="flex items-center gap-1 md:gap-2">
+                              <span className="font-bold text-gray-800 text-base md:text-lg">
+                                ₹{listing.price.toLocaleString()}
+                              </span>
+                            </div>
+                            <Badge
+                              className={`${getConditionColor(
+                                listing.condition
+                              )} border-0 rounded-xl text-xs capitalize`}
+                            >
+                              {listing.condition}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs">
+                              {listing.size_value}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Eye className="h-3 w-3" />
+                              {listing.views || 0}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1 md:gap-2">
-                            <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
-                            <span className="font-bold text-gray-800 text-base md:text-lg">
-                              ₹{listing.price.toLocaleString()}
-                            </span>
+                      </>
+                    ) : (
+                      // List View
+                      <div className="flex p-3 md:p-4 gap-3 md:gap-4">
+                        <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
+                          <img
+                            src={listing.image_url || "/placeholder.svg"}
+                            alt={listing.title}
+                            className="w-full h-full object-cover rounded-xl"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-purple-600 font-semibold capitalize">
+                                {listing.brand}
+                              </p>
+                              <h3 className="font-bold text-gray-800 text-sm md:text-base truncate">
+                                {listing.title}
+                              </h3>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 glass-button border-0 rounded-xl flex-shrink-0"
+                            >
+                              <Heart className="h-4 w-4 text-gray-500" />
+                            </Button>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-500">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(listing.created_at)}
+                          <div className="flex items-center gap-2 md:gap-4 mb-2 md:mb-3 flex-wrap">
+                            <Badge
+                              className={`${getConditionColor(
+                                listing.condition
+                              )} border-0 rounded-xl text-xs capitalize`}
+                            >
+                              {listing.condition}
+                            </Badge>
+                            <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs">
+                              {listing.size_value}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Eye className="h-3 w-3" />
+                              {listing.views || 0} views
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1 md:gap-2">
+                              <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
+                              <span className="font-bold text-gray-800 text-base md:text-lg">
+                                ₹{listing.price.toLocaleString()}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(listing.created_at)}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

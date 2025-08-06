@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { supabase } from "@/lib/supabase";
 import { categories } from "@/constants/sellConstants";
+import { smartCompressImages } from "@/lib/imageCompression";
 
 export default function SellPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -90,16 +91,58 @@ export default function SellPage() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = e.target.files;
     if (newFiles) {
-      const newImages = Array.from(newFiles).map((file) =>
-        URL.createObjectURL(file)
-      );
-      setImages([...images, ...newImages]);
-      setFiles([...files, ...newFiles]);
+      // Early return if already at maximum
+      if (images.length >= 8) {
+        toast.error(
+          "Maximum 8 images allowed. Please remove some images first."
+        );
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        // Convert FileList to Array
+        const filesArray = Array.from(newFiles);
+
+        // Check if adding new images would exceed the limit of 8
+        const totalImages = images.length + filesArray.length;
+        if (totalImages > 8) {
+          const allowedCount = 8 - images.length;
+          toast.error(
+            `You can only add ${allowedCount} more image(s). Maximum 8 images allowed.`
+          );
+          return;
+        }
+
+        // Compress images using smart compression
+        const compressionResults = await smartCompressImages(filesArray);
+
+        // Create preview URLs for compressed images
+        const newImages = compressionResults.map((result) =>
+          URL.createObjectURL(result.compressedFile)
+        );
+
+        // Update state with compressed files
+        setImages([...images, ...newImages]);
+        setFiles([
+          ...files,
+          ...compressionResults.map((result) => result.compressedFile),
+        ]);
+
+        toast.success(
+          `${filesArray.length} photo(s) added! `
+        );
+      } catch (error) {
+        console.error("Image compression failed:", error);
+        toast.error("Failed to compress images. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     }
-    toast.success(`${files?.length} photo(s) added successfully!`);
   };
 
   const removeImage = (index: number) => {
@@ -430,7 +473,11 @@ export default function SellPage() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+                <div
+                  className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mb-6 ${
+                    images.length === 0 ? "!grid-cols-1" : ""
+                  }`}
+                >
                   {images.map((image, index) => (
                     <div key={index} className="relative aspect-square group">
                       <img
@@ -454,11 +501,20 @@ export default function SellPage() {
                       </Button>
                     </div>
                   ))}
-                  {images.length < 8 && (
+                  <input
+                    type="file"
+                    hidden
+                    onChange={handleImageUpload}
+                    ref={fileInputRef}
+                    multiple
+                    accept="image/*"
+                    disabled={images.length >= 8}
+                  />
+                  {images.length === 0 && (
                     <Button
                       type="button"
                       variant="outline"
-                      className="aspect-square glass-button border-2 border-dashed border-white/40 hover:border-purple-400 bg-transparent rounded-2xl hover:bg-white/20 transition-all duration-300"
+                      className="h-max glass-button border-2 border-dashed border-white/40 hover:border-purple-400 bg-transparent rounded-2xl hover:bg-white/20 transition-all duration-300"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <div className="flex flex-col items-center gap-2">
@@ -468,14 +524,6 @@ export default function SellPage() {
                         <span className="text-xs md:text-sm text-gray-700 font-semibold">
                           Add Photo
                         </span>
-                        <input
-                          type="file"
-                          hidden
-                          onChange={handleImageUpload}
-                          ref={fileInputRef}
-                          multiple
-                          accept="image/*"
-                        />
                       </div>
                     </Button>
                   )}
@@ -485,9 +533,12 @@ export default function SellPage() {
                   variant="outline"
                   className="w-full glass-button border-0 rounded-2xl bg-transparent hover:bg-white/20 text-gray-700"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={images.length === 8}
                 >
                   <Upload className="h-5 w-5 mr-3" />
-                  Upload from Gallery
+                  {images.length === 8
+                    ? "Maximum 8 photos reached"
+                    : `Upload from Gallery`}
                 </Button>
               </CardContent>
             </Card>
