@@ -12,9 +12,11 @@ import { toast } from "sonner";
 import { Link } from "react-router";
 import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
 
   const handleLogout = () => {
     signOut();
@@ -57,10 +59,14 @@ export function Navbar() {
           {/* Brand text */}
           <div className="hidden sm:block">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold gradient-text">The Plug Market</h1>
+              <h1 className="text-xl font-bold gradient-text">
+                The Plug Market
+              </h1>
               <div className="flex items-center gap-1 bg-green-100 px-2 py-1 rounded-full">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                <span className="text-green-700 text-xs font-medium">Trusted</span>
+                <span className="text-green-700 text-xs font-medium">
+                  Trusted
+                </span>
               </div>
             </div>
             <p className="text-xs text-gray-600 -mt-1">Your Connect</p>
@@ -123,6 +129,19 @@ export function Navbar() {
                     My Listings
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem
+                    asChild
+                    className="rounded-xl mx-1 my-1 cursor-pointer"
+                  >
+                    <Link
+                      to="/admin/review"
+                      className="text-purple-700 font-medium"
+                    >
+                      🔍 Admin Review
+                    </Link>
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuSeparator className="bg-white/30" />
                 <DropdownMenuItem

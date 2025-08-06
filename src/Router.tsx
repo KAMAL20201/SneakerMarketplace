@@ -7,6 +7,8 @@ import SellPage from "./pages/Sell";
 import MyListings from "./pages/MyListings";
 import EditListing from "./pages/EditListing";
 import Browse from "./pages/Browse";
+import AdminReview from "./pages/AdminReview";
+import { AdminRoute } from "./components/AdminRoute";
 
 const Router = () => {
   return (
@@ -19,6 +21,7 @@ const Router = () => {
       <Route path="/my-listings" element={<MyListings />} />
       <Route path="/edit-listing/:id" element={<EditListing />} />
       <Route path="/browse" element={<Browse />} />
+      <Route path="/admin/review" element={<AdminRoute><AdminReview /></AdminRoute>} />
     </Routes>
   );
 };
