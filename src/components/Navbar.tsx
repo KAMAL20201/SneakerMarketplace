@@ -13,6 +13,7 @@ import { Link } from "react-router";
 import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
+import { preloadRoutes } from "@/Router";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -21,6 +22,11 @@ export function Navbar() {
   const handleLogout = () => {
     signOut();
     toast.success("Logged out successfully");
+  };
+
+  // Preload route on hover for better performance
+  const handleRoutePreload = (routeKey: keyof typeof preloadRoutes) => {
+    preloadRoutes[routeKey]();
   };
 
   return (
@@ -35,6 +41,7 @@ export function Navbar() {
         <Link
           to="/"
           className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2"
+          onMouseEnter={() => handleRoutePreload("home")}
         >
           <div className="relative">
             {/* Main logo container with glass effect */}
@@ -116,16 +123,15 @@ export function Navbar() {
                   </div>
                 </div>
                 <DropdownMenuSeparator className="bg-white/30" />
-                {/* <DropdownMenuItem asChild className="rounded-xl mx-1 my-1">
-                  <Link to="/profile" className="text-gray-700">
-                    Profile
-                  </Link>
-                </DropdownMenuItem> */}
                 <DropdownMenuItem
                   asChild
                   className="rounded-xl mx-1 my-1 cursor-pointer"
                 >
-                  <Link to="/my-listings" className="text-gray-700">
+                  <Link
+                    to="/my-listings"
+                    className="text-gray-700"
+                    onMouseEnter={() => handleRoutePreload("myListings")}
+                  >
                     My Listings
                   </Link>
                 </DropdownMenuItem>
@@ -137,6 +143,7 @@ export function Navbar() {
                     <Link
                       to="/admin/review"
                       className="text-purple-700 font-medium"
+                      onMouseEnter={() => handleRoutePreload("adminReview")}
                     >
                       🔍 Admin Review
                     </Link>
@@ -168,7 +175,12 @@ export function Navbar() {
                 size="sm"
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-xl shadow-lg"
               >
-                <Link to="/login">Log In</Link>
+                <Link
+                  to="/login"
+                  onMouseEnter={() => handleRoutePreload("login")}
+                >
+                  Log In
+                </Link>
               </Button>
             </div>
           )}

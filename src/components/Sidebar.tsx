@@ -22,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router";
+import { preloadRoutes } from "@/Router";
 
 const data = {
   navMain: [
@@ -32,11 +33,13 @@ const data = {
           title: "Home",
           url: "/",
           icon: Home,
+          preloadKey: "home" as keyof typeof preloadRoutes,
         },
         {
           title: "Browse",
           url: "/browse",
           icon: Search,
+          preloadKey: "browse" as keyof typeof preloadRoutes,
         },
       ],
     },
@@ -47,11 +50,13 @@ const data = {
           title: "Sell Items",
           url: "/sell",
           icon: Plus,
+          preloadKey: "sell" as keyof typeof preloadRoutes,
         },
         {
           title: "My Listings",
           url: "/my-listings",
           icon: ShoppingBag,
+          preloadKey: "myListings" as keyof typeof preloadRoutes,
         },
       ],
     },
@@ -62,16 +67,19 @@ const data = {
           title: "Profile",
           url: "/profile",
           icon: User,
+          preloadKey: null, // No preload for this route
         },
         {
           title: "Payment Methods",
           url: "/payment",
           icon: CreditCard,
+          preloadKey: null, // No preload for this route
         },
         {
           title: "Settings",
           url: "/settings",
           icon: Settings,
+          preloadKey: null, // No preload for this route
         },
       ],
     },
@@ -80,6 +88,16 @@ const data = {
 
 export function AppSidebar() {
   const { toggleSidebar } = useSidebar();
+
+  // Preload route on hover for better performance
+  const handleRoutePreload = (
+    preloadKey: keyof typeof preloadRoutes | null
+  ) => {
+    if (preloadKey) {
+      preloadRoutes[preloadKey]();
+    }
+  };
+
   return (
     <Sidebar variant="inset" className="border-0">
       <SidebarHeader className="p-4">
@@ -90,7 +108,7 @@ export function AppSidebar() {
               asChild
               className="glass-button rounded-2xl border-0 hover:bg-white/20"
             >
-              <Link to="/">
+              <Link to="/" onMouseEnter={() => handleRoutePreload("home")}>
                 <div className="flex aspect-square size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 text-white shadow-lg">
                   <span className="text-lg font-bold">⚡</span>
                 </div>
@@ -125,7 +143,11 @@ export function AppSidebar() {
                         toggleSidebar();
                       }}
                     >
-                      <Link to={item.url} className="text-gray-700">
+                      <Link
+                        to={item.url}
+                        className="text-gray-700"
+                        onMouseEnter={() => handleRoutePreload(item.preloadKey)}
+                      >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>

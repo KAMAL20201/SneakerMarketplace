@@ -1,27 +1,119 @@
 import { Route, Routes } from "react-router";
-import Home from "./pages/Home";
-import ProductDetailPage from "./pages/ProductDetailPage";
-import LoginPage from "./pages/SignIn";
-import SignupPage from "./pages/SignUp";
-import SellPage from "./pages/Sell";
-import MyListings from "./pages/MyListings";
-import EditListing from "./pages/EditListing";
-import Browse from "./pages/Browse";
-import AdminReview from "./pages/AdminReview";
+import { lazy, Suspense } from "react";
 import { AdminRoute } from "./components/AdminRoute";
+import { PageSkeleton, FormSkeleton } from "./components/ui/skeleton";
+
+// Lazy load all page components with preloading capability
+const Home = lazy(() => import("./pages/Home"));
+const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
+const LoginPage = lazy(() => import("./pages/SignIn"));
+const SignupPage = lazy(() => import("./pages/SignUp"));
+const SellPage = lazy(() => import("./pages/Sell"));
+const MyListings = lazy(() => import("./pages/MyListings"));
+const EditListing = lazy(() => import("./pages/EditListing"));
+const Browse = lazy(() => import("./pages/Browse"));
+const AdminReview = lazy(() => import("./pages/AdminReview"));
+
+// Preload functions for critical routes
+export const preloadRoutes = {
+  home: () => import("./pages/Home"),
+  browse: () => import("./pages/Browse"),
+  sell: () => import("./pages/Sell"),
+  login: () => import("./pages/SignIn"),
+  signup: () => import("./pages/SignUp"),
+  myListings: () => import("./pages/MyListings"),
+  productDetail: () => import("./pages/ProductDetailPage"),
+  editListing: () => import("./pages/EditListing"),
+  adminReview: () => import("./pages/AdminReview"),
+};
+
+// Enhanced loading component for better UX
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <p className="text-sm text-gray-600">Loading...</p>
+    </div>
+  </div>
+);
 
 const Router = () => {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/product/:id" element={<ProductDetailPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/sell" element={<SellPage />} />
-      <Route path="/my-listings" element={<MyListings />} />
-      <Route path="/edit-listing/:id" element={<EditListing />} />
-      <Route path="/browse" element={<Browse />} />
-      <Route path="/admin/review" element={<AdminRoute><AdminReview /></AdminRoute>} />
+      <Route
+        path="/"
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <Home />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/product/:id"
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <ProductDetailPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <Suspense fallback={<FormSkeleton />}>
+            <LoginPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <Suspense fallback={<FormSkeleton />}>
+            <SignupPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/sell"
+        element={
+          <Suspense fallback={<FormSkeleton />}>
+            <SellPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/my-listings"
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <MyListings />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/edit-listing/:id"
+        element={
+          <Suspense fallback={<FormSkeleton />}>
+            <EditListing />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/browse"
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <Browse />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/admin/review"
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <AdminRoute>
+              <AdminReview />
+            </AdminRoute>
+          </Suspense>
+        }
+      />
     </Routes>
   );
 };
