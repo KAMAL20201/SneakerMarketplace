@@ -69,14 +69,8 @@ export function Navbar() {
               <h1 className="text-xl font-bold gradient-text">
                 The Plug Market
               </h1>
-              <div className="flex items-center gap-1 bg-green-100 px-2 py-1 rounded-full">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                <span className="text-green-700 text-xs font-medium">
-                  Trusted
-                </span>
-              </div>
+             
             </div>
-            <p className="text-xs text-gray-600 -mt-1">Your Connect</p>
           </div>
         </Link>
 
