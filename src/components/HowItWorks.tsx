@@ -63,26 +63,7 @@ const HowItWorks = () => {
             </p>
           </div>
         ))}
-      </div>
-
-      {/* Additional Info */}
-      <div className="mt-8 bg-white/40 p-6 rounded-2xl backdrop-blur-sm">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-green-100 rounded-full flex-shrink-0">
-            <Shield className="h-6 w-6 text-green-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-800 mb-2">
-              Complete Buyer Protection
-            </h3>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              We hold your payment securely until you receive and approve your
-              item. You have 24 hours to inspect your purchase. If you're not
-              satisfied, we'll process a full refund. No questions asked.
-            </p>
-          </div>
-        </div>
-      </div>
+      </div>      
     </section>
   );
 };

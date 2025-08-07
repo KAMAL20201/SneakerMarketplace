@@ -307,3 +307,72 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
+
+/* Animation utilities for sidebar */
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-to-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+}
+
+.animate-out {
+  animation-fill-mode: both;
+}
+
+.data-\[state\=open\]\:animate-in[data-state="open"] {
+  animation-name: fade-in;
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.data-\[state\=closed\]\:animate-out[data-state="closed"] {
+  animation-name: fade-out;
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.data-\[state\=open\]\:slide-in-from-left[data-state="open"] {
+  animation-name: slide-in-from-left;
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.data-\[state\=closed\]\:slide-out-to-left[data-state="closed"] {
+  animation-name: slide-out-to-left;
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}

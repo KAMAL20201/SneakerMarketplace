@@ -116,7 +116,6 @@ export function AppSidebar() {
                   <span className="truncate font-semibold text-gray-800">
                     The Plug Market
                   </span>
-                
                 </div>
               </Link>
             </SidebarMenuButton>

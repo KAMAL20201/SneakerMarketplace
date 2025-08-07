@@ -67,7 +67,7 @@ const Home = () => {
         <div className="flex gap-4">
           <Button
             asChild
-            className="flex-1 h-12 glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
+            className="flex-1 h-12 bg-white text-gray-800 font-semibold border-2 border-gray-800 rounded-2xl hover:bg-gray-800 hover:text-white transition-all duration-300"
           >
             <Link to="/sell">
               <Plus className="h-5 w-5 mr-2" />
