@@ -141,7 +141,6 @@ export async function compressImagesWithPreset(
  */
 export async function smartCompressImages(
   files: File[],
-  targetMaxSize: number = 0.5
 ): Promise<CompressionResult[]> {
   const results: CompressionResult[] = [];
 

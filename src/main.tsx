@@ -5,11 +5,13 @@ import Layout from "./layout";
 import "./index.css";
 import Provider from "./Provider";
 import { AuthProvider } from "./contexts/AuthContext";
+import ScrollToTop from "./components/ScrollToTop";
 
 const root = document.getElementById("root")!;
 
 ReactDOM.createRoot(root).render(
   <BrowserRouter>
+    <ScrollToTop />
     <AuthProvider>
       <Provider>
         <Layout>
