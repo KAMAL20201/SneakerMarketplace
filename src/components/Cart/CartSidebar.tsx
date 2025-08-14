@@ -1,11 +1,11 @@
-import { X, Trash2, ShoppingBag, CreditCard, ArrowRight } from "lucide-react";
+import { X, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Link } from "react-router";
 import { useCart } from "@/contexts/CartContext";
+import { PaymentButton } from "@/components/PaymentButton";
 
 export function CartSidebar() {
   const { items, toggleCart, clearCart, removeItem, isOpen, totalPrice } =
@@ -175,16 +175,18 @@ export function CartSidebar() {
 
               {/* Checkout Buttons */}
               <div className="space-y-3">
-                <Button
-                  asChild
+                <PaymentButton
+                  amount={totalPrice}
+                  description={`Cart checkout - ${items.length} item${
+                    items.length !== 1 ? "s" : ""
+                  }`}
+                  metadata={{
+                    cart_items: items.map((item) => item.id).join(","),
+                    item_count: items.length.toString(),
+                    type: "cart_checkout",
+                  }}
                   className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg text-lg font-bold"
-                >
-                  <Link to="/checkout">
-                    <CreditCard className="h-5 w-5 mr-3" />
-                    Checkout
-                    <ArrowRight className="h-5 w-5 ml-3" />
-                  </Link>
-                </Button>
+                />
 
                 <Button
                   variant="outline"
