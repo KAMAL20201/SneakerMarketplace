@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
-  Heart,
   Share,
   Star,
   ShoppingCart,
@@ -16,6 +15,7 @@ import { Link, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
+import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -138,60 +138,17 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="sticky top-16 z-40 glass-navbar">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link to="/">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2 glass-button rounded-2xl border-0"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="font-bold text-gray-800">{listing?.title}</h1>
-                <p className="text-sm text-gray-600">
-                  {listing?.brand} • {listing?.model}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsLiked(!isLiked)}
-                className={`p-2 glass-button rounded-2xl border-0 ${
-                  isLiked ? "text-red-500" : "text-gray-600"
-                }`}
-              >
-                <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-2 glass-button rounded-2xl border-0"
-              >
-                <Share className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Image Gallery */}
       <div className="px-4 py-6">
         <div className="mb-4">
-          <div className="relative aspect-square glass-card rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center">
-            <img
+          <div className="relative aspect-square glass-card rounded-3xl overflow-hidden shadow-2xl">
+            <ProductImage
               src={
                 images?.[selectedImageIndex]?.image_url || "/placeholder.svg"
               }
               alt={`${listing?.title} - Image ${selectedImageIndex + 1}`}
-              className="object-cover w-full h-full"
+              priority={true}
+              className="w-full h-full"
             />
           </div>
         </div>
@@ -208,10 +165,10 @@ export default function ProductDetailPage() {
                   : "glass-button border-0 hover:scale-105"
               }`}
             >
-              <img
+              <ThumbnailImage
                 src={image.image_url || "/placeholder.svg"}
                 alt={`${listing?.title} thumbnail ${index + 1}`}
-                className="object-cover w-full h-full"
+                className="w-full h-full"
               />
             </button>
           ))}
@@ -222,12 +179,19 @@ export default function ProductDetailPage() {
         <h2 className="text-3xl font-bold text-gray-800 px-4">
           ₹ {listing?.price}
         </h2>
+
         <div className="flex items-center ">
           <span className="font-bold">Condition:</span>
           <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
             {listing?.condition}
           </Badge>
         </div>
+      </div>
+
+      <div className="px-8 pb-5">
+        <h1 className="text-2xl font-bold text-gray-600">{listing?.brand}</h1>
+
+        <h2 className=" text-md text-gray-800">{listing?.title}</h2>
       </div>
 
       {/* Sellers List */}
@@ -281,8 +245,6 @@ export default function ProductDetailPage() {
                     <Truck className="h-4 w-4" />
                     <span>Free shipping</span>
                   </div>
-                  <span>•</span>
-                  {/* <span>{seller.location}</span> */}
                 </div>
 
                 <div className="flex items-center justify-between">

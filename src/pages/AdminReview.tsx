@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Link } from "react-router";
+import { CardImage } from "@/components/ui/OptimizedImage";
 
 interface Listing {
   id: string;
@@ -247,10 +248,11 @@ export default function AdminReview() {
                 <CardContent className="space-y-4">
                   {/* Image */}
                   <div className="relative h-48 rounded-2xl overflow-hidden bg-gray-100">
-                    <img
+                    <CardImage
                       src={listing.image_url || "/placeholder.svg"}
                       alt={listing.title}
-                      className="w-full h-full object-cover"
+                      aspectRatio="aspect-[4/3]"
+                      className="w-full h-full"
                     />
                   </div>
 

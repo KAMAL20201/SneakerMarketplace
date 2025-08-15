@@ -282,6 +282,41 @@
   animation: shimmer 2s infinite;
 }
 
+/* Glass-themed image shimmer */
+@keyframes glass-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.glass-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: glass-shimmer 2s infinite ease-in-out;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Purple gradient shimmer for premium feel */
+.premium-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(168, 85, 247, 0.1) 25%,
+    rgba(168, 85, 247, 0.2) 50%,
+    rgba(168, 85, 247, 0.1) 75%
+  );
+  background-size: 200% 100%;
+  animation: glass-shimmer 2s infinite ease-in-out;
+}
+
 /* Logo pulse animation */
 @keyframes logo-pulse {
   0%,

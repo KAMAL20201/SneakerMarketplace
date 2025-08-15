@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 
 interface Order {
   id: string;
@@ -237,10 +238,10 @@ const MyOrders = () => {
                   <div className="flex gap-4">
                     {/* Product Image */}
                     <div className="w-20 h-20 flex-shrink-0">
-                      <img
+                      <ThumbnailImage
                         src={order.product_image}
                         alt={order.product_title}
-                        className="w-full h-full object-cover rounded-2xl"
+                        className="w-full h-full"
                       />
                     </div>
 

@@ -57,14 +57,6 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/authenticity-guarantee"
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Authenticity Guarantee
-                </Link>
-              </li>
-              <li>
-                <Link
                   to="/secure-payments"
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
@@ -73,26 +65,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/verified-sellers"
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Verified Sellers
-                </Link>
-              </li>
-              <li>
-                <Link
                   to="/review-process"
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Review Process
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/safety-tips"
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Safety Tips
                 </Link>
               </li>
             </ul>
@@ -112,14 +88,7 @@ export function Footer() {
                   Help Center
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/contact"
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Contact Us
-                </Link>
-              </li>
+            
               <li>
                 <Link
                   to="/faq"
@@ -181,14 +150,6 @@ export function Footer() {
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Seller Agreement
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/buyer-protection"
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Buyer Protection
                 </Link>
               </li>
             </ul>

@@ -8,6 +8,7 @@ import { supabaseUrl } from "@/lib/supabase";
 import RecentlyListed from "@/components/RecentlyListed";
 import FeaturedListings from "@/components/FeaturedListings";
 import HowItWorks from "@/components/HowItWorks";
+import { CardImage } from "@/components/ui/OptimizedImage";
 
 const Home = () => {
   return (
@@ -92,15 +93,14 @@ const Home = () => {
                 <div
                   className={`h-40 bg-gradient-to-br relative overflow-hidden`}
                 >
-                  <img
+                  <CardImage
                     src={`${supabaseUrl}${category.image}`}
                     alt={category.name}
-                    className="w-full h-full object-cover"
+                    aspectRatio="aspect-[4/3]"
+                    className="w-full h-full"
+                    priority={true}
                   />
                   <div className="absolute inset-0 bg-white/10 group-hover:bg-white/5 transition-colors" />
-                  <div className="absolute bottom-4 left-4">
-                    <div className="w-8 h-8 bg-white/30 rounded-full backdrop-blur-sm"></div>
-                  </div>
                 </div>
                 <div className="px-4 py-2 absolute opacity-50 bottom-0 bg-white w-full">
                   <h3 className="font-bold text-black">{category.name}</h3>

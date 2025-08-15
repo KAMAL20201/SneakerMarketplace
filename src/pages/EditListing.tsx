@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 
 const EditListing = () => {
   const { id } = useParams();
@@ -115,10 +116,10 @@ const EditListing = () => {
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
-                <img
+                <ThumbnailImage
                   src={listing.image_url || "/placeholder.svg"}
                   alt={listing.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
                 />
               </div>
               <div className="flex-1">

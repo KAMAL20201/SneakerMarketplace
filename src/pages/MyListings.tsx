@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { CardImage } from "@/components/ui/OptimizedImage";
 
 interface Listing {
   id: string;
@@ -312,15 +313,16 @@ const MyListings = () => {
                   <CardContent className="p-0">
                     {/* Image Section */}
                     <div className="relative h-48 overflow-hidden">
-                      <img
+                      <CardImage
                         src={listing.image_url || "/placeholder.svg"}
                         alt={listing.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        aspectRatio="aspect-[4/3]"
+                        className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                       />
-                      <div className="absolute top-3 left-3">
+                      <div className="absolute top-3 left-3 z-10">
                         {getStatusBadge(listing.status)}
                       </div>
-                      <div className="absolute top-3 right-3 flex gap-2">
+                      <div className="absolute top-3 right-3 flex gap-2 z-10">
                         <Button
                           size="sm"
                           variant="ghost"

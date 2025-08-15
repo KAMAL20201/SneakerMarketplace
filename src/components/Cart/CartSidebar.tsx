@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
 import { PaymentButton } from "@/components/PaymentButton";
+import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 
 export function CartSidebar() {
   const { items, toggleCart, clearCart, removeItem, isOpen, totalPrice } =
@@ -80,10 +81,10 @@ export function CartSidebar() {
                       <div className="flex gap-4">
                         {/* Product Image */}
                         <div className="relative w-20 h-20 flex-shrink-0 rounded-2xl overflow-hidden bg-gray-100">
-                          <img
+                          <ThumbnailImage
                             src={item.image || "/placeholder.svg"}
                             alt={item.productName}
-                            className="object-cover"
+                            className="w-full h-full"
                           />
                         </div>
 

@@ -32,6 +32,7 @@ import { useNavigate } from "react-router";
 import { supabase } from "@/lib/supabase";
 import { categories } from "@/constants/sellConstants";
 import { smartCompressImages } from "@/lib/imageCompression";
+import { ProductImage } from "@/components/ui/OptimizedImage";
 
 export default function SellPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -320,16 +321,7 @@ export default function SellPage() {
                     Sell Your Items
                   </h1>
                 </div>
-                <p className="text-sm md:text-base text-gray-600 mb-2">
-                  Step {currentStep} of {steps.length}:{" "}
-                  {steps[currentStep - 1].description}
-                </p>
-                <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-full border border-blue-200 inline-flex">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-blue-700 text-xs font-medium">
-                    All listings are reviewed before going live
-                  </span>
-                </div>
+            
               </div>
             </div>
           </div>
@@ -353,14 +345,6 @@ export default function SellPage() {
                 className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(currentStep / steps.length) * 100}%` }}
               />
-            </div>
-            <div className="text-center">
-              <h3 className="font-bold text-gray-800">
-                {steps[currentStep - 1].title}
-              </h3>
-              <p className="text-sm text-gray-600">
-                {steps[currentStep - 1].description}
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -486,13 +470,13 @@ export default function SellPage() {
                 >
                   {images.map((image, index) => (
                     <div key={index} className="relative aspect-square group">
-                      <img
+                      <ProductImage
                         src={image || "/placeholder.svg"}
                         alt={`Item ${index + 1}`}
-                        className="w-full h-full object-cover rounded-2xl border border-white/30 shadow-lg"
+                        className="w-full h-full rounded-2xl border border-white/30 shadow-lg"
                       />
                       {index === 0 && (
-                        <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-lg font-semibold">
+                        <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-lg font-semibold z-10">
                           Main
                         </div>
                       )}
@@ -500,7 +484,7 @@ export default function SellPage() {
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="absolute top-2 right-2 h-6 w-6 md:h-8 md:w-8 p-0 glass-button border-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 h-6 w-6 md:h-8 md:w-8 p-0 glass-button border-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity z-10"
                         onClick={() => removeImage(index)}
                       >
                         <X className="h-3 w-3 md:h-4 md:w-4 text-red-500" />
@@ -891,11 +875,11 @@ export default function SellPage() {
                     </h3>
                     <div className="grid grid-cols-3 gap-2">
                       {images.slice(0, 6).map((image, index) => (
-                        <img
+                        <ProductImage
                           key={index}
                           src={image || "/placeholder.svg"}
                           alt={`Preview ${index + 1}`}
-                          className="w-full aspect-square object-cover rounded-xl"
+                          className="w-full aspect-square rounded-xl"
                         />
                       ))}
                     </div>

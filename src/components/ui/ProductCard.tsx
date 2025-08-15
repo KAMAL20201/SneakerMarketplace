@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { ProductImage, CardImage } from "@/components/ui/OptimizedImage";
 
 interface ProductCardProps {
   product: {
@@ -25,18 +25,13 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
         <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
           <CardContent className="p-0">
             <div className="relative">
-              <img
+              <CardImage
                 src={product.image_url || "/placeholder.svg"}
                 alt={product.title}
-                className="w-full sm:h-48 h-36 object-cover"
+                aspectRatio="aspect-[4/3]"
+                className="w-full sm:h-48 h-36"
               />
-              <Button
-                size="sm"
-                variant="ghost"
-                className="absolute top-3 right-3 h-8 w-8 p-0 glass-button border-0 rounded-2xl"
-              >
-                <Heart className="h-4 w-4 text-gray-500" />
-              </Button>
+  
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
@@ -84,12 +79,10 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
         <CardContent className="p-0">
           <div className="flex p-4 gap-2">
             <div className="relative w-28 h-28 flex-shrink-0">
-              <img
+              <ProductImage
                 src={product.image_url || "/placeholder.svg"}
                 alt={product.title}
-                width={112}
-                height={112}
-                className="w-full h-full object-cover"
+                className="w-full h-full"
               />
             </div>
             <div className="flex-1">
@@ -102,13 +95,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                     {product.title}
                   </h3>
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0 glass-button border-0 rounded-2xl"
-                >
-                  <Heart className="h-4 w-4 text-gray-500" />
-                </Button>
+         
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <Badge className="glass-button border-0 text-gray-700 text-xs rounded-xl ml-auto capitalize">

@@ -3,7 +3,6 @@ import {
   Search,
   Grid3X3,
   List,
-  Heart,
   Eye,
   DollarSign,
   Package,
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { CardImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 
 interface Listing {
   id: string;
@@ -656,18 +656,13 @@ const Browse = () => {
                       // Grid View
                       <>
                         <div className="relative h-40 sm:h-48 overflow-hidden">
-                          <img
+                          <CardImage
                             src={listing.image_url || "/placeholder.svg"}
                             alt={listing.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            aspectRatio="aspect-[4/3]"
+                            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                           />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="absolute top-2 right-2 h-8 w-8 p-0 glass-button border-0 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30"
-                          >
-                            <Heart className="h-4 w-4 text-white" />
-                          </Button>
+                  
                         </div>
                         <div className="p-3 md:p-4">
                           <div className="flex items-start justify-between mb-2 md:mb-3">
@@ -709,10 +704,10 @@ const Browse = () => {
                       // List View
                       <div className="flex p-3 md:p-4 gap-3 md:gap-4">
                         <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
-                          <img
+                          <ThumbnailImage
                             src={listing.image_url || "/placeholder.svg"}
                             alt={listing.title}
-                            className="w-full h-full object-cover rounded-xl"
+                            className="w-full h-full"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -725,13 +720,7 @@ const Browse = () => {
                                 {listing.title}
                               </h3>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 glass-button border-0 rounded-xl flex-shrink-0"
-                            >
-                              <Heart className="h-4 w-4 text-gray-500" />
-                            </Button>
+        
                           </div>
                           <div className="flex items-center gap-2 md:gap-4 mb-2 md:mb-3 flex-wrap">
                             <Badge
