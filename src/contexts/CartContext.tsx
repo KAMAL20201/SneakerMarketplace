@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useMemo } from "react";
+import { createContext, useContext, useState, useMemo, useEffect } from "react";
+import { useCartStorage } from "@/hooks/useCartStorage";
 
 export interface CartItem {
   id: string;
@@ -41,20 +42,48 @@ export const CartContext = createContext<CartContextType>({
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const { debouncedSave, immediateSave, load, clear } = useCartStorage();
+
+  // Load cart from localStorage on component mount
+  useEffect(() => {
+    const savedItems = load();
+    if (savedItems.length > 0) {
+      setItems(savedItems);
+    }
+    setIsLoaded(true);
+  }, [load]);
+
+  // Save cart to localStorage whenever items change (after initial load)
+  useEffect(() => {
+    if (isLoaded) {
+      debouncedSave(items);
+    }
+  }, [items, isLoaded, debouncedSave]);
+
+  // Cleanup: save immediately on unmount to ensure no data loss
+  useEffect(() => {
+    return () => {
+      if (isLoaded && items.length > 0) {
+        immediateSave(items);
+      }
+    };
+  }, [items, isLoaded, immediateSave]);
 
   const addToCart = (item: any) => {
     // Check if item already exists in cart (by productId and sellerId)
     const existingItem = items.find(
-      (cartItem) => 
-        cartItem.productId === item.productId && 
+      (cartItem) =>
+        cartItem.productId === item.productId &&
         cartItem.sellerId === item.sellerId
     );
-    
+
     if (existingItem) {
       // Item already in cart, don't add again
       return false;
     }
-    
+
     setItems([...items, item]);
     return true;
   };
@@ -79,6 +108,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const clearCart = () => {
     setItems([]);
+    // Immediately clear from localStorage
+    clear();
   };
 
   const totalPrice = useMemo(() => {
