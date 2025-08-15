@@ -11,4 +11,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Add SPA fallback for client-side routing
+  server: {
+    historyApiFallback: true,
+  },
+  // For production builds
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router"],
+        },
+      },
+    },
+  },
 });
