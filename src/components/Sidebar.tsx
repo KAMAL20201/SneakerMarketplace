@@ -6,6 +6,7 @@ import {
   Settings,
   ShoppingBag,
   CreditCard,
+  Package,
 } from "lucide-react";
 
 import {
@@ -57,6 +58,12 @@ const data = {
           url: "/my-listings",
           icon: ShoppingBag,
           preloadKey: "myListings" as keyof typeof preloadRoutes,
+        },
+        {
+          title: "My Orders",
+          url: "/my-orders",
+          icon: Package,
+          preloadKey: "myOrders" as keyof typeof preloadRoutes,
         },
       ],
     },

@@ -10,6 +10,7 @@ const LoginPage = lazy(() => import("./pages/SignIn"));
 const SignupPage = lazy(() => import("./pages/SignUp"));
 const SellPage = lazy(() => import("./pages/Sell"));
 const MyListings = lazy(() => import("./pages/MyListings"));
+const MyOrders = lazy(() => import("./pages/MyOrders"));
 const EditListing = lazy(() => import("./pages/EditListing"));
 const Browse = lazy(() => import("./pages/Browse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
@@ -22,6 +23,7 @@ export const preloadRoutes = {
   login: () => import("./pages/SignIn"),
   signup: () => import("./pages/SignUp"),
   myListings: () => import("./pages/MyListings"),
+  myOrders: () => import("./pages/MyOrders"),
   productDetail: () => import("./pages/ProductDetailPage"),
   editListing: () => import("./pages/EditListing"),
   adminReview: () => import("./pages/AdminReview"),
@@ -85,6 +87,14 @@ const Router = () => {
         element={
           <Suspense fallback={<PageSkeleton />}>
             <MyListings />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/my-orders"
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <MyOrders />
           </Suspense>
         }
       />
