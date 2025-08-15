@@ -7,7 +7,6 @@ import {
   Truck,
   XCircle,
   Calendar,
-  DollarSign,
   Eye,
   ShoppingBag,
   AlertCircle,
