@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
@@ -19,9 +19,8 @@ import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
-  const [selectedSize, setSelectedSize] = useState("US 9");
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
   const { addToCart, items } = useCart();
   const [listing, setListing] = useState<any>(null);
   const [images, setImages] = useState<any[]>([]);
@@ -45,7 +44,7 @@ export default function ProductDetailPage() {
 
     const success = addToCart(cartItem);
     if (success) {
-      toast.success(`Added ${listing?.title} (${selectedSize}) to cart!`);
+      toast.success(`Added to cart!`);
     } else {
       toast.error("This item is already in your cart!");
     }
@@ -116,6 +115,9 @@ export default function ProductDetailPage() {
       delete transformedListing.sellers;
 
       setListing(transformedListing);
+      if (transformedListing.size_value) {
+        setSelectedSize(transformedListing.size_value);
+      }
       setImages(imagesData || []);
 
       // Set the first image (poster or first available) as selected
