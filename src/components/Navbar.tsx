@@ -30,7 +30,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-navbar">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full glass-navbar">
       <div className=" flex h-16 items-center justify-between px-4">
         {/* Left side - Sidebar trigger */}
         <div className="flex items-center">
@@ -69,7 +69,6 @@ export function Navbar() {
               <h1 className="text-xl font-bold gradient-text">
                 The Plug Market
               </h1>
-             
             </div>
           </div>
         </Link>

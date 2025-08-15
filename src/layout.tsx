@@ -22,7 +22,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <AppSidebar />
       <SidebarInset>
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pt-16">{children}</main>
         <Footer />
       </SidebarInset>
       <Suspense fallback={null}>

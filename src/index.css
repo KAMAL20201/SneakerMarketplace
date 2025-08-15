@@ -146,10 +146,22 @@
   * {
     border: hsl(var(--border));
   }
+  html {
+    /* Ensure smooth scrolling behavior and prevent scroll issues on mobile */
+    scroll-behavior: auto;
+    /* Fix for mobile viewport issues */
+    -webkit-text-size-adjust: 100%;
+    /* Prevent horizontal scrolling */
+    overflow-x: hidden;
+  }
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     min-height: 100vh;
+    /* Prevent horizontal scrolling */
+    overflow-x: hidden;
+    /* Ensure proper scrolling on mobile */
+    position: relative;
   }
   button {
     cursor: pointer;
