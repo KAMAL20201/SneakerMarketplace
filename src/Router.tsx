@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router";
 import { lazy, Suspense } from "react";
 import { AdminRoute } from "./components/AdminRoute";
 import { PageSkeleton, FormSkeleton } from "./components/ui/skeleton";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Lazy load all page components with preloading capability
 const Home = lazy(() => import("./pages/Home"));
@@ -88,7 +89,9 @@ const Router = () => {
         path="/my-listings"
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <MyListings />
+            <ProtectedRoute>
+              <MyListings />
+            </ProtectedRoute>
           </Suspense>
         }
       />
@@ -96,7 +99,9 @@ const Router = () => {
         path="/my-orders"
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <MyOrders />
+            <ProtectedRoute>
+              <MyOrders />
+            </ProtectedRoute>
           </Suspense>
         }
       />
@@ -104,7 +109,9 @@ const Router = () => {
         path="/edit-listing/:id"
         element={
           <Suspense fallback={<FormSkeleton />}>
-            <EditListing />
+            <ProtectedRoute>
+              <EditListing />
+            </ProtectedRoute>
           </Suspense>
         }
       />
@@ -130,7 +137,9 @@ const Router = () => {
         path="/payment-methods"
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <PaymentMethods />
+            <ProtectedRoute>
+              <PaymentMethods />
+            </ProtectedRoute>
           </Suspense>
         }
       />

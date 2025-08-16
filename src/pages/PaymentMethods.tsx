@@ -12,11 +12,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -52,11 +51,9 @@ import type {
   BankAccountData,
 } from "@/lib/encryptionService";
 import { toast } from "sonner";
-import { useNavigate } from "react-router";
 
 const PaymentMethods = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [paymentMethods, setPaymentMethods] = useState<
     DecryptedPaymentMethod[]
   >([]);
@@ -64,7 +61,6 @@ const PaymentMethods = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingMethod, setEditingMethod] =
     useState<DecryptedPaymentMethod | null>(null);
-  const [deletingMethodId, setDeletingMethodId] = useState<string | null>(null);
   const [showSensitiveData, setShowSensitiveData] = useState<{
     [key: string]: boolean;
   }>({});
@@ -228,7 +224,6 @@ const PaymentMethods = () => {
     try {
       await PaymentMethodsService.deletePaymentMethod(methodId, user!.id);
       toast.success("Payment method deleted successfully");
-      setDeletingMethodId(null);
       fetchPaymentMethods();
     } catch (error) {
       console.error("Error deleting payment method:", error);

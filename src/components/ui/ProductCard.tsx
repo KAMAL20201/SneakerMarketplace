@@ -1,7 +1,6 @@
 import { Link } from "react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ProductImage, CardImage } from "@/components/ui/OptimizedImage";
 
 interface ProductCardProps {

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   Check,
   X,
-  Eye,
   Calendar,
   User,
   Package,
@@ -27,7 +26,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Link } from "react-router";
 import { CardImage } from "@/components/ui/OptimizedImage";
 
 interface Listing {

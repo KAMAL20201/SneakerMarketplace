@@ -62,8 +62,6 @@ export default function SellPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const conditions = ["New", "Like New", "Good", "Fair", "Poor"];
-
   const steps = [
     { id: 1, title: "Category", description: "What are you selling?" },
     { id: 2, title: "Photos", description: "Add photos of your item" },
