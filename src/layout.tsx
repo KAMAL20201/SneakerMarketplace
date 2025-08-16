@@ -4,6 +4,7 @@ import { Navbar } from "./components/Navbar";
 import { AppSidebar } from "./components/Sidebar";
 import { Toaster } from "sonner";
 import { Footer } from "./components/Footer";
+import { useIsMobile } from "./hooks/use-mobile";
 
 // Lazy load CartSidebar since it's only needed when cart is opened
 const CartSidebar = lazy(() =>
@@ -17,6 +18,8 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const isMobile = useIsMobile();
+
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
@@ -28,7 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <Suspense fallback={null}>
         <CartSidebar />
       </Suspense>
-      <Toaster />
+      <Toaster position={isMobile ? "bottom-center" : "top-right"} />
     </SidebarProvider>
   );
 };
