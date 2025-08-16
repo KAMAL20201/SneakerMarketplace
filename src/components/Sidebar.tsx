@@ -78,9 +78,9 @@ const data = {
         },
         {
           title: "Payment Methods",
-          url: "/payment",
+          url: "/payment-methods",
           icon: CreditCard,
-          preloadKey: null, // No preload for this route
+          preloadKey: "paymentMethods" as keyof typeof preloadRoutes,
         },
         {
           title: "Settings",

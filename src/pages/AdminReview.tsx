@@ -293,15 +293,6 @@ export default function AdminReview() {
 
                   {/* Actions */}
                   <div className="flex gap-3 pt-4">
-                    <Link to={`/product/${listing.id}`} className="flex-1">
-                      <Button
-                        variant="outline"
-                        className="w-full glass-button border-0 rounded-xl"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                    </Link>
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

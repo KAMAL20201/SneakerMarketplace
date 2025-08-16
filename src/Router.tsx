@@ -14,6 +14,7 @@ const MyOrders = lazy(() => import("./pages/MyOrders"));
 const EditListing = lazy(() => import("./pages/EditListing"));
 const Browse = lazy(() => import("./pages/Browse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
+const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
 
 // Preload functions for critical routes
 export const preloadRoutes = {
@@ -27,6 +28,7 @@ export const preloadRoutes = {
   productDetail: () => import("./pages/ProductDetailPage"),
   editListing: () => import("./pages/EditListing"),
   adminReview: () => import("./pages/AdminReview"),
+  paymentMethods: () => import("./pages/PaymentMethods"),
 };
 
 // Enhanced loading component for better UX
@@ -121,6 +123,14 @@ const Router = () => {
             <AdminRoute>
               <AdminReview />
             </AdminRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path="/payment-methods"
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <PaymentMethods />
           </Suspense>
         }
       />

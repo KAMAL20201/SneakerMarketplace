@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Camera,
   Upload,
@@ -11,6 +11,9 @@ import {
   Package,
   Check,
   Eye,
+  CreditCard,
+  Smartphone,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,12 +36,16 @@ import { supabase } from "@/lib/supabase";
 import { categories } from "@/constants/sellConstants";
 import { smartCompressImages } from "@/lib/imageCompression";
 import { ProductImage } from "@/components/ui/OptimizedImage";
+import { PaymentMethodsService } from "@/lib/paymentMethodsService";
+import type { PaymentMethod } from "@/lib/encryptionService";
 
 export default function SellPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [images, setImages] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
     brand: "",
@@ -47,7 +54,8 @@ export default function SellPage() {
     condition: "",
     price: "",
     description: "",
-    category: "",
+    category: categories[0].id,
+    paymentMethodId: "",
   });
 
   const { user } = useAuth();
@@ -62,12 +70,45 @@ export default function SellPage() {
     { id: 3, title: "Basic Info", description: "Tell us about your item" },
     { id: 4, title: "Details", description: "Item details and condition" },
     { id: 5, title: "Price", description: "Set your price and description" },
-    { id: 6, title: "Review", description: "Review and submit for approval" },
+    { id: 6, title: "Payment", description: "Choose payment method" },
+    { id: 7, title: "Review", description: "Review and submit for approval" },
   ];
 
   const selectedCategory = categories.find(
     (cat) => cat.id === formData.category
   );
+
+  // Fetch payment methods when user is available
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      if (user) {
+        try {
+          setLoadingPaymentMethods(true);
+          const methods = await PaymentMethodsService.getPaymentMethods(
+            user.id
+          );
+          setPaymentMethods(methods);
+
+          // Set default payment method if available and none selected
+          if (methods.length > 0 && !formData.paymentMethodId) {
+            const defaultMethod =
+              methods.find((m) => m.is_default) || methods[0];
+            setFormData((prev) => ({
+              ...prev,
+              paymentMethodId: defaultMethod.id,
+            }));
+          }
+        } catch (error) {
+          console.error("Error fetching payment methods:", error);
+          toast.error("Failed to load payment methods");
+        } finally {
+          setLoadingPaymentMethods(false);
+        }
+      }
+    };
+
+    fetchPaymentMethods();
+  }, [user]);
 
   const validateStep = (step: number): boolean => {
     switch (step) {
@@ -87,6 +128,8 @@ export default function SellPage() {
         );
       case 5:
         return formData.price !== "";
+      case 6:
+        return formData.paymentMethodId !== "";
       default:
         return true;
     }
@@ -252,6 +295,18 @@ export default function SellPage() {
       return;
     }
 
+    // Check if user has payment methods
+    if (paymentMethods.length === 0) {
+      toast.error("Please add a payment method before listing items");
+      navigate("/payment-methods");
+      return;
+    }
+
+    if (!formData.paymentMethodId) {
+      toast.error("Please select a payment method");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -274,6 +329,7 @@ export default function SellPage() {
           price: parseFloat(formData.price),
           description: formData.description,
           status: "under_review",
+          payment_method_id: formData.paymentMethodId,
         })
         .select()
         .single();
@@ -321,7 +377,6 @@ export default function SellPage() {
                     Sell Your Items
                   </h1>
                 </div>
-            
               </div>
             </div>
           </div>
@@ -702,70 +757,99 @@ export default function SellPage() {
                       </Select>
                     </div>
                   )}
-
-                  <div>
-                    <Label
-                      htmlFor="condition"
-                      className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
-                    >
-                      Condition *
-                    </Label>
-                    <Select
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, condition: value })
-                      }
-                    >
-                      <SelectTrigger className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700">
-                        <SelectValue placeholder="Select condition" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-2xl z-50">
-                        {conditions.map((condition) => (
-                          <SelectItem
-                            key={condition}
-                            value={condition.toLowerCase()}
-                          >
-                            {condition}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
 
                 <div className="space-y-4">
                   <Label className="text-gray-800 font-semibold text-base md:text-lg">
-                    Condition Guide
+                    Condition
                   </Label>
                   <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4">
-                    <div className="glass-button border-0 rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all">
+                    <div
+                      className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
+                        formData.condition === "New"
+                          ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                          : "bg-white"
+                      }`}
+                      onClick={() =>
+                        setFormData({ ...formData, condition: "New" })
+                      }
+                    >
                       <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 rounded-xl mb-2">
                         New
                       </Badge>
-                      <p className="text-xs md:text-sm text-gray-700">
+                        <p
+                        className={`text-xs md:text-sm ${
+                          formData.condition === "New"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
                         Never used, with original packaging
                       </p>
                     </div>
-                    <div className="glass-button border-0 rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all">
+                    <div
+                      className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
+                        formData.condition === "Like New"
+                          ? "bg-gradient-to-r from-blue-500 to-purple-500"
+                          : "bg-white"
+                      }`}
+                      onClick={() =>
+                        setFormData({ ...formData, condition: "Like New" })
+                      }
+                    >
                       <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 rounded-xl mb-2">
                         Like New
                       </Badge>
-                      <p className="text-xs md:text-sm text-gray-700">
+                      <p className={`text-xs md:text-sm ${
+                          formData.condition === "Like New"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
                         Used 1-2 times, minimal signs of wear
                       </p>
                     </div>
-                    <div className="glass-button border-0 rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all">
+                    <div
+                      className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
+                        formData.condition === "Good"
+                          ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                          : "bg-white"
+                      }`}
+                      onClick={() =>
+                        setFormData({ ...formData, condition: "Good" })
+                      }
+                    >
                       <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 rounded-xl mb-2">
                         Good
                       </Badge>
-                      <p className="text-xs md:text-sm text-gray-700">
+                      <p className={`text-xs md:text-sm ${
+                          formData.condition === "Good"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
                         Some wear, still in good condition
                       </p>
                     </div>
-                    <div className="glass-button border-0 rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all">
+                    <div
+                      className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
+                        formData.condition === "Fair"
+                          ? "bg-gradient-to-r from-orange-500 to-red-500"
+                          : "bg-white"
+                      }`}
+                      onClick={() =>
+                        setFormData({ ...formData, condition: "Fair" })
+                      }
+                    >
                       <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 rounded-xl mb-2">
                         Fair
                       </Badge>
-                      <p className="text-xs md:text-sm text-gray-700">
+                      <p className={`text-xs md:text-sm ${
+                          formData.condition === "Fair"
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}
+                      >
                         Noticeable wear, still functional
                       </p>
                     </div>
@@ -837,8 +921,105 @@ export default function SellPage() {
             </Card>
           )}
 
-          {/* Step 6: Review */}
+          {/* Step 6: Payment Method */}
           {currentStep === 6 && (
+            <Card className="glass-card border-0 rounded-3xl shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-3">
+                  <div className="p-2 md:p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl">
+                    <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                  </div>
+                  Choose Payment Method
+                </CardTitle>
+                <p className="text-sm md:text-base text-gray-600">
+                  Select how you want to receive payment for this item
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {loadingPaymentMethods ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="text-gray-600 mt-2">
+                      Loading payment methods...
+                    </p>
+                  </div>
+                ) : paymentMethods.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+                      <div className="flex items-center justify-center mb-4">
+                        <AlertTriangle className="w-12 h-12 text-amber-600" />
+                      </div>
+                      <h3 className="font-medium text-amber-800 mb-2">
+                        No Payment Methods Found
+                      </h3>
+                      <p className="text-amber-700 text-sm mb-4">
+                        You need to add at least one payment method to list
+                        items for sale.
+                      </p>
+                      <Button
+                        onClick={() => navigate("/payment-methods")}
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        Add Payment Method
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {paymentMethods.map((method) => (
+                      <div
+                        key={method.id}
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                          formData.paymentMethodId === method.id
+                            ? "border-green-500 bg-green-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            paymentMethodId: method.id,
+                          }))
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            {method.method_type === "upi" ? (
+                              <Smartphone className="w-5 h-5 text-blue-600" />
+                            ) : (
+                              <CreditCard className="w-5 h-5 text-green-600" />
+                            )}
+                            <div>
+                              <h4 className="font-medium">
+                                {method.method_name}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {method.method_type === "upi"
+                                  ? "UPI Payment"
+                                  : "Bank Account"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {method.is_default && (
+                              <Badge variant="secondary" className="text-xs">
+                                Default
+                              </Badge>
+                            )}
+                            {formData.paymentMethodId === method.id && (
+                              <Check className="w-5 h-5 text-green-600" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 7: Review */}
+          {currentStep === 7 && (
             <Card className="glass-card border-0 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-3">
@@ -922,6 +1103,23 @@ export default function SellPage() {
                         <p>
                           <strong>Price:</strong> ₹ {formData.price || "0.00"}
                         </p>
+
+                        {/* Payment Method Info */}
+                        {(() => {
+                          const selectedPaymentMethod = paymentMethods.find(
+                            (m) => m.id === formData.paymentMethodId
+                          );
+                          return selectedPaymentMethod ? (
+                            <p>
+                              <strong>Payment Method:</strong>{" "}
+                              {selectedPaymentMethod.method_name}(
+                              {selectedPaymentMethod.method_type === "upi"
+                                ? "UPI"
+                                : "Bank Account"}
+                              )
+                            </p>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                     {formData.description && (
