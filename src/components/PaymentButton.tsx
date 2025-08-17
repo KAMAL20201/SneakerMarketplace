@@ -2,6 +2,11 @@ import React from "react";
 import { Button } from "./ui/button";
 import { usePayment } from "../contexts/PaymentContext";
 import { Loader2, CreditCard } from "lucide-react";
+import { toast } from "sonner";
+import { ROUTE_NAMES } from "@/constants/enums";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router";
+import { useCart } from "@/contexts/CartContext";
 
 interface PaymentButtonProps {
   amount: number;
@@ -31,9 +36,24 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   disabled = false,
 }) => {
   const { initiatePayment, isLoading, error } = usePayment();
-
+  const { user, setOperationAfterLogin } = useAuth();
+  const { isOpen, toggleCart } = useCart();
+  const navigate = useNavigate();
   const handlePayment = async () => {
     try {
+      if (!user) {
+        if (isOpen) {
+          toggleCart();
+        }
+        toast.error("Please login to continue");
+
+        navigate(ROUTE_NAMES.LOGIN);
+
+        return;
+      }
+      setOperationAfterLogin(() => () => {
+        initiatePayment(amount, currency, description, metadata);
+      });
       await initiatePayment(amount, currency, description, metadata);
     } catch (err) {
       console.error("Payment failed:", err);

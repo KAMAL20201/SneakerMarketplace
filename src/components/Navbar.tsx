@@ -14,7 +14,6 @@ import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { preloadRoutes } from "@/Router";
-import { CART_STORAGE_KEY } from "@/lib/cartStorage";
 import { ROUTE_NAMES } from "@/constants/enums";
 
 export function Navbar() {
@@ -23,7 +22,6 @@ export function Navbar() {
 
   const handleLogout = () => {
     signOut();
-    localStorage.removeItem(CART_STORAGE_KEY);
     toast.success("Logged out successfully");
   };
 

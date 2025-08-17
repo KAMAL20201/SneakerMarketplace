@@ -54,7 +54,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Mobile Search - Only visible on mobile */}
         <div className="mb-8">
           <div className="relative flex items-center justify-center border rounded-2xl pl-2">
             <Search className=" h-5 w-5 text-gray-600" />
@@ -84,7 +83,7 @@ const Home = () => {
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Explore Categories
         </h2>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {categories.map((category) => (
             <Card
               key={category.name}

@@ -159,7 +159,7 @@ export function Footer() {
 
         {/* Contact Info */}
         <div className="border-t border-white/20 pt-8 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 md:gap-6">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/10 rounded-xl">
                 <Mail className="h-5 w-5" />
@@ -167,7 +167,7 @@ export function Footer() {
               <div>
                 <p className="text-sm text-gray-300">Email</p>
                 <p className="text-white font-semibold">
-                  support@theplugmarket.com
+                  support@theplugmarket.in
                 </p>
               </div>
             </div>

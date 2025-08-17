@@ -87,17 +87,6 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
       description: string,
       metadata: Record<string, string> = {}
     ) => {
-      if (!user) {
-        setOperationAfterLogin(() => () => {
-          initiatePayment(amount, currency, description, metadata);
-        });
-
-        toast.error("Please login to continue");
-        navigate(ROUTE_NAMES.LOGIN);
-
-        return;
-      }
-
       try {
         setIsLoading(true);
         setError(null);
