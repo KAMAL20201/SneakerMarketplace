@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 const EditListing = () => {
   const { id } = useParams();
@@ -76,7 +77,7 @@ const EditListing = () => {
                   variant="ghost"
                   className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
                 >
-                  <Link to="/my-listings">
+                  <Link to={ROUTE_NAMES.MY_LISTINGS}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to My Listings
                   </Link>
@@ -99,7 +100,7 @@ const EditListing = () => {
             variant="ghost"
             className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30 mb-4"
           >
-            <Link to="/my-listings">
+            <Link to={ROUTE_NAMES.MY_LISTINGS}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to My Listings
             </Link>
@@ -108,7 +109,7 @@ const EditListing = () => {
           <h1 className="text-3xl font-bold gradient-text mb-2">
             Edit Listing
           </h1>
-                      <p className="text-gray-600">Update your listing details</p>
+          <p className="text-gray-600">Update your listing details</p>
         </div>
 
         {/* Listing Preview */}
@@ -163,7 +164,7 @@ const EditListing = () => {
                 asChild
                 className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
               >
-                <Link to="/sell">Create New Listing</Link>
+                <Link to={ROUTE_NAMES.SELL}>Create New Listing</Link>
               </Button>
             </div>
           </CardContent>

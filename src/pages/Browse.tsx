@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
+import { ROUTE_HELPERS } from "@/constants/enums";
 
 interface Listing {
   id: string;
@@ -644,7 +645,7 @@ const Browse = () => {
           >
             {filteredListings.map((listing) => (
               <Link
-                to={`/product/${listing.product_id}`}
+                to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.product_id)}
                 key={listing.product_id}
               >
                 <Card
@@ -662,7 +663,6 @@ const Browse = () => {
                             aspectRatio="aspect-[4/3]"
                             className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                           />
-                  
                         </div>
                         <div className="p-3 md:p-4">
                           <div className="flex items-start justify-between mb-2 md:mb-3">
@@ -720,7 +720,6 @@ const Browse = () => {
                                 {listing.title}
                               </h3>
                             </div>
-        
                           </div>
                           <div className="flex items-center gap-2 md:gap-4 mb-2 md:mb-3 flex-wrap">
                             <Badge

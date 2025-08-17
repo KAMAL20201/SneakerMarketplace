@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
+import { ROUTE_NAMES, ROUTE_HELPERS } from "@/constants/enums";
 import {
   Package,
   Clock,
@@ -138,7 +139,7 @@ const EmptyOrdersState = () => (
         You haven't placed any orders yet. Start exploring our marketplace to
         find amazing sneakers!
       </p>
-      <Link to="/browse">
+      <Link to={ROUTE_NAMES.BROWSE}>
         <Button className="glass-button border-0 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700">
           <Package className="h-4 w-4 mr-2" />
           Start Shopping
@@ -287,7 +288,9 @@ const MyOrders = () => {
 
                       {/* Action Buttons */}
                       <div className="flex gap-3 mt-4">
-                        <Link to={`/product/${order.product_id}`}>
+                        <Link
+                          to={ROUTE_HELPERS.PRODUCT_DETAIL(order.product_id)}
+                        >
                           <Button
                             variant="outline"
                             size="sm"

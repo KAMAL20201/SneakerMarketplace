@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { Mail, Phone, Instagram } from "lucide-react";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 export function Footer() {
   return (
@@ -49,7 +50,7 @@ export function Footer() {
             <ul className="space-y-2 md:space-y-3">
               <li>
                 <Link
-                  to="/buyer-protection"
+                  to={ROUTE_NAMES.BUYER_PROTECTION}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Buyer Protection
@@ -57,7 +58,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/secure-payments"
+                  to={ROUTE_NAMES.SECURE_PAYMENTS}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Secure Payments
@@ -65,7 +66,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/review-process"
+                  to={ROUTE_NAMES.REVIEW_PROCESS}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Review Process
@@ -82,16 +83,16 @@ export function Footer() {
             <ul className="space-y-2 md:space-y-3">
               <li>
                 <Link
-                  to="/help"
+                  to={ROUTE_NAMES.HELP}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Help Center
                 </Link>
               </li>
-            
+
               <li>
                 <Link
-                  to="/faq"
+                  to={ROUTE_NAMES.FAQ}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   FAQs
@@ -99,7 +100,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/shipping"
+                  to={ROUTE_NAMES.SHIPPING}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Shipping Info
@@ -107,7 +108,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/returns"
+                  to={ROUTE_NAMES.RETURNS}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Returns & Exchanges
@@ -122,7 +123,7 @@ export function Footer() {
             <ul className="space-y-2 md:space-y-3">
               <li>
                 <Link
-                  to="/about"
+                  to={ROUTE_NAMES.ABOUT}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   About Us
@@ -130,7 +131,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/terms"
+                  to={ROUTE_NAMES.TERMS}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Terms of Service
@@ -138,7 +139,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/privacy"
+                  to={ROUTE_NAMES.PRIVACY}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Privacy Policy
@@ -146,7 +147,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to="/seller-agreement"
+                  to={ROUTE_NAMES.SELLER_AGREEMENT}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Seller Agreement

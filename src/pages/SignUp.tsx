@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -71,7 +72,7 @@ export default function SignupPage() {
         toast.success(
           "Account created successfully! Please check your email to verify your account."
         );
-        navigate("/");
+        navigate(ROUTE_NAMES.HOME);
       }
     } catch (error) {
       console.error("Signup error:", error);
@@ -122,9 +123,7 @@ export default function SignupPage() {
 
         <Card className="glass-card border-0 rounded-3xl shadow-2xl">
           <CardHeader className="text-center pb-4">
-            <div className="flex justify-center mb-4">
-             
-            </div>
+            <div className="flex justify-center mb-4"></div>
             <CardTitle className="text-2xl font-bold text-gray-800">
               Join The Plug Market
             </CardTitle>
@@ -339,14 +338,14 @@ export default function SignupPage() {
                 >
                   I agree to the{" "}
                   <Link
-                    to="/terms"
+                    to={ROUTE_NAMES.TERMS}
                     className="text-purple-600 hover:text-purple-700 font-semibold"
                   >
                     Terms of Service
                   </Link>{" "}
                   and{" "}
                   <Link
-                    to="/privacy"
+                    to={ROUTE_NAMES.PRIVACY}
                     className="text-purple-600 hover:text-purple-700 font-semibold"
                   >
                     Privacy Policy
@@ -367,7 +366,7 @@ export default function SignupPage() {
               <p className="text-gray-600">
                 Already have an account?{" "}
                 <Link
-                  to="/login"
+                  to={ROUTE_NAMES.LOGIN}
                   className="text-purple-600 hover:text-purple-700 font-semibold"
                 >
                   Sign in

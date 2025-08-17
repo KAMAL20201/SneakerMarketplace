@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 interface AdminRouteProps {
   children: ReactNode;
@@ -25,7 +26,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
 
   // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={ROUTE_NAMES.LOGIN} replace />;
   }
 
   // Show access denied if not admin

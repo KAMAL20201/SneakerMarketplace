@@ -15,13 +15,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { preloadRoutes } from "@/Router";
 import { CART_STORAGE_KEY } from "@/lib/cartStorage";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
 
   const handleLogout = () => {
-
     signOut();
     localStorage.removeItem(CART_STORAGE_KEY);
     toast.success("Logged out successfully");
@@ -42,7 +42,7 @@ export function Navbar() {
 
         {/* Center - Logo */}
         <Link
-          to="/"
+          to={ROUTE_NAMES.HOME}
           className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2"
           onMouseEnter={() => handleRoutePreload("home")}
         >
@@ -124,7 +124,7 @@ export function Navbar() {
                   className="rounded-xl mx-1 my-1 cursor-pointer"
                 >
                   <Link
-                    to="/my-listings"
+                    to={ROUTE_NAMES.MY_LISTINGS}
                     className="text-gray-700"
                     onMouseEnter={() => handleRoutePreload("myListings")}
                   >
@@ -137,7 +137,7 @@ export function Navbar() {
                     className="rounded-xl mx-1 my-1 cursor-pointer"
                   >
                     <Link
-                      to="/admin/review"
+                      to={ROUTE_NAMES.ADMIN_REVIEW}
                       className="text-purple-700 font-medium"
                       onMouseEnter={() => handleRoutePreload("adminReview")}
                     >
@@ -151,7 +151,7 @@ export function Navbar() {
                   asChild
                   className="rounded-xl mx-1 my-1 cursor-pointer"
                 >
-                  <Link to="/settings" className="text-gray-700">
+                  <Link to={ROUTE_NAMES.SETTINGS} className="text-gray-700">
                     Settings
                   </Link>
                 </DropdownMenuItem>
@@ -172,7 +172,7 @@ export function Navbar() {
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-xl shadow-lg"
               >
                 <Link
-                  to="/login"
+                  to={ROUTE_NAMES.LOGIN}
                   onMouseEnter={() => handleRoutePreload("login")}
                 >
                   Log In

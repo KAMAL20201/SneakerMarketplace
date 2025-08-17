@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
+import { ROUTE_NAMES, ROUTE_HELPERS } from "@/constants/enums";
 import {
   Edit,
   Trash2,
@@ -214,7 +215,7 @@ const MyListings = () => {
               asChild
               className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30 px-6 py-3"
             >
-              <Link to="/sell">
+              <Link to={ROUTE_NAMES.SELL}>
                 <Plus className="h-5 w-5 mr-2" />
                 Add New Listing
               </Link>
@@ -295,7 +296,7 @@ const MyListings = () => {
                 asChild
                 className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
               >
-                <Link to="/sell">
+                <Link to={ROUTE_NAMES.SELL}>
                   <Plus className="h-5 w-5 mr-2" />
                   Create Your First Listing
                 </Link>
@@ -329,7 +330,7 @@ const MyListings = () => {
                           asChild
                           className="h-8 w-8 p-0 glass-button border-0 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30"
                         >
-                          <Link to={`/product/${listing.id}`}>
+                          <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}>
                             <Eye className="h-4 w-4 text-white" />
                           </Link>
                         </Button>
@@ -390,7 +391,7 @@ const MyListings = () => {
                           asChild
                           className="flex-1 glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30"
                         >
-                          <Link to={`/edit-listing/${listing.id}`}>
+                          <Link to={ROUTE_HELPERS.EDIT_LISTING(listing.id)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </Link>

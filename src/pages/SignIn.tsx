@@ -1,7 +1,7 @@
 import type React from "react";
 
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +20,7 @@ export default function LoginPage() {
     password: "",
   });
 
-  const { signIn } = useAuth();
+  const { signIn, handleSocialLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,54 +33,7 @@ export default function LoginPage() {
         toast.error(error.message);
       } else {
         toast.success("Welcome back!");
-        navigate("/");
-      }
-    } catch (_err) {
-      toast.error("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSocialLogin = async (provider: string) => {
-    setIsLoading(true);
-
-    try {
-      let result;
-
-      switch (provider) {
-        case "Google":
-          result = await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo: `${window.location.origin}/`,
-            },
-          });
-          break;
-        case "Apple":
-          result = await supabase.auth.signInWithOAuth({
-            provider: "apple",
-            options: {
-              redirectTo: `${window.location.origin}/`,
-            },
-          });
-          break;
-        case "Facebook":
-          result = await supabase.auth.signInWithOAuth({
-            provider: "facebook",
-            options: {
-              redirectTo: `${window.location.origin}/`,
-            },
-          });
-          break;
-        default:
-          throw new Error(`Unsupported provider: ${provider}`);
-      }
-
-      if (result.error) {
-        toast.error(result.error.message);
-      } else {
-        toast.success(`Signing in with ${provider}...`);
+        navigate(ROUTE_NAMES.HOME);
       }
     } catch (_err) {
       toast.error("An unexpected error occurred");
@@ -92,15 +45,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-
-
         <Card className="glass-card border-0 rounded-3xl shadow-2xl">
           <CardHeader className="text-center pb-4">
-         
             <CardTitle className="text-2xl font-bold text-gray-800">
-             Welcome Back To The Plug Market
+              Welcome Back To The Plug Market
             </CardTitle>
-         
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -240,7 +189,7 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <Link
-                  to="/forgot-password"
+                  to={ROUTE_NAMES.FORGOT_PASSWORD}
                   className="text-sm text-purple-600 hover:text-purple-700 font-semibold"
                 >
                   Forgot password?
@@ -260,7 +209,7 @@ export default function LoginPage() {
               <p className="text-gray-600">
                 Don't have an account?{" "}
                 <Link
-                  to="/signup"
+                  to={ROUTE_NAMES.SIGNUP}
                   className="text-purple-600 hover:text-purple-700 font-semibold"
                 >
                   Sign up

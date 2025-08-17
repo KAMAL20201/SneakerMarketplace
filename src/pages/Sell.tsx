@@ -38,6 +38,7 @@ import { smartCompressImages } from "@/lib/imageCompression";
 import { ProductImage } from "@/components/ui/OptimizedImage";
 import { PaymentMethodsService } from "@/lib/paymentMethodsService";
 import type { PaymentMethod } from "@/lib/encryptionService";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 export default function SellPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -289,14 +290,14 @@ export default function SellPage() {
   const handleSubmit = async () => {
     if (!user) {
       toast.error("Please sign in to list your items");
-      navigate("/login");
+      navigate(ROUTE_NAMES.LOGIN);
       return;
     }
 
     // Check if user has payment methods
     if (paymentMethods.length === 0) {
       toast.error("Please add a payment method before listing items");
-      navigate("/payment-methods");
+      navigate(ROUTE_NAMES.PAYMENT_METHODS);
       return;
     }
 
@@ -342,7 +343,7 @@ export default function SellPage() {
       toast.success(
         "Listing submitted for review! You'll be notified once it's approved."
       );
-      navigate("/my-listings");
+      navigate(ROUTE_NAMES.MY_LISTINGS);
       return { success: true, listing };
     } catch (error) {
       console.error("Error creating listing:", error);
@@ -359,7 +360,7 @@ export default function SellPage() {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/">
+              <Link to={ROUTE_NAMES.HOME}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -775,7 +776,7 @@ export default function SellPage() {
                       <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 rounded-xl mb-2">
                         New
                       </Badge>
-                        <p
+                      <p
                         className={`text-xs md:text-sm ${
                           formData.condition === "New"
                             ? "text-white"
@@ -798,7 +799,8 @@ export default function SellPage() {
                       <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 rounded-xl mb-2">
                         Like New
                       </Badge>
-                      <p className={`text-xs md:text-sm ${
+                      <p
+                        className={`text-xs md:text-sm ${
                           formData.condition === "Like New"
                             ? "text-white"
                             : "text-gray-700"
@@ -820,7 +822,8 @@ export default function SellPage() {
                       <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 rounded-xl mb-2">
                         Good
                       </Badge>
-                      <p className={`text-xs md:text-sm ${
+                      <p
+                        className={`text-xs md:text-sm ${
                           formData.condition === "Good"
                             ? "text-white"
                             : "text-gray-700"
@@ -842,7 +845,8 @@ export default function SellPage() {
                       <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 rounded-xl mb-2">
                         Fair
                       </Badge>
-                      <p className={`text-xs md:text-sm ${
+                      <p
+                        className={`text-xs md:text-sm ${
                           formData.condition === "Fair"
                             ? "text-white"
                             : "text-gray-700"
@@ -955,7 +959,7 @@ export default function SellPage() {
                         items for sale.
                       </p>
                       <Button
-                        onClick={() => navigate("/payment-methods")}
+                        onClick={() => navigate(ROUTE_NAMES.PAYMENT_METHODS)}
                         className="bg-amber-600 hover:bg-amber-700 text-white"
                       >
                         Add Payment Method

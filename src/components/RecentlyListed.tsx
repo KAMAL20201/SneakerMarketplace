@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ProductCard from "@/components/ui/ProductCard";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 const RecentlyListed = () => {
   const [recentListings, setRecentListings] = useState<any[]>([]);
@@ -35,7 +36,7 @@ const RecentlyListed = () => {
           variant="ghost"
           className="text-purple-600 hover:text-purple-700 font-semibold"
         >
-          <Link to="/browse">View All</Link>
+          <Link to={ROUTE_NAMES.BROWSE}>View All</Link>
         </Button>
       </div>
 

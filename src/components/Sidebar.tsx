@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link } from "react-router";
 import { preloadRoutes } from "@/Router";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 const data = {
   navMain: [
@@ -32,13 +33,13 @@ const data = {
       items: [
         {
           title: "Home",
-          url: "/",
+          url: ROUTE_NAMES.HOME,
           icon: Home,
           preloadKey: "home" as keyof typeof preloadRoutes,
         },
         {
           title: "Browse",
-          url: "/browse",
+          url: ROUTE_NAMES.BROWSE,
           icon: Search,
           preloadKey: "browse" as keyof typeof preloadRoutes,
         },
@@ -49,19 +50,19 @@ const data = {
       items: [
         {
           title: "Sell Items",
-          url: "/sell",
+          url: ROUTE_NAMES.SELL,
           icon: Plus,
           preloadKey: "sell" as keyof typeof preloadRoutes,
         },
         {
           title: "My Listings",
-          url: "/my-listings",
+          url: ROUTE_NAMES.MY_LISTINGS,
           icon: ShoppingBag,
           preloadKey: "myListings" as keyof typeof preloadRoutes,
         },
         {
           title: "My Orders",
-          url: "/my-orders",
+          url: ROUTE_NAMES.MY_ORDERS,
           icon: Package,
           preloadKey: "myOrders" as keyof typeof preloadRoutes,
         },
@@ -72,19 +73,19 @@ const data = {
       items: [
         {
           title: "Profile",
-          url: "/profile",
+          url: ROUTE_NAMES.PROFILE,
           icon: User,
           preloadKey: null, // No preload for this route
         },
         {
           title: "Payment Methods",
-          url: "/payment-methods",
+          url: ROUTE_NAMES.PAYMENT_METHODS,
           icon: CreditCard,
           preloadKey: "paymentMethods" as keyof typeof preloadRoutes,
         },
         {
           title: "Settings",
-          url: "/settings",
+          url: ROUTE_NAMES.SETTINGS,
           icon: Settings,
           preloadKey: null, // No preload for this route
         },
@@ -115,7 +116,10 @@ export function AppSidebar() {
               asChild
               className="glass-button rounded-2xl border-0 hover:bg-white/20"
             >
-              <Link to="/" onMouseEnter={() => handleRoutePreload("home")}>
+              <Link
+                to={ROUTE_NAMES.HOME}
+                onMouseEnter={() => handleRoutePreload("home")}
+              >
                 <div className="flex aspect-square size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 text-white shadow-lg">
                   <span className="text-lg font-bold">⚡</span>
                 </div>

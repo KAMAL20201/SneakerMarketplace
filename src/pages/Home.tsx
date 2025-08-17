@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router";
 import { categories } from "@/constants/sellConstants";
+import { ROUTE_NAMES } from "@/constants/enums";
 import { supabaseUrl } from "@/lib/supabase";
 import RecentlyListed from "@/components/RecentlyListed";
 import FeaturedListings from "@/components/FeaturedListings";
@@ -70,7 +71,7 @@ const Home = () => {
             asChild
             className="flex-1 h-12 bg-white text-gray-800 font-semibold border-2 border-gray-800 rounded-2xl hover:bg-gray-800 hover:text-white transition-all duration-300"
           >
-            <Link to="/sell">
+            <Link to={ROUTE_NAMES.SELL}>
               <Plus className="h-5 w-5 mr-2" />
               Sell Now
             </Link>
@@ -124,7 +125,7 @@ const Home = () => {
             <h2 className="text-2xl font-bold text-gray-800">Trending Now</h2>
           </div>
           <Link
-            to="/browse"
+                              to={ROUTE_NAMES.BROWSE}
             className="text-purple-600 hover:text-purple-700 font-semibold"
           >
             View All
@@ -133,7 +134,7 @@ const Home = () => {
 
         <div className="grid grid-cols-2 gap-4">
           {featuredSneakers.slice(0, 2).map((sneaker) => (
-            <Link to="/product/dunk-low-panda" key={sneaker.id}>
+            <Link to={ROUTE_HELPERS.PRODUCT_DETAIL("dunk-low-panda")} key={sneaker.id}>
               <Card className="glass-card border-0 hover:scale-105 transition-all duration-300 group cursor-pointer rounded-3xl overflow-hidden">
                 <CardContent className="p-0">
                   <div className="relative">

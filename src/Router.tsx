@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { AdminRoute } from "./components/AdminRoute";
 import { PageSkeleton, FormSkeleton } from "./components/ui/skeleton";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ROUTE_NAMES } from "./constants/enums";
 
 // Lazy load all page components with preloading capability
 const Home = lazy(() => import("./pages/Home"));
@@ -46,7 +47,7 @@ const Router = () => {
   return (
     <Routes>
       <Route
-        path="/"
+        path={ROUTE_NAMES.HOME}
         element={
           <Suspense fallback={<PageSkeleton />}>
             <Home />
@@ -54,7 +55,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/product/:id"
+        path={ROUTE_NAMES.PRODUCT_DETAIL}
         element={
           <Suspense fallback={<PageLoader />}>
             <ProductDetailPage />
@@ -62,7 +63,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/login"
+        path={ROUTE_NAMES.LOGIN}
         element={
           <Suspense fallback={<FormSkeleton />}>
             <LoginPage />
@@ -70,7 +71,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/signup"
+        path={ROUTE_NAMES.SIGNUP}
         element={
           <Suspense fallback={<FormSkeleton />}>
             <SignupPage />
@@ -78,7 +79,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/sell"
+        path={ROUTE_NAMES.SELL}
         element={
           <Suspense fallback={<FormSkeleton />}>
             <SellPage />
@@ -86,7 +87,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/my-listings"
+        path={ROUTE_NAMES.MY_LISTINGS}
         element={
           <Suspense fallback={<PageSkeleton />}>
             <ProtectedRoute>
@@ -96,7 +97,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/my-orders"
+        path={ROUTE_NAMES.MY_ORDERS}
         element={
           <Suspense fallback={<PageSkeleton />}>
             <ProtectedRoute>
@@ -106,7 +107,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/edit-listing/:id"
+        path={ROUTE_NAMES.EDIT_LISTING}
         element={
           <Suspense fallback={<FormSkeleton />}>
             <ProtectedRoute>
@@ -116,7 +117,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/browse"
+        path={ROUTE_NAMES.BROWSE}
         element={
           <Suspense fallback={<PageSkeleton />}>
             <Browse />
@@ -124,7 +125,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/admin/review"
+        path={ROUTE_NAMES.ADMIN_REVIEW}
         element={
           <Suspense fallback={<PageSkeleton />}>
             <AdminRoute>
@@ -134,7 +135,7 @@ const Router = () => {
         }
       />
       <Route
-        path="/payment-methods"
+        path={ROUTE_NAMES.PAYMENT_METHODS}
         element={
           <Suspense fallback={<PageSkeleton />}>
             <ProtectedRoute>

@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductImage, CardImage } from "@/components/ui/OptimizedImage";
+import { ROUTE_HELPERS } from "@/constants/enums";
 
 interface ProductCardProps {
   product: {
@@ -20,7 +21,7 @@ interface ProductCardProps {
 const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
   if (variant === "vertical") {
     return (
-      <Link to={`/product/${product.product_id}`}>
+      <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.product_id)}>
         <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
           <CardContent className="p-0">
             <div className="relative">
@@ -30,7 +31,6 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                 aspectRatio="aspect-[4/3]"
                 className="w-full sm:h-48 h-36"
               />
-  
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
@@ -73,7 +73,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
 
   // Horizontal variant (default)
   return (
-    <Link to={`/product/${product.product_id}`}>
+    <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.product_id)}>
       <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
         <CardContent className="p-0">
           <div className="flex p-4 gap-2">
@@ -94,7 +94,6 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                     {product.title}
                   </h3>
                 </div>
-         
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <Badge className="glass-button border-0 text-gray-700 text-xs rounded-xl ml-auto capitalize">

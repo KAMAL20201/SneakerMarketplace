@@ -20,6 +20,9 @@ import type {
   CreateOrderRequest,
 } from "../types/razorpay";
 import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
+import { useNavigate } from "react-router";
+import { ROUTE_NAMES } from "../constants/enums";
 
 interface PaymentContextType {
   isLoading: boolean;
@@ -55,8 +58,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<PaymentDetails[]>([]);
-  const { user } = useAuth();
-
+  const { user, setOperationAfterLogin } = useAuth();
+  const navigate = useNavigate();
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -85,7 +88,13 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
       metadata: Record<string, string> = {}
     ) => {
       if (!user) {
-        setError("User not authenticated");
+        setOperationAfterLogin(() => () => {
+          initiatePayment(amount, currency, description, metadata);
+        });
+
+        toast.error("Please login to continue");
+        navigate(ROUTE_NAMES.LOGIN);
+
         return;
       }
 
