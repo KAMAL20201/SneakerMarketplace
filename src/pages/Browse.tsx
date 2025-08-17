@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
 import { ROUTE_HELPERS } from "@/constants/enums";
+import { categories } from "@/constants/sellConstants";
 
 interface Listing {
   id: string;
@@ -48,12 +49,14 @@ interface Listing {
   created_at: string;
   views: number;
   user_id: string;
+  category: string;
 }
 
 interface FilterState {
   search: string;
   condition: string[];
   brand: string[];
+  category: string[];
   priceRange: [number, number];
   sortBy: string;
 }
@@ -72,6 +75,10 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
 
   if (filters.brand.length > 0) {
     params.set("brand", filters.brand.join(","));
+  }
+
+  if (filters.category.length > 0) {
+    params.set("category", filters.category.join(","));
   }
 
   if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
@@ -106,6 +113,11 @@ const parseFiltersFromURL = (
     filters.brand = brand.split(",").filter(Boolean);
   }
 
+  const category = searchParams.get("category");
+  if (category) {
+    filters.category = category.split(",").filter(Boolean);
+  }
+
   const priceMin = searchParams.get("priceMin");
   const priceMax = searchParams.get("priceMax");
   if (priceMin || priceMax) {
@@ -136,6 +148,7 @@ const Browse = () => {
     search: "",
     condition: [],
     brand: [],
+    category: [],
     priceRange: [0, 100000],
     sortBy: "newest",
   };
@@ -150,6 +163,7 @@ const Browse = () => {
     priceRange: false,
     condition: false,
     brand: false,
+    category: false,
   });
 
   const itemsPerPage = 12;
@@ -231,6 +245,12 @@ const Browse = () => {
         );
       }
 
+      // Apply category filter
+      if (currentFilters.category.length > 0) {
+        countQuery = countQuery.in("category", currentFilters.category);
+        dataQuery = dataQuery.in("category", currentFilters.category);
+      }
+
       // Apply condition filter
       if (currentFilters.condition.length > 0) {
         countQuery = countQuery.in("condition", currentFilters.condition);
@@ -303,8 +323,6 @@ const Browse = () => {
     setSearchParams(newParams, { replace: true });
   };
 
-
-
   // Handle search input change without triggering fetch
   const handleSearchInputChange = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value }));
@@ -339,6 +357,7 @@ const Browse = () => {
       search: "",
       condition: [],
       brand: [],
+      category: [],
       priceRange: [0, 100000] as [number, number],
       sortBy: "newest",
     };
@@ -371,10 +390,16 @@ const Browse = () => {
     }
   };
 
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category ? category.name : categoryId;
+  };
+
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.condition.length > 0) count++;
     if (filters.brand.length > 0) count++;
+    if (filters.category.length > 0) count++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) count++;
     return count;
   };
@@ -383,6 +408,7 @@ const Browse = () => {
     let count = 0;
     if (tempFilters.condition.length > 0) count++;
     if (tempFilters.brand.length > 0) count++;
+    if (tempFilters.category.length > 0) count++;
     if (tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000)
       count++;
     return count;
@@ -420,9 +446,9 @@ const Browse = () => {
                 Verified Sellers
               </span>
             </div>
-            <div className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
-              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-              <span className="text-purple-700 text-xs font-medium">
+            <div className="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
+              <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+              <span className="text-orange-700 text-xs font-medium">
                 Quality Approved
               </span>
             </div>
@@ -509,7 +535,7 @@ const Browse = () => {
                       }
                       className={`w-full justify-start rounded-xl ${
                         filters.sortBy === option.value
-                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
                           : "glass-button border-0 text-gray-700 hover:bg-white/30"
                       }`}
                     >
@@ -547,6 +573,70 @@ const Browse = () => {
                 </SheetHeader>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                  {/* Category */}
+                  <div>
+                    <button
+                      onClick={() => toggleSection("category")}
+                      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      <Label className="text-sm font-medium text-gray-700 cursor-pointer">
+                        Category
+                        {tempFilters.category.length > 0 && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1/2 rounded-full ">
+                            {tempFilters.category.length}
+                          </span>
+                        )}
+                      </Label>
+                      {collapsedSections.category ? (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4 text-gray-500" />
+                      )}
+                    </button>
+                    {!collapsedSections.category && (
+                      <div className="px-3 pb-3">
+                        <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                          {categories.map((category) => (
+                            <div
+                              key={category.id}
+                              className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                            >
+                              <Checkbox
+                                id={category.id}
+                                checked={tempFilters.category.includes(
+                                  category.id
+                                )}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    handleTempFilterChange("category", [
+                                      ...tempFilters.category,
+                                      category.id,
+                                    ]);
+                                  } else {
+                                    handleTempFilterChange(
+                                      "category",
+                                      tempFilters.category.filter(
+                                        (c) => c !== category.id
+                                      )
+                                    );
+                                  }
+                                }}
+                                className="rounded-md"
+                              />
+                              <Label
+                                htmlFor={category.id}
+                                className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"
+                              >
+                                <category.icon className="h-4 w-4" />
+                                {category.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Price Range */}
                   <div>
                     <button
@@ -759,9 +849,38 @@ const Browse = () => {
         {/* Active Filters */}
         {(filters.condition.length > 0 ||
           filters.brand.length > 0 ||
+          filters.category.length > 0 ||
           filters.priceRange[0] > 0 ||
           filters.priceRange[1] < 100000) && (
           <div className="flex flex-wrap items-center gap-2 mb-4 py-4 bg-gray-50/50 ">
+            {filters.category.map((categoryId) => (
+              <Badge
+                key={categoryId}
+                className="bg-indigo-100 text-indigo-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1"
+              >
+                {getCategoryName(categoryId)}
+                <button
+                  onClick={() => {
+                    const newCategories = filters.category.filter(
+                      (c) => c !== categoryId
+                    );
+                    const updatedFilters = {
+                      ...filters,
+                      category: newCategories,
+                    };
+                    setFilters(updatedFilters);
+                    setTempFilters(updatedFilters);
+                    setCurrentPage(1);
+                    const newParams = serializeFiltersToURL(updatedFilters);
+                    setSearchParams(newParams, { replace: true });
+                  }}
+                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                  title={`Remove ${getCategoryName(categoryId)} filter`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
             {filters.condition.map((condition) => (
               <Badge
                 key={condition}
@@ -965,7 +1084,7 @@ const Browse = () => {
                     onClick={() => setCurrentPage(page)}
                     className={`rounded-xl ${
                       currentPage === page
-                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
+                        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
                         : "glass-button border-0 text-gray-700 hover:bg-white/30"
                     }`}
                   >

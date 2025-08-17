@@ -2,7 +2,7 @@ import { Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { categories } from "@/constants/sellConstants";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { supabaseUrl } from "@/lib/supabase";
@@ -12,13 +12,20 @@ import HowItWorks from "@/components/HowItWorks";
 import { CardImage } from "@/components/ui/OptimizedImage";
 
 const Home = () => {
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (categoryId: string) => {
+    // Navigate to browse page with category filter
+    navigate(`${ROUTE_NAMES.BROWSE}?category=${categoryId}`);
+  };
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="px-4 py-6">
         <div className="text-center mb-8 float-animation">
           <div className="inline-flex items-center gap-2 mb-4">
-            <Sparkles className="h-6 w-6 text-purple-500" />
+            <Sparkles className="h-6 w-6 text-orange-500" />
           </div>
           <h1 className="text-4xl font-bold mb-3">
             Discover the Hottest
@@ -45,9 +52,9 @@ const Home = () => {
                 Buyer Protection
               </span>
             </div>
-            <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-full border border-purple-200">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span className="text-purple-700 text-sm font-medium">
+            <div className="flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-full border border-orange-200">
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              <span className="text-orange-700 text-sm font-medium">
                 Secure Payments
               </span>
             </div>
@@ -81,6 +88,7 @@ const Home = () => {
           {categories.map((category) => (
             <Card
               key={category.name}
+              onClick={() => handleCategoryClick(category.id)}
               className="glass-card border-0 hover:scale-105 transition-all duration-300 cursor-pointer group rounded-3xl overflow-hidden"
             >
               <CardContent className="p-0">
