@@ -34,6 +34,15 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   const [currentSrc, setCurrentSrc] = useState(src);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  // Update currentSrc when src prop changes
+  React.useEffect(() => {
+    if (src !== currentSrc) {
+      setCurrentSrc(src);
+      setIsLoading(true);
+      setHasError(false);
+    }
+  }, [src, currentSrc]);
+  
   const handleLoad = useCallback(() => {
     setIsLoading(false);
     onLoad?.();
@@ -73,9 +82,9 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     <div className={cn("relative overflow-hidden", aspectRatio, className)}>
       {/* Shimmer Loading State */}
       {isLoading && (
-        <div 
+        <div
           className={cn(
-            'absolute inset-0 glass-shimmer rounded-xl',
+            "absolute inset-0 glass-shimmer rounded-xl",
             shimmerClassName
           )}
         />

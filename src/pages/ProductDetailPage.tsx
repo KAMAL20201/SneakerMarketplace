@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Star,
-  ShoppingCart,
-  Shield,
-  Truck,
-} from "lucide-react";
+import { Star, ShoppingCart, Shield, Truck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
@@ -138,177 +133,187 @@ export default function ProductDetailPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Image Gallery */}
-      <div className="px-4 py-6">
-        <div className="mb-4">
-          <div className="relative aspect-square glass-card rounded-3xl overflow-hidden shadow-2xl">
-            <ProductImage
-              src={
-                images?.[selectedImageIndex]?.image_url || "/placeholder.svg"
-              }
-              alt={`${listing?.title} - Image ${selectedImageIndex + 1}`}
-              priority={true}
-              className="w-full h-full"
-            />
+      <div className="lg:flex lg:gap-8 lg:p-8">
+        {/* Image Gallery - Left side on desktop, full width on mobile */}
+        <div className="lg:w-1/2 lg:max-w-2xl px-4 py-6 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5">
+          <div className="mb-4 lg:w-[80%]">
+            <div className="relative aspect-square glass-card rounded-3xl overflow-hidden shadow-2xl lg:max-w-lg lg:mx-auto">
+              <ProductImage
+                src={
+                  images?.[selectedImageIndex]?.image_url || "/placeholder.svg"
+                }
+                alt={`${listing?.title} - Image ${selectedImageIndex + 1}`}
+                priority={true}
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+
+          {/* Image Thumbnails */}
+          <div className="flex gap-3 overflow-x-auto p-2 lg:justify-center lg:max-w-lg lg:flex-col">
+            {images?.map((image, index) => (
+              <button
+                key={image.id}
+                onClick={() => setSelectedImageIndex(index)}
+                className={`relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 ${
+                  selectedImageIndex === index
+                    ? "ring-3 ring-purple-500 scale-105"
+                    : "glass-button border-0 hover:scale-105"
+                }`}
+              >
+                <ThumbnailImage
+                  src={image.image_url || "/placeholder.svg"}
+                  alt={`${listing?.title} thumbnail ${index + 1}`}
+                  className="w-full h-full"
+                />
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Image Thumbnails */}
-        <div className="flex gap-3 overflow-x-auto p-2">
-          {images?.map((image, index) => (
-            <button
-              key={image.id}
-              onClick={() => setSelectedImageIndex(index)}
-              className={`relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 ${
-                selectedImageIndex === index
-                  ? "ring-3 ring-purple-500 scale-105"
-                  : "glass-button border-0 hover:scale-105"
+        {/* Product Details - Right side on desktop, below images on mobile */}
+        <div className="lg:w-1/2 lg:py-6">
+          <div className="px-4 py-5 flex items-center justify-between lg:px-0 lg:py-0 lg:mb-6">
+            <h2 className="text-3xl font-bold text-gray-800 lg:px-0 px-4">
+              ₹ {listing?.price}
+            </h2>
+
+            <div className="flex items-center">
+              <span className="font-bold">Condition:</span>
+              <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
+                {listing?.condition}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="px-8 pb-5 lg:px-0 lg:pb-6">
+            <h1 className="text-2xl font-bold text-gray-600">
+              {listing?.brand}
+            </h1>
+            <h2 className="text-md text-gray-800">{listing?.title}</h2>
+          </div>
+
+          {/* Sellers List */}
+          <div className="px-4 pb-8 lg:px-0 lg:pb-6">
+            <Card className="glass-card border-0 rounded-3xl">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-6 text-gray-800">
+                  Sold by
+                </h3>
+
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-14 w-14">
+                    <AvatarImage
+                      src={
+                        listing?.seller_details?.profile_image_url ||
+                        "/placeholder.svg"
+                      }
+                      alt={listing?.seller_details?.display_name}
+                    />
+                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-2xl text-lg">
+                      {listing?.seller_details?.display_name?.slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-bold text-gray-800 text-lg">
+                        {listing?.seller_details?.display_name}
+                      </h4>
+                      {listing?.seller_details?.is_verified && (
+                        <Badge className="glass-button border-0 text-green-700 rounded-xl px-3">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-semibold">
+                          {listing?.seller_details?.rating || 0}
+                        </span>
+                      </div>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-600">
+                        {listing?.seller_details?.total_reviews || 0} reviews
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-3 text-gray-600">
+                      <div className="flex items-center gap-1">
+                        <Truck className="h-4 w-4" />
+                        <span>Free shipping</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3"></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Size Selection */}
+          {listing?.size_value && (
+            <div className="px-4 pb-6 lg:px-0">
+              <Card className="glass-card border-0 rounded-3xl">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold mb-4 text-gray-800">
+                    Available Sizes
+                  </h3>
+                  <div className="grid grid-cols-4 gap-3">
+                    <Button
+                      key={listing?.size_value}
+                      variant={
+                        selectedSize === listing?.size_value
+                          ? "default"
+                          : "outline"
+                      }
+                      size="sm"
+                      onClick={() => setSelectedSize(listing?.size_value)}
+                      className={`h-14 rounded-2xl border-0 font-semibold uppercase ${
+                        selectedSize === listing?.size_value
+                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                          : "glass-button text-gray-700 hover:bg-white/30"
+                      }`}
+                    >
+                      {listing?.size_value}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          <div className="px-4 pb-6 grid grid-cols-2 gap-4 lg:px-0">
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => handleAddToCart(listing?.seller_details)}
+              disabled={isItemInCart()}
+              className={`border-0 rounded-2xl shadow-lg h-12 ${
+                isItemInCart()
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
-              <ThumbnailImage
-                src={image.image_url || "/placeholder.svg"}
-                alt={`${listing?.title} thumbnail ${index + 1}`}
-                className="w-full h-full"
-              />
-            </button>
-          ))}
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              {isItemInCart() ? "In Cart" : "Add to Cart"}
+            </Button>
+            <Button
+              size="lg"
+              // onClick={() => handleAddToCart(listing?.seller_details)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Buy Now
+            </Button>
+          </div>
         </div>
-      </div>
-
-      <div className="px-4 py-5 flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-gray-800 px-4">
-          ₹ {listing?.price}
-        </h2>
-
-        <div className="flex items-center ">
-          <span className="font-bold">Condition:</span>
-          <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
-            {listing?.condition}
-          </Badge>
-        </div>
-      </div>
-
-      <div className="px-8 pb-5">
-        <h1 className="text-2xl font-bold text-gray-600">{listing?.brand}</h1>
-
-        <h2 className=" text-md text-gray-800">{listing?.title}</h2>
-      </div>
-
-      {/* Sellers List */}
-      <div className="px-4 pb-8">
-        <Card className="glass-card border-0 rounded-3xl">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-bold mb-6 text-gray-800">Sold by</h3>
-
-            <div className="flex items-start gap-4">
-              <Avatar className="h-14 w-14">
-                <AvatarImage
-                  src={
-                    listing?.seller_details?.profile_image_url ||
-                    "/placeholder.svg"
-                  }
-                  alt={listing?.seller_details?.display_name}
-                />
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-2xl text-lg">
-                  {listing?.seller_details?.display_name?.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-bold text-gray-800 text-lg">
-                    {listing?.seller_details?.display_name}
-                  </h4>
-                  {listing?.seller_details?.is_verified && (
-                    <Badge className="glass-button border-0 text-green-700 rounded-xl px-3">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-semibold">
-                      {listing?.seller_details?.rating || 0}
-                    </span>
-                  </div>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-gray-600">
-                    {listing?.seller_details?.total_reviews || 0} reviews
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4 mb-3 text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <Truck className="h-4 w-4" />
-                    <span>Free shipping</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3"></div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Size Selection */}
-      {listing?.size_value && (
-        <div className="px-4 pb-6">
-          <Card className="glass-card border-0 rounded-3xl">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold mb-4 text-gray-800">
-                Available Sizes
-              </h3>
-              <div className="grid grid-cols-4 gap-3">
-                <Button
-                  key={listing?.size_value}
-                  variant={
-                    selectedSize === listing?.size_value ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedSize(listing?.size_value)}
-                  className={`h-14 rounded-2xl border-0 font-semibold uppercase ${
-                    selectedSize === listing?.size_value
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                      : "glass-button text-gray-700 hover:bg-white/30"
-                  }`}
-                >
-                  {listing?.size_value}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      <div className="px-4 pb-6 grid grid-cols-2 gap-4">
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={() => handleAddToCart(listing?.seller_details)}
-          disabled={isItemInCart()}
-          className={`border-0 rounded-2xl shadow-lg h-12 ${
-            isItemInCart()
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-white text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          {isItemInCart() ? "In Cart" : "Add to Cart"}
-        </Button>
-        <Button
-          size="lg"
-          // onClick={() => handleAddToCart(listing?.seller_details)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
-        >
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Buy Now
-        </Button>
       </div>
 
       {/* Bottom spacing */}
