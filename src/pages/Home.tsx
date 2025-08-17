@@ -1,6 +1,6 @@
-import { Sparkles, Search, Plus } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router";
 import { categories } from "@/constants/sellConstants";
@@ -55,13 +55,7 @@ const Home = () => {
         </div>
 
         <div className="mb-8">
-          <div className="relative flex items-center justify-center border rounded-2xl pl-2">
-            <Search className=" h-5 w-5 text-gray-600" />
-            <Input
-              placeholder="Search sneakers, streetwear, collectibles..."
-              className="h-12 text-gray-700 placeholder:text-gray-500 !border-none !outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-          </div>
+          <SearchDropdown />
         </div>
 
         {/* Quick Actions */}
