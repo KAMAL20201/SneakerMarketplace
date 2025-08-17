@@ -17,6 +17,7 @@ const EditListing = lazy(() => import("./pages/EditListing"));
 const Browse = lazy(() => import("./pages/Browse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
 const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Preload functions for critical routes
 export const preloadRoutes = {
@@ -31,6 +32,7 @@ export const preloadRoutes = {
   editListing: () => import("./pages/EditListing"),
   adminReview: () => import("./pages/AdminReview"),
   paymentMethods: () => import("./pages/PaymentMethods"),
+  notFound: () => import("./pages/NotFound"),
 };
 
 // Enhanced loading component for better UX
@@ -141,6 +143,15 @@ const Router = () => {
             <ProtectedRoute>
               <PaymentMethods />
             </ProtectedRoute>
+          </Suspense>
+        }
+      />
+      {/* Catch-all route for 404 pages */}
+      <Route
+        path="*"
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <NotFound />
           </Suspense>
         }
       />

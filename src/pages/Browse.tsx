@@ -2,12 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import {
   Search,
-  Grid3X3,
-  List,
-  Eye,
-  DollarSign,
   Package,
-  Calendar,
   ChevronDown,
   ChevronUp,
   X,
@@ -308,11 +303,7 @@ const Browse = () => {
     setSearchParams(newParams, { replace: true });
   };
 
-  // Handle regular filter changes (for search input only)
-  const handleFilterChange = (key: keyof FilterState, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setCurrentPage(1);
-  };
+
 
   // Handle search input change without triggering fetch
   const handleSearchInputChange = (value: string) => {
@@ -361,14 +352,6 @@ const Browse = () => {
 
     // Trigger fetch with cleared filters
     setTimeout(() => fetchListings(), 0);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
   };
 
   const getConditionColor = (condition: string) => {

@@ -20,9 +20,6 @@ import type {
   CreateOrderRequest,
 } from "../types/razorpay";
 import { useAuth } from "./AuthContext";
-import { toast } from "sonner";
-import { useNavigate } from "react-router";
-import { ROUTE_NAMES } from "../constants/enums";
 
 interface PaymentContextType {
   isLoading: boolean;
@@ -58,8 +55,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<PaymentDetails[]>([]);
-  const { user, setOperationAfterLogin } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -113,8 +109,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           description: description,
           order_id: order.id,
           prefill: {
-            name: user.user_metadata?.full_name || "",
-            email: user.email || "",
+            name: user?.user_metadata?.full_name || "",
+            email: user?.email || "",
           },
           notes: metadata,
           theme: {
@@ -133,7 +129,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                   status: "completed",
                   order_id: response.razorpay_order_id,
                   payment_id: response.razorpay_payment_id,
-                  user_id: user.id,
+                  user_id: user?.id || "",
                 });
 
                 // Reload payment history
