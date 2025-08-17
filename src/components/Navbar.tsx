@@ -14,13 +14,16 @@ import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { preloadRoutes } from "@/Router";
+import { CART_STORAGE_KEY } from "@/lib/cartStorage";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
 
   const handleLogout = () => {
+
     signOut();
+    localStorage.removeItem(CART_STORAGE_KEY);
     toast.success("Logged out successfully");
   };
 
@@ -76,7 +79,7 @@ export function Navbar() {
         {/* Right side - Cart and Profile/Auth */}
         <div className="flex items-center gap-3">
           {/* Shopping Cart - only show if authenticated */}
-          {user && <CartButton />}
+          <CartButton />
 
           {/* Authentication Section */}
           {user ? (

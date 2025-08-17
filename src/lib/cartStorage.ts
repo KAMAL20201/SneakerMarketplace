@@ -1,6 +1,6 @@
 import type { CartItem } from "@/contexts/CartContext";
 
-const CART_STORAGE_KEY = "sneakin-market-cart";
+export const CART_STORAGE_KEY = "sneakin-market-cart";
 
 export const cartStorage = {
   /**
