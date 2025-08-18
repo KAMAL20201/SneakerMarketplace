@@ -12,7 +12,6 @@ export function CartSidebar() {
   const { items, toggleCart, clearCart, removeItem, isOpen, totalPrice } =
     useCart();
 
-  console.log("kamal", items);
   if (!isOpen) return null;
   return (
     <>

@@ -51,7 +51,6 @@ interface Listing {
 const MyListings = () => {
   const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
-  console.log("kamal", listings);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);

@@ -206,7 +206,6 @@ const Browse = () => {
     searchTerm?: string,
     filterState?: FilterState
   ) => {
-    debugger;
     try {
       setLoading(true);
       // Use current filters if not provided

@@ -135,7 +135,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen">
       <div className="lg:flex lg:gap-8 lg:p-8">
         {/* Image Gallery - Left side on desktop, full width on mobile */}
-        <div className="lg:w-1/2 lg:max-w-2xl px-4 py-6 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5">
+        <div className="lg:w-[60%] lg:max-w-2xl px-4 py-6 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5">
           <div className="mb-4 lg:w-[80%]">
             <div className="relative aspect-square glass-card rounded-3xl overflow-hidden shadow-2xl lg:max-w-lg lg:mx-auto">
               <ProductImage
@@ -150,7 +150,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Image Thumbnails */}
-          <div className="flex gap-3 overflow-x-auto p-2 lg:justify-center lg:max-w-lg lg:flex-col">
+          <div className="flex gap-3 overflow-x-auto p-2 lg:justify-start lg:max-w-lg lg:flex-col">
             {images?.map((image, index) => (
               <button
                 key={image.id}
@@ -172,7 +172,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Product Details - Right side on desktop, below images on mobile */}
-        <div className="lg:w-1/2 lg:py-6">
+        <div className="lg:w-[40%] lg:py-6">
           <div className="px-4 py-5 flex items-center justify-between lg:px-0 lg:py-0 lg:mb-6">
             <h2 className="text-3xl font-bold text-gray-800 lg:px-0 px-4">
               ₹ {listing?.price}
