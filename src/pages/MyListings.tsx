@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SellerOrdersWidget } from "@/components/ui/SellerOrdersWidget";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -276,6 +277,11 @@ const MyListings = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Orders to Ship Widget */}
+        <div className="mb-8">
+          <SellerOrdersWidget />
         </div>
 
         {/* Listings Grid */}

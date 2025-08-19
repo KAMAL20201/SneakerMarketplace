@@ -66,6 +66,7 @@ export default function ProductDetailPage() {
           `
         *,
         sellers (
+          id,
           display_name,
           phone,
           bio,

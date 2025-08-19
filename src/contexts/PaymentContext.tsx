@@ -13,25 +13,27 @@ import {
   RAZORPAY_KEY_ID,
 } from "../lib/razorpay";
 import { PaymentService } from "../lib/paymentService";
+import { OrderService } from "../lib/orderService";
 import type {
   RazorpayOptions,
   RazorpayResponse,
-  PaymentDetails,
   CreateOrderRequest,
 } from "../types/razorpay";
 import { useAuth } from "./AuthContext";
+import { useCart } from "./CartContext";
+import { toast } from "sonner";
+import { ROUTE_NAMES } from "@/constants/enums";
+import { useNavigate } from "react-router";
 
 interface PaymentContextType {
   isLoading: boolean;
   error: string | null;
-  paymentHistory: PaymentDetails[];
   initiatePayment: (
     amount: number,
     currency: string,
     description: string,
     metadata?: Record<string, string>
   ) => Promise<void>;
-  loadPaymentHistory: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -54,27 +56,12 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentHistory, setPaymentHistory] = useState<PaymentDetails[]>([]);
   const { user } = useAuth();
+  const { items: cartItems, toggleCart, isOpen } = useCart();
+  const navigate = useNavigate();
   const clearError = useCallback(() => {
     setError(null);
   }, []);
-
-  const loadPaymentHistory = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setIsLoading(true);
-      const history = await PaymentService.getPaymentHistory(user.id);
-      setPaymentHistory(history);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load payment history"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
 
   const initiatePayment = useCallback(
     async (
@@ -132,8 +119,28 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                   user_id: user?.id || "",
                 });
 
-                // Reload payment history
-                await loadPaymentHistory();
+                // Check if this is a cart checkout
+                if (metadata.type === "cart_checkout" && cartItems.length > 0) {
+                  // Process cart checkout - create orders and notify sellers
+                  await OrderService.processCartCheckout(
+                    cartItems,
+                    response.razorpay_payment_id,
+                    response.razorpay_order_id,
+                    user?.id || "",
+                    user?.user_metadata?.full_name || ""
+                  );
+
+                  // Clear cart after successful purchase
+                  if (isOpen) {
+                    toggleCart();
+                  }
+
+                  navigate(ROUTE_NAMES.MY_ORDERS);
+
+                  toast.success(
+                    "🎉 Purchase successful! Sellers have been notified."
+                  );
+                }
               } else {
                 setError("Payment verification failed");
               }
@@ -143,6 +150,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                   ? err.message
                   : "Payment verification failed"
               );
+            } finally {
+              setIsLoading(false);
             }
           },
           modal: {
@@ -162,15 +171,13 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(false);
       }
     },
-    [user, loadPaymentHistory]
+    [user]
   );
 
   const value: PaymentContextType = {
     isLoading,
     error,
-    paymentHistory,
     initiatePayment,
-    loadPaymentHistory,
     clearError,
   };
 

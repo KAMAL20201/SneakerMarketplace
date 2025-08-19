@@ -75,24 +75,4 @@ export class PaymentService {
       throw error;
     }
   }
-
-  // Get payment history for a user
-  static async getPaymentHistory(userId: string): Promise<PaymentDetails[]> {
-    try {
-      const { data, error } = await supabase
-        .from("payments")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching payment history:", error);
-      throw error;
-    }
-  }
 }

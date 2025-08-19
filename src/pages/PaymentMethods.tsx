@@ -93,7 +93,6 @@ const PaymentMethods = () => {
       const methods = await PaymentMethodsService.getDecryptedPaymentMethods(
         user!.id
       );
-      console.log(methods);
       setPaymentMethods(methods);
     } catch (error) {
       console.error("Error fetching payment methods:", error);

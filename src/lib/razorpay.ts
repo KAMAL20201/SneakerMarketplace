@@ -8,10 +8,6 @@ declare global {
 
 export const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
 export const RAZORPAY_KEY_SECRET = import.meta.env.VITE_RAZORPAY_KEY_SECRET;
-
-// Temporary debug log - remove after testing
-console.log("Razorpay Key ID loaded:", RAZORPAY_KEY_ID);
-
 export const loadRazorpayScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (window.Razorpay) {

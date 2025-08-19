@@ -17,66 +17,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
+import { OrderService, type Order as OrderType } from "@/lib/orderService";
+import { toast } from "sonner";
 
-interface Order {
-  id: string;
-  order_number: string;
-  product_id: string;
-  product_title: string;
-  product_brand: string;
-  product_image: string;
-  seller_name: string;
-  price: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-  created_at: string;
-  estimated_delivery?: string;
-  tracking_number?: string;
+// Use the OrderType from orderService, but extend it with product details
+interface Order extends OrderType {
+  product_listings?: {
+    title: string;
+    brand: string;
+    product_images: Array<{
+      image_url: string;
+      is_poster_image: boolean;
+    }>;
+  };
 }
-
-// Mock data for demonstration
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    order_number: "ORD-2024-001",
-    product_id: "prod-1",
-    product_title: "Air Jordan 1 Retro High",
-    product_brand: "Nike",
-    product_image: "/placeholder.svg",
-    seller_name: "SneakerPro",
-    price: 12000,
-    status: "delivered",
-    created_at: "2024-01-15T10:30:00Z",
-    estimated_delivery: "2024-01-20",
-    tracking_number: "TRK123456789",
-  },
-  {
-    id: "2",
-    order_number: "ORD-2024-002",
-    product_id: "prod-2",
-    product_title: "Adidas Yeezy Boost 350",
-    product_brand: "Adidas",
-    product_image: "/placeholder.svg",
-    seller_name: "YeezyWorld",
-    price: 25000,
-    status: "shipped",
-    created_at: "2024-01-18T14:20:00Z",
-    estimated_delivery: "2024-01-25",
-    tracking_number: "TRK987654321",
-  },
-  {
-    id: "3",
-    order_number: "ORD-2024-003",
-    product_id: "prod-3",
-    product_title: "Converse Chuck Taylor All Star",
-    product_brand: "Converse",
-    product_image: "/placeholder.svg",
-    seller_name: "ClassicKicks",
-    price: 4500,
-    status: "confirmed",
-    created_at: "2024-01-20T09:15:00Z",
-    estimated_delivery: "2024-01-27",
-  },
-];
 
 const getStatusIcon = (status: Order["status"]) => {
   switch (status) {
@@ -155,14 +109,19 @@ const MyOrders = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call
     const fetchOrders = async () => {
-      setLoading(true);
-      // In a real app, you would fetch from your API/Supabase
-      // For now, using mock data
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate loading
-      setOrders(mockOrders);
-      setLoading(false);
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        const buyerOrders = await OrderService.getBuyerOrders(user.id);
+        setOrders(buyerOrders);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        toast.error("Failed to load your orders");
+      } finally {
+        setLoading(false);
+      }
     };
 
     if (user) {
@@ -172,7 +131,7 @@ const MyOrders = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <div className="min-h-screen ">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-16">
             <div className="text-center">
@@ -186,7 +145,7 @@ const MyOrders = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className="min-h-screen ">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -218,7 +177,7 @@ const MyOrders = () => {
                       </div>
                       <div>
                         <CardTitle className="text-lg font-bold text-gray-900">
-                          Order #{order.order_number}
+                          Order #{order.id.slice(0, 8)}
                         </CardTitle>
                         <p className="text-sm text-gray-600">
                           Placed on {formatDate(order.created_at)}
@@ -240,8 +199,15 @@ const MyOrders = () => {
                     {/* Product Image */}
                     <div className="w-20 h-20 flex-shrink-0">
                       <ThumbnailImage
-                        src={order.product_image}
-                        alt={order.product_title}
+                        src={
+                          order.product_listings?.product_images?.find(
+                            (img) => img.is_poster_image
+                          )?.image_url ||
+                          order.product_listings?.product_images?.[0]
+                            ?.image_url ||
+                          "/placeholder.svg"
+                        }
+                        alt={order.product_listings?.title || "Product"}
                         className="w-full h-full"
                       />
                     </div>
@@ -251,33 +217,30 @@ const MyOrders = () => {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="text-xs text-purple-600 font-semibold">
-                            {order.product_brand}
+                            {order.product_listings?.brand || "Brand"}
                           </p>
                           <h3 className="font-bold text-gray-800 mb-1">
-                            {order.product_title}
+                            {order.product_listings?.title || "Product"}
                           </h3>
                           <p className="text-sm text-gray-600">
-                            Sold by {order.seller_name}
+                            Order ID: {order.id.slice(0, 8)}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-gray-900">
-                            {formatPrice(order.price)}
+                            {formatPrice(order.amount)}
                           </p>
                         </div>
                       </div>
 
                       {/* Order Details */}
                       <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-4">
-                        {order.estimated_delivery && (
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              Est. delivery:{" "}
-                              {formatDate(order.estimated_delivery)}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Order Date: {formatDate(order.created_at)}
+                          </span>
+                        </div>
                         {order.tracking_number && (
                           <div className="flex items-center gap-1">
                             <Truck className="h-4 w-4" />
