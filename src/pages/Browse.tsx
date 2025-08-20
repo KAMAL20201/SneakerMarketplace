@@ -367,9 +367,6 @@ const Browse = () => {
     // Clear all filters from URL
     const newParams = serializeFiltersToURL(clearedFilters);
     setSearchParams(newParams, { replace: true });
-
-    // Trigger fetch with cleared filters
-    setTimeout(() => fetchListings(), 0);
   };
 
   const getConditionColor = (condition: string) => {
@@ -424,7 +421,7 @@ const Browse = () => {
     <div className="min-h-screen px-4 py-6">
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6 flex flex-col items-center text-center">
           <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">
             Browse Items
           </h1>
@@ -432,7 +429,7 @@ const Browse = () => {
             Discover amazing items from our collector community - all listings
             are manually reviewed and approved
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 justify-center">
             <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
               <span className="text-green-700 text-xs font-medium">
