@@ -157,10 +157,9 @@ const Home = () => {
                     className="w-full h-full"
                     priority={true}
                   />
-                  <div className="absolute inset-0 bg-white/10 group-hover:bg-white/5 transition-colors" />
-                </div>
-                <div className="px-4 py-2 absolute opacity-50 bottom-0 bg-white w-full">
-                  <h3 className="font-bold text-black">{category.name}</h3>
+                  <div className="px-4 py-2 absolute opacity-50 bottom-0 bg-white w-full">
+                    <h3 className="font-bold text-black">{category.name}</h3>
+                  </div>
                 </div>
               </CardContent>
             </Card>
