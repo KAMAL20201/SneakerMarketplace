@@ -10,6 +10,8 @@ import RecentlyListed from "@/components/RecentlyListed";
 import FeaturedListings from "@/components/FeaturedListings";
 import HowItWorks from "@/components/HowItWorks";
 import { CardImage } from "@/components/ui/OptimizedImage";
+import { useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,6 +20,59 @@ const Home = () => {
     // Navigate to browse page with category filter
     navigate(`${ROUTE_NAMES.BROWSE}?category=${categoryId}`);
   };
+
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        console.log("kamalran", session);
+
+        if (error) {
+          window.opener.postMessage(
+            {
+              type: "GOOGLE_AUTH_ERROR",
+              error: error.message,
+            },
+            window.location.origin
+          );
+        } else if (session?.user) {
+          window.opener.postMessage(
+            {
+              type: "GOOGLE_AUTH_SUCCESS",
+              user: session.user,
+              session: session,
+            },
+            window.location.origin
+          );
+        } else {
+          window.opener.postMessage(
+            {
+              type: "GOOGLE_AUTH_ERROR",
+              error: "No session found",
+            },
+            window.location.origin
+          );
+        }
+      } catch (err: any) {
+        window.opener.postMessage(
+          {
+            type: "GOOGLE_AUTH_ERROR",
+            error: err.message,
+          },
+          window.location.origin
+        );
+      }
+
+      // Close popup
+      window.close();
+    };
+
+    handleAuthCallback();
+  }, []);
 
   return (
     <div className="min-h-screen">

@@ -46,7 +46,7 @@ export default function SellPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     brand: "",
@@ -355,36 +355,9 @@ export default function SellPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="sticky top-16 z-40 glass-navbar">
-        <div className="px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to={ROUTE_NAMES.HOME}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2 glass-button rounded-2xl border-0"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="h-5 w-5 text-purple-500" />
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-800">
-                    Sell Your Items
-                  </h1>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="px-4 py-6 max-w-4xl mx-auto">
         {/* Mobile Stepper */}
-        <Card className="glass-card border-0 rounded-3xl shadow-lg mb-6 md:hidden">
+        <Card className="glass-card border-0 rounded-3xl shadow-lg mb-6 ">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="text-sm text-gray-600">
@@ -399,56 +372,6 @@ export default function SellPage() {
                 className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(currentStep / steps.length) * 100}%` }}
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Desktop Stepper */}
-        <Card className="glass-card border-0 rounded-3xl shadow-lg mb-6 hidden md:block">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
-                        currentStep > step.id
-                          ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-                          : currentStep === step.id
-                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                          : "bg-gray-200 text-gray-500"
-                      }`}
-                    >
-                      {currentStep > step.id ? (
-                        <Check className="h-5 w-5" />
-                      ) : (
-                        step.id
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <p
-                        className={`text-sm font-semibold ${
-                          currentStep >= step.id
-                            ? "text-gray-800"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {step.title}
-                      </p>
-                      <p className="text-xs text-gray-500 hidden lg:block">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`w-8 lg:w-12 h-0.5 mx-2 lg:mx-4 transition-all duration-300 ${
-                        currentStep > step.id ? "bg-green-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>

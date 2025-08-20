@@ -45,15 +45,16 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
         if (isOpen) {
           toggleCart();
         }
+        setOperationAfterLogin(() => () => {
+          initiatePayment(amount, currency, description, metadata);
+        });
         toast.error("Please login to continue");
 
         navigate(ROUTE_NAMES.LOGIN);
 
         return;
       }
-      setOperationAfterLogin(() => () => {
-        initiatePayment(amount, currency, description, metadata);
-      });
+
       await initiatePayment(amount, currency, description, metadata);
     } catch (err) {
       console.error("Payment failed:", err);

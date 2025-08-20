@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { useGoogleAuthPopup } from "@/hooks/useGooglePopup";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +23,7 @@ export default function LoginPage() {
 
   const { signIn, handleSocialLogin } = useAuth();
   const navigate = useNavigate();
+  const { signInWithGooglePopup } = useGoogleAuthPopup();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +61,7 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 className="w-full h-12 glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30 bg-transparent"
-                onClick={() => handleSocialLogin("Google")}
+                onClick={() => signInWithGooglePopup()}
                 disabled={isLoading}
               >
                 <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24">
