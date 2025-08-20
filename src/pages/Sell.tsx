@@ -687,12 +687,12 @@ export default function SellPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4">
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "New"
+                        formData.condition === "new"
                           ? "bg-gradient-to-r from-green-500 to-emerald-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "New" })
+                        setFormData({ ...formData, condition: "new" })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 rounded-xl mb-2">
@@ -700,7 +700,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "New"
+                          formData.condition === "new"
                             ? "text-white"
                             : "text-gray-700"
                         }`}
@@ -710,12 +710,12 @@ export default function SellPage() {
                     </div>
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "Like New"
+                        formData.condition === "like new"
                           ? "bg-gradient-to-r from-blue-500 to-purple-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "Like New" })
+                        setFormData({ ...formData, condition: "like new" })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 rounded-xl mb-2">
@@ -723,7 +723,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "Like New"
+                          formData.condition === "like new"
                             ? "text-white"
                             : "text-gray-700"
                         }`}
@@ -733,12 +733,12 @@ export default function SellPage() {
                     </div>
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "Good"
+                        formData.condition === "good"
                           ? "bg-gradient-to-r from-yellow-500 to-orange-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "Good" })
+                        setFormData({ ...formData, condition: "good" })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 rounded-xl mb-2">
@@ -746,7 +746,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "Good"
+                          formData.condition === "good"
                             ? "text-white"
                             : "text-gray-700"
                         }`}
@@ -756,12 +756,12 @@ export default function SellPage() {
                     </div>
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "Fair"
+                        formData.condition === "fair"
                           ? "bg-gradient-to-r from-orange-500 to-red-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "Fair" })
+                        setFormData({ ...formData, condition: "fair" })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 rounded-xl mb-2">
@@ -769,7 +769,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "Fair"
+                          formData.condition === "fair"
                             ? "text-white"
                             : "text-gray-700"
                         }`}
