@@ -26,14 +26,14 @@ export const useGoogleAuthPopup = () => {
           },
         })
         .then(({ data }) => {
-          if (data?.url) {
+          if (data?.url && popup) {
             popup.location.href = data.url;
           }
         });
 
       // Listen for popup completion
       const checkClosed = setInterval(() => {
-        if (popup.closed) {
+        if (popup?.closed) {
           clearInterval(checkClosed);
           // Check if auth was successful
           supabase.auth.getSession().then(({ data: { session } }) => {
@@ -47,17 +47,17 @@ export const useGoogleAuthPopup = () => {
       }, 1000);
 
       // Listen for messages from popup
-      const messageListener = (event) => {
+      const messageListener = (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
 
         if (event.data.type === "SUPABASE_AUTH_SUCCESS") {
           clearInterval(checkClosed);
-          popup.close();
+          popup?.close();
           window.removeEventListener("message", messageListener);
           resolve(event.data.session);
         } else if (event.data.type === "SUPABASE_AUTH_ERROR") {
           clearInterval(checkClosed);
-          popup.close();
+          popup?.close();
           window.removeEventListener("message", messageListener);
           reject(new Error(event.data.error));
         }

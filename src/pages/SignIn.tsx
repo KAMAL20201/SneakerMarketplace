@@ -21,7 +21,7 @@ export default function LoginPage() {
     password: "",
   });
 
-  const { signIn, handleSocialLogin } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const { signInWithGooglePopup } = useGoogleAuthPopup();
 
