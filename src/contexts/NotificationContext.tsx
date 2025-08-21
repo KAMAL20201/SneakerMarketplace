@@ -96,72 +96,72 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
     if (!user) return;
 
     // Initial fetch
-    fetchNotifications();
+    // fetchNotifications();
 
-    // Set up real-time subscription
-    const channel = supabase
-      .channel("notifications")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const newNotification = payload.new as Notification;
-          setNotifications((prev) => [newNotification, ...prev]);
+    // // Set up real-time subscription
+    // const channel = supabase
+    //   .channel("notifications")
+    //   .on(
+    //     "postgres_changes",
+    //     {
+    //       event: "INSERT",
+    //       schema: "public",
+    //       table: "notifications",
+    //       filter: `user_id=eq.${user.id}`,
+    //     },
+    //     (payload) => {
+    //       const newNotification = payload.new as Notification;
+    //       setNotifications((prev) => [newNotification, ...prev]);
 
-          // Show toast for new notifications
-          toast.success(newNotification.title, {
-            description: newNotification.message,
-            duration: 5000,
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const updatedNotification = payload.new as Notification;
-          setNotifications((prev) =>
-            prev.map((notification) =>
-              notification.id === updatedNotification.id
-                ? updatedNotification
-                : notification
-            )
-          );
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "DELETE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const deletedNotification = payload.old as Notification;
-          setNotifications((prev) =>
-            prev.filter(
-              (notification) => notification.id !== deletedNotification.id
-            )
-          );
-        }
-      )
-      .subscribe();
+    //       // Show toast for new notifications
+    //       toast.success(newNotification.title, {
+    //         description: newNotification.message,
+    //         duration: 5000,
+    //       });
+    //     }
+    //   )
+    //   .on(
+    //     "postgres_changes",
+    //     {
+    //       event: "UPDATE",
+    //       schema: "public",
+    //       table: "notifications",
+    //       filter: `user_id=eq.${user.id}`,
+    //     },
+    //     (payload) => {
+    //       const updatedNotification = payload.new as Notification;
+    //       setNotifications((prev) =>
+    //         prev.map((notification) =>
+    //           notification.id === updatedNotification.id
+    //             ? updatedNotification
+    //             : notification
+    //         )
+    //       );
+    //     }
+    //   )
+    //   .on(
+    //     "postgres_changes",
+    //     {
+    //       event: "DELETE",
+    //       schema: "public",
+    //       table: "notifications",
+    //       filter: `user_id=eq.${user.id}`,
+    //     },
+    //     (payload) => {
+    //       const deletedNotification = payload.old as Notification;
+    //       setNotifications((prev) =>
+    //         prev.filter(
+    //           (notification) => notification.id !== deletedNotification.id
+    //         )
+    //       );
+    //     }
+    //   )
+    //   .subscribe();
 
-    // Cleanup subscription
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // // Cleanup subscription
+    // return () => {
+    //   supabase.removeChannel(channel);
+    // };
   }, [user, fetchNotifications]);
 
   const value: NotificationContextType = {

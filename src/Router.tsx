@@ -93,7 +93,7 @@ const Router = () => {
         path={ROUTE_NAMES.MY_LISTINGS}
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute>
+            <ProtectedRoute route={ROUTE_NAMES.MY_LISTINGS}>
               <MyListings />
             </ProtectedRoute>
           </Suspense>
@@ -103,7 +103,7 @@ const Router = () => {
         path={ROUTE_NAMES.MY_ORDERS}
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute>
+            <ProtectedRoute route={ROUTE_NAMES.MY_ORDERS}>
               <MyOrders />
             </ProtectedRoute>
           </Suspense>
@@ -113,7 +113,7 @@ const Router = () => {
         path={ROUTE_NAMES.EDIT_LISTING}
         element={
           <Suspense fallback={<FormSkeleton />}>
-            <ProtectedRoute>
+            <ProtectedRoute route={ROUTE_NAMES.EDIT_LISTING}>
               <EditListing />
             </ProtectedRoute>
           </Suspense>
@@ -141,7 +141,7 @@ const Router = () => {
         path={ROUTE_NAMES.PAYMENT_METHODS}
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute>
+            <ProtectedRoute route={ROUTE_NAMES.PAYMENT_METHODS}>
               <PaymentMethods />
             </ProtectedRoute>
           </Suspense>
