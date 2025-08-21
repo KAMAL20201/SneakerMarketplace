@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
+import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface Listing {
   id: string;
@@ -263,9 +264,10 @@ export default function AdminReview() {
                           ₹{listing.price}
                         </span>
                       </div>
-                      <Badge className="bg-green-100 text-green-800 border-0">
-                        {listing.condition}
-                      </Badge>
+                      <ConditionBadge
+                        condition={listing.condition}
+                        variant="default"
+                      />
                     </div>
 
                     <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -291,7 +293,6 @@ export default function AdminReview() {
 
                   {/* Actions */}
                   <div className="flex gap-3 pt-4">
-
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button

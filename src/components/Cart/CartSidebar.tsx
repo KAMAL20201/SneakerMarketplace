@@ -1,12 +1,12 @@
 import { X, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
 import { PaymentButton } from "@/components/PaymentButton";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
+import ConditionBadge from "../ui/ConditionBadge";
 
 export function CartSidebar() {
   const { items, toggleCart, clearCart, removeItem, isOpen, totalPrice } =
@@ -121,9 +121,12 @@ export function CartSidebar() {
                             <span className="text-xs text-gray-700 font-medium">
                               by {item.sellerName}
                             </span>
-                            <Badge className="bg-gray-100/80 border-0 text-gray-800 text-xs rounded-lg px-2 py-1">
-                              {item.condition}
-                            </Badge>
+
+                            <ConditionBadge
+                              condition={item.condition}
+                              // variant="glass"
+                              className="text-xs"
+                            />
                           </div>
 
                           {/* Price */}

@@ -34,3 +34,15 @@ export const ROUTE_HELPERS = {
   PRODUCT_DETAIL: (id: string) => `/product/${id}`,
   EDIT_LISTING: (id: string) => `/edit-listing/${id}`,
 } as const;
+
+// Product condition constants
+export const PRODUCT_CONDITIONS = {
+  NEW: "new",
+  LIKE_NEW: "like new",
+  GOOD: "good",
+  FAIR: "fair",
+  POOR: "poor",
+} as const;
+
+export type ProductCondition =
+  (typeof PRODUCT_CONDITIONS)[keyof typeof PRODUCT_CONDITIONS];

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
+import ConditionBadge from "@/components/ui/ConditionBadge";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -182,9 +183,11 @@ export default function ProductDetailPage() {
 
             <div className="flex items-center">
               <span className="font-bold">Condition:</span>
-              <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
-                {listing?.condition}
-              </Badge>
+              <ConditionBadge
+                condition={listing?.condition}
+                // variant="glass"
+                className="uppercase"
+              />
             </div>
           </div>
 

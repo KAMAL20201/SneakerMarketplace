@@ -37,7 +37,7 @@ import { smartCompressImages } from "@/lib/imageCompression";
 import { ProductImage } from "@/components/ui/OptimizedImage";
 import { PaymentMethodsService } from "@/lib/paymentMethodsService";
 import type { PaymentMethod } from "@/lib/encryptionService";
-import { ROUTE_NAMES } from "@/constants/enums";
+import { ROUTE_NAMES, PRODUCT_CONDITIONS } from "@/constants/enums";
 
 export default function SellPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -687,12 +687,15 @@ export default function SellPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4">
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "new"
+                        formData.condition === PRODUCT_CONDITIONS.NEW
                           ? "bg-gradient-to-r from-green-500 to-emerald-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "new" })
+                        setFormData({
+                          ...formData,
+                          condition: PRODUCT_CONDITIONS.NEW,
+                        })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 rounded-xl mb-2">
@@ -700,7 +703,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "new"
+                          formData.condition === PRODUCT_CONDITIONS.NEW
                             ? "text-white"
                             : "text-gray-700"
                         }`}
@@ -710,12 +713,15 @@ export default function SellPage() {
                     </div>
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "like new"
+                        formData.condition === PRODUCT_CONDITIONS.LIKE_NEW
                           ? "bg-gradient-to-r from-blue-500 to-purple-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "like new" })
+                        setFormData({
+                          ...formData,
+                          condition: PRODUCT_CONDITIONS.LIKE_NEW,
+                        })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 rounded-xl mb-2">
@@ -723,7 +729,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "like new"
+                          formData.condition === PRODUCT_CONDITIONS.LIKE_NEW
                             ? "text-white"
                             : "text-gray-700"
                         }`}
@@ -733,12 +739,15 @@ export default function SellPage() {
                     </div>
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "good"
+                        formData.condition === PRODUCT_CONDITIONS.GOOD
                           ? "bg-gradient-to-r from-yellow-500 to-orange-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "good" })
+                        setFormData({
+                          ...formData,
+                          condition: PRODUCT_CONDITIONS.GOOD,
+                        })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 rounded-xl mb-2">
@@ -746,7 +755,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "good"
+                          formData.condition === PRODUCT_CONDITIONS.GOOD
                             ? "text-white"
                             : "text-gray-700"
                         }`}
@@ -756,12 +765,15 @@ export default function SellPage() {
                     </div>
                     <div
                       className={` border !border-gray-100 cursor-pointer rounded-2xl p-3 md:p-4 hover:bg-white/20 transition-all ${
-                        formData.condition === "fair"
+                        formData.condition === PRODUCT_CONDITIONS.FAIR
                           ? "bg-gradient-to-r from-orange-500 to-red-500"
                           : "bg-white"
                       }`}
                       onClick={() =>
-                        setFormData({ ...formData, condition: "fair" })
+                        setFormData({
+                          ...formData,
+                          condition: PRODUCT_CONDITIONS.FAIR,
+                        })
                       }
                     >
                       <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 rounded-xl mb-2">
@@ -769,7 +781,7 @@ export default function SellPage() {
                       </Badge>
                       <p
                         className={`text-xs md:text-sm ${
-                          formData.condition === "fair"
+                          formData.condition === PRODUCT_CONDITIONS.FAIR
                             ? "text-white"
                             : "text-gray-700"
                         }`}

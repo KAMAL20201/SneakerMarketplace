@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductImage, CardImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_HELPERS } from "@/constants/enums";
+import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface ProductCardProps {
   product: {
@@ -44,9 +45,11 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                 </div>
               </div>
               <div className="flex items-center gap-2 mb-3">
-                <Badge className="glass-button border-0 text-gray-700 text-xs rounded-xl capitalize">
-                  {product.condition}
-                </Badge>
+                <ConditionBadge
+                  condition={product.condition}
+                  // variant="glass"
+                  className="text-xs"
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
@@ -96,9 +99,11 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                 </div>
               </div>
               <div className="flex items-center gap-2 mb-3">
-                <Badge className="glass-button border-0 text-gray-700 text-xs rounded-xl ml-auto capitalize">
-                  {product.condition}
-                </Badge>
+                <ConditionBadge
+                  condition={product.condition}
+                  variant="glass"
+                  className="text-xs ml-auto"
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>

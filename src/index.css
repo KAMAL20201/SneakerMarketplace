@@ -182,7 +182,7 @@
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
+  box-shadow: 16px 0px 40px 0 rgba(31, 38, 135, 0.12);
 }
 
 .glass-navbar {

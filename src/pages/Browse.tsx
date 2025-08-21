@@ -33,8 +33,9 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
-import { ROUTE_HELPERS } from "@/constants/enums";
+import { ROUTE_HELPERS, PRODUCT_CONDITIONS } from "@/constants/enums";
 import { categories } from "@/constants/sellConstants";
+import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface Listing {
   id: string;
@@ -169,7 +170,13 @@ const Browse = () => {
   const itemsPerPage = 12;
 
   // Available filter options
-  const conditions = ["new", "like new", "good", "fair", "poor"];
+  const conditions = [
+    PRODUCT_CONDITIONS.NEW,
+    PRODUCT_CONDITIONS.LIKE_NEW,
+    PRODUCT_CONDITIONS.GOOD,
+    PRODUCT_CONDITIONS.FAIR,
+    PRODUCT_CONDITIONS.POOR,
+  ];
   const brands = [
     "Nike",
     "Adidas",
@@ -367,23 +374,6 @@ const Browse = () => {
     // Clear all filters from URL
     const newParams = serializeFiltersToURL(clearedFilters);
     setSearchParams(newParams, { replace: true });
-  };
-
-  const getConditionColor = (condition: string) => {
-    switch (condition) {
-      case "new":
-        return "bg-green-100 text-green-700 !hover:bg-green-100";
-      case "like new":
-        return "bg-blue-100 text-blue-700 !hover:bg-blue-100";
-      case "good":
-        return "bg-yellow-100 text-yellow-700 !hover:bg-yellow-100";
-      case "fair":
-        return "bg-orange-100 text-orange-700 !hover:bg-orange-100";
-      case "poor":
-        return "bg-red-100 text-red-700 !hover:bg-red-100  ";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
   };
 
   const getCategoryName = (categoryId: string) => {
@@ -743,14 +733,11 @@ const Browse = () => {
                                 }}
                                 className="rounded-md"
                               />
-                              <Label
-                                htmlFor={condition}
-                                className={`${getConditionColor(
-                                  condition
-                                )} px-2 rounded-xl text-sm capitalize font-medium text-gray-700 cursor-pointer`}
-                              >
-                                {condition}
-                              </Label>
+                              <ConditionBadge
+                                condition={condition}
+                                // variant="glass"
+                                className="text-xs"
+                              />
                             </div>
                           ))}
                         </div>
@@ -878,13 +865,12 @@ const Browse = () => {
               </Badge>
             ))}
             {filters.condition.map((condition) => (
-              <Badge
+              <ConditionBadge
                 key={condition}
-                className={`${getConditionColor(
-                  condition
-                )} border-0 rounded-xl text-xs capitalize font-medium flex items-center gap-1 pr-1`}
+                condition={condition}
+                variant="glass"
+                className="text-xs font-medium flex items-center gap-1 pr-1"
               >
-                {condition}
                 <button
                   onClick={() => {
                     const newConditions = filters.condition.filter(
@@ -905,7 +891,7 @@ const Browse = () => {
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </Badge>
+              </ConditionBadge>
             ))}
             {filters.brand.map((brand) => (
               <Badge
@@ -1036,13 +1022,11 @@ const Browse = () => {
                               ₹{listing.price.toLocaleString()}
                             </span>
                           </div>
-                          <Badge
-                            className={`${getConditionColor(
-                              listing.condition
-                            )} border-0 rounded-xl text-xs capitalize`}
-                          >
-                            {listing.condition}
-                          </Badge>
+                          <ConditionBadge
+                            condition={listing.condition}
+                            // variant="glass"
+                            className="text-xs"
+                          />
                         </div>
                         <div className="flex items-center justify-between">
                           <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
