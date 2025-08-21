@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
+import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -129,7 +130,7 @@ export default function ProductDetailPage() {
     }
   }, [productId]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <ProductDetailSkeleton />;
   if (error) return <div>Error: {error}</div>;
 
   return (

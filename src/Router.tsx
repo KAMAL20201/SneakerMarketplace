@@ -4,6 +4,7 @@ import { AdminRoute } from "./components/AdminRoute";
 import { PageSkeleton, FormSkeleton } from "./components/ui/skeleton";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ROUTE_NAMES } from "./constants/enums";
+import ProductDetailSkeleton from "./components/ui/ProductDetailSkeleton";
 
 // Lazy load all page components with preloading capability
 const Home = lazy(() => import("./pages/Home"));
@@ -59,7 +60,7 @@ const Router = () => {
       <Route
         path={ROUTE_NAMES.PRODUCT_DETAIL}
         element={
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<ProductDetailSkeleton />}>
             <ProductDetailPage />
           </Suspense>
         }
