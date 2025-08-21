@@ -329,18 +329,6 @@ const MyListings = () => {
                       <div className="absolute top-3 left-3 z-10">
                         {getStatusBadge(listing.status)}
                       </div>
-                      <div className="absolute top-3 right-3 flex gap-2 z-10">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          asChild
-                          className="h-8 w-8 p-0 glass-button border-0 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30"
-                        >
-                          <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}>
-                            <Eye className="h-4 w-4 text-white" />
-                          </Link>
-                        </Button>
-                      </div>
                     </div>
 
                     {/* Content Section */}
@@ -383,13 +371,6 @@ const MyListings = () => {
                         </div>
                       </div>
 
-                      {/* Views */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Eye className="h-3 w-3" />
-                          {listing.views || 0} views
-                        </div>
-                      </div>
 
                       {/* Action Buttons */}
                       <div className="flex gap-2">
