@@ -6,8 +6,10 @@ declare global {
   }
 }
 
+// Only the public key is needed on the client side
+// The secret key should only be used in server-side Edge Functions
 export const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID;
-export const RAZORPAY_KEY_SECRET = import.meta.env.VITE_RAZORPAY_KEY_SECRET;
+
 export const loadRazorpayScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (window.Razorpay) {

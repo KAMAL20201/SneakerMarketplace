@@ -4,7 +4,6 @@ import { ROUTE_NAMES, ROUTE_HELPERS } from "@/constants/enums";
 import {
   Edit,
   Trash2,
-  Eye,
   Plus,
   ChevronLeft,
   ChevronRight,
@@ -259,7 +258,7 @@ const MyListings = () => {
               </CardContent>
             </Card>
 
-            <Card className="glass-card border-0 rounded-2xl">
+            {/* <Card className="glass-card border-0 rounded-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -276,7 +275,7 @@ const MyListings = () => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
 

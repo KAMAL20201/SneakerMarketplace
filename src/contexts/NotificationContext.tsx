@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, type ReactNode } from "react";
-import { supabase } from "../lib/supabase";
+// import { supabase } from "../lib/supabase";
 import { NotificationService } from "../lib/notificationService";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";

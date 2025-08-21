@@ -29,8 +29,6 @@ const Home = () => {
           error,
         } = await supabase.auth.getSession();
 
-        console.log("kamalran", session);
-
         if (error) {
           window.opener.postMessage(
             {
