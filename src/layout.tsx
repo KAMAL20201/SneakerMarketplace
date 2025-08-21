@@ -31,7 +31,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <Suspense fallback={null}>
         <CartSidebar />
       </Suspense>
-      <Toaster position={isMobile ? "bottom-center" : "top-right"} />
+      <Toaster
+        position={isMobile ? "bottom-center" : "top-right"}
+        offset={{ top: isMobile ? undefined : 60 }}
+        richColors
+        closeButton
+      />
     </SidebarProvider>
   );
 };
