@@ -14,6 +14,7 @@ interface PaymentButtonProps {
   description: string;
   metadata?: Record<string, string>;
   className?: string;
+  buttonText?: string;
   variant?:
     | "default"
     | "destructive"
@@ -31,6 +32,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   description,
   metadata = {},
   className = "",
+  buttonText,
   variant = "default",
   size = "default",
   disabled = false,
@@ -78,7 +80,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
         ) : (
           <>
             <CreditCard className="mr-2 h-4 w-4" />
-            Pay ₹{amount}
+            {buttonText || `Pay ₹${amount}`}
           </>
         )}
       </Button>

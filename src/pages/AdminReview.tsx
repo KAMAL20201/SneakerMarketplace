@@ -31,6 +31,7 @@ import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface Listing {
   id: string;
+  product_id: string;
   title: string;
   brand: string;
   category: string;
@@ -52,6 +53,7 @@ export default function AdminReview() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  console.log(selectedListing);
   const [reviewComment, setReviewComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -92,7 +94,8 @@ export default function AdminReview() {
           reviewed_at: new Date().toISOString(),
           review_comment: reviewComment || "Approved",
         })
-        .eq("id", listingId);
+        .eq("id", listingId)
+        .select();
 
       if (error) throw error;
 
@@ -327,7 +330,7 @@ export default function AdminReview() {
                           <AlertDialogAction
                             onClick={() =>
                               selectedListing &&
-                              handleApprove(selectedListing.id)
+                              handleApprove(selectedListing.product_id)
                             }
                             disabled={actionLoading}
                             className="bg-green-500 hover:bg-green-600 rounded-xl"
@@ -374,7 +377,7 @@ export default function AdminReview() {
                           <AlertDialogAction
                             onClick={() =>
                               selectedListing &&
-                              handleReject(selectedListing.id)
+                              handleReject(selectedListing.product_id)
                             }
                             disabled={actionLoading || !reviewComment.trim()}
                             className="bg-red-500 hover:bg-red-600 rounded-xl"

@@ -52,7 +52,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                 />
               </div>
               <div className="flex items-center justify-between">
-                <div>
+                <>
                   <span className="font-bold text-gray-800 text-lg">
                     ₹ {product.price}
                   </span>
@@ -62,9 +62,9 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                         ₹ {product.originalPrice}
                       </span>
                     )}
-                </div>
+                </>
                 <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
-                  {product.size_value}
+                  {product.size_value?.split(" / ")[0]}
                 </Badge>
               </div>
             </div>

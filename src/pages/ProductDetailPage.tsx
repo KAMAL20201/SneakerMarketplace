@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import ConditionBadge from "@/components/ui/ConditionBadge";
+import { PaymentButton } from "@/components/PaymentButton";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -147,7 +148,7 @@ export default function ProductDetailPage() {
                 }
                 alt={`${listing?.title} - Image ${selectedImageIndex + 1}`}
                 priority={true}
-                className="w-full h-full"
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
@@ -278,9 +279,9 @@ export default function ProductDetailPage() {
                           ? "default"
                           : "outline"
                       }
-                      size="sm"
+                      // size="sm"
                       onClick={() => setSelectedSize(listing?.size_value)}
-                      className={`h-14 rounded-2xl border-0 font-semibold uppercase ${
+                      className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
                         selectedSize === listing?.size_value
                           ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
                           : "glass-button text-gray-700 hover:bg-white/30"
@@ -309,14 +310,24 @@ export default function ProductDetailPage() {
               <ShoppingCart className="h-4 w-4 mr-2" />
               {isItemInCart() ? "In Cart" : "Add to Cart"}
             </Button>
-            <Button
+
+            <PaymentButton
+              amount={listing?.price || 0}
+              currency="INR"
+              description={`Buy ${listing?.brand} ${listing?.title} - ${listing?.condition} condition`}
+              metadata={{
+                type: "cart_checkout",
+                cart_items: listing?.id.toString(),
+                product_id: listing?.id,
+                seller_id: listing?.seller_details?.id?.toString(),
+                size: selectedSize || "",
+                condition: listing?.condition,
+              }}
+              buttonText="Buy Now"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
               size="lg"
-              // onClick={() => handleAddToCart(listing?.seller_details)}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Buy Now
-            </Button>
+              disabled={!selectedSize}
+            />
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
-import { NotificationService } from "./notificationService";
-import type { OrderNotificationData } from "../types/notifications";
+// import { NotificationService } from "./notificationService";
+// import type { OrderNotificationData } from "../types/notifications";
 
 export interface Order {
   id: string;
@@ -154,30 +154,30 @@ export class OrderService {
 
         orders.push(order);
 
-        // Create notification data
-        const notificationData: OrderNotificationData = {
-          order_id: order.id,
-          product_id: item.productId,
-          product_title: item.productName,
-          product_image:
-            productDetails.product_images?.find((img) => img.is_poster_image)
-              ?.image_url || productDetails.product_images?.[0]?.image_url,
-          buyer_name: buyerName,
-          seller_name: item.sellerName,
-          amount: item.price,
-        };
+        // // Create notification data
+        // const notificationData: OrderNotificationData = {
+        //   order_id: order.id,
+        //   product_id: item.productId,
+        //   product_title: item.productName,
+        //   product_image:
+        //     productDetails.product_images?.find((img) => img.is_poster_image)
+        //       ?.image_url || productDetails.product_images?.[0]?.image_url,
+        //   buyer_name: buyerName,
+        //   seller_name: item.sellerName,
+        //   amount: item.price,
+        // };
 
-        // Notify seller about the sale
-        await NotificationService.notifyOrderReceived(
-          item.sellerId,
-          notificationData
-        );
+        // // Notify seller about the sale
+        // await NotificationService.notifyOrderReceived(
+        //   item.sellerId,
+        //   notificationData
+        // );
 
-        // Also send payment confirmation notification
-        await NotificationService.notifyPaymentConfirmed(
-          item.sellerId,
-          notificationData
-        );
+        // // Also send payment confirmation notification
+        // await NotificationService.notifyPaymentConfirmed(
+        //   item.sellerId,
+        //   notificationData
+        // );
 
         // Update product listing status to sold
         await supabase
