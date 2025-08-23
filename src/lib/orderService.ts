@@ -127,7 +127,7 @@ export class OrderService {
     paymentId: string,
     razorpayOrderId: string,
     buyerId: string,
-    buyerName: string
+    // buyerName: string
   ): Promise<Order[]> {
     try {
       const orders: Order[] = [];

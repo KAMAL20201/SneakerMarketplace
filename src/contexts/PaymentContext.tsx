@@ -127,7 +127,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     response.razorpay_payment_id,
                     response.razorpay_order_id,
                     user?.id || "",
-                    user?.user_metadata?.full_name || ""
+                    // user?.user_metadata?.full_name || ""
                   );
 
                   // Clear cart after successful purchase
