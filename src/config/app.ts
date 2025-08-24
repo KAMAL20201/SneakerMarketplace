@@ -7,12 +7,12 @@ export const APP_CONFIG = {
     import.meta.env.VITE_APP_DEV_ENV === "PROD",
 
   // App metadata
-  APP_NAME: "SneakIn Market",
+  APP_NAME: "The Plug Market",
   APP_DESCRIPTION: "The Ultimate Sneaker Marketplace",
   APP_VERSION: "1.0.0",
 
   // Contact information
-  CONTACT_EMAIL: "hello@sneakinmarket.com",
+  CONTACT_EMAIL: "hello@theplugmarket.com",
 
   // Social media links
   SOCIAL_LINKS: {

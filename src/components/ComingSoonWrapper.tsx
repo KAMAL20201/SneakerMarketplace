@@ -8,12 +8,41 @@ interface ComingSoonWrapperProps {
 const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
   // Check if we should show coming soon page
   const isComingSoon = APP_CONFIG.IS_COMING_SOON;
+  const [email, setEmail] = React.useState("");
+  const [isSubscribed, setIsSubscribed] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  console.log(
-    "kamal",
-    import.meta.env.VITE_APP_DEV_ENV,
-    import.meta.env.VITE_IS_COMING_SOON
-  );
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsLoading(true);
+
+    try {
+      // Store email in localStorage
+      const existingEmails = JSON.parse(
+        localStorage.getItem("launchEmails") || "[]"
+      );
+      if (!existingEmails.includes(email)) {
+        existingEmails.push(email);
+        localStorage.setItem("launchEmails", JSON.stringify(existingEmails));
+      }
+
+      setIsSubscribed(true);
+      setEmail("");
+
+      // Optional: Send to your backend/API
+      // await fetch('/api/subscribe', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ email })
+      // });
+    } catch (error) {
+      console.error("Subscription error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // If not coming soon, show the actual website
   if (!isComingSoon) {
@@ -136,16 +165,59 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
           <h3 className="text-xl font-semibold text-gray-800 mb-3">
             Get Notified When We Launch
           </h3>
-          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-2 rounded-xl border border-purple-300 bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm"
-            />
-            <button className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl">
-              Notify Me
-            </button>
-          </div>
+
+          {isSubscribed ? (
+            <div className="text-center py-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <p className="text-green-700 font-medium">
+                You're on the list! 🎉
+              </p>
+              <p className="text-gray-600 text-sm mt-1">
+                We'll notify you as soon as we launch.
+              </p>
+              <button
+                onClick={() => setIsSubscribed(false)}
+                className="text-purple-600 hover:text-purple-700 text-sm mt-2 underline"
+              >
+                Subscribe another email
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubscribe}
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            >
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="flex-1 px-4 py-2 rounded-xl border border-purple-300 bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm"
+              />
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                {isLoading ? "Subscribing..." : "Notify Me"}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Social Links */}
@@ -166,7 +238,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-purple-200">
           <p className="text-gray-500 text-sm">
-            © 2024 SneakIn Market. All rights reserved.
+            © 2025 The Plug Market. All rights reserved.
           </p>
         </div>
       </div>

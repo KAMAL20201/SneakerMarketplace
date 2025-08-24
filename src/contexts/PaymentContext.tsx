@@ -92,7 +92,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           key: RAZORPAY_KEY_ID,
           amount: order.amount,
           currency: order.currency,
-          name: "SneakIn Market",
+          name: "The Plug Market",
           description: description,
           order_id: order.id,
           prefill: {
@@ -126,7 +126,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     cartItems,
                     response.razorpay_payment_id,
                     response.razorpay_order_id,
-                    user?.id || "",
+                    user?.id || ""
                     // user?.user_metadata?.full_name || ""
                   );
 
