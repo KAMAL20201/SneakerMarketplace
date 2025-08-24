@@ -8,11 +8,12 @@ export const APP_CONFIG = {
 
   // App metadata
   APP_NAME: "The Plug Market",
-  APP_DESCRIPTION: "The Ultimate Sneaker Marketplace",
+  APP_DESCRIPTION:
+    "The Plug: Where Sneaker Culture Meets Streetwear Innovation",
   APP_VERSION: "1.0.0",
 
   // Contact information
-  CONTACT_EMAIL: "hello@theplugmarket.com",
+  CONTACT_EMAIL: "support@theplugmarket.in",
 
   // Social media links
   SOCIAL_LINKS: {
