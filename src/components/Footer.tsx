@@ -98,14 +98,7 @@ export function Footer() {
                   FAQs
                 </Link>
               </li>
-              <li>
-                <Link
-                  to={ROUTE_NAMES.SHIPPING}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Shipping Info
-                </Link>
-              </li>
+
               <li>
                 <Link
                   to={ROUTE_NAMES.RETURNS}
@@ -143,14 +136,6 @@ export function Footer() {
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to={ROUTE_NAMES.SELLER_AGREEMENT}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Seller Agreement
                 </Link>
               </li>
             </ul>
