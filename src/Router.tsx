@@ -22,6 +22,9 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
+const BuyerProtection = lazy(() => import("./pages/BuyerProtection"));
+const SecurePayments = lazy(() => import("./pages/SecurePayments"));
+const ReviewProcess = lazy(() => import("./pages/ReviewProcess"));
 
 // Preload functions for critical routes
 export const preloadRoutes = {
@@ -40,6 +43,9 @@ export const preloadRoutes = {
   privacyPolicy: () => import("./pages/PrivacyPolicy"),
   termsOfService: () => import("./pages/TermsOfService"),
   aboutUs: () => import("./pages/AboutUs"),
+  buyerProtection: () => import("./pages/BuyerProtection"),
+  securePayments: () => import("./pages/SecurePayments"),
+  reviewProcess: () => import("./pages/ReviewProcess"),
 };
 
 // Enhanced loading component for better UX
@@ -174,6 +180,30 @@ const Router = () => {
         element={
           <Suspense fallback={<PageSkeleton />}>
             <AboutUs />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.BUYER_PROTECTION}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <BuyerProtection />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.SECURE_PAYMENTS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <SecurePayments />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.REVIEW_PROCESS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <ReviewProcess />
           </Suspense>
         }
       />
