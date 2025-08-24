@@ -1,0 +1,177 @@
+import React from "react";
+import { APP_CONFIG } from "../config/app";
+
+interface ComingSoonWrapperProps {
+  children: React.ReactNode;
+}
+
+const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
+  // Check if we should show coming soon page
+  const isComingSoon = APP_CONFIG.IS_COMING_SOON;
+
+  console.log(
+    "kamal",
+    import.meta.env.VITE_APP_DEV_ENV,
+    import.meta.env.VITE_IS_COMING_SOON
+  );
+
+  // If not coming soon, show the actual website
+  if (!isComingSoon) {
+    return <>{children}</>;
+  }
+
+  // Otherwise, show the coming soon page
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="max-w-2xl mx-auto text-center">
+        {/* Logo/Brand */}
+        <div className="mb-8">
+          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg relative overflow-hidden">
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 opacity-50 animate-pulse"></div>
+
+            {/* Logo icon - Electric plug representing "The Plug" */}
+            <svg
+              viewBox="0 0 24 24"
+              className="h-10 w-10 text-white relative z-10"
+              fill="currentColor"
+            >
+              <path d="M16.5 3c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v4c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V3zM11 3c0-.83-.67-1.5-1.5-1.5S8 2.17 8 3v4c0 .83.67 1.5 1.5 1.5S11 7.83 11 7V3zM6 8.5C6 7.12 7.12 6 8.5 6h7C16.88 6 18 7.12 18 8.5v2c0 .28-.22.5-.5.5h-1v2c0 2.21-1.79 4-4 4s-4-1.79-4-2v-2h-1c-.28 0-.5-.22-.5-.5v-2zm6 10.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-1.5-.67-1.5-1.5-.67-1.5-1.5-1.5S12 18.17 12 19z" />
+            </svg>
+
+            {/* Shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-shimmer"></div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-2">
+            {APP_CONFIG.APP_NAME}
+          </h1>
+          <p className="text-lg text-gray-600">{APP_CONFIG.APP_DESCRIPTION}</p>
+        </div>
+
+        {/* Coming Soon Message */}
+        <div className="mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            Coming Soon
+          </h2>
+          <p className="text-lg text-gray-600 leading-relaxed">
+            We're working hard to bring you the best sneaker buying and selling
+            experience. Get ready for exclusive drops, authentic products, and
+            seamless transactions.
+          </p>
+        </div>
+
+        {/* Features Preview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-purple-200 shadow-lg hover:scale-105 transition-all duration-300">
+            <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-800 mb-1">
+              Authentic Products
+            </h3>
+            <p className="text-sm text-gray-600">
+              Verified sneakers from trusted sellers
+            </p>
+          </div>
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-pink-200 shadow-lg hover:scale-105 transition-all duration-300">
+            <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-pink-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-800 mb-1">Fast & Secure</h3>
+            <p className="text-sm text-gray-600">
+              Quick transactions with buyer protection
+            </p>
+          </div>
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-blue-200 shadow-lg hover:scale-105 transition-all duration-300">
+            <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+              <svg
+                className="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-800 mb-1">Community</h3>
+            <p className="text-sm text-gray-600">
+              Connect with fellow sneaker enthusiasts
+            </p>
+          </div>
+        </div>
+
+        {/* Newsletter Signup */}
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-purple-200 shadow-lg">
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">
+            Get Notified When We Launch
+          </h3>
+          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-4 py-2 rounded-xl border border-purple-300 bg-white text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm"
+            />
+            <button className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl">
+              Notify Me
+            </button>
+          </div>
+        </div>
+
+        {/* Social Links */}
+        <div className="mt-8 flex justify-center">
+          <a
+            href="https://instagram.com/the.plugmarket"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-pink-600 hover:text-pink-700 transition-colors duration-200 hover:scale-110"
+            aria-label="Follow us on Instagram"
+          >
+            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+            </svg>
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 pt-8 border-t border-purple-200">
+          <p className="text-gray-500 text-sm">
+            © 2024 SneakIn Market. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ComingSoonWrapper;

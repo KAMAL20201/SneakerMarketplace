@@ -5,6 +5,7 @@ import { AppSidebar } from "./components/Sidebar";
 import { Toaster } from "sonner";
 import { Footer } from "./components/Footer";
 import { useIsMobile } from "./hooks/use-mobile";
+import ComingSoonWrapper from "./components/ComingSoonWrapper";
 
 // Lazy load CartSidebar since it's only needed when cart is opened
 const CartSidebar = lazy(() =>
@@ -21,23 +22,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <AppSidebar />
-      <SidebarInset>
-        <Navbar />
-        <main className="flex-1 pt-16">{children}</main>
-        <Footer />
-      </SidebarInset>
-      <Suspense fallback={null}>
-        <CartSidebar />
-      </Suspense>
-      <Toaster
-        position={isMobile ? "bottom-center" : "top-right"}
-        offset={{ top: isMobile ? undefined : 60 }}
-        richColors
-        closeButton
-      />
-    </SidebarProvider>
+    <ComingSoonWrapper>
+      <SidebarProvider defaultOpen={false}>
+        <AppSidebar />
+        <SidebarInset>
+          <Navbar />
+          <main className="flex-1 pt-16">{children}</main>
+          <Footer />
+        </SidebarInset>
+        <Suspense fallback={null}>
+          <CartSidebar />
+        </Suspense>
+        <Toaster
+          position={isMobile ? "bottom-center" : "top-right"}
+          offset={{ top: isMobile ? undefined : 60 }}
+          richColors
+          closeButton
+        />
+      </SidebarProvider>
+    </ComingSoonWrapper>
   );
 };
 
