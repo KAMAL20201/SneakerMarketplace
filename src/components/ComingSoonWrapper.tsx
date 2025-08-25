@@ -1,5 +1,7 @@
 import React from "react";
 import { APP_CONFIG } from "../config/app";
+import { supabase } from "@/lib/supabase";
+import { LaunchEmailService } from "@/lib/launchEmailService";
 
 interface ComingSoonWrapperProps {
   children: React.ReactNode;
@@ -11,34 +13,55 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
   const [email, setEmail] = React.useState("");
   const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [subscriptionMessage, setSubscriptionMessage] = React.useState("");
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
+    setSubscriptionMessage("");
 
     try {
-      // Store email in localStorage
-      const existingEmails = JSON.parse(
-        localStorage.getItem("launchEmails") || "[]"
-      );
-      if (!existingEmails.includes(email)) {
-        existingEmails.push(email);
-        localStorage.setItem("launchEmails", JSON.stringify(existingEmails));
+      // Use the service to handle email subscription
+      const result = await LaunchEmailService.subscribeEmail({
+        email,
+        source: "coming-soon-page",
+      });
+      console.log(result);
+
+      if (result.success) {
+        setIsSubscribed(true);
+        setEmail("");
+        setSubscriptionMessage(result.message);
+
+        // Send to Supabase Edge Function for email processing
+        const { error: functionError } = await supabase.functions.invoke(
+          "subscribe",
+          {
+            body: {
+              email: email.toLowerCase().trim(),
+              source: "coming-soon-page",
+              timestamp: new Date().toISOString(),
+            },
+          }
+        );
+
+        if (functionError) {
+          console.warn(
+            "Email function error (non-critical):",
+            functionError.message
+          );
+          // Don't throw error here as the email was successfully stored
+        }
+      } else {
+        setSubscriptionMessage(result.message);
+        setIsSubscribed(false);
       }
-
-      setIsSubscribed(true);
-      setEmail("");
-
-      // Optional: Send to your backend/API
-      // await fetch('/api/subscribe', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email })
-      // });
     } catch (error) {
       console.error("Subscription error:", error);
+      setSubscriptionMessage("Failed to subscribe. Please try again.");
+      setIsSubscribed(false);
     } finally {
       setIsLoading(false);
     }
@@ -272,7 +295,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
                 </svg>
               </div>
               <p className="text-green-700 font-medium">
-                You're on the list! 🎉
+                {subscriptionMessage || "You're on the list! 🎉"}
               </p>
               <p className="text-gray-600 text-sm mt-1">
                 We'll notify you as soon as we launch.
