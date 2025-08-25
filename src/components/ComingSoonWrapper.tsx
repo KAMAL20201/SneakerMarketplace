@@ -113,7 +113,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
         </div>
 
         {/* Features Preview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-6 mb-8">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-purple-200 shadow-lg hover:scale-105 transition-all duration-300">
             <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
               <svg
