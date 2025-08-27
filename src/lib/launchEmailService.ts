@@ -44,6 +44,7 @@ export class LaunchEmailService {
         return {
           success: true,
           message: "This email is already subscribed! 🎉",
+          alreadySubscribed: true,
         };
       }
 

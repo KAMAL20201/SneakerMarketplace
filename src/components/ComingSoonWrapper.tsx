@@ -29,7 +29,13 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
         email,
         source: "coming-soon-page",
       });
-      logger.info(`Email subscription result: ${JSON.stringify(result)}`);
+
+      if (result.alreadySubscribed) {
+        setIsSubscribed(true);
+        setEmail("");
+        setSubscriptionMessage(result.message);
+        return;
+      }
 
       if (result.success) {
         setIsSubscribed(true);

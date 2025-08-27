@@ -15,6 +15,7 @@ export interface CreateLaunchEmailRequest {
 export interface LaunchEmailResponse {
   success: boolean;
   message: string;
+  alreadySubscribed?: boolean;
   email?: LaunchEmail;
   error?: string;
 }
