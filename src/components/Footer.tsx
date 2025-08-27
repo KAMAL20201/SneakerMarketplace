@@ -171,8 +171,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/20 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-300 text-sm mb-4 md:mb-0 text-center md:text-left">
-            © 2025 The Plug Market. All rights reserved. Authentic items
-            guaranteed.
+            © 2025 The Plug Market. All rights reserved.
           </p>
         </div>
       </div>

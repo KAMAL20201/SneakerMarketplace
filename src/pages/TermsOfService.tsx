@@ -77,7 +77,7 @@ export default function TermsOfService() {
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-900">For Buyers</h3>
                 <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-                  <li>Browse and purchase authentic items</li>
+                  <li>Browse and purchase quality items</li>
                   <li>Secure payment processing</li>
                   <li>Buyer protection guarantees</li>
                   <li>Customer support services</li>

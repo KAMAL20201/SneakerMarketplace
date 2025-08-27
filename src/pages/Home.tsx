@@ -96,7 +96,7 @@ const Home = () => {
             <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-full border border-green-200">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-green-700 text-sm font-medium">
-                100% Authentic Guarantee
+                Quality Verified
               </span>
             </div>
             <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-full border border-blue-200">

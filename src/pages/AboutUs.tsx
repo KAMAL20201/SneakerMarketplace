@@ -137,9 +137,10 @@ export default function AboutUs() {
                 <div className="w-16 h-16 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center mx-auto">
                   <Shield className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="font-semibold text-gray-900">Quality Assurance</h3>
+                <h3 className="font-semibold text-gray-900">Authenticity</h3>
                 <p className="text-sm text-gray-600">
-                  Items are reviewed for quality and accurate description.
+                  Every item is verified to ensure it's genuine and as
+                  described.
                 </p>
               </div>
 
@@ -288,7 +289,7 @@ export default function AboutUs() {
               </div>
               <div>
                 <div className="text-3xl font-bold mb-2">99.9%</div>
-                <div className="text-purple-200">Quality Rate</div>
+                <div className="text-purple-200">Authenticity Rate</div>
               </div>
               <div>
                 <div className="text-3xl font-bold mb-2">24/7</div>

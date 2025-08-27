@@ -1,10 +1,4 @@
-import {
-  Search,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Users,
-} from "lucide-react";
+import { Search, CheckCircle, Clock, AlertTriangle, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -21,7 +15,7 @@ export default function ReviewProcess() {
             Review Process
           </h1>
           <p className="text-gray-600 text-lg">
-            How we ensure quality and accurate description of every item
+            How we ensure quality and authenticity of every item
           </p>
           <Badge variant="secondary" className="mt-3">
             Quality Assured
@@ -38,8 +32,8 @@ export default function ReviewProcess() {
           <CardContent className="space-y-4 text-gray-700">
             <p className="text-center text-lg">
               Every item listed on The Plug Market goes through our
-              comprehensive review process to ensure quality and
-              accurate representation.
+              comprehensive review process to ensure quality and accurate
+              representation.
             </p>
             <p className="text-center">
               Our expert team examines each listing to maintain the highest
@@ -81,8 +75,8 @@ export default function ReviewProcess() {
                   </h3>
                   <p className="text-gray-700">
                     Our verification team examines photos, descriptions, and
-                    pricing to ensure accuracy and quality. We check for
-                    red flags and verify item details.
+                    pricing to ensure accuracy and quality. We check for red
+                    flags and verify item details.
                   </p>
                 </div>
               </div>
@@ -162,11 +156,11 @@ export default function ReviewProcess() {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span className="text-gray-700">Quality items only</span>
+                    <span className="text-gray-700">Genuine items only</span>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span className="text-gray-700">Accurate descriptions</span>
+                    <span className="text-gray-700">No counterfeit goods</span>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
