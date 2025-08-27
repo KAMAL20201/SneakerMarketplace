@@ -207,8 +207,7 @@ export function CartSidebar() {
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 text-center">
-                  Buyer protection • Money-back guarantee • Authenticity
-                  verified
+                  Buyer protection • Money-back guarantee • Quality verified
                 </p>
               </div>
             </div>

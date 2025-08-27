@@ -21,7 +21,7 @@ export default function ReviewProcess() {
             Review Process
           </h1>
           <p className="text-gray-600 text-lg">
-            How we ensure quality and authenticity of every item
+            How we ensure quality and accurate description of every item
           </p>
           <Badge variant="secondary" className="mt-3">
             Quality Assured
@@ -38,7 +38,7 @@ export default function ReviewProcess() {
           <CardContent className="space-y-4 text-gray-700">
             <p className="text-center text-lg">
               Every item listed on The Plug Market goes through our
-              comprehensive review process to ensure authenticity, quality, and
+              comprehensive review process to ensure quality and
               accurate representation.
             </p>
             <p className="text-center">
@@ -81,7 +81,7 @@ export default function ReviewProcess() {
                   </h3>
                   <p className="text-gray-700">
                     Our verification team examines photos, descriptions, and
-                    pricing to ensure accuracy and authenticity. We check for
+                    pricing to ensure accuracy and quality. We check for
                     red flags and verify item details.
                   </p>
                 </div>
@@ -157,16 +157,16 @@ export default function ReviewProcess() {
 
               <div className="space-y-4">
                 <h3 className="font-semibold text-gray-900 text-lg">
-                  Authenticity & Safety
+                  Quality & Safety
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span className="text-gray-700">Genuine items only</span>
+                    <span className="text-gray-700">Quality items only</span>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                    <span className="text-gray-700">No counterfeit goods</span>
+                    <span className="text-gray-700">Accurate descriptions</span>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />

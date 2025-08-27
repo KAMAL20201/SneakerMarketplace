@@ -34,13 +34,13 @@ export default function BuyerProtection() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <CheckCircle className="h-5 w-5 text-green-600" />
-                Authenticity Guarantee
+                Quality Verification
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-gray-700">
               <p>
                 Every item listed on The Plug Market undergoes verification to
-                ensure authenticity and quality.
+                ensure quality and accurate description.
               </p>
               <ul className="list-disc list-inside space-y-2 text-sm">
                 <li>Expert verification team</li>

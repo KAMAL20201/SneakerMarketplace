@@ -976,7 +976,7 @@ export default function SellPage() {
                       </p>
                       <p className="text-yellow-700 text-xs">
                         Your listing will be reviewed by our team within 24
-                        hours to ensure quality and authenticity. You'll be
+                        hours to ensure quality and accurate description. You'll be
                         notified once it's approved and live.
                       </p>
                     </div>
