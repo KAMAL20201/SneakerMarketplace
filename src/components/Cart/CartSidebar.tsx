@@ -91,13 +91,13 @@ export function CartSidebar() {
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <p className="text-xs text-purple-600 font-bold">
+                              <p className="text-xs text-purple-600 font-bold capitalize">
                                 {item.brand}
                               </p>
                               <h4 className="font-bold text-gray-900 text-sm line-clamp-1">
                                 {item.productName}
                               </h4>
-                              <p className="text-xs text-gray-700 font-medium">
+                              <p className="text-xs text-gray-700 font-medium uppercase">
                                 Size: {item.size}
                               </p>
                             </div>
@@ -180,14 +180,12 @@ export function CartSidebar() {
               <div className="space-y-3">
                 <PaymentButton
                   amount={totalPrice}
-                  description={`Cart checkout - ${items.length} item${
-                    items.length !== 1 ? "s" : ""
-                  }`}
                   metadata={{
                     cart_items: items.map((item) => item.id).join(","),
                     item_count: items.length.toString(),
                     type: "cart_checkout",
                   }}
+                  items={items}
                   className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg text-lg font-bold"
                 />
 

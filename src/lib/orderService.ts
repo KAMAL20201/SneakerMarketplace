@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 // import { NotificationService } from "./notificationService";
 // import type { OrderNotificationData } from "../types/notifications";
+import { logger } from "@/components/ui/Logger";
 
 export interface Order {
   id: string;
@@ -126,7 +127,7 @@ export class OrderService {
     cartItems: CartItem[],
     paymentId: string,
     razorpayOrderId: string,
-    buyerId: string,
+    buyerId: string
     // buyerName: string
   ): Promise<Order[]> {
     try {
@@ -138,7 +139,7 @@ export class OrderService {
         const productDetails = await this.getProductDetails(item.productId);
 
         if (!productDetails) {
-          console.warn(`Product ${item.productId} not found, skipping`);
+          logger.warn(`Product ${item.productId} not found, skipping`);
           continue;
         }
 
@@ -149,7 +150,7 @@ export class OrderService {
           product_id: item.productId,
           payment_id: paymentId,
           razorpay_order_id: razorpayOrderId,
-          amount: item.price
+          amount: item.price,
         });
 
         orders.push(order);

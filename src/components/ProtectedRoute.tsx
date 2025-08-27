@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { logger } from "@/components/ui/Logger";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, setOperationAfterLogin } = useAuth();
   const navigate = useNavigate();
-  console.log(route);
+  logger.info(`Protected route accessed: ${route}`);
   if (!user) {
     toast.error("You must be logged in to access this page", {
       duration: 3000,

@@ -2,6 +2,7 @@ import React from "react";
 import { APP_CONFIG } from "../config/app";
 import { supabase } from "@/lib/supabase";
 import { LaunchEmailService } from "@/lib/launchEmailService";
+import { logger } from "@/components/ui/Logger";
 
 interface ComingSoonWrapperProps {
   children: React.ReactNode;
@@ -28,7 +29,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
         email,
         source: "coming-soon-page",
       });
-      console.log(result);
+      logger.info(`Email subscription result: ${JSON.stringify(result)}`);
 
       if (result.success) {
         setIsSubscribed(true);
@@ -48,9 +49,8 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
         );
 
         if (functionError) {
-          console.warn(
-            "Email function error (non-critical):",
-            functionError.message
+          logger.warn(
+            `Email function error (non-critical): ${functionError.message}`
           );
           // Don't throw error here as the email was successfully stored
         }

@@ -193,10 +193,12 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="px-8 pb-5 lg:px-0 lg:pb-6">
-            <h1 className="text-2xl font-bold text-gray-600">
+            <h1 className="text-2xl font-bold text-gray-600 capitalize">
               {listing?.brand}
             </h1>
-            <h2 className="text-md text-gray-800">{listing?.title}</h2>
+            <h2 className="text-md text-gray-800 capitalize">
+              {listing?.title}
+            </h2>
           </div>
 
           {/* Sellers List */}
@@ -314,15 +316,26 @@ export default function ProductDetailPage() {
             <PaymentButton
               amount={listing?.price || 0}
               currency="INR"
-              description={`Buy ${listing?.brand} ${listing?.title} - ${listing?.condition} condition`}
               metadata={{
                 type: "cart_checkout",
                 cart_items: listing?.id.toString(),
-                product_id: listing?.id,
-                seller_id: listing?.seller_details?.id?.toString(),
-                size: selectedSize || "",
-                condition: listing?.condition,
+                item_count: "1",
               }}
+              items={[
+                {
+                  id: listing?.id,
+                  productId: listing?.id,
+                  productName: listing?.title,
+                  brand: listing?.brand,
+                  size: selectedSize || "",
+                  condition: listing?.condition,
+                  price: listing?.price,
+                  image: images?.[0]?.image_url,
+                  sellerId: listing?.seller_details?.id?.toString(),
+                  sellerName: listing?.seller_details?.display_name,
+                  quantity: 1,
+                },
+              ]}
               buttonText="Buy Now"
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
               size="lg"

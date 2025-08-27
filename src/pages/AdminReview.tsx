@@ -28,6 +28,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
+import { logger } from "@/components/ui/Logger";
 
 interface Listing {
   id: string;
@@ -53,7 +54,7 @@ export default function AdminReview() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
-  console.log(selectedListing);
+  logger.info(`Selected listing: ${selectedListing?.id || "none"}`);
   const [reviewComment, setReviewComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 

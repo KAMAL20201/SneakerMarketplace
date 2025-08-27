@@ -6,12 +6,14 @@ import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, type CartItem } from "@/contexts/CartContext";
 
 interface PaymentButtonProps {
   amount: number;
+  items: CartItem[];
+
   currency?: string;
-  description: string;
+  // description: string;
   metadata?: Record<string, string>;
   className?: string;
   buttonText?: string;
@@ -29,13 +31,13 @@ interface PaymentButtonProps {
 export const PaymentButton: React.FC<PaymentButtonProps> = ({
   amount,
   currency = "INR",
-  description,
   metadata = {},
   className = "",
   buttonText,
   variant = "default",
   size = "default",
   disabled = false,
+  items,
 }) => {
   const { initiatePayment, isLoading, error } = usePayment();
   const { user, setOperationAfterLogin } = useAuth();
@@ -48,7 +50,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
           toggleCart();
         }
         setOperationAfterLogin(() => () => {
-          initiatePayment(amount, currency, description, metadata);
+          initiatePayment(amount, currency, metadata, items);
         });
         toast.error("Please login to continue");
 
@@ -57,7 +59,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
         return;
       }
 
-      await initiatePayment(amount, currency, description, metadata);
+      await initiatePayment(amount, currency, metadata, items);
     } catch (err) {
       console.error("Payment failed:", err);
     }

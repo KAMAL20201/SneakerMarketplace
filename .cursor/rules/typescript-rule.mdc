@@ -1,0 +1,5 @@
+---
+description: always use strict typescript in the code that you are outputting, don't change typescript of existing code
+globs: ["src/**/*"]
+alwaysApply: false
+---

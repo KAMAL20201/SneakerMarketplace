@@ -1,4 +1,5 @@
 import type { CartItem } from "@/contexts/CartContext";
+import { logger } from "@/components/ui/Logger";
 
 export const CART_STORAGE_KEY = "sneakin-market-cart";
 
@@ -31,7 +32,7 @@ export const cartStorage = {
 
       // Validate the structure of loaded items
       if (!Array.isArray(items)) {
-        console.warn("Invalid cart data structure in localStorage");
+        logger.warn("Invalid cart data structure in localStorage");
         return [];
       }
 
