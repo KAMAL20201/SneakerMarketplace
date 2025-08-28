@@ -56,6 +56,9 @@ export default function SellPage() {
     description: "",
     category: categories[0].id,
     paymentMethodId: "",
+    shippingCharges: "",
+    deliveryDays: "",
+    customDeliveryDays: "",
   });
 
   const { user } = useAuth();
@@ -68,8 +71,13 @@ export default function SellPage() {
     { id: 3, title: "Basic Info", description: "Tell us about your item" },
     { id: 4, title: "Details", description: "Item details and condition" },
     { id: 5, title: "Price", description: "Set your price and description" },
-    { id: 6, title: "Payment", description: "Choose payment method" },
-    { id: 7, title: "Review", description: "Review and submit for approval" },
+    {
+      id: 6,
+      title: "Shipping",
+      description: "Shipping charges and delivery time",
+    },
+    { id: 7, title: "Payment", description: "Choose payment method" },
+    { id: 8, title: "Review", description: "Review and submit for approval" },
   ];
 
   const selectedCategory = categories.find(
@@ -127,6 +135,16 @@ export default function SellPage() {
       case 5:
         return formData.price !== "";
       case 6:
+        if (formData.deliveryDays === "custom") {
+          return (
+            formData.shippingCharges !== "" &&
+            formData.customDeliveryDays !== ""
+          );
+        }
+        return formData.shippingCharges !== "" && formData.deliveryDays !== "";
+      case 7:
+        return true; // Review step - no validation needed
+      case 8:
         return formData.paymentMethodId !== "";
       default:
         return true;
@@ -217,7 +235,7 @@ export default function SellPage() {
       const filePath = `${userId}/${listingId}/${fileName}`;
 
       // Upload to storage
-      const { data: _data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("product-images")
         .upload(filePath, file);
 
@@ -244,13 +262,17 @@ export default function SellPage() {
       if (dbError) throw dbError;
 
       return { success: true, data: imageData, url: publicUrl };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading image:", error);
       throw error;
     }
   };
 
-  const ensureSellerProfile = async (user: any) => {
+  const ensureSellerProfile = async (user: {
+    id: string;
+    user_metadata?: { full_name?: string; name?: string; avatar_url?: string };
+    email?: string;
+  }) => {
     try {
       // Check if seller profile exists
       const { data: existingSeller, error: checkError } = await supabase
@@ -328,6 +350,11 @@ export default function SellPage() {
           description: formData.description,
           status: "under_review",
           payment_method_id: formData.paymentMethodId,
+          shipping_charges: parseFloat(formData.shippingCharges) || 0,
+          delivery_days:
+            formData.deliveryDays === "custom"
+              ? formData.customDeliveryDays
+              : formData.deliveryDays,
         })
         .select()
         .single();
@@ -834,6 +861,52 @@ export default function SellPage() {
                       className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-14 md:h-16 text-gray-700 placeholder:text-gray-500 text-lg md:text-xl font-semibold"
                     />
                   </div>
+
+                  {/* Charges Calculator */}
+                  {formData.price && parseFloat(formData.price) > 0 && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                        Payment Breakdown
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Listed Price:</span>
+                          <span className="font-medium">
+                            ₹{parseFloat(formData.price).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-red-600">
+                          <span>Payment Gateway Charges (2%):</span>
+                          <span>
+                            -₹{(parseFloat(formData.price) * 0.02).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-red-600">
+                          <span>Platform Charges (0.5%):</span>
+                          <span>
+                            -₹{(parseFloat(formData.price) * 0.005).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="border-t border-gray-300 pt-2 mt-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold text-gray-800">
+                              You'll Receive:
+                            </span>
+                            <span className="font-bold text-lg text-green-600">
+                              ₹{(parseFloat(formData.price) * 0.975).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-xs text-blue-700">
+                          💡 Total charges: 2.5% (₹
+                          {(parseFloat(formData.price) * 0.025).toFixed(2)}) -
+                          Only on item price, not shipping
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -857,97 +930,171 @@ export default function SellPage() {
             </Card>
           )}
 
-          {/* Step 6: Payment Method */}
+          {/* Step 6: Shipping */}
           {currentStep === 6 && (
             <Card className="glass-card border-0 rounded-3xl shadow-lg">
               <CardHeader>
                 <CardTitle className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-3">
-                  <div className="p-2 md:p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl">
-                    <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                  <div className="p-2 md:p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl">
+                    <Package className="h-5 w-5 md:h-6 md:w-6 text-white" />
                   </div>
-                  Choose Payment Method
+                  Shipping & Delivery
                 </CardTitle>
                 <p className="text-sm md:text-base text-gray-600">
-                  Select how you want to receive payment for this item
+                  Set shipping charges and delivery timeline
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {loadingPaymentMethods ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="text-gray-600 mt-2">
-                      Loading payment methods...
-                    </p>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label
+                    htmlFor="shippingCharges"
+                    className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
+                  >
+                    Shipping Charges (INR) *
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-gray-600 text-lg md:text-xl font-bold">
+                      ₹
+                    </span>
+                    <Input
+                      id="shippingCharges"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.shippingCharges}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          shippingCharges: e.target.value,
+                        })
+                      }
+                      className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700 placeholder:text-gray-500 text-base md:text-lg"
+                    />
                   </div>
-                ) : paymentMethods.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
-                      <div className="flex items-center justify-center mb-4">
-                        <AlertTriangle className="w-12 h-12 text-amber-600" />
-                      </div>
-                      <h3 className="font-medium text-amber-800 mb-2">
-                        No Payment Methods Found
-                      </h3>
-                      <p className="text-amber-700 text-sm mb-4">
-                        You need to add at least one payment method to list
-                        items for sale.
-                      </p>
-                      <Button
-                        onClick={() => navigate(ROUTE_NAMES.PAYMENT_METHODS)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
-                      >
-                        Add Payment Method
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {paymentMethods.map((method) => (
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Set to 0 if you want to offer free shipping
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="text-gray-800 font-semibold text-base md:text-lg mb-3 block">
+                    Delivery Timeline *
+                  </Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        value: "3-5",
+                        label: "3-5 Days",
+                        color: "from-green-500 to-emerald-500",
+                      },
+                      {
+                        value: "7-10",
+                        label: "7-10 Days",
+                        color: "from-blue-500 to-purple-500",
+                      },
+                      {
+                        value: "12-15",
+                        label: "12-15 Days",
+                        color: "from-yellow-500 to-orange-500",
+                      },
+                      {
+                        value: "18-21",
+                        label: "18-21 Days",
+                        color: "from-gray-500 to-slate-500",
+                      },
+                    ].map((option) => (
                       <div
-                        key={method.id}
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                          formData.paymentMethodId === method.id
-                            ? "border-green-500 bg-green-50"
-                            : "border-gray-200 hover:border-gray-300"
+                        key={option.value}
+                        className={`border-2 cursor-pointer rounded-2xl p-4 hover:scale-105 transition-all ${
+                          formData.deliveryDays === option.value
+                            ? `bg-gradient-to-r ${option.color} text-white border-0`
+                            : "border-gray-200 hover:border-gray-300 bg-white"
                         }`}
                         onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            paymentMethodId: method.id,
-                          }))
+                          setFormData({
+                            ...formData,
+                            deliveryDays: option.value,
+                          })
                         }
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            {method.method_type === "upi" ? (
-                              <Smartphone className="w-5 h-5 text-blue-600" />
-                            ) : (
-                              <CreditCard className="w-5 h-5 text-green-600" />
-                            )}
-                            <div>
-                              <h4 className="font-medium">
-                                {method.method_name}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {method.method_type === "upi"
-                                  ? "UPI Payment"
-                                  : "Bank Account"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {method.is_default && (
-                              <Badge variant="secondary" className="text-xs">
-                                Default
-                              </Badge>
-                            )}
-                            {formData.paymentMethodId === method.id && (
-                              <Check className="w-5 h-5 text-green-600" />
-                            )}
-                          </div>
+                        <div className="text-center">
+                          <span
+                            className={`text-sm font-semibold ${
+                              formData.deliveryDays === option.value
+                                ? "text-white"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            {option.label}
+                          </span>
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  {formData.deliveryDays === "custom" && (
+                    <div className="mt-4">
+                      <Label
+                        htmlFor="customDeliveryDays"
+                        className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
+                      >
+                        Custom Delivery Time
+                      </Label>
+                      <Input
+                        id="customDeliveryDays"
+                        placeholder="e.g., 2-3 weeks, 1-2 months"
+                        value={formData.customDeliveryDays}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            customDeliveryDays: e.target.value,
+                          })
+                        }
+                        className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700 placeholder:text-gray-500 text-base md:text-lg"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Total Price Preview */}
+                {formData.price && formData.shippingCharges && (
+                  <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-200">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                      Total Price Preview
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Item Price:</span>
+                        <span className="font-medium">
+                          ₹{parseFloat(formData.price).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Shipping:</span>
+                        <span className="font-medium">
+                          ₹{parseFloat(formData.shippingCharges).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="border-t border-blue-300 pt-2 mt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-gray-800">
+                            Total for Buyer:
+                          </span>
+                          <span className="font-bold text-lg text-blue-600">
+                            ₹
+                            {(
+                              parseFloat(formData.price) +
+                              parseFloat(formData.shippingCharges)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-xs text-amber-700">
+                          💡 Note: Platform charges (2.5%) are only applied to
+                          the item price, not shipping charges
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -976,8 +1123,8 @@ export default function SellPage() {
                       </p>
                       <p className="text-yellow-700 text-xs">
                         Your listing will be reviewed by our team within 24
-                        hours to ensure quality and accurate description. You'll be
-                        notified once it's approved and live.
+                        hours to ensure quality and accurate description. You'll
+                        be notified once it's approved and live.
                       </p>
                     </div>
                   </div>
@@ -1039,23 +1186,98 @@ export default function SellPage() {
                         <p>
                           <strong>Price:</strong> ₹ {formData.price || "0.00"}
                         </p>
+                        {formData.price && parseFloat(formData.price) > 0 && (
+                          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="text-xs space-y-1">
+                              <div className="flex justify-between">
+                                <span>Payment Gateway (2%):</span>
+                                <span className="text-red-600">
+                                  -₹
+                                  {(parseFloat(formData.price) * 0.02).toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Platform (0.5%):</span>
+                                <span className="text-red-600">
+                                  -₹
+                                  {(parseFloat(formData.price) * 0.005).toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex justify-between font-semibold border-t border-gray-300 pt-1">
+                                <span>You'll Receive:</span>
+                                <span className="text-green-600">
+                                  ₹
+                                  {(parseFloat(formData.price) * 0.975).toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-                        {/* Payment Method Info */}
-                        {(() => {
-                          const selectedPaymentMethod = paymentMethods.find(
-                            (m) => m.id === formData.paymentMethodId
-                          );
-                          return selectedPaymentMethod ? (
-                            <p>
-                              <strong>Payment Method:</strong>{" "}
-                              {selectedPaymentMethod.method_name}(
-                              {selectedPaymentMethod.method_type === "upi"
-                                ? "UPI"
-                                : "Bank Account"}
-                              )
-                            </p>
-                          ) : null;
-                        })()}
+                        {/* Shipping Information */}
+                        {formData.shippingCharges && (
+                          <p>
+                            <strong>Shipping Charges:</strong> ₹{" "}
+                            {formData.shippingCharges}
+                          </p>
+                        )}
+                        {formData.deliveryDays && (
+                          <p>
+                            <strong>Delivery Time:</strong>{" "}
+                            {formData.deliveryDays === "3-5"
+                              ? "3-5 Days"
+                              : formData.deliveryDays === "7-10"
+                              ? "7-10 Days"
+                              : formData.deliveryDays === "12-15"
+                              ? "12-15 Days"
+                              : formData.deliveryDays === "3-weeks"
+                              ? "3 Weeks"
+                              : formData.deliveryDays === "1-month"
+                              ? "1 Month"
+                              : formData.deliveryDays === "custom"
+                              ? formData.customDeliveryDays || "Custom"
+                              : formData.deliveryDays}
+                          </p>
+                        )}
+
+                        {/* Total Price for Buyer */}
+                        {formData.price && formData.shippingCharges && (
+                          <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="text-xs space-y-1">
+                              <div className="flex justify-between">
+                                <span>Item Price:</span>
+                                <span>
+                                  ₹{parseFloat(formData.price).toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Shipping:</span>
+                                <span>
+                                  ₹
+                                  {parseFloat(formData.shippingCharges).toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex justify-between font-semibold border-t border-blue-300 pt-1">
+                                <span>Total for Buyer:</span>
+                                <span className="text-blue-600 font-bold">
+                                  ₹
+                                  {(
+                                    parseFloat(formData.price) +
+                                    parseFloat(formData.shippingCharges)
+                                  ).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {formData.description && (
@@ -1070,6 +1292,103 @@ export default function SellPage() {
                     )}
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 8: Payment Method */}
+          {currentStep === 8 && (
+            <Card className="glass-card border-0 rounded-3xl shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-3">
+                  <div className="p-2 md:p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl">
+                    <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-white" />
+                  </div>
+                  Choose Payment Method
+                </CardTitle>
+                <p className="text-sm md:text-base text-gray-600">
+                  Select how you want to receive payment for this item
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {loadingPaymentMethods ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="text-gray-600 mt-2">
+                      Loading payment methods...
+                    </p>
+                  </div>
+                ) : paymentMethods.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+                      <div className="flex items-center justify-center mb-4">
+                        <AlertTriangle className="w-12 h-12 text-amber-600" />
+                      </div>
+                      <h3 className="font-medium text-amber-800 mb-2">
+                        No Payment Methods Found
+                      </h3>
+                      <p className="text-amber-700 text-sm mb-4">
+                        You need to add at least one payment method to list
+                        items for sale.
+                      </p>
+                      <Button
+                        onClick={() => navigate(ROUTE_NAMES.PAYMENT_METHODS)}
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        Add Payment Method
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {paymentMethods.map((method) => (
+                      <div
+                        key={method.id}
+                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                          formData.paymentMethodId === method.id
+                            ? "border-green-500 bg-green-500"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            paymentMethodId: method.id,
+                          }))
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            {method.method_type === "upi" ? (
+                              <Smartphone className="w-5 h-5 text-blue-600" />
+                            ) : (
+                              <CreditCard className="w-5 h-5 text-green-600" />
+                            )}
+                            <div>
+                              <h4 className="font-medium">
+                                {method.method_name}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {method.method_type === "upi"
+                                  ? "UPI Payment"
+                                  : "Bank Account"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {method.is_default && (
+                              <Badge variant="secondary" className="text-xs">
+                                Default
+                              </Badge>
+                            )}
+                            {formData.paymentMethodId === method.id && (
+                              <Check className="w-5 h-5 text-green-600" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

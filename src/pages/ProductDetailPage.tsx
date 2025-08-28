@@ -253,6 +253,8 @@ export default function ProductDetailPage() {
                       <div className="flex items-center gap-1">
                         <Truck className="h-4 w-4" />
                         <span>Free shipping</span>
+                        <span>•</span>
+                        <span>Delivery in {listing?.delivery_days} days</span>
                       </div>
                     </div>
 
