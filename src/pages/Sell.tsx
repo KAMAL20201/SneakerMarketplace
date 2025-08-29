@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useContext } from "react";
 import {
   Camera,
   Upload,
@@ -37,33 +37,54 @@ import { smartCompressImages } from "@/lib/imageCompression";
 import { ProductImage } from "@/components/ui/OptimizedImage";
 import { PaymentMethodsService } from "@/lib/paymentMethodsService";
 import type { PaymentMethod } from "@/lib/encryptionService";
-import { ROUTE_NAMES, PRODUCT_CONDITIONS } from "@/constants/enums";
+import {
+  ROUTE_NAMES,
+  PRODUCT_CONDITIONS,
+  DELIVERY_TIMELINES,
+  LISTING_STATUS,
+} from "@/constants/enums";
+import { SellerFormContext } from "@/contexts/SellerFormContext";
 
 export default function SellPage() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [images, setImages] = useState<string[]>([]);
-  const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    brand: "",
-    model: "",
-    size: "",
-    condition: "",
-    price: "",
-    description: "",
-    category: categories[0].id,
-    paymentMethodId: "",
-    shippingCharges: "",
-    deliveryDays: "",
-    customDeliveryDays: "",
-  });
+  const [showOtherBrandInput, setShowOtherBrandInput] = useState(false);
+  const [otherBrandName, setOtherBrandName] = useState("");
 
-  const { user } = useAuth();
+  const { user, setOperationAfterLogin } = useAuth();
+  const {
+    formData,
+    setFormData,
+    clearFormData,
+    images,
+    files,
+    currentStep,
+    setCurrentStep,
+    setImages,
+    setFiles,
+  } = useContext(SellerFormContext);
+
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Function to scroll to top - using a more reliable method
+  const scrollToTop = () => {
+    // Try multiple methods for better compatibility
+    try {
+      // Method 1: Smooth scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      try {
+        // Method 2: Instant scroll to top
+        window.scrollTo(0, 0);
+      } catch {
+        // Method 3: Use document element
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    }
+  };
 
   const steps = [
     { id: 1, title: "Category", description: "What are you selling?" },
@@ -119,7 +140,7 @@ export default function SellPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return formData.category !== "";
+        return true; // Category is always selected by default
       case 2:
         return images.length > 0;
       case 3:
@@ -135,7 +156,7 @@ export default function SellPage() {
       case 5:
         return formData.price !== "";
       case 6:
-        if (formData.deliveryDays === "custom") {
+        if (formData.deliveryDays === DELIVERY_TIMELINES.CUSTOM) {
           return (
             formData.shippingCharges !== "" &&
             formData.customDeliveryDays !== ""
@@ -211,6 +232,7 @@ export default function SellPage() {
   const nextStep = () => {
     if (validateStep(currentStep)) {
       setCurrentStep(currentStep + 1);
+      scrollToTop();
     } else {
       toast.error("Please complete all required fields before continuing");
     }
@@ -218,6 +240,7 @@ export default function SellPage() {
 
   const prevStep = () => {
     setCurrentStep(currentStep - 1);
+    scrollToTop();
   };
 
   const uploadImage = async (
@@ -310,6 +333,11 @@ export default function SellPage() {
 
   const handleSubmit = async () => {
     if (!user) {
+      // Set operation to redirect back to sell page after login
+      setOperationAfterLogin(() => () => {
+        navigate(ROUTE_NAMES.SELL);
+      });
+
       toast.error("Please sign in to list your items");
       navigate(ROUTE_NAMES.LOGIN);
       return;
@@ -348,11 +376,11 @@ export default function SellPage() {
           condition: formData.condition,
           price: parseFloat(formData.price),
           description: formData.description,
-          status: "under_review",
+          status: LISTING_STATUS.UNDER_REVIEW,
           payment_method_id: formData.paymentMethodId,
           shipping_charges: parseFloat(formData.shippingCharges) || 0,
           delivery_days:
-            formData.deliveryDays === "custom"
+            formData.deliveryDays === DELIVERY_TIMELINES.CUSTOM
               ? formData.customDeliveryDays
               : formData.deliveryDays,
         })
@@ -366,6 +394,10 @@ export default function SellPage() {
           await uploadImage(files[i], user.id, listing.id, i === 0);
         }
       }
+
+      // Clear any saved form data after successful submission
+      clearFormData();
+
       toast.success(
         "Listing submitted for review! You'll be notified once it's approved."
       );
@@ -396,7 +428,9 @@ export default function SellPage() {
             <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
               <div
                 className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / steps.length) * 100}%` }}
+                style={{
+                  width: `${(currentStep / steps.length) * 100}%`,
+                }}
               />
             </div>
           </CardContent>
@@ -429,9 +463,14 @@ export default function SellPage() {
                           ? "default"
                           : "outline"
                       }
-                      onClick={() =>
-                        setFormData({ ...formData, category: category.id })
-                      }
+                      onClick={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          category: category.id,
+                        }));
+                        setShowOtherBrandInput(false);
+                        setOtherBrandName("");
+                      }}
                       className={`h-20 md:h-24 rounded-2xl border-0 font-semibold flex flex-col gap-2 md:gap-3 transition-all duration-300 ${
                         formData.category === category.id
                           ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-105"
@@ -577,7 +616,10 @@ export default function SellPage() {
                     }
                     value={formData.title}
                     onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
+                      setFormData((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
                     }
                     className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700 placeholder:text-gray-500 text-base md:text-lg"
                   />
@@ -593,22 +635,53 @@ export default function SellPage() {
                         Brand *
                       </Label>
                       <Select
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, brand: value })
-                        }
+                        onValueChange={(value) => {
+                          if (value === "other") {
+                            setShowOtherBrandInput(true);
+                            setFormData({ ...formData, brand: "" });
+                          } else {
+                            setShowOtherBrandInput(false);
+                            setOtherBrandName("");
+                            setFormData({ ...formData, brand: value });
+                          }
+                        }}
                       >
                         <SelectTrigger className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700">
-                          <SelectValue placeholder="Select brand" />
+                          <SelectValue
+                            placeholder="Select brand"
+                            className="capitalize"
+                          />
                         </SelectTrigger>
                         <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-2xl z-50">
                           {selectedCategory.brands.map((brand) => (
-                            <SelectItem key={brand} value={brand.toLowerCase()}>
+                            <SelectItem
+                              key={brand}
+                              value={brand.toLowerCase()}
+                              className="capitalize"
+                            >
                               {brand}
                             </SelectItem>
                           ))}
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
+
+                      {showOtherBrandInput && (
+                        <div className="mt-3">
+                          <Input
+                            placeholder="Enter brand name"
+                            value={otherBrandName}
+                            onChange={(e) => {
+                              setOtherBrandName(e.target.value);
+                              setFormData({
+                                ...formData,
+                                brand: e.target.value,
+                              });
+                            }}
+                            className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700 placeholder:text-gray-500 text-base md:text-lg"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -697,7 +770,11 @@ export default function SellPage() {
                         </SelectTrigger>
                         <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-2xl z-50">
                           {selectedCategory.sizes.map((size) => (
-                            <SelectItem key={size} value={size.toLowerCase()}>
+                            <SelectItem
+                              key={size}
+                              value={size.toLowerCase()}
+                              className="uppercase"
+                            >
                               {size}
                             </SelectItem>
                           ))}
@@ -982,22 +1059,22 @@ export default function SellPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       {
-                        value: "3-5",
+                        value: DELIVERY_TIMELINES.THREE_TO_FIVE,
                         label: "3-5 Days",
                         color: "from-green-500 to-emerald-500",
                       },
                       {
-                        value: "7-10",
+                        value: DELIVERY_TIMELINES.SEVEN_TO_TEN,
                         label: "7-10 Days",
                         color: "from-blue-500 to-purple-500",
                       },
                       {
-                        value: "12-15",
+                        value: DELIVERY_TIMELINES.TWELVE_TO_FIFTEEN,
                         label: "12-15 Days",
                         color: "from-yellow-500 to-orange-500",
                       },
                       {
-                        value: "18-21",
+                        value: DELIVERY_TIMELINES.EIGHTEEN_TO_TWENTY_ONE,
                         label: "18-21 Days",
                         color: "from-gray-500 to-slate-500",
                       },
@@ -1031,7 +1108,7 @@ export default function SellPage() {
                     ))}
                   </div>
 
-                  {formData.deliveryDays === "custom" && (
+                  {formData.deliveryDays === DELIVERY_TIMELINES.CUSTOM && (
                     <div className="mt-4">
                       <Label
                         htmlFor="customDeliveryDays"
@@ -1230,17 +1307,24 @@ export default function SellPage() {
                         {formData.deliveryDays && (
                           <p>
                             <strong>Delivery Time:</strong>{" "}
-                            {formData.deliveryDays === "3-5"
+                            {formData.deliveryDays ===
+                            DELIVERY_TIMELINES.THREE_TO_FIVE
                               ? "3-5 Days"
-                              : formData.deliveryDays === "7-10"
+                              : formData.deliveryDays ===
+                                DELIVERY_TIMELINES.SEVEN_TO_TEN
                               ? "7-10 Days"
-                              : formData.deliveryDays === "12-15"
+                              : formData.deliveryDays ===
+                                DELIVERY_TIMELINES.TWELVE_TO_FIFTEEN
                               ? "12-15 Days"
+                              : formData.deliveryDays ===
+                                DELIVERY_TIMELINES.EIGHTEEN_TO_TWENTY_ONE
+                              ? "18-21 Days"
                               : formData.deliveryDays === "3-weeks"
                               ? "3 Weeks"
                               : formData.deliveryDays === "1-month"
                               ? "1 Month"
-                              : formData.deliveryDays === "custom"
+                              : formData.deliveryDays ===
+                                DELIVERY_TIMELINES.CUSTOM
                               ? formData.customDeliveryDays || "Custom"
                               : formData.deliveryDays}
                           </p>

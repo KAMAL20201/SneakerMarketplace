@@ -162,6 +162,7 @@
     overflow-x: hidden;
     /* Ensure proper scrolling on mobile */
     position: relative;
+    margin-right: 0px !important;
   }
   button {
     cursor: pointer;

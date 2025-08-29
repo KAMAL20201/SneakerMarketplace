@@ -45,8 +45,9 @@ interface Listing {
   condition: string;
   image_url: string;
   created_at: string;
-  status: "active" | "sold" | "pending";
+  status: "active" | "sold" | "pending" | "rejected";
   views: number;
+  review_comment: string;
 }
 
 const MyListings = () => {
@@ -340,6 +341,21 @@ const MyListings = () => {
                           <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
                             {listing.title}
                           </h3>
+                          {listing?.review_comment &&
+                            listing.status === "rejected" && (
+                              <p className="text-xs text-gray-500 mb-2">
+                                Comment from reviewers:{" "}
+                                <span
+                                  className={`font-bold ${
+                                    listing.status === "rejected"
+                                      ? "text-red-500"
+                                      : "text-green-500"
+                                  }`}
+                                >
+                                  {listing.review_comment}
+                                </span>
+                              </p>
+                            )}
                         </div>
                       </div>
 
@@ -369,7 +385,6 @@ const MyListings = () => {
                           {formatDate(listing.created_at)}
                         </div>
                       </div>
-
 
                       {/* Action Buttons */}
                       <div className="flex gap-2">
