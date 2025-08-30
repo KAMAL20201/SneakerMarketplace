@@ -3,6 +3,7 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   PaymentDetails,
+  RazorpayResponse,
 } from "../types/razorpay";
 
 export class PaymentService {
@@ -30,9 +31,9 @@ export class PaymentService {
   }
 
   // Verify payment signature using Supabase Edge Function
-  static async verifyPayment(paymentData: {
-    cf_order_id: string;
-  }): Promise<{ verified: boolean; payment?: PaymentDetails }> {
+  static async verifyPayment(
+    paymentData: RazorpayResponse
+  ): Promise<{ verified: boolean; payment?: PaymentDetails }> {
     try {
       const { data, error } = await supabase.functions.invoke(
         "verify-payment",

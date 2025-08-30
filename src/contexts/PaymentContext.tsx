@@ -127,7 +127,6 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             try {
               // Verify payment
 
-              console.log("response", response);
               const verification = await PaymentService.verifyPayment(response);
 
               if (verification.verified && verification.payment) {
