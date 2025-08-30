@@ -3,7 +3,7 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   PaymentDetails,
-} from "../types/cashfree";
+} from "../types/razorpay";
 
 export class PaymentService {
   // Create a new order using Supabase Edge Function
@@ -12,7 +12,7 @@ export class PaymentService {
   ): Promise<CreateOrderResponse> {
     try {
       const { data, error } = await supabase.functions.invoke(
-        "create-cashfree-order",
+        "create-razorpay-order",
         {
           body: orderData,
         }
@@ -35,7 +35,7 @@ export class PaymentService {
   }): Promise<{ verified: boolean; payment?: PaymentDetails }> {
     try {
       const { data, error } = await supabase.functions.invoke(
-        "verify-cashfree-payment",
+        "verify-payment",
         {
           body: paymentData,
         }

@@ -331,7 +331,7 @@ export default function AdminReview() {
                           <AlertDialogAction
                             onClick={() =>
                               selectedListing &&
-                              handleApprove(selectedListing.product_id)
+                              handleApprove(selectedListing.id)
                             }
                             disabled={actionLoading}
                             className="bg-green-500 hover:bg-green-600 rounded-xl"
@@ -378,7 +378,7 @@ export default function AdminReview() {
                           <AlertDialogAction
                             onClick={() =>
                               selectedListing &&
-                              handleReject(selectedListing.product_id)
+                              handleReject(selectedListing.id)
                             }
                             disabled={actionLoading || !reviewComment.trim()}
                             className="bg-red-500 hover:bg-red-600 rounded-xl"

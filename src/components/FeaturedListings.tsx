@@ -42,7 +42,7 @@ const FeaturedListings = () => {
 
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
         {featuredSneakers.map((item) => (
-          <div key={item.product_id} className="flex-shrink-0 sm:w-64 w-48">
+          <div key={item.id} className="flex-shrink-0 sm:w-64 w-48">
             <ProductCard product={item} variant="vertical" />
           </div>
         ))}

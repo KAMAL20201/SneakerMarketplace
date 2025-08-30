@@ -7,7 +7,7 @@ import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface ProductCardProps {
   product: {
-    product_id: string;
+    id: string;
     title: string;
     brand: string;
     price: number;
@@ -22,7 +22,7 @@ interface ProductCardProps {
 const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
   if (variant === "vertical") {
     return (
-      <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.product_id)}>
+      <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.id)}>
         <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
           <CardContent className="p-0">
             <div className="relative">
@@ -76,7 +76,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
 
   // Horizontal variant (default)
   return (
-    <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.product_id)}>
+    <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.id)}>
       <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
         <CardContent className="p-0">
           <div className="flex p-4 gap-2">

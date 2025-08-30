@@ -13,7 +13,7 @@ interface PaymentButtonProps {
   items: CartItem[];
 
   currency?: string;
-  // description: string;
+  description?: string;
   metadata?: Record<string, string>;
   className?: string;
   buttonText?: string;

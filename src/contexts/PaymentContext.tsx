@@ -5,20 +5,25 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import {
-  loadCashfreeScript,
-  createCashfreeInstance,
-  formatCurrency,
-} from "../lib/cashfree";
 import { PaymentService } from "../lib/paymentService";
 import { OrderService } from "../lib/orderService";
-import type { CreateOrderRequest } from "../types/cashfree";
 import { useAuth } from "./AuthContext";
 import { useCart, type CartItem } from "./CartContext";
 import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useNavigate } from "react-router";
-import { logger } from "@/components/ui/Logger";
+import {
+  createRazorpayInstance,
+  formatAmount,
+  formatCurrency,
+  loadRazorpayScript,
+  RAZORPAY_KEY_ID,
+} from "@/lib/razorpay";
+import type {
+  RazorpayOptions,
+  RazorpayResponse,
+  CreateOrderRequest,
+} from "../types/razorpay";
 
 interface PaymentContextType {
   isLoading: boolean;
@@ -69,123 +74,116 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(true);
         setError(null);
 
-        // Load Cashfree script
-        await loadCashfreeScript();
+        // Load razorpay script
+        await loadRazorpayScript();
 
         // Create order on server with required customer details and cart items for one-click checkout
         const orderData: CreateOrderRequest = {
-          amount: amount,
+          amount: formatAmount(amount),
           currency: formatCurrency(currency),
           receipt: `receipt_${Date.now()}`,
           notes: metadata,
-          customer_details: {
-            customer_id: user?.id || `user_${Date.now()}`,
-            customer_name: user?.user_metadata?.full_name || "Customer",
-            customer_email: user?.email || "customer@example.com",
-            customer_phone: "9999999999", // Dummy phone number as required by Cashfree
-          },
-          cart_details: {
-            cart_items:
-              items?.length > 0
-                ? items?.map((item, index) => ({
-                    item_id: item.id || `item_${index}`,
-                    item_name: item.productName || `Item ${index + 1}`,
-                    item_description: `${item.brand} - ${item.condition} - Size: ${item.size}`,
-                    item_original_unit_price: item.price,
-                    item_discounted_unit_price: item.price,
-                    item_quantity: item.quantity,
-                    item_currency: currency,
-                  }))
-                : [],
-          },
+          // customer_details: {
+          //   customer_id: user?.id || `user_${Date.now()}`,
+          //   customer_name: user?.user_metadata?.full_name || "Customer",
+          //   customer_email: user?.email || "customer@example.com",
+          //   customer_phone: "9999999999", // Dummy phone number as required by Cashfree
+          // },
+          // cart_details: {
+          //   cart_items:
+          //     items?.length > 0
+          //       ? items?.map((item, index) => ({
+          //           item_id: item.id || `item_${index}`,
+          //           item_name: item.productName || `Item ${index + 1}`,
+          //           item_description: `${item.brand} - ${item.condition} - Size: ${item.size}`,
+          //           item_original_unit_price: item.price,
+          //           item_discounted_unit_price: item.price,
+          //           item_quantity: item.quantity,
+          //           item_currency: currency,
+          //         }))
+          //       : [],
+          // },
         };
 
         const order = await PaymentService.createOrder(orderData);
 
-        // Open Cashfree checkout
-        const cashfree = createCashfreeInstance();
+        // Configure Razorpay options
+        const options: RazorpayOptions = {
+          key: RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: order.currency,
+          name: "The Plug Market",
+          // description: description,
+          order_id: order.id,
+          prefill: {
+            name: user?.user_metadata?.full_name || "",
+            email: user?.email || "",
+          },
+          notes: metadata,
+          theme: {
+            color: "#3B82F6",
+          },
+          handler: async (response: RazorpayResponse) => {
+            try {
+              // Verify payment
 
-        // Debug: Log what's available on the cashfree instance
-        logger.debug(`Cashfree instance: ${JSON.stringify(cashfree)}`);
-        logger.debug(
-          `Cashfree methods: ${Object.getOwnPropertyNames(cashfree).join(", ")}`
-        );
+              console.log("response", response);
+              const verification = await PaymentService.verifyPayment(response);
 
-        // Use the correct checkout method from v3 SDK
-        if (typeof cashfree.checkout === "function") {
-          logger.info(`Cashfree order: ${JSON.stringify(order)}`);
-          // Open Cashfree checkout with payment session ID
-          cashfree
-            .checkout({
-              paymentSessionId: order.payment_session_id,
-              redirectTarget: "_modal",
-            })
-            .then(async (res: any) => {
-              logger.info(`Cashfree response: ${JSON.stringify(res)}`);
-
-              if (res.paymentDetails) {
-                logger.info(
-                  `Payment details: ${JSON.stringify(res.paymentDetails)}`
-                );
-
-                // Save payment details
-                const verificationResult = await PaymentService.verifyPayment({
-                  cf_order_id: order.order_id,
+              if (verification.verified && verification.payment) {
+                // Save payment to database
+                await PaymentService.savePayment({
+                  amount: amount,
+                  currency: currency,
+                  status: "completed",
+                  order_id: response.razorpay_order_id,
+                  payment_id: response.razorpay_payment_id,
+                  user_id: user?.id || "",
                 });
-
-                if (verificationResult.verified) {
-                  logger.info("Payment verified successfully");
-                  await PaymentService.savePayment({
-                    amount: amount,
-                    currency: currency,
-                    status: "completed",
-                    order_id: verificationResult?.payment?.order_id || "",
-                    payment_id: verificationResult?.payment?.id || "",
-                    user_id: user?.id || "",
-                  });
-
+                // Check if this is a cart checkout
+                if (metadata.type === "cart_checkout" && items.length > 0) {
+                  // Process cart checkout - create orders and notify sellers
                   await OrderService.processCartCheckout(
                     items,
-                    verificationResult?.payment?.id || "",
-                    verificationResult?.payment?.order_id || "",
+                    response.razorpay_payment_id,
+                    response.razorpay_order_id,
                     user?.id || ""
                   );
-
-                  // Clear cart after successful purchase
                   if (isOpen) {
                     toggleCart();
                   }
-
                   clearCart();
                   navigate(ROUTE_NAMES.MY_ORDERS);
                   toast.success(
                     "🎉 Purchase successful! Sellers have been notified."
                   );
-                } else {
-                  logger.warn("Payment verification failed");
-                  throw new Error("Payment verification failed");
                 }
+              } else {
+                setError("Payment verification failed");
               }
-            })
-            .catch((err: any) => {
-              console.error("Cashfree error:", err);
+            } catch (err) {
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : "Payment verification failed"
+              );
+            } finally {
               setIsLoading(false);
-            });
-        } else {
-          console.error(
-            "Cashfree instance methods:",
-            Object.getOwnPropertyNames(cashfree)
-          );
-          setIsLoading(false);
-
-          throw new Error(
-            "Unable to open Cashfree checkout - checkout method not found"
-          );
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to initiate payment"
-        );
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setIsLoading(false);
+            },
+          },
+        };
+        // Open Razorpay modal
+        const razorpay = createRazorpayInstance(options);
+        razorpay.open();
+      } catch (error) {
+        console.error("Payment error:", error);
+        toast.error("Payment failed. Please try again.");
+      } finally {
         setIsLoading(false);
       }
     },

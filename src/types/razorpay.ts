@@ -3,7 +3,7 @@ export interface RazorpayOptions {
   amount: number;
   currency: string;
   name: string;
-  description: string;
+  description?: string;
   order_id: string;
   handler: (response: RazorpayResponse) => void;
   prefill?: {

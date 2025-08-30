@@ -988,8 +988,8 @@ const Browse = () => {
           >
             {filteredListings.map((listing) => (
               <Link
-                to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.product_id)}
-                key={listing.product_id}
+                to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}
+                key={listing.id}
               >
                 <Card
                   key={listing.id}
