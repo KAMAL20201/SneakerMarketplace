@@ -209,57 +209,58 @@ export default function ProductDetailPage() {
                   Sold by
                 </h3>
 
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-14 w-14">
-                    <AvatarImage
-                      src={
-                        listing?.seller_details?.profile_image_url ||
-                        "/placeholder.svg"
-                      }
-                      alt={listing?.seller_details?.display_name}
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-2xl text-lg">
-                      {listing?.seller_details?.display_name?.slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="flex flex-col items-start gap-4">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage
+                        src={
+                          listing?.seller_details?.profile_image_url ||
+                          "/placeholder.svg"
+                        }
+                        alt={listing?.seller_details?.display_name}
+                      />
+                      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-2xl text-lg">
+                        {listing?.seller_details?.display_name?.slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-bold text-gray-800 text-lg">
-                        {listing?.seller_details?.display_name}
-                      </h4>
-                      {listing?.seller_details?.is_verified && (
-                        <Badge className="glass-button border-0 text-green-700 rounded-xl px-3">
-                          <Shield className="h-3 w-3 mr-1" />
-                          Verified
-                        </Badge>
-                      )}
-                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-bold text-gray-800 text-lg">
+                          {listing?.seller_details?.display_name}
+                        </h4>
+                        {listing?.seller_details?.is_verified && (
+                          <Badge className="glass-button border-0 text-green-700 rounded-xl px-3">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
 
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold">
-                          {listing?.seller_details?.rating || 0}
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold">
+                            {listing?.seller_details?.rating || 0}
+                          </span>
+                        </div>
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-600">
+                          {listing?.seller_details?.total_reviews || 0} reviews
                         </span>
                       </div>
-                      <span className="text-gray-400">•</span>
-                      <span className="text-gray-600">
-                        {listing?.seller_details?.total_reviews || 0} reviews
-                      </span>
                     </div>
-
-                    <div className="flex items-center gap-4 mb-3 text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Truck className="h-4 w-4" />
-                        <span>Free shipping</span>
-                        <span>•</span>
-                        <span>Delivery in {listing?.delivery_days} days</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3"></div>
+                  </div>
+                  <div className="flex items-center gap-4 mb-3 text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <Truck className="h-4 w-4" />
+                      <span>Free shipping</span>
+                      {listing?.delivery_days && (
+                        <>
+                          <span>•</span>
+                          <span>Delivery in {listing?.delivery_days} days</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

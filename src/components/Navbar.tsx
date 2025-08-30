@@ -8,7 +8,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { NotificationBell } from "@/components/ui/NotificationBell";
 import { toast } from "sonner";
 import { Link } from "react-router";
 import { CartButton } from "./Cart/CartButton";
@@ -81,7 +80,7 @@ export function Navbar() {
           <CartButton />
 
           {/* Notifications - only show if authenticated */}
-          {user && <NotificationBell />}
+          {/* {user && <NotificationBell />} */}
 
           {/* Authentication Section */}
           {user ? (

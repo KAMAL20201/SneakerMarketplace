@@ -71,6 +71,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [items, isLoaded, immediateSave]);
 
+  // Cleanup: remove cart-open class when component unmounts
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove("cart-open");
+    };
+  }, []);
+
   const addToCart = (item: any) => {
     // Check if item already exists in cart (by productId and sellerId)
     const existingItem = items.find(
@@ -103,7 +110,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const toggleCart = () => {
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => {
+      const newIsOpen = !prev;
+      if (newIsOpen) {
+        document.body.classList.add("cart-open");
+      } else {
+        document.body.classList.remove("cart-open");
+      }
+      return newIsOpen;
+    });
   };
 
   const clearCart = () => {
