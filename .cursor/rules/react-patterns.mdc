@@ -1,0 +1,85 @@
+# React Patterns and Best Practices
+
+## Component Structure
+
+- Use functional components with hooks
+- Place components in appropriate directories:
+  - `src/components/ui/` for reusable UI components
+  - `src/components/` for feature-specific components
+  - `src/pages/` for page-level components
+- Use PascalCase for component names and files
+
+## Context Usage
+
+- Use React Context for global state (Auth, Cart, Payment)
+- Wrap providers in `src/Provider.tsx`
+- Access context values using custom hooks (e.g., `useAuth()`, `useCart()`)
+- Keep context providers lightweight and focused
+
+## Custom Hooks
+
+- Create custom hooks in `src/hooks/` directory
+- Use descriptive names starting with `use` (e.g., `useMobile`, `useAddressStorage`)
+- Keep hooks focused on single responsibility
+- Return objects with clear property names
+
+## State Management
+
+- Use `useState` for local component state
+- Use `useReducer` for complex state logic
+- Minimize `useEffect` usage - prefer event-driven updates
+- Use context for cross-component state sharing
+
+## Form Handling
+
+- Use React Hook Form with Zod validation
+- Define validation schemas in `src/lib/validations/`
+- Use controlled components for form inputs
+- Handle form submission with proper error handling
+
+## Event Handling
+
+- Use descriptive handler names (e.g., `handleAddToCart`, `handleFormSubmit`)
+- Pass event objects to handlers when needed
+- Use proper event types for TypeScript
+- Prevent default behavior when appropriate
+
+## Component Composition
+
+- Use composition over inheritance
+- Pass children as props when appropriate
+- Use render props or function children for complex logic
+- Keep components focused and single-purpose
+
+## Performance Considerations
+
+- Use `React.memo` for expensive components
+- Use `useCallback` for event handlers passed to child components
+- Use `useMemo` for expensive calculations
+- Lazy load routes and heavy components
+
+## Example Patterns
+
+```typescript
+// Good: Functional component with proper typing
+export const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onAddToCart,
+}) => {
+  const handleClick = useCallback(() => {
+    onAddToCart(product.id);
+  }, [product.id, onAddToCart]);
+
+  return <div className="product-card">{/* component content */}</div>;
+};
+
+// Good: Custom hook usage
+const { user, signIn } = useAuth();
+const { addToCart } = useCart();
+```
+
+description:
+globs:
+alwaysApply: false
+
+---

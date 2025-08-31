@@ -12,6 +12,7 @@ export interface CartItem {
   image: string;
   sellerId: string;
   sellerName: string;
+  sellerEmail:string;
   quantity: number;
 }
 

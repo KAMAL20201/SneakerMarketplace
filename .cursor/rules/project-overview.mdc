@@ -1,0 +1,48 @@
+# SneakInMarket Project Overview
+
+## Project Description
+
+SneakInMarket is a React-based marketplace application for sneakers, clothing, accessories, electronics, gaming, and collectibles. Built with TypeScript, Vite, Tailwind CSS, and Supabase.
+
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript 5.8, Vite 7
+- **Styling**: Tailwind CSS 4.1, Radix UI components
+- **State Management**: React Context API
+- **Backend**: Supabase (Auth, Database, Storage)
+- **Payment**: Razorpay integration
+- **Forms**: React Hook Form with Zod validation
+- **Routing**: React Router 7
+
+## Key Architecture Patterns
+
+- **Component Structure**: UI components in `src/components/ui/`, page components in `src/pages/`
+- **Context Pattern**: Auth, Cart, Payment, and Seller form contexts
+- **Custom Hooks**: Reusable hooks in `src/hooks/`
+- **Service Layer**: Business logic in `src/lib/` with dedicated service files
+- **Type Safety**: Strict TypeScript with comprehensive type definitions
+- **Path Aliases**: `@/*` maps to `src/*` for clean imports
+
+## File Organization
+
+- `src/constants/enums.ts` - Centralized enums for routes, categories, brands, sizes
+- `src/types/` - TypeScript type definitions
+- `src/contexts/` - React context providers
+- `src/lib/` - Utility functions and services
+- `src/components/ui/` - Reusable UI components (shadcn/ui style)
+- `src/pages/` - Page-level components
+
+## Development Guidelines
+
+- Always use TypeScript with strict mode
+- Follow mobile-first responsive design
+- Minimize useEffect usage
+- Use enums from constants for consistent values
+- Implement pagination for list APIs
+- Use latest package versions
+- Follow existing code patterns and conventions
+  description:
+  globs:
+  alwaysApply: false
+
+---

@@ -146,7 +146,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     items,
                     response.razorpay_payment_id,
                     response.razorpay_order_id,
-                    user?.id || ""
+                    user?.id || "",
+                    {
+                      full_name: user?.user_metadata?.full_name || "",
+                      email: user?.email || "",
+                    }
                   );
                   if (isOpen) {
                     toggleCart();

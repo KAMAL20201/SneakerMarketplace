@@ -35,6 +35,7 @@ export default function ProductDetailPage() {
       image: images?.[0]?.image_url,
       sellerId: seller?.id?.toString(),
       sellerName: seller?.display_name,
+      sellerEmail: seller?.email,
       quantity: 1,
     };
 
@@ -78,7 +79,8 @@ export default function ProductDetailPage() {
           total_reviews,
           location,
           is_verified,
-          created_at
+          created_at,
+          email
         )
       `
         )
@@ -336,6 +338,7 @@ export default function ProductDetailPage() {
                   image: images?.[0]?.image_url,
                   sellerId: listing?.seller_details?.id?.toString(),
                   sellerName: listing?.seller_details?.display_name,
+                  sellerEmail: listing?.seller_details?.email,
                   quantity: 1,
                 },
               ]}

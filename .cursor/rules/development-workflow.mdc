@@ -1,0 +1,112 @@
+# Development Workflow and Quality Standards
+
+## Development Process
+
+1. **Plan**: Understand requirements and design solution
+2. **Code**: Follow established patterns and conventions
+3. **Test**: Ensure functionality works as expected
+4. **Build**: Run `npm run build` to verify no TypeScript errors
+5. **Review**: Check code quality and adherence to standards
+
+## Code Quality Standards
+
+- **TypeScript**: Always use strict mode, no `any` types
+- **React**: Functional components, minimal useEffect usage
+- **Performance**: Mobile-first design, optimize for performance
+- **Accessibility**: Proper ARIA labels, keyboard navigation
+- **Error Handling**: Graceful error handling with user feedback
+
+## File Naming Conventions
+
+- **Components**: PascalCase (e.g., `ProductCard.tsx`)
+- **Hooks**: camelCase starting with `use` (e.g., `useAuth.ts`)
+- **Services**: camelCase (e.g., `orderService.ts`)
+- **Types**: camelCase (e.g., `productTypes.ts`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `enums.ts`)
+
+## Import Organization
+
+```typescript
+// 1. React and external libraries
+import React from "react";
+import { useNavigate } from "react-router";
+
+// 2. Internal components and hooks
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+
+// 3. Types and constants
+import { ROUTE_NAMES } from "@/constants/enums";
+import type { Product } from "@/types/product";
+
+// 4. Utilities and services
+import { cn } from "@/lib/utils";
+import { productService } from "@/lib/productService";
+```
+
+## Testing Requirements
+
+- Test all user interactions and flows
+- Verify mobile responsiveness
+- Check error handling scenarios
+- Ensure proper loading states
+- Test with different data sets
+
+## Build Verification
+
+- **Always run `npm run build` before committing**
+- Fix any TypeScript compilation errors
+- Ensure no build warnings
+- Verify all imports resolve correctly
+- Check that all types are properly defined
+
+## Performance Guidelines
+
+- Implement proper loading states
+- Use skeleton components for content loading
+- Optimize images and assets
+- Implement proper caching strategies
+- Minimize bundle size
+
+## Mobile-First Design
+
+- Design for mobile devices first (320px+)
+- Use responsive breakpoints (sm:, md:, lg:, xl:)
+- Ensure touch-friendly interactions
+- Test on various screen sizes
+- Optimize for mobile performance
+
+## Error Prevention
+
+- Use TypeScript strict mode
+- Implement proper validation
+- Handle edge cases gracefully
+- Provide clear error messages
+- Log errors for debugging
+
+## Code Review Checklist
+
+- [ ] TypeScript compiles without errors
+- [ ] Mobile responsive design implemented
+- [ ] Proper error handling in place
+- [ ] Follows established patterns
+- [ ] Uses enums from constants
+- [ ] Implements pagination for lists
+- [ ] No unnecessary useEffect usage
+- [ ] Proper component composition
+- [ ] Accessibility considerations
+- [ ] Performance optimizations
+
+## Common Pitfalls to Avoid
+
+- Don't use `any` type in TypeScript
+- Don't hardcode values that exist in enums
+- Don't create components without proper typing
+- Don't skip error handling
+- Don't ignore mobile responsiveness
+- Don't use useEffect when not necessary
+  description:
+  globs:
+  alwaysApply: false
+
+---

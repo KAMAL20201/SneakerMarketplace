@@ -1,0 +1,114 @@
+# API Patterns and Data Management
+
+## Supabase Integration
+
+- Use `src/lib/supabase.ts` for all Supabase operations
+- Access Supabase client via `supabase` export
+- Use environment variables for configuration
+- Handle authentication state through `AuthContext`
+
+## Service Layer Pattern
+
+- Create service files in `src/lib/` for business logic
+- Use descriptive names: `orderService.ts`, `paymentService.ts`
+- Export functions, not classes
+- Handle errors consistently across services
+
+## API Response Handling
+
+- Always handle success and error cases
+- Use proper TypeScript types for API responses
+- Implement proper error boundaries and user feedback
+- Use toast notifications for user feedback (via sonner)
+
+## Pagination Implementation
+
+- Always implement pagination for list APIs
+- Use `count` and `skip` parameters for Supabase queries
+- Show fewer items per page initially (10-20 items)
+- Provide pagination controls at the bottom
+- Allow users to navigate between pages
+
+## Data Fetching Patterns
+
+- Use React Query or SWR for server state management
+- Implement proper loading states with skeletons
+- Handle empty states gracefully
+- Cache data appropriately to reduce API calls
+
+## Error Handling
+
+- Define custom error types in `src/types/`
+- Use try-catch blocks for async operations
+- Provide meaningful error messages to users
+- Log errors for debugging (use `Logger` component)
+
+## Authentication Flow
+
+- Use Supabase Auth for user management
+- Handle social login (Google, etc.)
+- Implement proper route protection
+- Use `PublicRoute` and `ProtectedRoute` components
+
+## File Upload
+
+- Use Supabase Storage for file uploads
+- Implement image compression before upload
+- Handle upload progress and errors
+- Validate file types and sizes
+
+## Payment Integration
+
+- Use Razorpay for payment processing
+- Implement proper payment flow with error handling
+- Store payment status in database
+- Handle webhook notifications
+
+## Example Patterns
+
+```typescript
+// Good: Service function pattern
+export const fetchProducts = async (page: number = 1, limit: number = 10) => {
+  try {
+    const { data, error, count } = await supabase
+      .from("products")
+      .select("*", { count: "exact" })
+      .range((page - 1) * limit, page * limit - 1)
+      .eq("status", LISTING_STATUS.APPROVED);
+
+    if (error) throw error;
+
+    return { data, count, page, limit };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw new Error("Failed to fetch products");
+  }
+};
+
+// Good: API call with proper error handling
+const handleSubmit = async (formData: FormData) => {
+  try {
+    setIsLoading(true);
+    const result = await createOrder(formData);
+    toast.success("Order created successfully!");
+    navigate("/orders");
+  } catch (error) {
+    toast.error("Failed to create order. Please try again.");
+    console.error("Order creation error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+## Database Schema
+
+- Use consistent naming conventions (snake_case for DB, camelCase for JS)
+- Implement proper RLS (Row Level Security) policies
+- Use appropriate data types and constraints
+- Create indexes for frequently queried fields
+  description:
+  globs:
+  alwaysApply: false
+
+---

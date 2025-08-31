@@ -1,0 +1,109 @@
+# UI Components and Design System
+
+## Component Library
+
+- Use shadcn/ui components from `src/components/ui/`
+- All UI components are built on Radix UI primitives
+- Components follow consistent naming: `Button`, `Card`, `Dialog`, etc.
+- Import components from their individual files, not from index
+
+## Available UI Components
+
+- **Button**: `Button` with variants (default, destructive, outline, secondary, ghost, link)
+- **Card**: `Card`, `CardHeader`, `CardContent`, `CardFooter`
+- **Form**: `Input`, `Label`, `Textarea`, `Select`, `Checkbox`
+- **Feedback**: `AlertDialog`, `Dialog`, `Toast` (via sonner)
+- **Layout**: `Separator`, `ScrollArea`, `Tabs`
+- **Data**: `Badge`, `Avatar`, `Skeleton`
+
+## Styling Guidelines
+
+- Use Tailwind CSS for all styling
+- Follow mobile-first responsive design
+- Use CSS variables for consistent spacing and colors
+- Maintain consistent component spacing and sizing
+
+## Button Variants
+
+```typescript
+// Available button variants
+<Button variant="default">Default</Button>
+<Button variant="destructive">Delete</Button>
+<Button variant="outline">Outline</Button>
+<Button variant="secondary">Secondary</Button>
+<Button variant="ghost">Ghost</Button>
+<Button variant="link">Link</Button>
+
+// Available sizes
+<Button size="sm">Small</Button>
+<Button size="default">Default</Button>
+<Button size="lg">Large</Button>
+<Button size="icon">Icon Only</Button>
+```
+
+## Form Components
+
+- Use `Input` for text inputs with proper labels
+- Use `Select` for dropdown selections
+- Use `Checkbox` for boolean selections
+- Always pair form controls with `Label` components
+- Use `Textarea` for multi-line text input
+
+## Layout Components
+
+- Use `Card` for content containers
+- Use `Separator` for visual divisions
+- Use `ScrollArea` for scrollable content
+- Use `Tabs` for tabbed interfaces
+
+## Responsive Design
+
+- Design for mobile first (320px+)
+- Use Tailwind responsive prefixes (sm:, md:, lg:, xl:)
+- Ensure touch-friendly button sizes (min 44px)
+- Test on various screen sizes
+
+## Theme Consistency
+
+- Use project color scheme (purple primary, consistent grays)
+- Maintain consistent spacing scale
+- Use consistent typography hierarchy
+- Follow existing component patterns
+
+## Custom Components
+
+- Extend existing UI components when possible
+- Create new components in `src/components/ui/` if needed
+- Follow the same naming and structure patterns
+- Use `cn()` utility for conditional classes
+
+## Example Usage
+
+```typescript
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+// Good: Proper component composition
+<Card>
+  <CardHeader>
+    <CardTitle>Product Details</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="name">Product Name</Label>
+        <Input id="name" placeholder="Enter product name" />
+      </div>
+      <Button type="submit">Save Product</Button>
+    </div>
+  </CardContent>
+</Card>;
+```
+
+description:
+globs:
+alwaysApply: false
+
+---

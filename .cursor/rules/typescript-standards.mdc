@@ -1,0 +1,69 @@
+# TypeScript Standards
+
+## Strict TypeScript Requirements
+
+- Always use strict TypeScript mode
+- Never use `any` type - use proper type definitions
+- Use `unknown` instead of `any` when type is truly unknown
+- Always define proper interfaces and types for props, state, and API responses
+
+## Type Definitions
+
+- Define types in `src/types/` directory
+- Use descriptive type names (e.g., `ProductListing`, `UserProfile`)
+- Export types from dedicated type files
+- Use union types for finite sets of values
+- Prefer `interface` for object shapes, `type` for unions/intersections
+
+## Component Props
+
+- Always define `Props` interface for component props
+- Use `React.FC<Props>` or `React.ComponentProps<"div">` for component typing
+- Make props required unless they have default values
+- Use proper event types (e.g., `React.ChangeEvent<HTMLInputElement>`)
+
+## Enum Usage
+
+- Always use enums from `src/constants/enums.ts` for consistent values
+- Never hardcode string values that exist in enums
+- Use enum values for API calls, form validation, and conditional logic
+- Export enum types for use in other files
+
+## Context Typing
+
+- Define proper types for context values and setters
+- Use `createContext<T>` with proper generic types
+- Define context provider props interface
+- Use proper typing for context consumers
+
+## API and Service Types
+
+- Define types for all API request/response shapes
+- Use proper typing for Supabase operations
+- Define error types and handle them appropriately
+- Use generic types for reusable service functions
+
+## Example Patterns
+
+```typescript
+// Good: Proper interface definition
+interface ProductCardProps {
+  product: Product;
+  onAddToCart: (productId: string) => void;
+  variant?: "default" | "compact";
+}
+
+// Good: Using enums
+const status = LISTING_STATUS.APPROVED;
+
+// Good: Proper event typing
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setValue(e.target.value);
+};
+```
+
+description:
+globs:
+alwaysApply: false
+
+---

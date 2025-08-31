@@ -318,6 +318,7 @@ export default function SellPage() {
             user.email?.split("@")[0] ||
             "Anonymous Seller",
           profile_image_url: user.user_metadata?.avatar_url,
+          email: user.email,
           // Add more fields as needed
         });
 

@@ -1,0 +1,111 @@
+# SneakInMarket Project Conventions
+
+## Project-Specific Requirements
+
+- **Marketplace Focus**: Sneakers, clothing, accessories, electronics, gaming, collectibles
+- **Seller-Buyer Platform**: Support both listing creation and purchasing flows
+- **Payment Integration**: Razorpay for Indian market payments
+- **Mobile-First**: Optimized for mobile users in Indian market
+- **Regional Features**: Pincode validation, address management, local delivery
+
+## Enum Usage Requirements
+
+- **Always use enums from `src/constants/enums.ts`**
+- **Never hardcode values that exist in enums**
+- **Use enum types for TypeScript interfaces**
+
+### Key Enums to Use
+
+```typescript
+// Routes - use ROUTE_NAMES for navigation
+import { ROUTE_NAMES } from "@/constants/enums";
+navigate(ROUTE_NAMES.HOME);
+
+// Product conditions - use PRODUCT_CONDITIONS
+import { PRODUCT_CONDITIONS } from "@/constants/enums";
+const condition = PRODUCT_CONDITIONS.NEW;
+
+// Categories - use CATEGORY_IDS
+import { CATEGORY_IDS } from "@/constants/enums";
+const category = CATEGORY_IDS.SNEAKERS;
+
+// Listing status - use LISTING_STATUS
+import { LISTING_STATUS } from "@/constants/enums";
+const status = LISTING_STATUS.APPROVED;
+```
+
+## Component Structure Patterns
+
+- **Feature Components**: Place in `src/components/` (e.g., `Cart/`, `checkout/`)
+- **UI Components**: Place in `src/components/ui/` (shadcn/ui style)
+- **Page Components**: Place in `src/pages/`
+- **Context Providers**: Place in `src/contexts/`
+
+## Authentication Flow
+
+- **Public Routes**: Use `PublicRoute` component for login/signup
+- **Protected Routes**: Use `ProtectedRoute` component for authenticated users
+- **Admin Routes**: Use `AdminRoute` component for admin-only access
+- **Context**: Use `useAuth()` hook for authentication state
+
+## Cart and Checkout Flow
+
+- **Cart Context**: Use `useCart()` hook for cart management
+- **Multi-step Checkout**: Cart → Shipping → Payment
+- **Address Management**: Use `useAddressStorage()` hook
+- **Payment Integration**: Razorpay with proper error handling
+
+## Product Management
+
+- **Listing Creation**: Multi-step form with image upload
+- **Image Compression**: Use `imageCompression` utility
+- **Status Management**: Draft → Review → Approved/Rejected
+- **Condition Badges**: Use `ConditionBadge` component
+
+## Mobile-First Design Requirements
+
+- **Touch Targets**: Minimum 44px for interactive elements
+- **Responsive Breakpoints**: 320px+ (mobile), 768px+ (tablet), 1024px+ (desktop)
+- **Navigation**: Mobile-friendly navigation patterns
+- **Forms**: Optimized for mobile input
+
+## Error Handling Patterns
+
+- **Toast Notifications**: Use `sonner` for user feedback
+- **Loading States**: Skeleton components and spinners
+- **Form Validation**: Zod schemas with clear error messages
+- **API Errors**: Graceful fallbacks and retry mechanisms
+
+## Performance Requirements
+
+- **Image Optimization**: Use `OptimizedImage` component
+- **Lazy Loading**: Implement for heavy components
+- **Bundle Splitting**: Consider for large pages
+- **Caching**: Implement appropriate caching strategies
+
+## Testing Scenarios
+
+- **User Flows**: Complete buyer and seller journeys
+- **Mobile Experience**: Test on various screen sizes
+- **Payment Flow**: Test successful and failed payment scenarios
+- **Form Validation**: Test all validation rules
+- **Error States**: Test error handling and recovery
+
+## Code Organization
+
+- **Import Order**: External → Internal → Types → Utils
+- **File Structure**: Follow existing patterns
+- **Naming**: Use descriptive, consistent names
+- **Documentation**: Comment complex logic and business rules
+
+## Build and Deployment
+
+- **TypeScript**: Strict mode, no compilation errors
+- **Bundle Size**: Monitor and optimize large chunks
+- **Environment**: Use proper environment variables
+- **Build Command**: Always run `npm run build` before committing
+  description:
+  globs:
+  alwaysApply: false
+
+---
