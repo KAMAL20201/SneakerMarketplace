@@ -13,6 +13,7 @@ export const ROUTE_NAMES = {
   EDIT_LISTING: "/edit-listing/:id",
   ADMIN_REVIEW: "/admin/review",
   PROFILE: "/profile",
+  MY_ADDRESSES: "/my-addresses",
   SETTINGS: "/settings",
   // Additional routes found in the codebase
   FORGOT_PASSWORD: "/forgot-password",

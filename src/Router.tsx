@@ -14,6 +14,7 @@ const SignupPage = lazy(() => import("./pages/SignUp"));
 const SellPage = lazy(() => import("./pages/Sell"));
 const MyListings = lazy(() => import("./pages/MyListings"));
 const MyOrders = lazy(() => import("./pages/MyOrders"));
+const MyAddresses = lazy(() => import("./pages/MyAddresses"));
 const EditListing = lazy(() => import("./pages/EditListing"));
 const Browse = lazy(() => import("./pages/Browse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
@@ -35,6 +36,7 @@ export const preloadRoutes = {
   signup: () => import("./pages/SignUp"),
   myListings: () => import("./pages/MyListings"),
   myOrders: () => import("./pages/MyOrders"),
+  myAddresses: () => import("./pages/MyAddresses"),
   productDetail: () => import("./pages/ProductDetailPage"),
   editListing: () => import("./pages/EditListing"),
   adminReview: () => import("./pages/AdminReview"),
@@ -117,6 +119,16 @@ const Router = () => {
           <Suspense fallback={<PageSkeleton />}>
             <ProtectedRoute route={ROUTE_NAMES.MY_ORDERS}>
               <MyOrders />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.MY_ADDRESSES}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <ProtectedRoute route={ROUTE_NAMES.MY_ADDRESSES}>
+              <MyAddresses />
             </ProtectedRoute>
           </Suspense>
         }

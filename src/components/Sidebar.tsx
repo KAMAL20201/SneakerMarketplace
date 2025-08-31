@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   CreditCard,
   Package,
+  MapPin,
 } from "lucide-react";
 
 import {
@@ -76,6 +77,12 @@ const data = {
           url: ROUTE_NAMES.PROFILE,
           icon: User,
           preloadKey: null, // No preload for this route
+        },
+        {
+          title: "My Addresses",
+          url: ROUTE_NAMES.MY_ADDRESSES,
+          icon: MapPin,
+          preloadKey: "myAddresses" as keyof typeof preloadRoutes,
         },
         {
           title: "Payment Methods",

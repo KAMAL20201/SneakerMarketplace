@@ -17,13 +17,19 @@ import {
 } from "../ui/select";
 
 interface ShippingAddressFormProps {
-  onSubmit: (data: ShippingAddress) => void;
+  onSubmit?: (data: ShippingAddress) => void;
+  onSuccess?: (data: ShippingAddress) => void;
+  onCancel?: () => void;
+  address?: ShippingAddress;
   initialData?: Partial<ShippingAddress>;
   isEdit?: boolean;
 }
 
 export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
   onSubmit,
+  onSuccess,
+  onCancel,
+  address,
   initialData,
   isEdit = false,
 }) => {
@@ -38,7 +44,7 @@ export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
     resolver: zodResolver(shippingAddressSchema),
     defaultValues: {
       country: "India",
-      ...initialData,
+      ...(address || initialData),
     },
     mode: "onChange", // Enable real-time validation
   });
@@ -87,7 +93,11 @@ export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
     trigger(["city", "state"]);
   };
   const onFormSubmit = (data: ShippingAddress) => {
-    onSubmit(data);
+    if (onSubmit) {
+      onSubmit(data);
+    } else if (onSuccess) {
+      onSuccess(data);
+    }
   };
 
   return (
@@ -220,18 +230,30 @@ export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
         )}
       </div>
 
-      {/* Submit Button */}
-      <Button
-        type="submit"
-        disabled={!isValid || isSubmitting}
-        className="w-full md:w-auto bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg"
-      >
-        {isSubmitting
-          ? "Saving..."
-          : isEdit
-          ? "Update Address"
-          : "Save Address"}
-      </Button>
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Button
+          type="submit"
+          disabled={!isValid || isSubmitting}
+          className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl px-8 py-3 text-lg font-semibold shadow-lg"
+        >
+          {isSubmitting
+            ? "Saving..."
+            : isEdit
+            ? "Update Address"
+            : "Save Address"}
+        </Button>
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="px-8 py-3 rounded-2xl"
+          >
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   );
 };
