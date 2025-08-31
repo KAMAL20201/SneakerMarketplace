@@ -16,6 +16,7 @@ import { useGoogleAuthPopup } from "@/hooks/useGooglePopup";
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,7 +24,11 @@ export default function LoginPage() {
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const { signInWithGooglePopup } = useGoogleAuthPopup();
+  const { signInWithGooglePopup } = useGoogleAuthPopup(() => {
+    // Handle successful Google authentication
+    toast.success("Welcome back!");
+    navigate(ROUTE_NAMES.HOME);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +42,7 @@ export default function LoginPage() {
         toast.success("Welcome back!");
         navigate(ROUTE_NAMES.HOME);
       }
-    } catch (_err) {
+    } catch {
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -61,8 +66,17 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 className="w-full h-12 glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30 bg-transparent"
-                onClick={() => signInWithGooglePopup()}
-                disabled={isLoading}
+                onClick={async () => {
+                  setIsGoogleLoading(true);
+                  try {
+                    await signInWithGooglePopup();
+                  } catch {
+                    toast.error("Google authentication failed");
+                  } finally {
+                    setIsGoogleLoading(false);
+                  }
+                }}
+                disabled={isLoading || isGoogleLoading}
               >
                 <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24">
                   <path
@@ -82,7 +96,7 @@ export default function LoginPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Continue with Google
+                {isGoogleLoading ? "Signing in..." : "Continue with Google"}
               </Button>
 
               {/* <Button

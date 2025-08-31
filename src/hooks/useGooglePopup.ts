@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 
-export const useGoogleAuthPopup = () => {
+export const useGoogleAuthPopup = (onSuccess?: (session: Session) => void) => {
   const signInWithGooglePopup = useCallback(async () => {
     return new Promise((resolve, reject) => {
       // Create popup window
@@ -38,6 +39,11 @@ export const useGoogleAuthPopup = () => {
           // Check if auth was successful
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
+              console.log("session", session);
+              // Call the success callback if provided
+              if (onSuccess) {
+                onSuccess(session);
+              }
               resolve(session);
             } else {
               reject(new Error("Authentication failed"));
@@ -49,11 +55,15 @@ export const useGoogleAuthPopup = () => {
       // Listen for messages from popup
       const messageListener = (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
-
-        if (event.data.type === "SUPABASE_AUTH_SUCCESS") {
+        console.log("event", event);
+        if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
           clearInterval(checkClosed);
           popup?.close();
           window.removeEventListener("message", messageListener);
+          // Call the success callback if provided
+          if (onSuccess) {
+            onSuccess(event.data.session);
+          }
           resolve(event.data.session);
         } else if (event.data.type === "SUPABASE_AUTH_ERROR") {
           clearInterval(checkClosed);
@@ -65,7 +75,7 @@ export const useGoogleAuthPopup = () => {
 
       window.addEventListener("message", messageListener);
     });
-  }, []);
+  }, [onSuccess]);
 
   return { signInWithGooglePopup };
 };

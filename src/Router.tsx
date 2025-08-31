@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { AdminRoute } from "./components/AdminRoute";
 import { PageSkeleton, FormSkeleton } from "./components/ui/skeleton";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { PublicRoute } from "./components/PublicRoute";
 import { ROUTE_NAMES } from "./constants/enums";
 import ProductDetailSkeleton from "./components/ui/ProductDetailSkeleton";
 
@@ -83,7 +84,9 @@ const Router = () => {
         path={ROUTE_NAMES.LOGIN}
         element={
           <Suspense fallback={<FormSkeleton />}>
-            <LoginPage />
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
           </Suspense>
         }
       />
@@ -91,7 +94,9 @@ const Router = () => {
         path={ROUTE_NAMES.SIGNUP}
         element={
           <Suspense fallback={<FormSkeleton />}>
-            <SignupPage />
+            <PublicRoute>
+              <SignupPage />
+            </PublicRoute>
           </Suspense>
         }
       />
