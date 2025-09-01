@@ -24,6 +24,7 @@ import type {
   RazorpayResponse,
   CreateOrderRequest,
 } from "../types/razorpay";
+import type { ShippingAddress } from "@/types/shipping";
 
 interface PaymentContextType {
   isLoading: boolean;
@@ -32,7 +33,8 @@ interface PaymentContextType {
     amount: number,
     currency: string,
     metadata?: Record<string, string>,
-    items?: CartItem[]
+    items?: CartItem[],
+    shippingAddress?: ShippingAddress
   ) => Promise<void>;
   clearError: () => void;
 }
@@ -68,7 +70,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
       amount: number,
       currency: string,
       metadata: Record<string, string> = {},
-      items: CartItem[] = []
+      items: CartItem[] = [],
+      shippingAddress?: ShippingAddress
     ) => {
       try {
         setIsLoading(true);
@@ -150,7 +153,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     {
                       full_name: user?.user_metadata?.full_name || "",
                       email: user?.email || "",
-                    }
+                    },
+                    shippingAddress
                   );
                   if (isOpen) {
                     toggleCart();

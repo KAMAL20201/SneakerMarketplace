@@ -79,9 +79,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
             cart_items: items.map((item) => item.id).join(","),
             item_count: items.length.toString(),
             type: "cart_checkout",
-            shipping_address: JSON.stringify(shippingAddress),
           }}
           items={items}
+          shippingAddress={shippingAddress}
           className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg text-lg font-bold"
         />
         <Button

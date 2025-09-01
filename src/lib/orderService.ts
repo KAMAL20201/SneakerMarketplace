@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { EmailService, type OrderEmailData } from "./emailService";
 import { logger } from "@/components/ui/Logger";
+import type { ShippingAddress } from "@/types/shipping";
 
 export interface Order {
   id: string;
@@ -11,7 +12,7 @@ export interface Order {
   razorpay_order_id: string;
   amount: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-  shipping_address?: Record<string, unknown>;
+  shipping_address?: ShippingAddress;
   tracking_number?: string;
   created_at: string;
   updated_at: string;
@@ -24,7 +25,7 @@ export interface CreateOrderRequest {
   payment_id: string;
   razorpay_order_id: string;
   amount: number;
-  shipping_address?: Record<string, unknown>;
+  shipping_address?: ShippingAddress;
 }
 
 export interface CartItem {
@@ -105,8 +106,8 @@ export class OrderService {
     paymentId: string,
     razorpayOrderId: string,
     buyerId: string,
-    buyerDetails: { full_name: string; email: string }
-    // buyerName: string
+    buyerDetails: { full_name: string; email: string },
+    shippingAddress?: ShippingAddress
   ): Promise<Order[]> {
     try {
       const orders: Order[] = [];
@@ -129,6 +130,7 @@ export class OrderService {
           payment_id: paymentId,
           razorpay_order_id: razorpayOrderId,
           amount: item.price,
+          shipping_address: shippingAddress || undefined,
         });
 
         orders.push(order);
@@ -147,6 +149,7 @@ export class OrderService {
           seller_name: item.sellerName,
           seller_email: item.sellerEmail,
           order_status: "confirmed",
+          shipping_address: shippingAddress || undefined,
         };
 
         // Send email notifications
@@ -370,8 +373,6 @@ export class OrderService {
   //     // Don't fail the order update if emails fail
   //   }
   // }
-
-
 
   // Get order by ID
   // private static async getOrderById(orderId: string): Promise<Order | null> {

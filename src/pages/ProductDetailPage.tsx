@@ -342,6 +342,7 @@ export default function ProductDetailPage() {
                   quantity: 1,
                 },
               ]}
+              shippingAddress={undefined}
               buttonText="Buy Now"
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
               size="lg"
