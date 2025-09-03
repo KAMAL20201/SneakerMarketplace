@@ -635,40 +635,40 @@ export default function SellPage() {
                       >
                         Brand *
                       </Label>
-                      <Select
-                        onValueChange={(value) => {
-                          if (value === "other") {
-                            setShowOtherBrandInput(true);
-                            setFormData({ ...formData, brand: "" });
-                          } else {
-                            setShowOtherBrandInput(false);
-                            setOtherBrandName("");
-                            setFormData({ ...formData, brand: value });
-                          }
-                        }}
-                      >
-                        <SelectTrigger className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700">
-                          <SelectValue
-                            placeholder="Select brand"
-                            className="capitalize"
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-2xl z-50">
-                          {selectedCategory.brands.map((brand) => (
-                            <SelectItem
-                              key={brand}
-                              value={brand.toLowerCase()}
+                      <div className="flex items-center gap-2">
+                        <Select
+                          onValueChange={(value) => {
+                            if (value === "other") {
+                              setShowOtherBrandInput(true);
+                              setFormData({ ...formData, brand: "" });
+                            } else {
+                              setShowOtherBrandInput(false);
+                              setOtherBrandName("");
+                              setFormData({ ...formData, brand: value });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="glass-input rounded-2xl border-0 !h-12 md:h-14 text-gray-700">
+                            <SelectValue
+                              placeholder="Select brand"
                               className="capitalize"
-                            >
-                              {brand}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-2xl z-50">
+                            {selectedCategory.brands.map((brand) => (
+                              <SelectItem
+                                key={brand}
+                                value={brand.toLowerCase()}
+                                className="capitalize"
+                              >
+                                {brand}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                      {showOtherBrandInput && (
-                        <div className="mt-3">
+                        {showOtherBrandInput && (
                           <Input
                             placeholder="Enter brand name"
                             value={otherBrandName}
@@ -681,8 +681,8 @@ export default function SellPage() {
                             }}
                             className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700 placeholder:text-gray-500 text-base md:text-lg"
                           />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1417,7 +1417,12 @@ export default function SellPage() {
                         items for sale.
                       </p>
                       <Button
-                        onClick={() => navigate(ROUTE_NAMES.PAYMENT_METHODS)}
+                        onClick={() => {
+                          navigate(ROUTE_NAMES.PAYMENT_METHODS);
+                          setOperationAfterLogin(() => () => {
+                            navigate(ROUTE_NAMES.SELL);
+                          });
+                        }}
                         className="bg-amber-600 hover:bg-amber-700 text-white"
                       >
                         Add Payment Method

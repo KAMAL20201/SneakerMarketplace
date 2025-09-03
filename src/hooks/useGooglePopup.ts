@@ -39,7 +39,7 @@ export const useGoogleAuthPopup = (onSuccess?: (session: Session) => void) => {
           // Check if auth was successful
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
-              console.log("session", session);
+              // console.log("session", session);
               // Call the success callback if provided
               if (onSuccess) {
                 onSuccess(session);
@@ -55,7 +55,7 @@ export const useGoogleAuthPopup = (onSuccess?: (session: Session) => void) => {
       // Listen for messages from popup
       const messageListener = (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
-        console.log("event", event);
+        // console.log("event", event);
         if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
           clearInterval(checkClosed);
           popup?.close();

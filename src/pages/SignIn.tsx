@@ -23,11 +23,11 @@ export default function LoginPage() {
   });
 
   const { signIn } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { signInWithGooglePopup } = useGoogleAuthPopup(() => {
     // Handle successful Google authentication
     toast.success("Welcome back!");
-    navigate(ROUTE_NAMES.HOME);
+    // navigate(ROUTE_NAMES.HOME);
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +40,7 @@ export default function LoginPage() {
         toast.error(error.message);
       } else {
         toast.success("Welcome back!");
-        navigate(ROUTE_NAMES.HOME);
+        // navigate(ROUTE_NAMES.HOME);
       }
     } catch {
       toast.error("An unexpected error occurred");
