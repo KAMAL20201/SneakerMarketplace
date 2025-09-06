@@ -238,9 +238,12 @@ export default function PrivacyPolicy() {
             </p>
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="font-semibold">The Plug Market</p>
-              <p>Email: privacy@theplugmarket.in</p>
-              <p>Phone: 1-800-PLUG-IN</p>
-              <p>Address: [Your Business Address]</p>
+              <p>Email: support@theplugmarket.in</p>
+              <p>Phone: +91-78885-27970</p>
+              <p>
+                Address: #222, Near Ram Mandir, Patiala Gate, Sangrur, Punjab
+                148001, India
+              </p>
             </div>
           </CardContent>
         </Card>

@@ -6,6 +6,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { PublicRoute } from "./components/PublicRoute";
 import { ROUTE_NAMES } from "./constants/enums";
 import ProductDetailSkeleton from "./components/ui/ProductDetailSkeleton";
+import ShippingPolicy from "./pages/ShippingPolicy";
+import Cancellations from "./pages/Cancellations";
 
 // Lazy load all page components with preloading capability
 const Home = lazy(() => import("./pages/Home"));
@@ -27,6 +29,7 @@ const AboutUs = lazy(() => import("./pages/AboutUs"));
 const BuyerProtection = lazy(() => import("./pages/BuyerProtection"));
 const SecurePayments = lazy(() => import("./pages/SecurePayments"));
 const ReviewProcess = lazy(() => import("./pages/ReviewProcess"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
 
 // Preload functions for critical routes
 export const preloadRoutes = {
@@ -49,6 +52,9 @@ export const preloadRoutes = {
   buyerProtection: () => import("./pages/BuyerProtection"),
   securePayments: () => import("./pages/SecurePayments"),
   reviewProcess: () => import("./pages/ReviewProcess"),
+  contactUs: () => import("./pages/ContactUs"),
+  shippingPolicy: () => import("./pages/ShippingPolicy"),
+  cancellationsRefunds: () => import("./pages/Cancellations"),
 };
 
 // Enhanced loading component for better UX
@@ -221,6 +227,30 @@ const Router = () => {
         element={
           <Suspense fallback={<PageSkeleton />}>
             <ReviewProcess />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.CONTACT_US}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <ContactUs />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.SHIPPING_POLICY}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <ShippingPolicy />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.CANCELLATIONS_REFUNDS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <Cancellations />
           </Suspense>
         }
       />

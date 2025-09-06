@@ -3,6 +3,8 @@ import { APP_CONFIG } from "../config/app";
 import { supabase } from "@/lib/supabase";
 import { LaunchEmailService } from "@/lib/launchEmailService";
 import { logger } from "@/components/ui/Logger";
+import { ROUTE_NAMES } from "../constants/enums";
+import { useLocation } from "react-router";
 
 interface ComingSoonWrapperProps {
   children: React.ReactNode;
@@ -11,10 +13,28 @@ interface ComingSoonWrapperProps {
 const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
   // Check if we should show coming soon page
   const isComingSoon = APP_CONFIG.IS_COMING_SOON;
+  const location = useLocation();
   const [email, setEmail] = React.useState("");
   const [isSubscribed, setIsSubscribed] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [subscriptionMessage, setSubscriptionMessage] = React.useState("");
+
+  // Define policy pages that should be accessible even in coming soon mode
+  // These are the pages Razorpay needs to verify for live mode
+  const allowedPolicyPages = [
+    ROUTE_NAMES.PRIVACY,
+    ROUTE_NAMES.TERMS,
+    ROUTE_NAMES.ABOUT,
+    ROUTE_NAMES.BUYER_PROTECTION,
+    ROUTE_NAMES.SECURE_PAYMENTS,
+    ROUTE_NAMES.REVIEW_PROCESS,
+    ROUTE_NAMES.CONTACT_US,
+    ROUTE_NAMES.SHIPPING_POLICY,
+    ROUTE_NAMES.CANCELLATIONS_REFUNDS,
+  ];
+
+  // Check if current page is an allowed policy page
+  const isPolicyPage = allowedPolicyPages.includes(location.pathname as any);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +95,11 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
 
   // If not coming soon, show the actual website
   if (!isComingSoon) {
+    return <>{children}</>;
+  }
+
+  // If it's a policy page, allow access even in coming soon mode
+  if (isPolicyPage) {
     return <>{children}</>;
   }
 

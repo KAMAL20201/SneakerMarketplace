@@ -1,10 +1,4 @@
-import {
-  CreditCard,
-  Lock,
-  Shield,
-  CheckCircle,
-  Zap,
-} from "lucide-react";
+import { CreditCard, Lock, Shield, CheckCircle, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -260,8 +254,8 @@ export default function SecurePayments() {
             </p>
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="font-semibold">Contact Payment Support</p>
-              <p>Email: payments@theplugmarket.in</p>
-              <p>Phone: 1-800-PLUG-IN</p>
+              <p>Email: support@theplugmarket.in</p>
+              <p>Phone: +91-78885-27970</p>
               <p className="text-sm text-gray-600 mt-2">
                 We're available 24/7 to assist with any payment-related
                 questions.

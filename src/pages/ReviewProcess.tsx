@@ -249,8 +249,8 @@ export default function ReviewProcess() {
             </p>
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="font-semibold">Contact Review Team</p>
-              <p>Email: reviews@theplugmarket.in</p>
-              <p>Phone: 1-800-PLUG-IN</p>
+              <p>Email: support@theplugmarket.in</p>
+              <p>Phone: +91-78885-27970</p>
               <p className="text-sm text-gray-600 mt-2">
                 We typically respond within 24 hours during business days.
               </p>

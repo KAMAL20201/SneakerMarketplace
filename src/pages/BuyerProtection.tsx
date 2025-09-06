@@ -213,7 +213,7 @@ export default function BuyerProtection() {
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="font-semibold">Contact Support</p>
               <p>Email: support@theplugmarket.in</p>
-              <p>Phone: 1-800-PLUG-IN</p>
+              <p>Phone: +91-78885-27970</p>
               <p className="text-sm text-gray-600 mt-2">
                 We're committed to resolving any issues quickly and fairly.
               </p>

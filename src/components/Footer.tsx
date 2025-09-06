@@ -83,6 +83,14 @@ export function Footer() {
             <ul className="space-y-2 md:space-y-3">
               <li>
                 <Link
+                  to={ROUTE_NAMES.CONTACT_US}
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link
                   to={ROUTE_NAMES.HELP}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
@@ -138,6 +146,22 @@ export function Footer() {
                   Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link
+                  to={ROUTE_NAMES.SHIPPING_POLICY}
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  Shipping Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to={ROUTE_NAMES.CANCELLATIONS_REFUNDS}
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  Cancellations & Refunds
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -152,7 +176,7 @@ export function Footer() {
               <div>
                 <p className="text-sm text-gray-300">Email</p>
                 <p className="text-white font-semibold">
-                  support@theplugmarket.in
+                  your-personal-email@gmail.com
                 </p>
               </div>
             </div>
@@ -162,7 +186,7 @@ export function Footer() {
               </div>
               <div>
                 <p className="text-sm text-gray-300">Phone</p>
-                <p className="text-white font-semibold">1-800-PLUG-IN</p>
+                <p className="text-white font-semibold">+91-98765-43210</p>
               </div>
             </div>
           </div>
