@@ -118,11 +118,20 @@ export default function ShippingPolicy() {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">
-                  What to Expect
+                  Delivery Timelines
                 </h3>
                 <ul className="space-y-2 text-sm text-gray-700">
+                  <li>
+                    • <strong>Minimum delivery time:</strong> 2-3 business days
+                  </li>
+                  <li>
+                    • <strong>Maximum delivery time:</strong> 18-21 business
+                    days
+                  </li>
                   <li>• Sellers typically ship within 1-3 business days</li>
-                  <li>• Delivery time depends on seller's location</li>
+                  <li>
+                    • Delivery time depends on seller's location and destination
+                  </li>
                   <li>• Distance between seller and buyer affects timing</li>
                   <li>• Shipping method chosen by seller impacts speed</li>
                 </ul>
@@ -229,6 +238,62 @@ export default function ShippingPolicy() {
                   Package delivered and awaiting approval
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pricing Information */}
+        <Card className="mb-6 border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Package className="h-5 w-5 text-green-600" />
+              Pricing & Service Charges
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-gray-700">
+              Our transparent pricing structure ensures you know exactly what
+              you're paying for:
+            </p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900">For Buyers</h3>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-2">
+                    No Hidden Fees
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-green-700 ml-4">
+                    <li>Pay only the listed price for items</li>
+                    <li>No additional platform fees for buyers</li>
+                    <li>Free buyer protection included</li>
+                    <li>Secure payment processing at no extra cost</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="font-semibold text-gray-900">For Sellers</h3>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2">
+                    Transparent Fee Structure
+                  </h4>
+                  <ul className="list-disc list-inside space-y-1 text-sm text-blue-700 ml-4">
+                    <li>Platform fee: 0.5% of sale price</li>
+                    <li>Payment gateway charges: 2% of sale price</li>
+                    <li>Total deduction: 2.5% of sale price</li>
+                    <li>You receive: 97.5% of listed price</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <h3 className="font-semibold text-yellow-800 mb-2">
+                Example Calculation
+              </h3>
+              <p className="text-yellow-700 text-sm">
+                If you list an item for ₹10,000: You'll receive ₹9,750 after all
+                fees. This includes payment processing and platform maintenance
+                costs.
+              </p>
             </div>
           </CardContent>
         </Card>
