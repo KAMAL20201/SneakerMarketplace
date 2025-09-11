@@ -22,6 +22,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { OrderService, type Order as OrderType } from "@/lib/orderService";
 import { toast } from "sonner";
+import ShipNowModal from "@/components/ShipNowModal";
+import PickupAddressModal, {
+  type PickupAddress,
+} from "@/components/PickupAddressModal";
+import { supabase } from "@/lib/supabase";
+import { addPickupToShiprocket } from "@/lib/shiprocket";
 
 // Use the OrderType from orderService, but extend it with product details
 interface Order extends OrderType {
@@ -115,6 +121,46 @@ const MyOrders = () => {
   const [sellOrders, setSellOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
+
+  // Ship Now modal state
+  const [shipModalOpen, setShipModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [pickupModalOpen, setPickupModalOpen] = useState(false);
+  const [pendingOpenShipAfterPickup, setPendingOpenShipAfterPickup] =
+    useState(false);
+  const [pickupPincode, setPickupPincode] = useState<string | null>(null);
+  const [pickupAddress, setPickupAddress] = useState<any | null>(null);
+
+  const ensurePickupAddressAndOpenShip = async (order: Order) => {
+    if (!user) return;
+    try {
+      // Fetch seller profile with pickup_address
+      const { data, error } = await supabase
+        .from("sellers")
+        .select("pickup_address")
+        .eq("id", user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+
+      if (!data || !data.pickup_address) {
+        // Ask for pickup address first
+        setSelectedOrder(order);
+        setPendingOpenShipAfterPickup(true);
+        setPickupModalOpen(true);
+        return;
+      }
+
+      // Pickup exists — open ship modal directly
+      setSelectedOrder(order);
+      setPickupPincode((data as any).pickup_address?.pin_code || null);
+      setPickupAddress((data as any).pickup_address || null);
+      setShipModalOpen(true);
+    } catch (e) {
+      console.error("Error checking pickup address:", e);
+      toast.error("Could not verify pickup address");
+    }
+  };
 
   // Pagination state for buy orders
   const [buyCurrentPage, setBuyCurrentPage] = useState(1);
@@ -509,40 +555,24 @@ const MyOrders = () => {
                               </div>
                             </div>
                             {/* Action Buttons for Seller */}
-                            <div className="flex justify-between mt-4">
-                              <Link
-                                to={ROUTE_HELPERS.PRODUCT_DETAIL(
-                                  order.product_id
-                                )}
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="glass-button border-gray-200 rounded-2xl"
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Product
-                                </Button>
-                              </Link>
+                            <div className="flex gap-3 items-center mt-4">
                               {order.status === "confirmed" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="glass-button border-gray-200 rounded-2xl"
-                                >
-                                  <Truck className="h-4 w-4 mr-2" />
-                                  Mark as Shipped
-                                </Button>
-                              )}
-                              {order.status === "shipped" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="glass-button border-gray-200 rounded-2xl"
-                                >
-                                  <Truck className="h-4 w-4 mr-2" />
-                                  Update Tracking
-                                </Button>
+                                <>
+                                  <p className="text-sm text-gray-600">
+                                    Ready to Ship this Order ?
+                                  </p>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700 text-white hover:text-white border-gray-200 rounded-2xl"
+                                    onClick={() =>
+                                      ensurePickupAddressAndOpenShip(order)
+                                    }
+                                  >
+                                    <Truck className="h-4 w-4 mr-2" />
+                                    Ship now
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </div>
@@ -609,6 +639,74 @@ const MyOrders = () => {
           </TabsContent>
         </Tabs>
       </div>
+      {/* Ship Now Modal (Steps 1–2) */}
+      <ShipNowModal
+        open={shipModalOpen}
+        onOpenChange={(open) => {
+          if (!open) setSelectedOrder(null);
+          setShipModalOpen(open);
+        }}
+        pickupPincode={pickupPincode || ""}
+        deliveryPincode={selectedOrder?.shipping_address?.pincode || ""}
+        pickupLocation={pickupAddress?.pickup_location || pickupAddress?.name || "Primary"}
+        order={selectedOrder as any}
+        onCourierSelected={(courier) => {
+          toast.success(`Selected ${courier.courier_name}`);
+          // Step 3 can be added inside this modal next
+        }}
+      />
+
+      {/* Pickup Address Modal */}
+      <PickupAddressModal
+        open={pickupModalOpen}
+        onOpenChange={(open) => {
+          setPickupModalOpen(open);
+          if (!open && !pendingOpenShipAfterPickup) {
+            setSelectedOrder(null);
+          }
+        }}
+        onSave={async (address: PickupAddress) => {
+          if (!user) return;
+          try {
+            const { error } = await supabase
+              .from("sellers")
+              .update({ pickup_address: address })
+              .eq("id", user.id);
+            if (error) throw error;
+            // Also create pickup in Shiprocket via edge function
+            try {
+              const srAddress = {
+                name: address.name,
+                email: address.email,
+                phone: address.phone,
+                address: [address.address, address.address_2]
+                  .filter(Boolean)
+                  .join(", "),
+                city: address.city,
+                state: address.state,
+                pincode: address.pin_code,
+                country: address.country,
+              };
+              await addPickupToShiprocket(srAddress);
+              toast.success("Pickup address saved and added to Shiprocket");
+            } catch (err) {
+              console.error("Shiprocket pickup creation failed:", err);
+              toast.error("Saved locally, but failed to add in Shiprocket");
+              throw err;
+            }
+            setPickupModalOpen(false);
+            if (pendingOpenShipAfterPickup && selectedOrder) {
+              setPendingOpenShipAfterPickup(false);
+              setPickupPincode(address.pin_code);
+              setPickupAddress(address);
+              setShipModalOpen(true);
+            }
+          } catch (e) {
+            console.error("Error saving pickup address:", e);
+            toast.error("Failed to save pickup address");
+          }
+        }}
+      />
     </div>
   );
 };
