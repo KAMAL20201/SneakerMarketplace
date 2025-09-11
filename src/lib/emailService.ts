@@ -34,24 +34,6 @@ export interface EmailNotificationRequest {
 export class EmailService {
 
   /**
-   * Format shipping address for email display
-   */
-  private static formatShippingAddress(address?: ShippingAddress): string {
-    if (!address) return "Address not provided";
-
-    const parts = [
-      address.full_name,
-      address.address_line1,
-      address.address_line2,
-      `${address.city}, ${address.state} - ${address.pincode}`,
-      address.landmark && `Near: ${address.landmark}`,
-      address.phone,
-    ].filter(Boolean);
-
-    return parts.join(", ");
-  }
-
-  /**
    * Send email via Supabase Edge Function (server-side SES)
    */
   private static async sendEmail(
@@ -69,8 +51,6 @@ export class EmailService {
       templateData
     );
   }
-
-  // SES client path removed from frontend to prevent exposing AWS credentials
 
   /**
    * Send email via Supabase (fallback)
