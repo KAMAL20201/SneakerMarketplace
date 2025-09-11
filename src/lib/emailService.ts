@@ -1,7 +1,5 @@
 import { supabase } from "./supabase";
 import { logger } from "@/components/ui/Logger";
-import AWSSESService from "./aws-ses";
-import EMAIL_TEMPLATES from "./emailTemplates";
 import type { ShippingAddress } from "@/types/shipping";
 
 export interface OrderEmailData {
@@ -34,7 +32,6 @@ export interface EmailNotificationRequest {
 }
 
 export class EmailService {
-  private static readonly USE_SES = import.meta.env.VITE_USE_SES === "true";
 
   /**
    * Format shipping address for email display
@@ -55,7 +52,7 @@ export class EmailService {
   }
 
   /**
-   * Send email using the configured service (SES or Supabase)
+   * Send email via Supabase Edge Function (server-side SES)
    */
   private static async sendEmail(
     type: string,
@@ -64,81 +61,16 @@ export class EmailService {
     orderData: OrderEmailData,
     templateData: Record<string, string>
   ): Promise<boolean> {
-    if (this.USE_SES) {
-      return await this.sendEmailViaSES(
-        type,
-        recipientEmail,
-        recipientName,
-        orderData,
-        templateData
-      );
-    } else {
-      return await this.sendEmailViaSupabase(
-        type,
-        recipientEmail,
-        recipientName,
-        orderData,
-        templateData
-      );
-    }
+    return await this.sendEmailViaSupabase(
+      type,
+      recipientEmail,
+      recipientName,
+      orderData,
+      templateData
+    );
   }
 
-  /**
-   * Send email via AWS SES
-   */
-  private static async sendEmailViaSES(
-    type: string,
-    recipientEmail: string,
-    _recipientName: string,
-    orderData: OrderEmailData,
-    templateData: Record<string, string>
-  ): Promise<boolean> {
-    try {
-      const template = EMAIL_TEMPLATES[type];
-      if (!template) {
-        logger.error(`Email template not found for type: ${type}`);
-        return false;
-      }
-
-      // Prepare template data
-      const emailData = {
-        buyer_name: orderData.buyer_name || "Buyer",
-        seller_name: orderData.seller_name || "Seller",
-        order_id: orderData.order_id,
-        product_title: orderData.product_title,
-        amount: orderData.amount.toString(),
-        currency: orderData.currency,
-        shipping_address: this.formatShippingAddress(
-          orderData.shipping_address
-        ),
-        tracking_number: orderData.tracking_number || "Not available",
-        estimated_delivery: orderData.estimated_delivery || "To be determined",
-        delivery_date: new Date().toLocaleDateString(),
-        action_url: templateData.action_url || "#",
-      };
-
-      const success = await AWSSESService.sendTemplatedEmail(
-        [recipientEmail],
-        template,
-        emailData
-      );
-
-      if (success) {
-        logger.info(`SES email sent successfully to: ${recipientEmail}`);
-        return true;
-      } else {
-        logger.error(`Failed to send SES email to: ${recipientEmail}`);
-        return false;
-      }
-    } catch (error) {
-      logger.error(
-        `Error sending SES email: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-      return false;
-    }
-  }
+  // SES client path removed from frontend to prevent exposing AWS credentials
 
   /**
    * Send email via Supabase (fallback)
@@ -359,13 +291,7 @@ export class EmailService {
       order_status: "confirmed",
     };
 
-    const sesResult = await this.sendEmailViaSES(
-      "order_confirmed",
-      testEmail,
-      "Test User",
-      testData,
-      { action_url: "#" }
-    );
+    const sesResult = false;
 
     const supabaseResult = await this.sendEmailViaSupabase(
       "order_confirmed",
