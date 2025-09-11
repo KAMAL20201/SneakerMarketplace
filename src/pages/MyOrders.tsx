@@ -648,7 +648,7 @@ const MyOrders = () => {
         }}
         pickupPincode={pickupPincode || ""}
         deliveryPincode={selectedOrder?.shipping_address?.pincode || ""}
-        pickupLocation={pickupAddress?.pickup_location || pickupAddress?.name || "Primary"}
+        pickupLocationName={pickupAddress?.name}
         order={selectedOrder as any}
         onCourierSelected={(courier) => {
           toast.success(`Selected ${courier.courier_name}`);

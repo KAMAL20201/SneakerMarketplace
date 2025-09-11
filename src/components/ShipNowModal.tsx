@@ -16,13 +16,15 @@ import {
 } from "@/lib/shiprocket";
 import { toast } from "sonner";
 import { Truck } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 type ShipNowModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pickupPincode: string;
   deliveryPincode: string;
-  pickupLocation?: string;
+  // Seller's Shiprocket pickup address nickname (e.g., "Home", "Kamal Arora")
+  pickupLocationName?: string;
   order?: {
     id: string;
     amount: number;
@@ -55,7 +57,7 @@ export default function ShipNowModal({
   onOpenChange,
   pickupPincode,
   deliveryPincode,
-  pickupLocation,
+  pickupLocationName,
   order,
   onCourierSelected,
 }: ShipNowModalProps) {
@@ -64,6 +66,7 @@ export default function ShipNowModal({
   const [breadthCm, setBreadthCm] = useState<string>("");
   const [widthCm, setWidthCm] = useState<string>("");
   const [step, setStep] = useState<1 | 2>(1);
+  const { user } = useAuth();
 
   // Step 2
   const [loading, setLoading] = useState(false);
@@ -101,7 +104,8 @@ export default function ShipNowModal({
       const payload = {
         order_id: order?.id,
         order_date: new Date().toISOString(),
-        pickup_location: pickupLocation || "Primary",
+        // Shiprocket requires the pickup_location to match the saved pickup address nickname
+        pickup_location: pickupLocationName || "Primary",
         billing_customer_name: addr.full_name || "",
         billing_last_name: "",
         billing_address: addr.address_line1 || "",
@@ -110,7 +114,7 @@ export default function ShipNowModal({
         billing_pincode: addr.pincode,
         billing_state: addr.state,
         billing_country: addr.country || "India",
-        billing_email: "",
+        billing_email: user?.email || "",
         billing_phone: addr.phone,
         shipping_is_billing: 1,
         order_items: [

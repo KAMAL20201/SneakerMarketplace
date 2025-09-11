@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export type PickupAddress = {
-  pickup_location: string; // A label for this pickup location
   name: string;
   email: string;
   phone: string;
@@ -38,7 +37,6 @@ export default function PickupAddressModal({
   defaultCountry = "India",
 }: PickupAddressModalProps) {
   const [form, setForm] = useState<PickupAddress>({
-    pickup_location: "Primary",
     name: "",
     email: "",
     phone: "",
@@ -52,13 +50,12 @@ export default function PickupAddressModal({
   });
   const [saving, setSaving] = useState(false);
 
-  const update = (key: keyof PickupAddress) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
+  const update =
+    (key: keyof PickupAddress) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const isValid = () => {
     return (
-      form.pickup_location.trim() !== "" &&
       form.name.trim() !== "" &&
       form.email.trim() !== "" &&
       form.phone.trim().length >= 10 &&
@@ -85,80 +82,150 @@ export default function PickupAddressModal({
       <DialogContent className="border-0 rounded-3xl p-0 w-[calc(100%-1rem)] sm:max-w-xl h-[90vh] sm:h-auto sm:max-h-[85vh]">
         <div className="flex h-[90vh] flex-col">
           <div className="p-6 h-full">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">Pickup Address</DialogTitle>
-            <DialogDescription className="text-gray-600">
-              Add your pickup address to continue creating the shipment
-            </DialogDescription>
-          </DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-gray-900">
+                Pickup Address
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Add your pickup address to continue creating the shipment
+              </DialogDescription>
+            </DialogHeader>
 
-          <div className="h-[76%] mt-4 grid grid-cols-1 gap-4 overflow-y-auto relative">
-            <div>
-              <Label htmlFor="pickup_location" className="text-gray-800">Pickup Location Label</Label>
-              <Input id="pickup_location" placeholder="e.g. Primary" value={form.pickup_location} onChange={update("pickup_location")} className="mt-2" />
-            </div>
+            <div className="h-[76%] mt-4 grid grid-cols-1 gap-4 overflow-y-auto relative">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name" className="text-gray-800">
+                    Contact Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={form.name}
+                    onChange={update("name")}
+                    placeholder="Full Name"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone" className="text-gray-800">
+                    Phone
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={form.phone}
+                    onChange={update("phone")}
+                    inputMode="tel"
+                    placeholder="10-digit phone"
+                    className="mt-2"
+                  />
+                </div>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name" className="text-gray-800">Contact Name</Label>
-                <Input id="name" value={form.name} onChange={update("name")} placeholder="Full Name" className="mt-2" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email" className="text-gray-800">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    onChange={update("email")}
+                    placeholder="name@example.com"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pin_code" className="text-gray-800">
+                    Pincode
+                  </Label>
+                  <Input
+                    id="pin_code"
+                    value={form.pin_code}
+                    onChange={update("pin_code")}
+                    inputMode="numeric"
+                    placeholder="6-digit"
+                    className="mt-2"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="phone" className="text-gray-800">Phone</Label>
-                <Input id="phone" value={form.phone} onChange={update("phone")} inputMode="tel" placeholder="10-digit phone" className="mt-2" />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="email" className="text-gray-800">Email</Label>
-                <Input id="email" type="email" value={form.email} onChange={update("email")} placeholder="name@example.com" className="mt-2" />
-              </div>
-              <div>
-                <Label htmlFor="pin_code" className="text-gray-800">Pincode</Label>
-                <Input id="pin_code" value={form.pin_code} onChange={update("pin_code")} inputMode="numeric" placeholder="6-digit" className="mt-2" />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="address" className="text-gray-800">Address Line 1</Label>
-              <Input id="address" value={form.address} onChange={update("address")} placeholder="House no., street, area" className="mt-2" />
-            </div>
-            <div>
-              <Label htmlFor="address_2" className="text-gray-800">Address Line 2 (Optional)</Label>
-              <Input id="address_2" value={form.address_2} onChange={update("address_2")} placeholder="Apartment, suite, etc." className="mt-2" />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="city" className="text-gray-800">City</Label>
-                <Input id="city" value={form.city} onChange={update("city")} className="mt-2" />
-              </div>
-              <div>
-                <Label htmlFor="state" className="text-gray-800">State</Label>
-                <Input id="state" value={form.state} onChange={update("state")} className="mt-2" />
-              </div>
-              <div>
-                <Label htmlFor="country" className="text-gray-800">Country</Label>
+                <Label htmlFor="address" className="text-gray-800">
+                  Address Line 1
+                </Label>
                 <Input
-                  id="country"
-                  value={form.country}
-                  readOnly
-                  disabled
+                  id="address"
+                  value={form.address}
+                  onChange={update("address")}
+                  placeholder="House no., street, area"
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label htmlFor="address_2" className="text-gray-800">
+                  Address Line 2 (Optional)
+                </Label>
+                <Input
+                  id="address_2"
+                  value={form.address_2}
+                  onChange={update("address_2")}
+                  placeholder="Apartment, suite, etc."
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="city" className="text-gray-800">
+                    City
+                  </Label>
+                  <Input
+                    id="city"
+                    value={form.city}
+                    onChange={update("city")}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state" className="text-gray-800">
+                    State
+                  </Label>
+                  <Input
+                    id="state"
+                    value={form.state}
+                    onChange={update("state")}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="country" className="text-gray-800">
+                    Country
+                  </Label>
+                  <Input
+                    id="country"
+                    value={form.country}
+                    readOnly
+                    disabled
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="landmark" className="text-gray-800">
+                  Landmark (Optional)
+                </Label>
+                <Input
+                  id="landmark"
+                  value={form.landmark}
+                  onChange={update("landmark")}
+                  placeholder="Nearby landmark"
                   className="mt-2"
                 />
               </div>
             </div>
-
-            <div>
-              <Label htmlFor="landmark" className="text-gray-800">Landmark (Optional)</Label>
-              <Input id="landmark" value={form.landmark} onChange={update("landmark")} placeholder="Nearby landmark" className="mt-2" />
-            </div>
           </div>
-          </div>
-          <div
-            className="absolute bottom-0 left-0 right-0 px-6 py-4 bg-gray-50/90 backdrop-blur supports-[backdrop-filter]:bg-gray-50/70 flex items-center justify-end gap-3"
-          >
+          <div className="absolute bottom-0 left-0 right-0 px-6 py-4 bg-gray-50/90 backdrop-blur supports-[backdrop-filter]:bg-gray-50/70 flex items-center justify-end gap-3">
             <Button
               onClick={handleSave}
               disabled={!isValid() || saving}

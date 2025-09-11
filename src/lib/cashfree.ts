@@ -6,7 +6,6 @@ declare global {
 
 // Only the public key is needed on the client side
 // The secret key should only be used in server-side Edge Functions
-export const CASHFREE_ENV = import.meta.env.VITE_CASHFREE_ENV || "sandbox";
 
 export const loadCashfreeScript = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -41,11 +40,11 @@ export const createCashfreeInstance = () => {
   }
 
   // Initialize Cashfree with correct mode
-  const mode = CASHFREE_ENV === "PROD" ? "production" : "sandbox";
+  // const mode = CASHFREE_ENV === "PROD" ? "production" : "sandbox";
 
-  return window.Cashfree({
-    mode: mode,
-  });
+  // return window.Cashfree({
+  //   mode: mode,
+  // });
 };
 
 export const formatAmount = (amount: number): number => {

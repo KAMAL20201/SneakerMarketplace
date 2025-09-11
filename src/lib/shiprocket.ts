@@ -71,7 +71,7 @@ export async function addPickupToShiprocket(address: ShiprocketPickupInput) {
 // Create Shiprocket order via Supabase Edge Function
 // Reads function name from env `VITE_SHIPROCKET_CREATE_ORDER_FN` or falls back to `shiprocket-create-order`.
 export async function createShiprocketOrder(orderPayload: Record<string, any>) {
-  const fnName = import.meta.env.VITE_SHIPROCKET_CREATE_ORDER_FN || "shiprocket-create-order";
+  const fnName = "shiprocket-create-order";
   const { data, error } = await supabase.functions.invoke(fnName, {
     body: { order: orderPayload },
   });
