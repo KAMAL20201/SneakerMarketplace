@@ -148,14 +148,14 @@ export function Navbar() {
                 )}
 
                 <DropdownMenuSeparator className="bg-white/30" />
-                <DropdownMenuItem
+                {/* <DropdownMenuItem
                   asChild
                   className="rounded-xl mx-1 my-1 cursor-pointer"
                 >
                   <Link to={ROUTE_NAMES.SETTINGS} className="text-gray-700">
                     Settings
                   </Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 <DropdownMenuItem
                   className="rounded-xl mx-1 my-1 text-red-600 hover:text-red-700 hover:bg-red-50/80 cursor-pointer"
                   onClick={handleLogout}

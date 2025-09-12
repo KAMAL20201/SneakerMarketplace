@@ -176,11 +176,11 @@ export function Footer() {
               <div>
                 <p className="text-sm text-gray-300">Email</p>
                 <p className="text-white font-semibold">
-                  your-personal-email@gmail.com
+                  support@theplugmarket.in
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
               <div className="p-2 bg-white/10 rounded-xl">
                 <Phone className="h-5 w-5" />
               </div>
@@ -188,7 +188,7 @@ export function Footer() {
                 <p className="text-sm text-gray-300">Phone</p>
                 <p className="text-white font-semibold">+91-98765-43210</p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 

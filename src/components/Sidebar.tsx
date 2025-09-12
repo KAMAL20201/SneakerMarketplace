@@ -2,8 +2,8 @@ import {
   Home,
   Search,
   Plus,
-  User,
-  Settings,
+  // User,
+  // Settings,
   ShoppingBag,
   CreditCard,
   Package,
@@ -72,12 +72,12 @@ const data = {
     {
       title: "Settings",
       items: [
-        {
-          title: "Profile",
-          url: ROUTE_NAMES.PROFILE,
-          icon: User,
-          preloadKey: null, // No preload for this route
-        },
+        // {
+        //   title: "Profile",
+        //   url: ROUTE_NAMES.PROFILE,
+        //   icon: User,
+        //   preloadKey: null, // No preload for this route
+        // },
         {
           title: "My Addresses",
           url: ROUTE_NAMES.MY_ADDRESSES,
@@ -90,12 +90,12 @@ const data = {
           icon: CreditCard,
           preloadKey: "paymentMethods" as keyof typeof preloadRoutes,
         },
-        {
-          title: "Settings",
-          url: ROUTE_NAMES.SETTINGS,
-          icon: Settings,
-          preloadKey: null, // No preload for this route
-        },
+        // {
+        //   title: "Settings",
+        //   url: ROUTE_NAMES.SETTINGS,
+        //   icon: Settings,
+        //   preloadKey: null, // No preload for this route
+        // },
       ],
     },
   ],

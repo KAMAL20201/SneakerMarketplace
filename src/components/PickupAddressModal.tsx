@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ type PickupAddressModalProps = {
   onOpenChange: (open: boolean) => void;
   onSave: (address: PickupAddress) => Promise<void> | void;
   defaultCountry?: string;
+  initialAddress?: PickupAddress;
 };
 
 export default function PickupAddressModal({
@@ -35,20 +36,44 @@ export default function PickupAddressModal({
   onOpenChange,
   onSave,
   defaultCountry = "India",
+  initialAddress,
 }: PickupAddressModalProps) {
-  const [form, setForm] = useState<PickupAddress>({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    address_2: "",
-    city: "",
-    state: "",
-    country: defaultCountry,
-    pin_code: "",
-    landmark: "",
-  });
+  const [form, setForm] = useState<PickupAddress>(
+    initialAddress || {
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      address_2: "",
+      city: "",
+      state: "",
+      country: defaultCountry,
+      pin_code: "",
+      landmark: "",
+    }
+  );
   const [saving, setSaving] = useState(false);
+
+  // When opening or when initialAddress changes, reset the form.
+  // Ensures editing pre-fills fields and closing then reopening resets state.
+  useEffect(() => {
+    if (open) {
+      setForm(
+        initialAddress || {
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+          address_2: "",
+          city: "",
+          state: "",
+          country: defaultCountry,
+          pin_code: "",
+          landmark: "",
+        }
+      );
+    }
+  }, [open, initialAddress, defaultCountry]);
 
   const update =
     (key: keyof PickupAddress) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -84,7 +109,7 @@ export default function PickupAddressModal({
           <div className="p-6 h-full">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold text-gray-900">
-                Pickup Address
+                {initialAddress ? "Edit Pickup Address" : "Pickup Address"}
               </DialogTitle>
               <DialogDescription className="text-gray-600">
                 Add your pickup address to continue creating the shipment
