@@ -11,7 +11,10 @@ import { supabase } from "@/lib/supabase";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import ConditionBadge from "@/components/ui/ConditionBadge";
-import { PaymentButton } from "@/components/PaymentButton";
+import { BuyNowModal } from "@/components/checkout/BuyNowModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router";
+import { ROUTE_NAMES } from "@/constants/enums";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -22,6 +25,9 @@ export default function ProductDetailPage() {
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [buyNowOpen, setBuyNowOpen] = useState(false);
+  const { user, setOperationAfterLogin } = useAuth();
+  const navigate = useNavigate();
 
   const handleAddToCart = (seller: any) => {
     const cartItem = {
@@ -318,37 +324,45 @@ export default function ProductDetailPage() {
               {isItemInCart() ? "In Cart" : "Add to Cart"}
             </Button>
 
-            <PaymentButton
-              amount={listing?.price || 0}
-              currency="INR"
-              metadata={{
-                type: "cart_checkout",
-                cart_items: listing?.id.toString(),
-                item_count: "1",
-              }}
-              items={[
-                {
-                  id: listing?.id,
-                  productId: listing?.id,
-                  productName: listing?.title,
-                  brand: listing?.brand,
-                  size: selectedSize || "",
-                  condition: listing?.condition,
-                  price: listing?.price,
-                  image: images?.[0]?.image_url,
-                  sellerId: listing?.seller_details?.id?.toString(),
-                  sellerName: listing?.seller_details?.display_name,
-                  sellerEmail: listing?.seller_details?.email,
-                  quantity: 1,
-                },
-              ]}
-              shippingAddress={undefined}
-              buttonText="Buy Now"
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
+            <Button
               size="lg"
+              onClick={() => {
+                if (!user) {
+                  setOperationAfterLogin(() => () => setBuyNowOpen(true));
+                  toast.error("Please login to continue");
+                  navigate(ROUTE_NAMES.LOGIN);
+                  return;
+                }
+                setBuyNowOpen(true);
+              }}
               disabled={!selectedSize}
-            />
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
+            >
+              Buy Now
+            </Button>
           </div>
+          {/* Buy Now Modal requiring shipping address */}
+          {listing && (
+            <BuyNowModal
+              open={buyNowOpen}
+              onOpenChange={setBuyNowOpen}
+              amount={listing?.price || 0}
+              item={{
+                id: listing?.id,
+                productId: listing?.id,
+                productName: listing?.title,
+                brand: listing?.brand,
+                size: selectedSize || "",
+                condition: listing?.condition,
+                price: listing?.price,
+                image: images?.[0]?.image_url,
+                sellerId: listing?.seller_details?.id?.toString(),
+                sellerName: listing?.seller_details?.display_name,
+                sellerEmail: listing?.seller_details?.email,
+                quantity: 1,
+              }}
+            />
+          )}
         </div>
       </div>
 
