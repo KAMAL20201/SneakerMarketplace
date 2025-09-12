@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -19,9 +19,10 @@ import { ROUTE_NAMES } from "@/constants/enums";
 export function Navbar() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
-
+  const navigate = useNavigate();
   const handleLogout = () => {
     signOut();
+    navigate(ROUTE_NAMES.HOME);
     toast.success("Logged out successfully");
   };
 
