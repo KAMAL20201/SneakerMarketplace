@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,18 +13,25 @@ import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { Turnstile } from "@marsidev/react-turnstile";
+
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as
+  | string
+  | undefined;
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+  console.log("kamalcaptcha", captchaToken);
 
   const { signUp } = useAuth();
   const navigate = useNavigate();
@@ -45,9 +52,20 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await signUp(formData.email, formData.password, {
-        full_name: formData.name,
-      });
+      if (TURNSTILE_SITE_KEY && !captchaToken) {
+        toast.error("Please complete the CAPTCHA");
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await signUp(
+        formData.email,
+        formData.password,
+        {
+          full_name: formData.name,
+        },
+        captchaToken ?? undefined
+      );
 
       if (error) {
         toast.error(error.message);
@@ -352,6 +370,18 @@ export default function SignupPage() {
                   </Link>
                 </Label>
               </div>
+
+              {/* CAPTCHA (shown when configured) */}
+              {TURNSTILE_SITE_KEY ? (
+                <div className="flex justify-center">
+                  <Turnstile
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => setCaptchaToken(null)}
+                  />
+                </div>
+              ) : null}
 
               <Button
                 type="submit"

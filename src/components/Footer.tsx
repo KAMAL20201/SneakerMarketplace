@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Mail, Phone, Instagram } from "lucide-react";
+import { Mail, Instagram } from "lucide-react";
 import { ROUTE_NAMES } from "@/constants/enums";
 
 export function Footer() {

@@ -26,7 +26,7 @@ export type PickupAddress = {
 type PickupAddressModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (address: PickupAddress) => Promise<void> | void;
+  onSave: (address: PickupAddress) => void;
   defaultCountry?: string;
   initialAddress?: PickupAddress;
 };

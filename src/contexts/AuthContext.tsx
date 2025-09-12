@@ -15,7 +15,8 @@ const AuthContext = createContext<{
   signUp: (
     email: string,
     password: string,
-    metadata?: { full_name?: string }
+    metadata?: { full_name?: string },
+    captchaToken?: string
   ) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<any>;
@@ -74,13 +75,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (
     email: string,
     password: string,
-    metadata?: { full_name?: string }
+    metadata?: { full_name?: string },
+    captchaToken?: string
   ) => {
     return await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
+        captchaToken,
       },
     });
   };
