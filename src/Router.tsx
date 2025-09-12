@@ -26,6 +26,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
+const ReturnsPolicy = lazy(() => import("./pages/Returns"));
 const BuyerProtection = lazy(() => import("./pages/BuyerProtection"));
 const SecurePayments = lazy(() => import("./pages/SecurePayments"));
 const ReviewProcess = lazy(() => import("./pages/ReviewProcess"));
@@ -251,6 +252,14 @@ const Router = () => {
         element={
           <Suspense fallback={<PageSkeleton />}>
             <Cancellations />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.RETURNS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <ReturnsPolicy />
           </Suspense>
         }
       />

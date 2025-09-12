@@ -33,7 +33,9 @@ export function Footer() {
           </p>
           <div className="flex space-x-3 md:space-x-4">
             <a
-              href="#"
+              href="https://instagram.com/the.plugmarket"
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
             >
               <Instagram className="h-4 w-4 md:h-5 md:w-5" />
@@ -89,24 +91,6 @@ export function Footer() {
                   Contact Us
                 </Link>
               </li>
-              <li>
-                <Link
-                  to={ROUTE_NAMES.HELP}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Help Center
-                </Link>
-              </li>
-
-              <li>
-                <Link
-                  to={ROUTE_NAMES.FAQ}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  FAQs
-                </Link>
-              </li>
-
               <li>
                 <Link
                   to={ROUTE_NAMES.RETURNS}
