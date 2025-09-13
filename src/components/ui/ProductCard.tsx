@@ -22,9 +22,12 @@ interface ProductCardProps {
 const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
   if (variant === "vertical") {
     return (
-      <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.id)}>
+      <Link
+        to={ROUTE_HELPERS.PRODUCT_DETAIL(product.id)}
+        className="h-full flex"
+      >
         <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
-          <CardContent className="p-0">
+          <CardContent className="p-0 flex flex-col h-full">
             <div className="relative">
               <CardImage
                 src={product.image_url || "/placeholder.svg"}
@@ -33,7 +36,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                 className="w-full sm:h-48 h-36"
               />
             </div>
-            <div className="p-4">
+            <div className="p-4 flex flex-col h-full">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
                   <p className="text-xs text-purple-600 font-semibold capitalize">
@@ -44,14 +47,14 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                   </h3>
                 </div>
               </div>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3 mt-auto">
                 <ConditionBadge
                   condition={product.condition}
                   // variant="glass"
                   className="text-xs"
                 />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between ">
                 <>
                   <span className="font-bold text-gray-800 text-lg">
                     ₹ {product.price}
