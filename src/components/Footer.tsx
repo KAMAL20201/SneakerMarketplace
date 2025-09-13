@@ -99,6 +99,14 @@ export function Footer() {
                   Returns & Exchanges
                 </Link>
               </li>
+              <li>
+                <Link
+                  to={ROUTE_NAMES.CANCELLATIONS_REFUNDS}
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  Cancellations & Refunds
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -136,14 +144,6 @@ export function Footer() {
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Shipping Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to={ROUTE_NAMES.CANCELLATIONS_REFUNDS}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Cancellations & Refunds
                 </Link>
               </li>
             </ul>

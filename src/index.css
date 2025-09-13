@@ -452,3 +452,7 @@ body.cart-open {
 .animate-shimmer {
   animation: shimmer 1.5s ease-in-out infinite;
 }
+
+.productZoom .embla {
+  height: 100%;
+}

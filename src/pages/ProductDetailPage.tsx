@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Star, ShoppingCart, Shield, Truck } from "lucide-react";
+import { Star, ShoppingCart, Shield, Truck, ZoomIn, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
@@ -15,6 +15,15 @@ import { BuyNowModal } from "@/components/checkout/BuyNowModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import type { EmblaCarouselType } from "embla-carousel";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -28,6 +37,52 @@ export default function ProductDetailPage() {
   const [buyNowOpen, setBuyNowOpen] = useState(false);
   const { user, setOperationAfterLogin } = useAuth();
   const navigate = useNavigate();
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [emblaApi, setEmblaApi] = useState<EmblaCarouselType | null>(null);
+  const [zoomEmblaApi, setZoomEmblaApi] = useState<EmblaCarouselType | null>(
+    null
+  );
+
+  // Sync selected index with carousel
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setSelectedImageIndex(emblaApi.selectedScrollSnap());
+    };
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+    onSelect();
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onSelect);
+    };
+  }, [emblaApi]);
+
+  // Scroll to slide when thumbnail changes selectedImageIndex
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.scrollTo(selectedImageIndex);
+  }, [selectedImageIndex, emblaApi]);
+
+  // Keep zoom carousel synced to selected index
+  useEffect(() => {
+    if (!zoomEmblaApi) return;
+    zoomEmblaApi.scrollTo(selectedImageIndex);
+  }, [selectedImageIndex, zoomEmblaApi, zoomOpen]);
+
+  // When swiping inside zoom modal, update selected index
+  useEffect(() => {
+    if (!zoomEmblaApi) return;
+    const onSelect = () =>
+      setSelectedImageIndex(zoomEmblaApi.selectedScrollSnap());
+    zoomEmblaApi.on("select", onSelect);
+    zoomEmblaApi.on("reInit", onSelect);
+    onSelect();
+    return () => {
+      zoomEmblaApi.off("select", onSelect);
+      zoomEmblaApi.off("reInit", onSelect);
+    };
+  }, [zoomEmblaApi]);
 
   const handleAddToCart = (seller: any) => {
     const cartItem = {
@@ -149,16 +204,52 @@ export default function ProductDetailPage() {
         {/* Image Gallery - Left side on desktop, full width on mobile */}
         <div className="lg:w-[60%] lg:max-w-2xl px-4 py-6 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5">
           <div className="mb-4 lg:w-[80%]">
-            <div className="relative aspect-square glass-card rounded-3xl overflow-hidden shadow-2xl lg:max-w-lg lg:mx-auto">
-              <ProductImage
-                src={
-                  images?.[selectedImageIndex]?.image_url || "/placeholder.svg"
-                }
-                alt={`${listing?.title} - Image ${selectedImageIndex + 1}`}
-                priority={true}
-                className="w-full h-full object-contain"
-              />
-            </div>
+            <Carousel
+              className="lg:max-w-lg lg:mx-auto bg-gray-200 rounded-3xl"
+              opts={{ loop: (images?.length || 0) > 1 }}
+              setApi={setEmblaApi}
+            >
+              <CarouselContent className="-ml-0 relative aspect-square rounded-none shadow-2xl">
+                {images?.length ? (
+                  images.map((image, index) => (
+                    <CarouselItem key={image.id} className="relative pl-0">
+                      {/* Zoom Button */}
+                      <button
+                        type="button"
+                        aria-label="Zoom in"
+                        onClick={() => setZoomOpen(true)}
+                        className="absolute top-3 right-3 z-10 rounded-xl p-2 bg-white/80 hover:bg-white transition-colors shadow-md"
+                      >
+                        <ZoomIn className="h-5 w-5 text-gray-700" />
+                      </button>
+                      <ProductImage
+                        src={image?.image_url || "/placeholder.svg"}
+                        alt={`${listing?.title} - Image ${index + 1}`}
+                        priority={index === 0}
+                        className="w-full object-contain rounded-none"
+                        onClick={() => {
+                          setZoomOpen(true);
+                        }}
+                      />
+                    </CarouselItem>
+                  ))
+                ) : (
+                  <CarouselItem className="relative">
+                    <ProductImage
+                      src={"/placeholder.svg"}
+                      alt={`${listing?.title} - Image`}
+                      priority={true}
+                      className="w-full object-contain"
+                    />
+                  </CarouselItem>
+                )}
+              </CarouselContent>
+              {/* Desktop arrows */}
+              <div className="hidden sm:block">
+                <CarouselPrevious />
+                <CarouselNext />
+              </div>
+            </Carousel>
           </div>
 
           {/* Image Thumbnails */}
@@ -368,6 +459,59 @@ export default function ProductDetailPage() {
 
       {/* Bottom spacing */}
       <div className="h-8"></div>
+
+      {/* Zoom Modal */}
+      <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+        <DialogContent
+          showCloseButton={false}
+          className=" border-0 p-0 bg-black/90 text-white w-[96dvw] max-w-[96dvw] h-[90dvh] sm:max-w-[90vw]"
+        >
+          {/* Custom close button for better visibility */}
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setZoomOpen(false)}
+            className="absolute top-3 right-3 z-50 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow hover:bg-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          {/* Zoom carousel with swipe */}
+          <Carousel
+            opts={{ loop: (images?.length || 0) > 1 }}
+            setApi={setZoomEmblaApi}
+            className="max-h-[90dvh] productZoom"
+          >
+            <CarouselContent className="h-full">
+              {images?.length ? (
+                images.map((image, index) => (
+                  <CarouselItem key={image.id} className=" h-full">
+                    <div className="w-full h-full flex items-center justify-center">
+                      <img
+                        src={image?.image_url || "/placeholder.svg"}
+                        alt={`${listing?.title} - Zoomed ${index + 1}`}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))
+              ) : (
+                <CarouselItem className="relative h-full">
+                  <div className="w-full h-full flex items-center justify-center">
+                    <img
+                      src={"/placeholder.svg"}
+                      alt={`${listing?.title} - Zoomed`}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                </CarouselItem>
+              )}
+            </CarouselContent>
+            <CarouselPrevious className="bg-white/80 text-gray-800" />
+            <CarouselNext className="bg-white/80 text-gray-800" />
+          </Carousel>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
