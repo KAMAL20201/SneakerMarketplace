@@ -527,7 +527,7 @@ export default function SellPage() {
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="absolute top-2 right-2 h-6 w-6 md:h-8 md:w-8 p-0 glass-button border-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute top-2 right-2 h-6 w-6 md:h-8 md:w-8 p-0 glass-button border-0 rounded-2xl opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
                         onClick={() => removeImage(index)}
                       >
                         <X className="h-3 w-3 md:h-4 md:w-4 text-red-500" />
