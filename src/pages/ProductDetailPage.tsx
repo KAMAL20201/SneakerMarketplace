@@ -24,6 +24,10 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import type { EmblaCarouselType } from "embla-carousel";
+import { ReviewStats } from "@/components/reviews/ReviewStats";
+import { ReviewList } from "@/components/reviews/ReviewList";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { useState as useReviewFormState } from "react";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -42,6 +46,7 @@ export default function ProductDetailPage() {
   const [zoomEmblaApi, setZoomEmblaApi] = useState<EmblaCarouselType | null>(
     null
   );
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   // Sync selected index with carousel
   useEffect(() => {
@@ -454,6 +459,58 @@ export default function ProductDetailPage() {
               }}
             />
           )}
+        </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="px-4 lg:px-8 pb-12">
+        <div className="max-w-5xl mx-auto space-y-8">
+          {/* Review Stats */}
+          <ReviewStats productId={productId!} />
+
+          {/* Write Review Button */}
+          <div className="flex justify-between items-center">
+            <h3 className="text-2xl font-bold text-gray-800">Reviews</h3>
+            {user && !showReviewForm && (
+              <Button
+                onClick={() => {
+                  setShowReviewForm(true);
+                }}
+                className="glass-button border-0 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+              >
+                Write a Review
+              </Button>
+            )}
+            {!user && (
+              <Button
+                onClick={() => {
+                  toast.error("Please sign in to write a review");
+                  navigate(ROUTE_NAMES.LOGIN);
+                }}
+                className="glass-button border-0 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+              >
+                Write a Review
+              </Button>
+            )}
+          </div>
+
+          {/* Review Form */}
+          {showReviewForm && user && listing && (
+            <ReviewForm
+              productId={productId!}
+              sellerId={listing.seller_details?.id}
+              verifiedPurchase={false}
+              onSuccess={() => {
+                setShowReviewForm(false);
+                // Optionally refresh the review list
+                window.location.reload();
+              }}
+              onCancel={() => setShowReviewForm(false)}
+            />
+          )}
+
+          {/* Review List */}
+          <ReviewList productId={productId!} />
         </div>
       </div>
 

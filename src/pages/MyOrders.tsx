@@ -13,6 +13,7 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import PickupAddressModal, {
 } from "@/components/PickupAddressModal";
 import { supabase } from "@/lib/supabase";
 import { addPickupToShiprocket } from "@/lib/shiprocket";
+import { ReviewDialog } from "@/components/reviews/ReviewDialog";
 
 // Use the OrderType from orderService, but extend it with product details
 interface Order extends OrderType {
@@ -130,6 +132,15 @@ const MyOrders = () => {
     useState(false);
   const [pickupPincode, setPickupPincode] = useState<string | null>(null);
   const [pickupAddress, setPickupAddress] = useState<any | null>(null);
+
+  // Review modal state
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewOrderData, setReviewOrderData] = useState<{
+    orderId: string;
+    productId: string;
+    sellerId: string;
+    productName: string;
+  } | null>(null);
 
   const ensurePickupAddressAndOpenShip = async (order: Order) => {
     if (!user) return;
@@ -379,10 +390,21 @@ const MyOrders = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    onClick={() => {
+                                      setReviewOrderData({
+                                        orderId: order.id,
+                                        productId: order.product_id,
+                                        sellerId: order.seller_id,
+                                        productName:
+                                          order.product_listings?.title ||
+                                          "Product",
+                                      });
+                                      setReviewDialogOpen(true);
+                                    }}
                                     className="glass-button border-gray-200 rounded-2xl"
                                   >
-                                    <Package className="h-4 w-4 mr-2" />
-                                    Rate Product
+                                    <Star className="h-4 w-4 mr-2" />
+                                    Write Review
                                   </Button>
                                 )}
                               </div>
@@ -707,6 +729,18 @@ const MyOrders = () => {
           }
         }}
       />
+
+      {/* Review Dialog */}
+      {reviewOrderData && (
+        <ReviewDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          productId={reviewOrderData.productId}
+          sellerId={reviewOrderData.sellerId}
+          orderId={reviewOrderData.orderId}
+          productName={reviewOrderData.productName}
+        />
+      )}
     </div>
   );
 };
