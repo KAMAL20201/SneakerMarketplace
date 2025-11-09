@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { EmailService, type OrderEmailData } from "./emailService";
 import { logger } from "@/components/ui/Logger";
 import type { ShippingAddress } from "@/types/shipping";
+import { StockValidationService } from "./stockValidationService";
 
 export interface Order {
   id: string;
@@ -110,15 +111,47 @@ export class OrderService {
     shippingAddress?: ShippingAddress
   ): Promise<Order[]> {
     try {
+      // CRITICAL: Validate all cart items are still available before processing
+      await StockValidationService.validateBeforeCheckout(cartItems);
+
       const orders: Order[] = [];
+      const failedItems: string[] = [];
 
       // Create orders for each item and notify sellers
       for (const item of cartItems) {
+        // Double-check product availability (in case of race condition)
+        const availability = await StockValidationService.checkProductAvailability(
+          item.productId
+        );
+
+        if (!availability.isAvailable) {
+          logger.warn(
+            `Product ${item.productName} (${item.productId}) is no longer available. Status: ${availability.currentStatus}`
+          );
+          failedItems.push(item.productName);
+          continue;
+        }
+
         // Get product details
         const productDetails = await this.getProductDetails(item.productId);
 
         if (!productDetails) {
           logger.warn(`Product ${item.productId} not found, skipping`);
+          failedItems.push(item.productName);
+          continue;
+        }
+
+        // Mark product as sold using optimistic locking
+        // This prevents race conditions where multiple users try to buy the same item
+        const markedAsSold = await StockValidationService.markProductAsSold(
+          item.productId
+        );
+
+        if (!markedAsSold) {
+          logger.error(
+            `Failed to mark product ${item.productName} as sold - already sold or unavailable`
+          );
+          failedItems.push(item.productName);
           continue;
         }
 
@@ -179,12 +212,13 @@ export class OrderService {
           );
           // Don't fail the order creation if emails fail
         }
+      }
 
-        // Update product listing status to sold
-        await supabase
-          .from("product_listings")
-          .update({ status: "sold" })
-          .eq("id", item.productId);
+      // If any items failed to process, throw an error with details
+      if (failedItems.length > 0) {
+        throw new Error(
+          `Some items could not be processed: ${failedItems.join(", ")}. Please refresh your cart and try again.`
+        );
       }
 
       return orders;
