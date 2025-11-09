@@ -17,14 +17,24 @@ interface CartItemsStepProps {
 export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
   const { items, removeItem, totalPrice } = useCart();
 
-  // Real-time cart validation to check stock availability
+  // Cart validation to check stock availability
   const { validation, isValidating, validateCart, unavailableProductIds } =
-    useCartValidation(items, true, 30000); // Auto-validate every 30 seconds
+    useCartValidation(items, false); // Only validate on demand, not on interval
 
   const hasUnavailableItems = validation && !validation.isValid;
   const availableItemsCount = items.filter(
     (item) => !unavailableProductIds.has(item.productId)
   ).length;
+
+  // Validate stock before proceeding to shipping
+  const handleContinue = async () => {
+    const result = await validateCart();
+    // Only proceed if all items are available
+    if (result.isValid) {
+      onNext();
+    }
+    // If validation fails, the UI will show the unavailable items
+  };
 
   if (items.length === 0) {
     return (
@@ -204,11 +214,13 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
         </div>
 
         <Button
-          onClick={onNext}
+          onClick={handleContinue}
           disabled={hasUnavailableItems || isValidating}
           className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl py-3 text-lg font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {hasUnavailableItems
+          {isValidating
+            ? "Checking availability..."
+            : hasUnavailableItems
             ? "Remove Unavailable Items"
             : "Continue to Shipping"}
         </Button>

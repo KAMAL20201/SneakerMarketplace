@@ -6,18 +6,18 @@ interface UseCartValidationResult {
   validation: CartValidationResult | null;
   isValidating: boolean;
   error: string | null;
-  validateCart: () => Promise<void>;
+  validateCart: () => Promise<CartValidationResult>;
   unavailableProductIds: Set<string>;
 }
 
 /**
- * Hook for real-time cart validation
+ * Hook for cart validation
  * Checks if cart items are still available in stock
+ * Validates on-demand to avoid unnecessary database calls
  */
 export function useCartValidation(
   cartItems: CartItem[],
-  autoValidate = true,
-  validateInterval = 30000 // 30 seconds
+  autoValidate = false
 ): UseCartValidationResult {
   const [validation, setValidation] = useState<CartValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
@@ -28,14 +28,15 @@ export function useCartValidation(
     validation?.unavailableItems.map((item) => item.productId) || []
   );
 
-  const validateCart = useCallback(async () => {
+  const validateCart = useCallback(async (): Promise<CartValidationResult> => {
     if (!cartItems || cartItems.length === 0) {
-      setValidation({
+      const emptyResult = {
         isValid: true,
         unavailableItems: [],
         availableItems: [],
-      });
-      return;
+      };
+      setValidation(emptyResult);
+      return emptyResult;
     }
 
     setIsValidating(true);
@@ -44,34 +45,29 @@ export function useCartValidation(
     try {
       const result = await StockValidationService.validateCartItems(cartItems);
       setValidation(result);
+      return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to validate cart items';
       setError(errorMessage);
       console.error('Cart validation error:', err);
+      const errorResult = {
+        isValid: false,
+        unavailableItems: [],
+        availableItems: [],
+      };
+      setValidation(errorResult);
+      return errorResult;
     } finally {
       setIsValidating(false);
     }
   }, [cartItems]);
 
-  // Auto-validate on mount and when cart changes
+  // Auto-validate on mount and when cart changes (if enabled)
   useEffect(() => {
     if (autoValidate) {
       validateCart();
     }
   }, [autoValidate, validateCart]);
-
-  // Set up periodic validation
-  useEffect(() => {
-    if (!autoValidate || validateInterval <= 0) {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      validateCart();
-    }, validateInterval);
-
-    return () => clearInterval(intervalId);
-  }, [autoValidate, validateInterval, validateCart]);
 
   return {
     validation,
