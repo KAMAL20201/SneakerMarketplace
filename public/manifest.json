@@ -1,0 +1,27 @@
+{
+  "name": "The Plug Market - Authentic Sneakers & Streetwear",
+  "short_name": "The Plug Market",
+  "description": "Buy and sell authentic sneakers and streetwear. India's trusted marketplace for verified sneakers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle"],
+  "lang": "en-IN",
+  "dir": "ltr"
+}
