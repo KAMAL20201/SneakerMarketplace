@@ -18,7 +18,7 @@ export interface Review {
 }
 
 export interface ReviewWithReviewer extends Review {
-  reviewer: {
+  reviewer?: {
     id: string;
     email: string;
     // Add other user fields as needed

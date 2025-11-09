@@ -30,12 +30,7 @@ export function ReviewList({ productId, limit }: ReviewListProps) {
       // Build the query
       let query = supabase
         .from("reviews")
-        .select(
-          `
-          *,
-          reviewer:auth.users!reviewer_id(id, email)
-        `
-        )
+        .select("*")
         .eq("product_id", productId)
         .eq("is_approved", true)
         .order("created_at", { ascending: false });
@@ -208,7 +203,7 @@ export function ReviewList({ productId, limit }: ReviewListProps) {
                   </h4>
                 )}
                 <p className="text-sm text-gray-500">
-                  By {review.reviewer?.email?.split("@")[0] || "Anonymous"} •{" "}
+                  By {review.verified_purchase ? "Verified Buyer" : "Customer"} •{" "}
                   {formatDistanceToNow(new Date(review.created_at), {
                     addSuffix: true,
                   })}
