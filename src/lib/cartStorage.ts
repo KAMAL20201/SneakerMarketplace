@@ -1,5 +1,5 @@
-import type { CartItem } from "@/contexts/CartContext";
 import { logger } from "@/components/ui/Logger";
+import type { CartItem } from "./orderService";
 
 export const CART_STORAGE_KEY = "sneakin-market-cart";
 

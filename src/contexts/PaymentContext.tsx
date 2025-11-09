@@ -8,10 +8,12 @@ import React, {
 import { PaymentService } from "../lib/paymentService";
 import { OrderService } from "../lib/orderService";
 import { useAuth } from "./AuthContext";
-import { useCart, type CartItem } from "./CartContext";
+import { useCart } from "./CartContext";
 import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useNavigate } from "react-router";
+import type { CartItem } from "../lib/orderService";
+
 import {
   createRazorpayInstance,
   formatAmount,

@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { cartStorage } from "@/lib/cartStorage";
-import type { CartItem } from "@/contexts/CartContext";
+import type { CartItem } from "@/lib/orderService";
 
 /**
  * Custom hook for debounced cart localStorage operations

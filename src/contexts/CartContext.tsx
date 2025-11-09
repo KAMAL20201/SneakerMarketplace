@@ -1,20 +1,6 @@
 import { createContext, useContext, useState, useMemo, useEffect } from "react";
 import { useCartStorage } from "@/hooks/useCartStorage";
-
-export interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  brand: string;
-  size: string;
-  condition: string;
-  price: number;
-  image: string;
-  sellerId: string;
-  sellerName: string;
-  sellerEmail:string;
-  quantity: number;
-}
+import type { CartItem } from "@/lib/orderService";
 
 interface CartContextType {
   items: CartItem[];

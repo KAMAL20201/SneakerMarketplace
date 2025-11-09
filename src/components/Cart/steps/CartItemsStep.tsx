@@ -5,10 +5,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
-import { Trash2, ShoppingBag, AlertCircle, RefreshCw } from "lucide-react";
+import { Trash2, ShoppingBag, RefreshCw } from "lucide-react";
 import { useCartValidation } from "@/hooks/useCartValidation";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CartItemsStepProps {
   onNext: () => void;

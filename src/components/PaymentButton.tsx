@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router";
-import { useCart, type CartItem } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import type { ShippingAddress } from "@/types/shipping";
+import type { CartItem } from "@/lib/orderService";
 
 interface PaymentButtonProps {
   amount: number;

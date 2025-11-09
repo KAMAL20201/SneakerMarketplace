@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { StockValidationService, type CartValidationResult } from '../lib/stockValidationService';
-import type { CartItem } from '../contexts/CartContext';
+import { useState, useEffect, useCallback } from "react";
+import {
+  StockValidationService,
+  type CartValidationResult,
+} from "../lib/stockValidationService";
+import type { CartItem } from "@/lib/orderService";
 
 interface UseCartValidationResult {
   validation: CartValidationResult | null;
@@ -19,7 +22,9 @@ export function useCartValidation(
   cartItems: CartItem[],
   autoValidate = false
 ): UseCartValidationResult {
-  const [validation, setValidation] = useState<CartValidationResult | null>(null);
+  const [validation, setValidation] = useState<CartValidationResult | null>(
+    null
+  );
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,9 +52,10 @@ export function useCartValidation(
       setValidation(result);
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to validate cart items';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to validate cart items";
       setError(errorMessage);
-      console.error('Cart validation error:', err);
+      console.error("Cart validation error:", err);
       const errorResult = {
         isValid: false,
         unavailableItems: [],

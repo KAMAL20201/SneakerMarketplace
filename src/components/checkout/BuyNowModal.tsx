@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin } from "lucide-react";
 import type { ShippingAddress } from "@/types/shipping";
 import { PaymentButton } from "@/components/PaymentButton";
-import type { CartItem } from "@/contexts/CartContext";
+import type { CartItem } from "@/lib/orderService";
 
 type BuyNowModalProps = {
   open: boolean;
@@ -46,7 +46,10 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(o) : handleClose())}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => (o ? onOpenChange(o) : handleClose())}
+    >
       <DialogContent className="max-w-md w-[calc(100%-1rem)] p-0 rounded-3xl overflow-hidden">
         {step === "shipping" ? (
           <div className="flex flex-col h-[90vh] sm:h-[80vh]">
@@ -73,15 +76,20 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-2">Shipping to:</h4>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Shipping to:
+                      </h4>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p className="font-medium">{shippingAddress.full_name}</p>
+                        <p className="font-medium">
+                          {shippingAddress.full_name}
+                        </p>
                         <p>{shippingAddress.address_line1}</p>
                         {shippingAddress.address_line2 && (
                           <p>{shippingAddress.address_line2}</p>
                         )}
                         <p>
-                          {shippingAddress.city}, {shippingAddress.state} - {shippingAddress.pincode}
+                          {shippingAddress.city}, {shippingAddress.state} -{" "}
+                          {shippingAddress.pincode}
                         </p>
                         {shippingAddress.landmark && (
                           <p>Near: {shippingAddress.landmark}</p>
@@ -95,7 +103,9 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
 
               {/* Order Summary */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Order Summary</h4>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Order Summary
+                </h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal (1 item)</span>
@@ -138,4 +148,3 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
     </Dialog>
   );
 };
-
