@@ -30,8 +30,6 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
-  console.log("kamalcaptcha", captchaToken);
-
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
