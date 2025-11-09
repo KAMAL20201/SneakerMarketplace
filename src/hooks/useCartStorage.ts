@@ -17,16 +17,16 @@ export const useCartStorage = (debounceMs: number = 500) => {
       }
 
       // Set new timeout
-      timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = setTimeout(async () => {
         if (cartStorage.isAvailable()) {
-          cartStorage.save(items);
+          await cartStorage.save(items);
         }
       }, debounceMs);
     },
     [debounceMs]
   );
 
-  const immediateSave = useCallback((items: CartItem[]) => {
+  const immediateSave = useCallback(async (items: CartItem[]) => {
     // Clear any pending debounced save
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -34,13 +34,13 @@ export const useCartStorage = (debounceMs: number = 500) => {
     }
 
     if (cartStorage.isAvailable()) {
-      cartStorage.save(items);
+      await cartStorage.save(items);
     }
   }, []);
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     if (cartStorage.isAvailable()) {
-      return cartStorage.load();
+      return await cartStorage.load();
     }
     return [];
   }, []);

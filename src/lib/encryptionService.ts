@@ -9,7 +9,8 @@ class EncryptionService {
   // Generate a cryptographic key from user's session
   private static async deriveKey(
     userId: string,
-    sessionId: string
+    sessionId: string,
+    salt: Uint8Array
   ): Promise<CryptoKey> {
     const encoder = new TextEncoder();
     const keyMaterial = await window.crypto.subtle.importKey(
@@ -23,7 +24,7 @@ class EncryptionService {
     return window.crypto.subtle.deriveKey(
       {
         name: "PBKDF2",
-        salt: encoder.encode("SneakInMarket_PaymentEncryption_v1"),
+        salt: salt,
         iterations: 100000,
         hash: "SHA-256",
       },
@@ -41,7 +42,9 @@ class EncryptionService {
     sessionId: string
   ): Promise<string> {
     try {
-      const key = await this.deriveKey(userId, sessionId);
+      // Generate random salt for PBKDF2
+      const salt = window.crypto.getRandomValues(new Uint8Array(16));
+      const key = await this.deriveKey(userId, sessionId, salt);
       const encoder = new TextEncoder();
       const dataString = JSON.stringify(data);
 
@@ -56,10 +59,13 @@ class EncryptionService {
         encoder.encode(dataString)
       );
 
-      // Combine IV and encrypted data
-      const combined = new Uint8Array(iv.length + encryptedData.byteLength);
-      combined.set(iv);
-      combined.set(new Uint8Array(encryptedData), iv.length);
+      // Combine salt, IV and encrypted data
+      const combined = new Uint8Array(
+        salt.length + iv.length + encryptedData.byteLength
+      );
+      combined.set(salt);
+      combined.set(iv, salt.length);
+      combined.set(new Uint8Array(encryptedData), salt.length + iv.length);
 
       // Convert to base64 for storage
       return btoa(String.fromCharCode(...combined));
@@ -76,7 +82,6 @@ class EncryptionService {
     sessionId: string
   ): Promise<PaymentMethodData> {
     try {
-      const key = await this.deriveKey(userId, sessionId);
       const decoder = new TextDecoder();
 
       // Convert from base64
@@ -86,9 +91,13 @@ class EncryptionService {
           .map((char) => char.charCodeAt(0))
       );
 
-      // Extract IV and encrypted data
-      const iv = combined.slice(0, this.IV_LENGTH);
-      const encrypted = combined.slice(this.IV_LENGTH);
+      // Extract salt, IV and encrypted data
+      const saltLength = 16;
+      const salt = combined.slice(0, saltLength);
+      const iv = combined.slice(saltLength, saltLength + this.IV_LENGTH);
+      const encrypted = combined.slice(saltLength + this.IV_LENGTH);
+
+      const key = await this.deriveKey(userId, sessionId, salt);
 
       const decryptedData = await window.crypto.subtle.decrypt(
         {
