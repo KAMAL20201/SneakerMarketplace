@@ -27,10 +27,9 @@ export function SellerRatingDisplay({
         .from("seller_ratings")
         .select("*")
         .eq("seller_id", sellerId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== "PGRST116") {
-        // PGRST116 = no rows returned
+      if (error) {
         console.error("Error fetching seller rating:", error);
         return;
       }

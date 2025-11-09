@@ -37,9 +37,9 @@ export function useProductReviews(productId: string) {
         .from("product_ratings")
         .select("*")
         .eq("product_id", productId)
-        .single();
+        .maybeSingle();
 
-      if (ratingError && ratingError.code !== "PGRST116") {
+      if (ratingError) {
         throw ratingError;
       }
 
@@ -72,9 +72,9 @@ export function useSellerRating(sellerId: string) {
         .from("seller_ratings")
         .select("*")
         .eq("seller_id", sellerId)
-        .single();
+        .maybeSingle();
 
-      if (ratingError && ratingError.code !== "PGRST116") {
+      if (ratingError) {
         throw ratingError;
       }
 

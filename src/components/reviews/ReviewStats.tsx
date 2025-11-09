@@ -22,10 +22,9 @@ export function ReviewStats({ productId }: ReviewStatsProps) {
         .from("product_ratings")
         .select("*")
         .eq("product_id", productId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== "PGRST116") {
-        // PGRST116 = no rows returned
+      if (error) {
         console.error("Error fetching stats:", error);
         return;
       }
