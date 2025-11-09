@@ -62,52 +62,11 @@ export default defineConfig({
   },
   // For production builds
   build: {
-    // Optimize bundle size
-    target: "esnext",
-    minify: "terser",
-    cssMinify: true,
-    reportCompressedSize: true,
-    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        // Better code splitting for performance
         manualChunks: {
-          // Core React libraries
-          react: ["react", "react-dom"],
-          // Router
-          router: ["react-router"],
-          // UI components
-          radix: [
-            "@radix-ui/react-alert-dialog",
-            "@radix-ui/react-avatar",
-            "@radix-ui/react-checkbox",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-label",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-scroll-area",
-            "@radix-ui/react-select",
-            "@radix-ui/react-separator",
-            "@radix-ui/react-slot",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-tooltip",
-          ],
-          // Supabase
-          supabase: ["@supabase/supabase-js"],
-          // Forms
-          forms: ["react-hook-form", "@hookform/resolvers", "zod"],
+          vendor: ["react", "react-dom", "react-router"],
         },
-        // Optimize asset file names
-        chunkFileNames: "assets/js/[name]-[hash].js",
-        entryFileNames: "assets/js/[name]-[hash].js",
-        assetFileNames: "assets/[ext]/[name]-[hash].[ext]",
-      },
-    },
-    // Improve compression
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.log in production
-        drop_debugger: true,
       },
     },
   },
