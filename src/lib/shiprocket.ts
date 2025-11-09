@@ -4,6 +4,9 @@ export type ServiceabilityQuery = {
   pickup_postcode: string;
   delivery_postcode: string;
   weight: number; // in kg
+  length: number; // in cm
+  breadth: number; // in cm
+  height: number; // in cm
 };
 
 export type CourierCompany = {
@@ -36,6 +39,9 @@ export async function fetchServiceability(
         pickup_pincode: query.pickup_postcode,
         delivery_pincode: query.delivery_postcode,
         weight: query.weight,
+        length: query.length,
+        breadth: query.breadth,
+        height: query.height,
       },
     }
   );

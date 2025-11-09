@@ -169,8 +169,11 @@ export default function ShipNowModal({
       pickup_postcode: pickupPincode,
       delivery_postcode: deliveryPincode,
       weight: Number(weightKg || 0),
+      length: Number(lengthCm || 0),
+      breadth: Number(breadthCm || 0),
+      height: Number(widthCm || 0),
     }),
-    [pickupPincode, deliveryPincode, weightKg]
+    [pickupPincode, deliveryPincode, weightKg, lengthCm, breadthCm, widthCm]
   );
 
   useEffect(() => {
