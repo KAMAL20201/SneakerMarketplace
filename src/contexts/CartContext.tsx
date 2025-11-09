@@ -49,11 +49,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Load cart from localStorage on component mount
   useEffect(() => {
-    const savedItems = load();
-    if (savedItems.length > 0) {
-      setItems(savedItems);
-    }
-    setIsLoaded(true);
+    const loadCart = async () => {
+      const savedItems = await load();
+      if (savedItems.length > 0) {
+        setItems(savedItems);
+      }
+      setIsLoaded(true);
+    };
+    loadCart();
   }, [load]);
 
   // Save cart to localStorage whenever items change (after initial load)
@@ -67,7 +70,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     return () => {
       if (isLoaded && items.length > 0) {
-        immediateSave(items);
+        // Fire and forget - cleanup handlers can't be async
+        void immediateSave(items);
       }
     };
   }, [items, isLoaded, immediateSave]);

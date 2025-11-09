@@ -13,11 +13,22 @@ export class PaymentMethodsService {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      return session?.access_token
-        ? session.access_token.substring(0, 32)
-        : "fallback_key";
+
+      if (!session?.access_token) {
+        throw new Error("No active session found. Please sign in again.");
+      }
+
+      // Use a hash of the access token for better security
+      const encoder = new TextEncoder();
+      const data = encoder.encode(session.access_token);
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      return hashHex.substring(0, 32);
     } catch (error) {
-      return "fallback_key";
+      console.error("Error getting session ID:", error);
+      throw new Error("Authentication required. Please sign in again.");
     }
   }
 
