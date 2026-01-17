@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "./ui/button";
 import { usePayment } from "../contexts/PaymentContext";
-import { Loader2, MessageCircle } from "lucide-react";
+import { CreditCard, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useAuth } from "@/contexts/AuthContext";
@@ -85,8 +85,8 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
           </>
         ) : (
           <>
-            <MessageCircle className="mr-2 h-4 w-4" />
-            {buttonText || `Continue to WhatsApp`}
+            <CreditCard className="mr-2 h-4 w-4" />
+            {buttonText || `Continue to Payment`}
           </>
         )}
       </Button>
