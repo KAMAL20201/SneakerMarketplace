@@ -10,7 +10,6 @@ export interface Order {
   seller_id: string;
   product_id: string;
   payment_id: string;
-  razorpay_order_id: string;
   amount: number;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   shipping_address?: ShippingAddress;
@@ -24,7 +23,6 @@ export interface CreateOrderRequest {
   seller_id: string;
   product_id: string;
   payment_id: string;
-  razorpay_order_id: string;
   amount: number;
   shipping_address?: ShippingAddress;
 }
@@ -56,10 +54,9 @@ export class OrderService {
             seller_id: orderData.seller_id,
             product_id: orderData.product_id,
             payment_id: orderData.payment_id,
-            razorpay_order_id: orderData.razorpay_order_id,
             amount: orderData.amount,
             shipping_address: orderData.shipping_address || {},
-            status: "confirmed",
+            status: "pending", // WhatsApp orders start as pending until payment is confirmed
           },
         ])
         .select()
@@ -105,7 +102,7 @@ export class OrderService {
   static async processCartCheckout(
     cartItems: CartItem[],
     paymentId: string,
-    razorpayOrderId: string,
+    _whatsappOrderRef: string, // Kept for reference in WhatsApp message, not stored in DB
     buyerId: string,
     buyerDetails: { full_name: string; email: string },
     shippingAddress?: ShippingAddress
@@ -161,7 +158,6 @@ export class OrderService {
           seller_id: item.sellerId,
           product_id: item.productId,
           payment_id: paymentId,
-          razorpay_order_id: razorpayOrderId,
           amount: item.price,
           shipping_address: shippingAddress || undefined,
         });
@@ -181,7 +177,7 @@ export class OrderService {
           buyer_email: buyerDetails.email,
           seller_name: item.sellerName,
           seller_email: item.sellerEmail,
-          order_status: "confirmed",
+          order_status: "pending",
           shipping_address: shippingAddress || undefined,
         };
 

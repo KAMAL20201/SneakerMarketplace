@@ -226,7 +226,7 @@ export default function CancellationsRefunds() {
                   <li>• UPI: 1-2 business days</li>
                   <li>• Credit/Debit Cards: 3-5 business days</li>
                   <li>• Bank Transfer: 5-7 business days</li>
-                  <li>• Razorpay: 1-3 business days</li>
+                  <li>• WhatsApp Payment: 1-3 business days</li>
                 </ul>
               </div>
             </div>

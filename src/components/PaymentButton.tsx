@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "./ui/button";
 import { usePayment } from "../contexts/PaymentContext";
-import { Loader2, CreditCard } from "lucide-react";
+import { CreditCard, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useAuth } from "@/contexts/AuthContext";
@@ -81,12 +81,12 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
+            Redirecting...
           </>
         ) : (
           <>
             <CreditCard className="mr-2 h-4 w-4" />
-            {buttonText || `Pay ₹${amount}`}
+            {buttonText || `Continue to Payment`}
           </>
         )}
       </Button>

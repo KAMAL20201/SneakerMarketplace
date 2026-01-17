@@ -167,7 +167,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
           disabled={!isFormValid}
           className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl py-3 text-lg font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Continue to Payment
+          Review & Pay
         </Button>
 
         <Button
