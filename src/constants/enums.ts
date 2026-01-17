@@ -28,7 +28,7 @@ export const ROUTE_NAMES = {
   RETURNS: "/returns",
   ABOUT: "/about",
   SELLER_AGREEMENT: "/seller-agreement",
-  // Razorpay required pages
+  // Policy pages
   CONTACT_US: "/contact-us",
   SHIPPING_POLICY: "/shipping-policy",
   CANCELLATIONS_REFUNDS: "/cancellations-refunds",

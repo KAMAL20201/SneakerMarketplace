@@ -20,7 +20,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
   const [subscriptionMessage, setSubscriptionMessage] = React.useState("");
 
   // Define policy pages that should be accessible even in coming soon mode
-  // These are the pages Razorpay needs to verify for live mode
+  // These are the policy pages required for the application
   const allowedPolicyPages = [
     ROUTE_NAMES.PRIVACY,
     ROUTE_NAMES.TERMS,

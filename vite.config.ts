@@ -17,11 +17,11 @@ export default defineConfig({
           res.setHeader(
             "Content-Security-Policy",
             "default-src 'self'; " +
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://sdk.cashfree.com https://www.google.com https://www.gstatic.com; " +
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com; " +
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
               "font-src 'self' https://fonts.gstatic.com; " +
               "img-src 'self' data: https: blob:; " +
-              "connect-src 'self' https://*.supabase.co https://api.postalpincode.in https://checkout.razorpay.com https://api.cashfree.com; " +
+              "connect-src 'self' https://*.supabase.co https://api.postalpincode.in https://wa.me; " +
               "frame-src 'self' https://www.google.com; " +
               "object-src 'none'; " +
               "base-uri 'self'; " +

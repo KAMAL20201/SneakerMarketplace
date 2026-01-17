@@ -5,7 +5,6 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import { PaymentService } from "../lib/paymentService";
 import { OrderService } from "../lib/orderService";
 import { useAuth } from "./AuthContext";
 import { useCart } from "./CartContext";
@@ -13,20 +12,13 @@ import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useNavigate } from "react-router";
 import type { CartItem } from "../lib/orderService";
-
-import {
-  createRazorpayInstance,
-  formatAmount,
-  formatCurrency,
-  loadRazorpayScript,
-  RAZORPAY_KEY_ID,
-} from "@/lib/razorpay";
-import type {
-  RazorpayOptions,
-  RazorpayResponse,
-  CreateOrderRequest,
-} from "../types/razorpay";
 import type { ShippingAddress } from "@/types/shipping";
+import {
+  openWhatsApp,
+  generateWhatsAppOrderRef,
+  isWhatsAppConfigured,
+  type WhatsAppOrderData,
+} from "@/lib/whatsapp";
 
 interface PaymentContextType {
   isLoading: boolean;
@@ -63,6 +55,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const { user } = useAuth();
   const { toggleCart, isOpen, clearCart } = useCart();
   const navigate = useNavigate();
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -70,7 +63,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const initiatePayment = useCallback(
     async (
       amount: number,
-      currency: string,
+      _currency: string,
       metadata: Record<string, string> = {},
       items: CartItem[] = [],
       shippingAddress?: ShippingAddress
@@ -79,119 +72,70 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(true);
         setError(null);
 
-        // Load razorpay script
-        await loadRazorpayScript();
+        // Check if WhatsApp is configured
+        if (!isWhatsAppConfigured()) {
+          setError("WhatsApp Business number not configured. Please contact support.");
+          toast.error("WhatsApp Business number not configured");
+          return;
+        }
 
-        // Create order on server with required customer details and cart items for one-click checkout
-        const orderData: CreateOrderRequest = {
-          amount: formatAmount(amount),
-          currency: formatCurrency(currency),
-          receipt: `receipt_${Date.now()}`,
-          notes: metadata,
-          // customer_details: {
-          //   customer_id: user?.id || `user_${Date.now()}`,
-          //   customer_name: user?.user_metadata?.full_name || "Customer",
-          //   customer_email: user?.email || "customer@example.com",
-          //   customer_phone: "9999999999", // Dummy phone number as required by Cashfree
-          // },
-          // cart_details: {
-          //   cart_items:
-          //     items?.length > 0
-          //       ? items?.map((item, index) => ({
-          //           item_id: item.id || `item_${index}`,
-          //           item_name: item.productName || `Item ${index + 1}`,
-          //           item_description: `${item.brand} - ${item.condition} - Size: ${item.size}`,
-          //           item_original_unit_price: item.price,
-          //           item_discounted_unit_price: item.price,
-          //           item_quantity: item.quantity,
-          //           item_currency: currency,
-          //         }))
-          //       : [],
-          // },
-        };
+        // Generate unique order reference
+        const whatsappOrderRef = generateWhatsAppOrderRef();
 
-        const order = await PaymentService.createOrder(orderData);
+        // Check if this is a cart checkout
+        if (metadata.type === "cart_checkout" && items.length > 0) {
+          // Prepare WhatsApp order data
+          const whatsAppOrderData: WhatsAppOrderData = {
+            items,
+            totalAmount: amount,
+            shippingAddress,
+            buyerName: user?.user_metadata?.full_name || "Customer",
+            buyerEmail: user?.email || "",
+            orderReference: whatsappOrderRef,
+          };
 
-        // Configure Razorpay options
-        const options: RazorpayOptions = {
-          key: RAZORPAY_KEY_ID,
-          amount: order.amount,
-          currency: order.currency,
-          name: "The Plug Market",
-          // description: description,
-          order_id: order.id,
-          prefill: {
-            name: user?.user_metadata?.full_name || "",
-            email: user?.email || "",
-          },
-          notes: metadata,
-          theme: {
-            color: "#3B82F6",
-          },
-          handler: async (response: RazorpayResponse) => {
-            try {
-              // Verify payment
+          // Open WhatsApp with order details
+          const whatsAppOpened = openWhatsApp(whatsAppOrderData);
 
-              const verification = await PaymentService.verifyPayment(response);
+          if (!whatsAppOpened) {
+            setError("Failed to open WhatsApp. Please ensure WhatsApp is installed.");
+            toast.error("Failed to open WhatsApp");
+            return;
+          }
 
-              if (verification.verified && verification.payment) {
-                // Save payment to database
-                await PaymentService.savePayment({
-                  amount: amount,
-                  currency: currency,
-                  status: "completed",
-                  order_id: response.razorpay_order_id,
-                  payment_id: response.razorpay_payment_id,
-                  user_id: user?.id || "",
-                });
-                // Check if this is a cart checkout
-                if (metadata.type === "cart_checkout" && items.length > 0) {
-                  // Process cart checkout - create orders and notify sellers
-                  await OrderService.processCartCheckout(
-                    items,
-                    response.razorpay_payment_id,
-                    response.razorpay_order_id,
-                    user?.id || "",
-                    {
-                      full_name: user?.user_metadata?.full_name || "",
-                      email: user?.email || "",
-                    },
-                    shippingAddress
-                  );
-                  if (isOpen) {
-                    toggleCart();
-                  }
-                  clearCart();
-                  navigate(ROUTE_NAMES.MY_ORDERS);
-                  toast.success(
-                    "🎉 Purchase successful! Sellers have been notified."
-                  );
-                }
-              } else {
-                setError("Payment verification failed");
-              }
-            } catch (err) {
-              setError(
-                err instanceof Error
-                  ? err.message
-                  : "Payment verification failed"
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              setIsLoading(false);
+          // Process cart checkout - create orders with pending_payment status
+          await OrderService.processCartCheckout(
+            items,
+            whatsappOrderRef, // Using whatsapp order ref as payment identifier
+            whatsappOrderRef,
+            user?.id || "",
+            {
+              full_name: user?.user_metadata?.full_name || "",
+              email: user?.email || "",
             },
-          },
-        };
-        // Open Razorpay modal
-        const razorpay = createRazorpayInstance(options);
-        razorpay.open();
+            shippingAddress
+          );
+
+          // Close cart if open
+          if (isOpen) {
+            toggleCart();
+          }
+
+          // Clear cart
+          clearCart();
+
+          // Navigate to orders page
+          navigate(ROUTE_NAMES.MY_ORDERS);
+
+          toast.success(
+            "Order placed! Please complete payment via WhatsApp. Sellers have been notified."
+          );
+        }
       } catch (error) {
         console.error("Payment error:", error);
-        toast.error("Payment failed. Please try again.");
+        const errorMessage = error instanceof Error ? error.message : "Failed to process order";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsLoading(false);
       }
