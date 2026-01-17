@@ -5,7 +5,6 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import { OrderService } from "../lib/orderService";
 import { useAuth } from "./AuthContext";
 import { useCart } from "./CartContext";
 import { toast } from "sonner";
@@ -13,12 +12,7 @@ import { ROUTE_NAMES } from "@/constants/enums";
 import { useNavigate } from "react-router";
 import type { CartItem } from "../lib/orderService";
 import type { ShippingAddress } from "@/types/shipping";
-import {
-  openWhatsApp,
-  generateWhatsAppOrderRef,
-  isWhatsAppConfigured,
-  type WhatsAppOrderData,
-} from "@/lib/whatsapp";
+import { generateWhatsAppOrderRef } from "@/lib/whatsapp";
 
 interface PaymentContextType {
   isLoading: boolean;
@@ -53,7 +47,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { toggleCart, isOpen, clearCart } = useCart();
+  const { toggleCart, isOpen } = useCart();
   const navigate = useNavigate();
 
   const clearError = useCallback(() => {
@@ -72,64 +66,25 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(true);
         setError(null);
 
-        // Check if WhatsApp is configured
-        if (!isWhatsAppConfigured()) {
-          setError("WhatsApp Business number not configured. Please contact support.");
-          toast.error("WhatsApp Business number not configured");
-          return;
-        }
-
         // Generate unique order reference
-        const whatsappOrderRef = generateWhatsAppOrderRef();
+        const orderReference = generateWhatsAppOrderRef();
 
         // Check if this is a cart checkout
         if (metadata.type === "cart_checkout" && items.length > 0) {
-          // Prepare WhatsApp order data
-          const whatsAppOrderData: WhatsAppOrderData = {
-            items,
-            totalAmount: amount,
-            shippingAddress,
-            buyerName: user?.user_metadata?.full_name || "Customer",
-            buyerEmail: user?.email || "",
-            orderReference: whatsappOrderRef,
-          };
-
-          // Open WhatsApp with order details
-          const whatsAppOpened = openWhatsApp(whatsAppOrderData);
-
-          if (!whatsAppOpened) {
-            setError("Failed to open WhatsApp. Please ensure WhatsApp is installed.");
-            toast.error("Failed to open WhatsApp");
-            return;
-          }
-
-          // Process cart checkout - create orders with pending_payment status
-          await OrderService.processCartCheckout(
-            items,
-            whatsappOrderRef, // Using whatsapp order ref as payment identifier
-            whatsappOrderRef,
-            user?.id || "",
-            {
-              full_name: user?.user_metadata?.full_name || "",
-              email: user?.email || "",
-            },
-            shippingAddress
-          );
-
           // Close cart if open
           if (isOpen) {
             toggleCart();
           }
 
-          // Clear cart
-          clearCart();
-
-          // Navigate to orders page
-          navigate(ROUTE_NAMES.MY_ORDERS);
-
-          toast.success(
-            "Order placed! Please complete payment via WhatsApp. Sellers have been notified."
-          );
+          // Navigate to payment confirmation page with order data
+          navigate(ROUTE_NAMES.PAYMENT_CONFIRMATION, {
+            state: {
+              items,
+              totalAmount: amount,
+              shippingAddress,
+              orderReference,
+            },
+          });
         }
       } catch (error) {
         console.error("Payment error:", error);
@@ -140,7 +95,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(false);
       }
     },
-    [user, isOpen, toggleCart, navigate, clearCart]
+    [user, isOpen, toggleCart, navigate]
   );
 
   const value: PaymentContextType = {

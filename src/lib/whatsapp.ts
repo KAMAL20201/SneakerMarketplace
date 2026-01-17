@@ -20,16 +20,17 @@ export interface WhatsAppOrderData {
 export const formatWhatsAppMessage = (orderData: WhatsAppOrderData): string => {
   const { items, totalAmount, shippingAddress, buyerName, buyerEmail, orderReference } = orderData;
 
-  let message = `*New Order Request*\n\n`;
-  message += `*Order Reference:* ${orderReference}\n\n`;
+  let message = `*Order Confirmation - Payment Completed*\n\n`;
+  message += `*Order Reference:* ${orderReference}\n`;
+  message += `*Payment Status:* PAID via UPI\n\n`;
   message += `*Order Details:*\n`;
 
   // Add each item
   items.forEach((item) => {
-    message += `${item.productName} - ${item.brand} - Size: ${item.size} - ₹${item.price} x ${item.quantity}\n`;
+    message += `• ${item.productName} - ${item.brand} - Size: ${item.size} - ₹${item.price.toLocaleString()} x ${item.quantity}\n`;
   });
 
-  message += `\n*Total Amount:* ₹${totalAmount}\n\n`;
+  message += `\n*Total Amount Paid:* ₹${totalAmount.toLocaleString()}\n\n`;
 
   // Add shipping address if available
   if (shippingAddress) {
@@ -45,7 +46,7 @@ export const formatWhatsAppMessage = (orderData: WhatsAppOrderData): string => {
 
   message += `*Buyer:* ${buyerName}\n`;
   message += `*Email:* ${buyerEmail}\n\n`;
-  message += `Please confirm payment and shipping details.`;
+  message += `I have completed the payment. Please confirm receipt and process my order.`;
 
   return message;
 };
