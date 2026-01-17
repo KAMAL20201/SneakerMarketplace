@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Copy, Check, MessageCircle, ShoppingBag, AlertCircle } from "lucide-react";
+import { Copy, Check, MessageCircle, ShoppingBag, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { OrderService } from "@/lib/orderService";
@@ -19,6 +19,9 @@ import {
 
 // UPI ID from environment variable
 const UPI_ID = import.meta.env.VITE_UPI_ID || "";
+
+// Payment timeout in seconds (10 minutes)
+const PAYMENT_TIMEOUT_SECONDS = 10 * 60;
 
 interface PaymentConfirmationState {
   items: CartItem[];
@@ -35,9 +38,36 @@ const PaymentConfirmation = () => {
   const [copied, setCopied] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderCreated, setOrderCreated] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(PAYMENT_TIMEOUT_SECONDS);
 
   // Get order data from navigation state
   const orderData = location.state as PaymentConfirmationState | null;
+
+  // Handle session expiry
+  const handleSessionExpiry = useCallback(() => {
+    toast.error("Payment session expired. Please try again.", {
+      duration: 5000,
+    });
+    navigate(ROUTE_NAMES.HOME);
+  }, [navigate]);
+
+  // Timer effect
+  useEffect(() => {
+    if (!orderData) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleSessionExpiry();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [orderData, handleSessionExpiry]);
 
   useEffect(() => {
     // Redirect if no order data
@@ -45,6 +75,20 @@ const PaymentConfirmation = () => {
       navigate(ROUTE_NAMES.HOME);
     }
   }, [orderData, navigate]);
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Get timer color based on remaining time
+  const getTimerColor = (): string => {
+    if (timeRemaining <= 60) return "text-red-600 dark:text-red-400";
+    if (timeRemaining <= 180) return "text-orange-600 dark:text-orange-400";
+    return "text-green-600 dark:text-green-400";
+  };
 
   if (!orderData) {
     return null;
@@ -69,6 +113,11 @@ const PaymentConfirmation = () => {
   const handleConfirmPayment = async () => {
     if (!user) {
       toast.error("Please log in to continue");
+      return;
+    }
+
+    if (timeRemaining <= 0) {
+      handleSessionExpiry();
       return;
     }
 
@@ -151,6 +200,19 @@ const PaymentConfirmation = () => {
           <p className="text-muted-foreground mt-2">
             Scan the QR code or use the UPI ID to pay
           </p>
+          {/* Timer Display */}
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Clock className={`h-5 w-5 ${getTimerColor()}`} />
+            <span className={`text-lg font-mono font-bold ${getTimerColor()}`}>
+              {formatTime(timeRemaining)}
+            </span>
+            <span className="text-sm text-muted-foreground">remaining</span>
+          </div>
+          {timeRemaining <= 60 && (
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1 animate-pulse">
+              Hurry! Session expiring soon
+            </p>
+          )}
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -257,12 +319,14 @@ const PaymentConfirmation = () => {
           {/* Confirm Payment Button */}
           <Button
             onClick={handleConfirmPayment}
-            disabled={isProcessing}
+            disabled={isProcessing || timeRemaining <= 0}
             className="w-full h-12 text-lg"
             size="lg"
           >
             {isProcessing ? (
               <>Processing...</>
+            ) : timeRemaining <= 0 ? (
+              <>Session Expired</>
             ) : (
               <>
                 <MessageCircle className="mr-2 h-5 w-5" />
