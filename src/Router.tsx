@@ -32,6 +32,7 @@ const SecurePayments = lazy(() => import("./pages/SecurePayments"));
 const ReviewProcess = lazy(() => import("./pages/ReviewProcess"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const PaymentConfirmation = lazy(() => import("./pages/PaymentConfirmation"));
+const OrderSubmitted = lazy(() => import("./pages/OrderSubmitted"));
 
 // Preload functions for critical routes
 export const preloadRoutes = {
@@ -58,6 +59,7 @@ export const preloadRoutes = {
   shippingPolicy: () => import("./pages/ShippingPolicy"),
   cancellationsRefunds: () => import("./pages/Cancellations"),
   paymentConfirmation: () => import("./pages/PaymentConfirmation"),
+  orderSubmitted: () => import("./pages/OrderSubmitted"),
 };
 
 // Enhanced loading component for better UX
@@ -271,6 +273,16 @@ const Router = () => {
           <Suspense fallback={<PageSkeleton />}>
             <ProtectedRoute route={ROUTE_NAMES.PAYMENT_CONFIRMATION}>
               <PaymentConfirmation />
+            </ProtectedRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.ORDER_SUBMITTED}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <ProtectedRoute route={ROUTE_NAMES.ORDER_SUBMITTED}>
+              <OrderSubmitted />
             </ProtectedRoute>
           </Suspense>
         }

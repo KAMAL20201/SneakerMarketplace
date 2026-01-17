@@ -162,12 +162,16 @@ const PaymentConfirmation = () => {
       // Clear cart
       clearCart();
 
-      // Navigate to orders page
-      navigate(ROUTE_NAMES.MY_ORDERS);
+      // Navigate to order submitted confirmation page
+      navigate(ROUTE_NAMES.ORDER_SUBMITTED, {
+        state: {
+          orderReference,
+          totalAmount,
+          itemCount: items.length,
+        },
+      });
 
-      toast.success(
-        "Order placed! Please complete payment via UPI. Sellers have been notified."
-      );
+      toast.success("Order submitted successfully!");
     } catch (error) {
       console.error("Error processing order:", error);
       toast.error("Failed to process order. Please try again.");
