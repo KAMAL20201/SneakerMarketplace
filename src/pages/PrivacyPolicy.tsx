@@ -240,10 +240,10 @@ export default function PrivacyPolicy() {
               <p className="font-semibold">The Plug Market</p>
               <p>Email: support@theplugmarket.in</p>
               <p>Phone: +91-78885-27970</p>
-              <p>
+              {/* <p>
                 Address: #222, Near Ram Mandir, Patiala Gate, Sangrur, Punjab
                 148001, India
-              </p>
+              </p> */}
             </div>
           </CardContent>
         </Card>
