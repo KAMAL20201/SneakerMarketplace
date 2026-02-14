@@ -1,11 +1,6 @@
 import {
   Home,
   Search,
-  Plus,
-  // User,
-  // Settings,
-  ShoppingBag,
-  CreditCard,
   Package,
   MapPin,
 } from "lucide-react";
@@ -30,7 +25,7 @@ import { ROUTE_NAMES } from "@/constants/enums";
 const data = {
   navMain: [
     {
-      title: "Marketplace",
+      title: "Shop",
       items: [
         {
           title: "Home",
@@ -50,18 +45,6 @@ const data = {
       title: "My Account",
       items: [
         {
-          title: "Sell Items",
-          url: ROUTE_NAMES.SELL,
-          icon: Plus,
-          preloadKey: "sell" as keyof typeof preloadRoutes,
-        },
-        {
-          title: "My Listings",
-          url: ROUTE_NAMES.MY_LISTINGS,
-          icon: ShoppingBag,
-          preloadKey: "myListings" as keyof typeof preloadRoutes,
-        },
-        {
           title: "My Orders",
           url: ROUTE_NAMES.MY_ORDERS,
           icon: Package,
@@ -72,30 +55,12 @@ const data = {
     {
       title: "Settings",
       items: [
-        // {
-        //   title: "Profile",
-        //   url: ROUTE_NAMES.PROFILE,
-        //   icon: User,
-        //   preloadKey: null, // No preload for this route
-        // },
         {
           title: "My Addresses",
           url: ROUTE_NAMES.MY_ADDRESSES,
           icon: MapPin,
           preloadKey: "myAddresses" as keyof typeof preloadRoutes,
         },
-        {
-          title: "Payment Methods",
-          url: ROUTE_NAMES.PAYMENT_METHODS,
-          icon: CreditCard,
-          preloadKey: "paymentMethods" as keyof typeof preloadRoutes,
-        },
-        // {
-        //   title: "Settings",
-        //   url: ROUTE_NAMES.SETTINGS,
-        //   icon: Settings,
-        //   preloadKey: null, // No preload for this route
-        // },
       ],
     },
   ],

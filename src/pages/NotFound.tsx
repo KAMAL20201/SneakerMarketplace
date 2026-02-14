@@ -64,17 +64,10 @@ const NotFound = () => {
               <p className="text-sm text-gray-500 mb-3">Popular sections:</p>
               <div className="flex flex-wrap justify-center gap-2">
                 <Link
-                  to={ROUTE_NAMES.SELL}
+                  to={ROUTE_NAMES.BROWSE}
                   className="text-sm text-blue-600 hover:text-blue-800 underline"
                 >
-                  Sell Items
-                </Link>
-                <span className="text-gray-300">•</span>
-                <Link
-                  to={ROUTE_NAMES.MY_LISTINGS}
-                  className="text-sm text-blue-600 hover:text-blue-800 underline"
-                >
-                  My Listings
+                  Browse Products
                 </Link>
                 <span className="text-gray-300">•</span>
                 <Link

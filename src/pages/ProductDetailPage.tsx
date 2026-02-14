@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Star, ShoppingCart, Shield, Truck, ZoomIn, X } from "lucide-react";
+import { ShoppingCart, Truck, ZoomIn, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { useParams } from "react-router";
@@ -84,7 +83,7 @@ export default function ProductDetailPage() {
     };
   }, [zoomEmblaApi]);
 
-  const handleAddToCart = (seller: any) => {
+  const handleAddToCart = () => {
     const cartItem = {
       id: `${listing?.id}`,
       productId: listing?.id,
@@ -94,9 +93,9 @@ export default function ProductDetailPage() {
       condition: listing?.condition,
       price: listing?.price,
       image: images?.[0]?.image_url,
-      sellerId: seller?.id?.toString(),
-      sellerName: seller?.display_name,
-      sellerEmail: seller?.email,
+      sellerId: listing?.user_id?.toString() || "",
+      sellerName: "",
+      sellerEmail: "",
       quantity: 1,
     };
 
@@ -110,12 +109,10 @@ export default function ProductDetailPage() {
 
   // Check if item is already in cart
   const isItemInCart = () => {
-    if (!listing || !listing.seller_details) return false;
+    if (!listing) return false;
 
     return items.some(
-      (cartItem) =>
-        cartItem.productId === listing.id &&
-        cartItem.sellerId === listing.seller_details.id?.toString()
+      (cartItem) => cartItem.productId === listing.id
     );
   };
 
@@ -124,27 +121,10 @@ export default function ProductDetailPage() {
       setLoading(true);
       setError(null);
 
-      // Query 1: Get listing details with seller information using join
+      // Query 1: Get listing details
       const { data: listingData, error: listingError } = await supabase
         .from("product_listings")
-        .select(
-          `
-        *,
-        sellers (
-          id,
-          display_name,
-          phone,
-          bio,
-          profile_image_url,
-          rating,
-          total_reviews,
-          location,
-          is_verified,
-          created_at,
-          email
-        )
-      `
-        )
+        .select("*")
         .eq("id", productId)
         .eq("status", "active")
         .single();
@@ -167,14 +147,7 @@ export default function ProductDetailPage() {
 
       if (imagesError) throw imagesError;
 
-      // Transform data structure
-      const transformedListing = {
-        ...listingData,
-        seller_details: listingData.sellers || null,
-      };
-      delete transformedListing.sellers;
-
-      setListing(transformedListing);
+      setListing(listingData);
       if (transformedListing.size_value) {
         setSelectedSize(transformedListing.size_value);
       }
@@ -300,67 +273,20 @@ export default function ProductDetailPage() {
             </h2>
           </div>
 
-          {/* Sellers List */}
+          {/* Shipping Info */}
           <div className="px-4 pb-8 lg:px-0 lg:pb-6">
             <Card className="glass-card border-0 rounded-3xl">
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold mb-6 text-gray-800">
-                  Sold by
-                </h3>
-
-                <div className="flex flex-col items-start gap-4">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-14 w-14">
-                      <AvatarImage
-                        src={
-                          listing?.seller_details?.profile_image_url ||
-                          "/placeholder.svg"
-                        }
-                        alt={listing?.seller_details?.display_name}
-                      />
-                      <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-2xl text-lg">
-                        {listing?.seller_details?.display_name?.slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-bold text-gray-800 text-lg">
-                          {listing?.seller_details?.display_name}
-                        </h4>
-                        {listing?.seller_details?.is_verified && (
-                          <Badge className="glass-button border-0 text-green-700 rounded-xl px-3">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Verified
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold">
-                            {listing?.seller_details?.rating || 0}
-                          </span>
-                        </div>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">
-                          {listing?.seller_details?.total_reviews || 0} reviews
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 mb-3 text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Truck className="h-4 w-4" />
-                      <span>Free shipping</span>
-                      {listing?.delivery_days && (
-                        <>
-                          <span>•</span>
-                          <span>Delivery in {listing?.delivery_days} days</span>
-                        </>
-                      )}
-                    </div>
+                <div className="flex items-center gap-4 text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Truck className="h-4 w-4" />
+                    <span>Free shipping</span>
+                    {listing?.delivery_days && (
+                      <>
+                        <span>•</span>
+                        <span>Delivery in {listing?.delivery_days} days</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -403,7 +329,7 @@ export default function ProductDetailPage() {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => handleAddToCart(listing?.seller_details)}
+              onClick={() => handleAddToCart()}
               disabled={isItemInCart()}
               className={`border-0 rounded-2xl shadow-lg h-12 ${
                 isItemInCart()
@@ -447,9 +373,9 @@ export default function ProductDetailPage() {
                 condition: listing?.condition,
                 price: listing?.price,
                 image: images?.[0]?.image_url,
-                sellerId: listing?.seller_details?.id?.toString(),
-                sellerName: listing?.seller_details?.display_name,
-                sellerEmail: listing?.seller_details?.email,
+                sellerId: listing?.user_id?.toString() || "",
+                sellerName: "",
+                sellerEmail: "",
                 quantity: 1,
               }}
             />
