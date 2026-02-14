@@ -121,18 +121,21 @@ export function Navbar() {
                   </div>
                 </div>
                 <DropdownMenuSeparator className="bg-white/30" />
-                <DropdownMenuItem
-                  asChild
-                  className="rounded-xl mx-1 my-1 cursor-pointer"
-                >
-                  <Link
-                    to={ROUTE_NAMES.MY_LISTINGS}
-                    className="text-gray-700"
-                    onMouseEnter={() => handleRoutePreload("myListings")}
+                {/* [ECOMMERCE] My Listings - only visible to admin since only admin can sell */}
+                {isAdmin && (
+                  <DropdownMenuItem
+                    asChild
+                    className="rounded-xl mx-1 my-1 cursor-pointer"
                   >
-                    My Listings
-                  </Link>
-                </DropdownMenuItem>
+                    <Link
+                      to={ROUTE_NAMES.MY_LISTINGS}
+                      className="text-gray-700"
+                      onMouseEnter={() => handleRoutePreload("myListings")}
+                    >
+                      My Listings
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {isAdmin && (
                   <DropdownMenuItem
                     asChild

@@ -7,7 +7,8 @@ import { PublicRoute } from "./components/PublicRoute";
 import { ROUTE_NAMES } from "./constants/enums";
 import ProductDetailSkeleton from "./components/ui/ProductDetailSkeleton";
 import ShippingPolicy from "./pages/ShippingPolicy";
-import Cancellations from "./pages/Cancellations";
+// [MARKETPLACE REMOVED] Cancellations page - not needed for ecommerce model
+// import Cancellations from "./pages/Cancellations";
 
 // Lazy load all page components with preloading capability
 const Home = lazy(() => import("./pages/Home"));
@@ -26,10 +27,11 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
-const ReturnsPolicy = lazy(() => import("./pages/Returns"));
-const BuyerProtection = lazy(() => import("./pages/BuyerProtection"));
-const SecurePayments = lazy(() => import("./pages/SecurePayments"));
-const ReviewProcess = lazy(() => import("./pages/ReviewProcess"));
+// [MARKETPLACE REMOVED] These pages were built for marketplace model (buyer protection, returns, etc.)
+// const ReturnsPolicy = lazy(() => import("./pages/Returns"));
+// const BuyerProtection = lazy(() => import("./pages/BuyerProtection"));
+// const SecurePayments = lazy(() => import("./pages/SecurePayments"));
+// const ReviewProcess = lazy(() => import("./pages/ReviewProcess"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 
 // Preload functions for critical routes
@@ -50,12 +52,13 @@ export const preloadRoutes = {
   privacyPolicy: () => import("./pages/PrivacyPolicy"),
   termsOfService: () => import("./pages/TermsOfService"),
   aboutUs: () => import("./pages/AboutUs"),
-  buyerProtection: () => import("./pages/BuyerProtection"),
-  securePayments: () => import("./pages/SecurePayments"),
-  reviewProcess: () => import("./pages/ReviewProcess"),
+  // [MARKETPLACE REMOVED] Marketplace-specific page preloads
+  // buyerProtection: () => import("./pages/BuyerProtection"),
+  // securePayments: () => import("./pages/SecurePayments"),
+  // reviewProcess: () => import("./pages/ReviewProcess"),
   contactUs: () => import("./pages/ContactUs"),
   shippingPolicy: () => import("./pages/ShippingPolicy"),
-  cancellationsRefunds: () => import("./pages/Cancellations"),
+  // cancellationsRefunds: () => import("./pages/Cancellations"),
 };
 
 // Enhanced loading component for better UX
@@ -107,21 +110,25 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* [ECOMMERCE] Sell page - admin only, only admin can list products */}
       <Route
         path={ROUTE_NAMES.SELL}
         element={
           <Suspense fallback={<FormSkeleton />}>
-            <SellPage />
+            <AdminRoute>
+              <SellPage />
+            </AdminRoute>
           </Suspense>
         }
       />
+      {/* [ECOMMERCE] My Listings - admin only */}
       <Route
         path={ROUTE_NAMES.MY_LISTINGS}
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute route={ROUTE_NAMES.MY_LISTINGS}>
+            <AdminRoute>
               <MyListings />
-            </ProtectedRoute>
+            </AdminRoute>
           </Suspense>
         }
       />
@@ -145,13 +152,14 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* [ECOMMERCE] Edit Listing - admin only */}
       <Route
         path={ROUTE_NAMES.EDIT_LISTING}
         element={
           <Suspense fallback={<FormSkeleton />}>
-            <ProtectedRoute route={ROUTE_NAMES.EDIT_LISTING}>
+            <AdminRoute>
               <EditListing />
-            </ProtectedRoute>
+            </AdminRoute>
           </Suspense>
         }
       />
@@ -173,13 +181,14 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* [ECOMMERCE] Payment Methods - admin only (seller payment methods) */}
       <Route
         path={ROUTE_NAMES.PAYMENT_METHODS}
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute route={ROUTE_NAMES.PAYMENT_METHODS}>
+            <AdminRoute>
               <PaymentMethods />
-            </ProtectedRoute>
+            </AdminRoute>
           </Suspense>
         }
       />
@@ -207,6 +216,8 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* [MARKETPLACE REMOVED] Buyer Protection, Secure Payments, Review Process pages
+         These were built for the marketplace model with escrow, buyer guarantees, etc.
       <Route
         path={ROUTE_NAMES.BUYER_PROTECTION}
         element={
@@ -231,6 +242,7 @@ const Router = () => {
           </Suspense>
         }
       />
+      */}
       <Route
         path={ROUTE_NAMES.CONTACT_US}
         element={
@@ -247,6 +259,8 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* [MARKETPLACE REMOVED] Cancellations/Refunds and Returns pages
+         These were built for the marketplace model with multi-seller disputes.
       <Route
         path={ROUTE_NAMES.CANCELLATIONS_REFUNDS}
         element={
@@ -263,6 +277,7 @@ const Router = () => {
           </Suspense>
         }
       />
+      */}
       {/* Catch-all route for 404 pages */}
       <Route
         path="*"
