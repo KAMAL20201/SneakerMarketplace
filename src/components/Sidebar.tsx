@@ -52,7 +52,7 @@ const getNavData = (isAdmin: boolean) => ({
     {
       title: "My Account",
       items: [
-        // [ECOMMERCE] Sell Items & My Listings - only visible to admin
+        // [ECOMMERCE] Sell Items, My Listings & Orders - only visible to admin
         ...(isAdmin
           ? [
               {
@@ -67,14 +67,15 @@ const getNavData = (isAdmin: boolean) => ({
                 icon: ShoppingBag,
                 preloadKey: "myListings" as keyof typeof preloadRoutes,
               },
+              // [GUEST CHECKOUT] Orders page is admin-only — guests get order info via email
+              {
+                title: "Orders",
+                url: ROUTE_NAMES.MY_ORDERS,
+                icon: Package,
+                preloadKey: "myOrders" as keyof typeof preloadRoutes,
+              },
             ]
           : []),
-        {
-          title: "My Orders",
-          url: ROUTE_NAMES.MY_ORDERS,
-          icon: Package,
-          preloadKey: "myOrders" as keyof typeof preloadRoutes,
-        },
       ],
     },
     {

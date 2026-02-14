@@ -170,9 +170,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     toggleCart();
                   }
                   clearCart();
-                  navigate(ROUTE_NAMES.MY_ORDERS);
+                  // [GUEST CHECKOUT] Navigate to home — guests have no orders page.
+                  // Order confirmation is sent via email.
+                  navigate(ROUTE_NAMES.HOME);
                   toast.success(
-                    "🎉 Purchase successful! Sellers have been notified."
+                    "🎉 Purchase successful! You'll receive a confirmation email shortly."
                   );
                 }
               } else {

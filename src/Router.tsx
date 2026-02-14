@@ -137,13 +137,14 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* [GUEST CHECKOUT] Orders page is admin-only — guests get order info via email */}
       <Route
         path={ROUTE_NAMES.MY_ORDERS}
         element={
           <Suspense fallback={<PageSkeleton />}>
-            <ProtectedRoute route={ROUTE_NAMES.MY_ORDERS}>
+            <AdminRoute>
               <MyOrders />
-            </ProtectedRoute>
+            </AdminRoute>
           </Suspense>
         }
       />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { ROUTE_NAMES, ROUTE_HELPERS } from "@/constants/enums";
+import { ROUTE_HELPERS } from "@/constants/enums";
 import {
   Package,
   Clock,
@@ -13,13 +13,14 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  Mail,
+  Phone,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { OrderService, type Order as OrderType } from "@/lib/orderService";
 import { toast } from "sonner";
@@ -92,37 +93,28 @@ const formatPrice = (price: number) => {
   }).format(price);
 };
 
-const EmptyOrdersState = ({ type }: { type: "buy" | "sell" }) => (
+const EmptyOrdersState = () => (
   <div className="flex flex-col items-center justify-center py-16 px-4">
     <div className="glass-card border-0 rounded-3xl p-8 text-center max-w-md">
       <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
         <ShoppingBag className="h-12 w-12 text-purple-600" />
       </div>
       <h3 className="text-xl font-bold text-gray-800 mb-3">
-        {type === "buy" ? "No Orders Yet" : "No Sales Yet"}
+        No Orders Yet
       </h3>
       <p className="text-gray-600 mb-6 leading-relaxed">
-        {type === "buy"
-          ? "You haven't placed any orders yet. Start exploring our marketplace to find amazing sneakers!"
-          : "You haven't sold any items yet. Start listing your items to make your first sale!"}
+        No orders have been placed yet. Orders will appear here when customers make purchases.
       </p>
-      <Link to={type === "buy" ? ROUTE_NAMES.BROWSE : ROUTE_NAMES.SELL}>
-        <Button className="glass-button border-0 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700">
-          <Package className="h-4 w-4 mr-2" />
-          {type === "buy" ? "Start Shopping" : "Start Selling"}
-        </Button>
-      </Link>
     </div>
   </div>
 );
 
+// [GUEST CHECKOUT] Orders page is admin-only — shows all sell orders with buyer info.
+// Guests receive order confirmations via email; there is no guest orders page.
 const MyOrders = () => {
   const { user } = useAuth();
-  const { isAdmin } = useAdmin();
-  const [buyOrders, setBuyOrders] = useState<Order[]>([]);
   const [sellOrders, setSellOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
 
   // Ship Now modal state
   const [shipModalOpen, setShipModalOpen] = useState(false);
@@ -164,15 +156,11 @@ const MyOrders = () => {
     }
   };
 
-  // Pagination state for buy orders
-  const [buyCurrentPage, setBuyCurrentPage] = useState(1);
-  const [buyTotalPages, setBuyTotalPages] = useState(1);
-
   // Pagination state for sell orders
   const [sellCurrentPage, setSellCurrentPage] = useState(1);
   const [sellTotalPages, setSellTotalPages] = useState(1);
 
-  const itemsPerPage = 5; // Show fewer orders per page
+  const itemsPerPage = 5;
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -181,20 +169,13 @@ const MyOrders = () => {
       try {
         setLoading(true);
 
-        // Fetch buy orders
-        const buyerOrders = await OrderService.getBuyerOrders(user.id);
-        setBuyOrders(buyerOrders);
-        setBuyTotalPages(Math.ceil(buyerOrders.length / itemsPerPage));
-
-        // [ECOMMERCE] Only fetch sell orders for admin
-        if (isAdmin) {
-          const sellerOrders = await OrderService.getSellerOrders(user.id);
-          setSellOrders(sellerOrders);
-          setSellTotalPages(Math.ceil(sellerOrders.length / itemsPerPage));
-        }
+        // [GUEST CHECKOUT] Admin sees all sell orders (they are the only seller)
+        const sellerOrders = await OrderService.getSellerOrders(user.id);
+        setSellOrders(sellerOrders);
+        setSellTotalPages(Math.ceil(sellerOrders.length / itemsPerPage));
       } catch (error) {
         console.error("Error fetching orders:", error);
-        toast.error("Failed to load your orders");
+        toast.error("Failed to load orders");
       } finally {
         setLoading(false);
       }
@@ -203,7 +184,7 @@ const MyOrders = () => {
     if (user) {
       fetchOrders();
     }
-  }, [user, isAdmin]);
+  }, [user]);
 
   // Get paginated orders for current tab
   const getPaginatedOrders = (orders: Order[], currentPage: number) => {
@@ -232,73 +213,56 @@ const MyOrders = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Orders</h1>
           <p className="text-gray-600">
-            Track your purchase history
+            All customer orders ({sellOrders.length})
           </p>
         </div>
 
-        {/* Tabs */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as "buy" | "sell")}
-          className="w-full"
-        >
-          {/* [ECOMMERCE] Only show sell orders tab for admin */}
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} mb-8`}>
-            <TabsTrigger value="buy" className="text-sm font-medium">
-              My Orders ({buyOrders.length})
-            </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="sell" className="text-sm font-medium">
-                My Sell Orders ({sellOrders.length})
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          {/* Buy Orders Tab */}
-          <TabsContent value="buy" className="space-y-6">
-            {buyOrders.length === 0 ? (
-              <EmptyOrdersState type="buy" />
-            ) : (
-              <>
-                <div className="space-y-6">
-                  {getPaginatedOrders(buyOrders, buyCurrentPage).map(
-                    (order) => (
-                      <Card
-                        key={order.id}
-                        className="glass-card border-0 rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300"
-                      >
-                        <CardHeader className="pb-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`p-2 rounded-2xl ${getStatusColor(
-                                  order.status
-                                )}`}
-                              >
-                                {getStatusIcon(order.status)}
-                              </div>
-                              <div>
-                                <CardTitle className="text-lg font-bold text-gray-900">
-                                  Order #{order.id.slice(0, 8)}
-                                </CardTitle>
-                                <p className="text-sm text-gray-600">
-                                  Placed on {formatDate(order.created_at)}
-                                </p>
-                              </div>
-                            </div>
-                            <Badge
-                              className={`${getStatusColor(
+        {/* Sell Orders */}
+        <div className="space-y-6">
+          {sellOrders.length === 0 ? (
+            <EmptyOrdersState />
+          ) : (
+            <>
+              <div className="space-y-6">
+                {getPaginatedOrders(sellOrders, sellCurrentPage).map(
+                  (order) => (
+                    <Card
+                      key={order.id}
+                      className="glass-card border-0 rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300"
+                    >
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`p-2 rounded-2xl ${getStatusColor(
                                 order.status
-                              )} border rounded-xl capitalize`}
+                              )}`}
                             >
-                              {order.status}
-                            </Badge>
+                              {getStatusIcon(order.status)}
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg font-bold text-gray-900">
+                                Order #{order.id.slice(0, 8)}
+                              </CardTitle>
+                              <p className="text-sm text-gray-600">
+                                {formatDate(order.created_at)}
+                              </p>
+                            </div>
                           </div>
-                        </CardHeader>
+                          <Badge
+                            className={`${getStatusColor(
+                              order.status
+                            )} border rounded-xl capitalize`}
+                          >
+                            {order.status}
+                          </Badge>
+                        </div>
+                      </CardHeader>
 
-                        <CardContent className="pt-0">
+                      <CardContent className="pt-0">
+                        <div className="flex flex-col gap-4">
                           <div className="flex gap-4">
                             {/* Product Image */}
                             <div className="w-20 h-20 flex-shrink-0">
@@ -311,7 +275,9 @@ const MyOrders = () => {
                                     ?.image_url ||
                                   "/placeholder.svg"
                                 }
-                                alt={order.product_listings?.title || "Product"}
+                                alt={
+                                  order.product_listings?.title || "Product"
+                                }
                                 className="w-full h-full"
                               />
                             </div>
@@ -324,11 +290,9 @@ const MyOrders = () => {
                                     {order.product_listings?.brand || "Brand"}
                                   </p>
                                   <h3 className="font-bold text-gray-800 mb-1">
-                                    {order.product_listings?.title || "Product"}
+                                    {order.product_listings?.title ||
+                                      "Product"}
                                   </h3>
-                                  <p className="text-sm text-gray-600">
-                                    Order ID: {order.id.slice(0, 8)}
-                                  </p>
                                 </div>
                                 <div className="text-right">
                                   <p className="text-lg font-bold text-gray-900">
@@ -338,12 +302,10 @@ const MyOrders = () => {
                               </div>
 
                               {/* Order Details */}
-                              <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-4">
+                              <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-4 w-4" />
-                                  <span>
-                                    Order Date: {formatDate(order.created_at)}
-                                  </span>
+                                  <span>{formatDate(order.created_at)}</span>
                                 </div>
                                 {order.tracking_number && (
                                   <div className="flex items-center gap-1">
@@ -354,297 +316,128 @@ const MyOrders = () => {
                                   </div>
                                 )}
                               </div>
+                            </div>
+                          </div>
 
-                              {/* Action Buttons */}
-                              <div className="flex gap-3 mt-4">
-                                <Link
-                                  to={ROUTE_HELPERS.PRODUCT_DETAIL(
-                                    order.product_id
-                                  )}
-                                >
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="glass-button border-gray-200 rounded-2xl"
-                                  >
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View Product
-                                  </Button>
-                                </Link>
-                                {order.status === "shipped" &&
-                                  order.tracking_number && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="glass-button border-gray-200 rounded-2xl"
-                                    >
-                                      <Truck className="h-4 w-4 mr-2" />
-                                      Track Order
-                                    </Button>
-                                  )}
-                                {order.status === "delivered" && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="glass-button border-gray-200 rounded-2xl"
-                                  >
-                                    <Package className="h-4 w-4 mr-2" />
-                                    Rate Product
-                                  </Button>
+                          {/* [GUEST CHECKOUT] Buyer Contact Info */}
+                          {(order.buyer_name || order.buyer_email || order.buyer_phone) && (
+                            <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+                              <p className="text-xs font-semibold text-blue-700 mb-2">Buyer Info</p>
+                              <div className="flex flex-wrap gap-4 text-sm text-gray-700">
+                                {order.buyer_name && (
+                                  <div className="flex items-center gap-1">
+                                    <User className="h-3.5 w-3.5 text-blue-500" />
+                                    <span>{order.buyer_name}</span>
+                                  </div>
+                                )}
+                                {order.buyer_email && (
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="h-3.5 w-3.5 text-blue-500" />
+                                    <span>{order.buyer_email}</span>
+                                  </div>
+                                )}
+                                {order.buyer_phone && (
+                                  <div className="flex items-center gap-1">
+                                    <Phone className="h-3.5 w-3.5 text-blue-500" />
+                                    <span>{order.buyer_phone}</span>
+                                  </div>
                                 )}
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  )}
-                </div>
+                          )}
 
-                {/* Pagination for Buy Orders */}
-                {buyTotalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <Button
-                      variant="ghost"
-                      onClick={() =>
-                        setBuyCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={buyCurrentPage === 1}
-                      className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-
-                    <div className="flex gap-1">
-                      {Array.from(
-                        { length: buyTotalPages },
-                        (_, i) => i + 1
-                      ).map((page) => (
-                        <Button
-                          key={page}
-                          variant={
-                            buyCurrentPage === page ? "default" : "ghost"
-                          }
-                          onClick={() => setBuyCurrentPage(page)}
-                          className={`rounded-xl ${
-                            buyCurrentPage === page
-                              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
-                              : "glass-button border-0 text-gray-700 hover:bg-white/30"
-                          }`}
-                        >
-                          {page}
-                        </Button>
-                      ))}
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      onClick={() =>
-                        setBuyCurrentPage((prev) =>
-                          Math.min(prev + 1, buyTotalPages)
-                        )
-                      }
-                      disabled={buyCurrentPage === buyTotalPages}
-                      className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </TabsContent>
-
-          {/* Sell Orders Tab */}
-          <TabsContent value="sell" className="space-y-6">
-            {sellOrders.length === 0 ? (
-              <EmptyOrdersState type="sell" />
-            ) : (
-              <>
-                <div className="space-y-6">
-                  {getPaginatedOrders(sellOrders, sellCurrentPage).map(
-                    (order) => (
-                      <Card
-                        key={order.id}
-                        className="glass-card border-0 rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300"
-                      >
-                        <CardHeader className="pb-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`p-2 rounded-2xl ${getStatusColor(
-                                  order.status
-                                )}`}
-                              >
-                                {getStatusIcon(order.status)}
-                              </div>
-                              <div>
-                                <CardTitle className="text-lg font-bold text-gray-900">
-                                  Sale #{order.id.slice(0, 8)}
-                                </CardTitle>
-                                <p className="text-sm text-gray-600">
-                                  Sold on {formatDate(order.created_at)}
-                                </p>
-                              </div>
-                            </div>
-                            <Badge
-                              className={`${getStatusColor(
-                                order.status
-                              )} border rounded-xl capitalize`}
-                            >
-                              {order.status}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-
-                        <CardContent className="pt-0">
-                          <div className="flex flex-col gap-4">
-                            <div className="flex gap-4">
-                              {/* Product Image */}
-                              <div className="w-20 h-20 flex-shrink-0">
-                                <ThumbnailImage
-                                  src={
-                                    order.product_listings?.product_images?.find(
-                                      (img) => img.is_poster_image
-                                    )?.image_url ||
-                                    order.product_listings?.product_images?.[0]
-                                      ?.image_url ||
-                                    "/placeholder.svg"
-                                  }
-                                  alt={
-                                    order.product_listings?.title || "Product"
-                                  }
-                                  className="w-full h-full"
-                                />
-                              </div>
-
-                              {/* Product Details */}
-                              <div className="flex-1">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div>
-                                    <p className="text-xs text-purple-600 font-semibold">
-                                      {order.product_listings?.brand || "Brand"}
-                                    </p>
-                                    <h3 className="font-bold text-gray-800 mb-1">
-                                      {order.product_listings?.title ||
-                                        "Product"}
-                                    </h3>
-                                    <p className="text-sm text-gray-600">
-                                      Sale ID: {order.id.slice(0, 8)}
-                                    </p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-lg font-bold text-gray-900">
-                                      {formatPrice(order.amount)}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Order Details */}
-                                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-4">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4" />
-                                    <span>
-                                      Sale Date: {formatDate(order.created_at)}
-                                    </span>
-                                  </div>
-                                  {order.tracking_number && (
-                                    <div className="flex items-center gap-1">
-                                      <Truck className="h-4 w-4" />
-                                      <span>
-                                        Tracking: {order.tracking_number}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            {/* Action Buttons for Seller */}
-                            <div className="flex gap-3 items-center mt-4">
-                              {order.status === "confirmed" && (
-                                <>
-                                  <p className="text-sm text-gray-600">
-                                    Ready to Ship this Order ?
-                                  </p>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="bg-green-600 hover:bg-green-700 text-white hover:text-white border-gray-200 rounded-2xl"
-                                    onClick={() =>
-                                      ensurePickupAddressAndOpenShip(order)
-                                    }
-                                  >
-                                    <Truck className="h-4 w-4 mr-2" />
-                                    Ship now
-                                  </Button>
-                                </>
+                          {/* Action Buttons */}
+                          <div className="flex gap-3 items-center">
+                            <Link
+                              to={ROUTE_HELPERS.PRODUCT_DETAIL(
+                                order.product_id
                               )}
-                            </div>
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="glass-button border-gray-200 rounded-2xl"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Product
+                              </Button>
+                            </Link>
+                            {order.status === "confirmed" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white hover:text-white border-gray-200 rounded-2xl"
+                                onClick={() =>
+                                  ensurePickupAddressAndOpenShip(order)
+                                }
+                              >
+                                <Truck className="h-4 w-4 mr-2" />
+                                Ship now
+                              </Button>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  )}
-                </div>
-
-                {/* Pagination for Sell Orders */}
-                {sellTotalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <Button
-                      variant="ghost"
-                      onClick={() =>
-                        setSellCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={sellCurrentPage === 1}
-                      className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-
-                    <div className="flex gap-1">
-                      {Array.from(
-                        { length: sellTotalPages },
-                        (_, i) => i + 1
-                      ).map((page) => (
-                        <Button
-                          key={page}
-                          variant={
-                            sellCurrentPage === page ? "default" : "ghost"
-                          }
-                          onClick={() => setSellCurrentPage(page)}
-                          className={`rounded-xl ${
-                            sellCurrentPage === page
-                              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
-                              : "glass-button border-0 text-gray-700 hover:bg-white/30"
-                          }`}
-                        >
-                          {page}
-                        </Button>
-                      ))}
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      onClick={() =>
-                        setSellCurrentPage((prev) =>
-                          Math.min(prev + 1, sellTotalPages)
-                        )
-                      }
-                      disabled={sellCurrentPage === sellTotalPages}
-                      className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
                 )}
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
+              </div>
+
+              {/* Pagination */}
+              {sellTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setSellCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={sellCurrentPage === 1}
+                    className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="flex gap-1">
+                    {Array.from(
+                      { length: sellTotalPages },
+                      (_, i) => i + 1
+                    ).map((page) => (
+                      <Button
+                        key={page}
+                        variant={
+                          sellCurrentPage === page ? "default" : "ghost"
+                        }
+                        onClick={() => setSellCurrentPage(page)}
+                        className={`rounded-xl ${
+                          sellCurrentPage === page
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
+                            : "glass-button border-0 text-gray-700 hover:bg-white/30"
+                        }`}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      setSellCurrentPage((prev) =>
+                        Math.min(prev + 1, sellTotalPages)
+                      )
+                    }
+                    disabled={sellCurrentPage === sellTotalPages}
+                    className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
       {/* Ship Now Modal (Steps 1–2) */}
       <ShipNowModal
