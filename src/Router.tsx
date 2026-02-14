@@ -13,8 +13,10 @@ import ShippingPolicy from "./pages/ShippingPolicy";
 // Lazy load all page components with preloading capability
 const Home = lazy(() => import("./pages/Home"));
 const ProductDetailPage = lazy(() => import("./pages/ProductDetailPage"));
+// [GUEST CHECKOUT] SignIn kept for admin login only
 const LoginPage = lazy(() => import("./pages/SignIn"));
-const SignupPage = lazy(() => import("./pages/SignUp"));
+// [GUEST CHECKOUT] SignUp commented out - no user registration needed
+// const SignupPage = lazy(() => import("./pages/SignUp"));
 const SellPage = lazy(() => import("./pages/Sell"));
 const MyListings = lazy(() => import("./pages/MyListings"));
 const MyOrders = lazy(() => import("./pages/MyOrders"));
@@ -40,7 +42,8 @@ export const preloadRoutes = {
   browse: () => import("./pages/Browse"),
   sell: () => import("./pages/Sell"),
   login: () => import("./pages/SignIn"),
-  signup: () => import("./pages/SignUp"),
+  // [GUEST CHECKOUT] signup preload commented out
+  // signup: () => import("./pages/SignUp"),
   myListings: () => import("./pages/MyListings"),
   myOrders: () => import("./pages/MyOrders"),
   myAddresses: () => import("./pages/MyAddresses"),
@@ -100,6 +103,7 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* [GUEST CHECKOUT] SignUp route commented out - no user registration
       <Route
         path={ROUTE_NAMES.SIGNUP}
         element={
@@ -110,6 +114,7 @@ const Router = () => {
           </Suspense>
         }
       />
+      */}
       {/* [ECOMMERCE] Sell page - admin only, only admin can list products */}
       <Route
         path={ROUTE_NAMES.SELL}

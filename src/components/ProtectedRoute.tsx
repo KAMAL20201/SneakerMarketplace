@@ -1,3 +1,8 @@
+// [GUEST CHECKOUT] ProtectedRoute auth check commented out.
+// Users no longer need to be logged in to access these pages.
+// Admin auth is still handled by AdminRoute separately.
+
+/* Original ProtectedRoute with auth check:
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -29,5 +34,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // If user is not authenticated, requireAuth will redirect to sign-in
   // and we show the fallback component (or nothing)
+  return <>{children}</>;
+};
+*/
+
+// [GUEST CHECKOUT] Pass-through: no login required for guest-facing pages
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+  route: string;
+}
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+}) => {
   return <>{children}</>;
 };

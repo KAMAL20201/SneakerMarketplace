@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { PaymentService } from "../lib/paymentService";
 import { OrderService } from "../lib/orderService";
+// [GUEST CHECKOUT] Auth still imported for optional admin prefill
 import { useAuth } from "./AuthContext";
 import { useCart } from "./CartContext";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // [GUEST CHECKOUT] user may be null for guest checkout — that's expected
   const { user } = useAuth();
   const { toggleCart, isOpen, clearCart } = useCart();
   const navigate = useNavigate();
@@ -120,6 +122,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           name: "The Plug Market",
           // description: description,
           order_id: order.id,
+          // [GUEST CHECKOUT] Prefill with user data if logged in (admin), empty for guests
+          // Razorpay will collect contact info from guest during payment
           prefill: {
             name: user?.user_metadata?.full_name || "",
             email: user?.email || "",
@@ -142,6 +146,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                   status: "completed",
                   order_id: response.razorpay_order_id,
                   payment_id: response.razorpay_payment_id,
+                  // [GUEST CHECKOUT] user_id is empty for guest orders
                   user_id: user?.id || "",
                 });
                 // Check if this is a cart checkout
@@ -151,8 +156,10 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     items,
                     response.razorpay_payment_id,
                     response.razorpay_order_id,
+                    // [GUEST CHECKOUT] buyer_id will be empty for guest orders
                     user?.id || "",
                     {
+                      // [GUEST CHECKOUT] For guests, name/email will come from shipping address in later phases
                       full_name: user?.user_metadata?.full_name || "",
                       email: user?.email || "",
                     },

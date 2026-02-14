@@ -169,7 +169,8 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            /* Login/Signup buttons for non-authenticated users */
+            /* [GUEST CHECKOUT] Login/Signup buttons hidden for guests.
+               Admin can still access /login directly via URL.
             <div className="flex items-center gap-2">
               <Button
                 asChild
@@ -184,6 +185,8 @@ export function Navbar() {
                 </Link>
               </Button>
             </div>
+            */
+            null
           )}
         </div>
       </div>

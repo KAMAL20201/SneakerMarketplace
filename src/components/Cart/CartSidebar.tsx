@@ -5,20 +5,22 @@ import { ShippingStep } from "./steps/ShippingStep";
 import { PaymentStep } from "./steps/PaymentStep";
 import { useCart } from "@/contexts/CartContext";
 import type { ShippingAddress } from "@/types/shipping";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { ROUTE_NAMES } from "@/constants/enums";
-import { useNavigate } from "react-router";
+// [GUEST CHECKOUT] Auth import commented out - guests can checkout without login
+// import { useAuth } from "@/contexts/AuthContext";
+// import { toast } from "sonner";
+// import { ROUTE_NAMES } from "@/constants/enums";
+// import { useNavigate } from "react-router";
 
 export function CartSidebar() {
   const { isOpen, toggleCart } = useCart();
-  const { user, setOperationAfterLogin } = useAuth();
+  // [GUEST CHECKOUT] Auth check removed - guests proceed directly
+  // const { user, setOperationAfterLogin } = useAuth();
   const [currentStep, setCurrentStep] = useState<
     "cart" | "shipping" | "payment"
   >("cart");
   const [shippingAddress, setShippingAddress] =
     useState<ShippingAddress | null>(null);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   if (!isOpen) return null;
 
@@ -49,6 +51,7 @@ export function CartSidebar() {
         return (
           <CartItemsStep
             onNext={() => {
+              /* [GUEST CHECKOUT] Login check removed - guests proceed to shipping directly
               if (!user) {
                 toggleCart();
                 toast.error("Please login to continue");
@@ -59,6 +62,8 @@ export function CartSidebar() {
               } else {
                 setCurrentStep("shipping");
               }
+              */
+              setCurrentStep("shipping");
             }}
           />
         );
