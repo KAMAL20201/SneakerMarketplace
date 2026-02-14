@@ -40,7 +40,7 @@ export default function PrivacyPolicy() {
               The Plug Market ("we," "our," or "us") is committed to protecting
               your privacy. This Privacy Policy explains how we collect, use,
               disclose, and safeguard your information when you use our
-              marketplace platform.
+              platform.
             </p>
             <p>
               By using The Plug Market, you agree to the collection and use of
@@ -102,9 +102,9 @@ export default function PrivacyPolicy() {
                 </h3>
                 <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
                   <li>Process transactions and payments</li>
-                  <li>Facilitate buyer-seller communication</li>
                   <li>Provide customer support</li>
                   <li>Verify user identity and prevent fraud</li>
+                  <li>Manage order fulfillment and delivery</li>
                 </ul>
               </div>
 
