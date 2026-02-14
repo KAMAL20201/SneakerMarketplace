@@ -69,7 +69,7 @@ export default function ContactUs() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="bg-purple-50 p-4 rounded-lg">
+            {/* <div className="bg-purple-50 p-4 rounded-lg">
               <p className="font-semibold text-gray-900">The Plug Market HQ</p>
               <p className="text-gray-700">
                 #222, Near Ram Mandir
@@ -78,7 +78,7 @@ export default function ContactUs() {
                 <br />
                 India
               </p>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
 

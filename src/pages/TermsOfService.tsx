@@ -69,21 +69,20 @@ export default function TermsOfService() {
           </CardHeader>
           <CardContent className="space-y-4 text-gray-700">
             <p>
-              The Plug Market is an online marketplace that connects buyers and
-              sellers of sneakers, streetwear, collectibles, and related items.
-              Our platform facilitates:
+              The Plug Market is an online store for sneakers, streetwear,
+              collectibles, and related items. Our platform provides:
             </p>
-            <div className="grid md:grid-cols-2 gap-4 mt-4">
+            <div className="mt-4">
               <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900">For Buyers</h3>
                 <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-                  <li>Browse and purchase quality items</li>
+                  <li>Browse and purchase quality, authentic items</li>
                   <li>Secure payment processing</li>
-                  <li>Buyer protection guarantees</li>
                   <li>Customer support services</li>
+                  <li>Quality-verified products</li>
                 </ul>
               </div>
 
+              {/* [MARKETPLACE REMOVED] "For Sellers" section - only admin sells in ecommerce model
               <div className="space-y-3">
                 <h3 className="font-semibold text-gray-900">For Sellers</h3>
                 <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
@@ -93,6 +92,7 @@ export default function TermsOfService() {
                   <li>Access to buyer network</li>
                 </ul>
               </div>
+              */}
             </div>
           </CardContent>
         </Card>
@@ -198,10 +198,10 @@ export default function TermsOfService() {
                   Shipping & Delivery
                 </h3>
                 <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-                  <li>Sellers are responsible for shipping items</li>
+                  <li>We handle all shipping of items</li>
                   <li>Delivery times vary by location and shipping method</li>
-                  <li>Tracking information must be provided</li>
-                  <li>Items must be shipped within specified timeframes</li>
+                  <li>Tracking information is provided for all orders</li>
+                  <li>Items are shipped within specified timeframes</li>
                 </ul>
               </div>
             </div>
@@ -334,10 +334,10 @@ export default function TermsOfService() {
               <p className="font-semibold">The Plug Market</p>
               <p>Email: legal@theplugmarket.in</p>
               <p>Phone: +91-78885-27970</p>
-              <p>
+              {/* <p>
                 Address: #222, Near Ram Mandir, Patiala Gate, Sangrur, Punjab
                 148001, India
-              </p>
+              </p> */}
             </div>
           </CardContent>
         </Card>

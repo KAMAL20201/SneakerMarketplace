@@ -27,9 +27,9 @@ export function Footer() {
             </div>
           </div>
           <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-            The ultimate marketplace connecting collectors and sellers across
-            India. Buy, sell, and discover hyped sneakers, streetwear,
-            collectibles & more from trusted community members.
+            Your one-stop shop for hyped sneakers, streetwear,
+            collectibles & more. Discover and buy authentic products
+            with quality you can trust.
           </p>
           <div className="flex space-x-3 md:space-x-4">
             <a
@@ -44,7 +44,8 @@ export function Footer() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 mb-8">
-          {/* Trust & Safety */}
+          {/* [MARKETPLACE REMOVED] Trust & Safety section - buyer protection, secure payments, review process
+             These pages were built for the marketplace model with escrow and multi-seller guarantees.
           <div className="space-y-3 md:space-y-4">
             <h4 className="text-base md:text-lg font-bold text-white">
               Trust & Safety
@@ -76,6 +77,7 @@ export function Footer() {
               </li>
             </ul>
           </div>
+          */}
 
           {/* Support */}
           <div className="space-y-3 md:space-y-4">
@@ -91,6 +93,7 @@ export function Footer() {
                   Contact Us
                 </Link>
               </li>
+              {/* [MARKETPLACE REMOVED] Returns & Cancellations links - marketplace dispute pages
               <li>
                 <Link
                   to={ROUTE_NAMES.RETURNS}
@@ -107,6 +110,7 @@ export function Footer() {
                   Cancellations & Refunds
                 </Link>
               </li>
+              */}
             </ul>
           </div>
 

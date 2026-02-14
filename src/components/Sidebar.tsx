@@ -5,7 +5,8 @@ import {
   // User,
   // Settings,
   ShoppingBag,
-  CreditCard,
+  // [MARKETPLACE REMOVED] Payment Methods icon - seller payment methods not needed for regular users
+  // CreditCard,
   Package,
   MapPin,
 } from "lucide-react";
@@ -26,11 +27,13 @@ import {
 import { Link } from "react-router";
 import { preloadRoutes } from "@/Router";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { useAdmin } from "@/hooks/useAdmin";
 
-const data = {
+// [ECOMMERCE] Navigation items - sell/listing items only shown to admin
+const getNavData = (isAdmin: boolean) => ({
   navMain: [
     {
-      title: "Marketplace",
+      title: "Shop",
       items: [
         {
           title: "Home",
@@ -49,18 +52,23 @@ const data = {
     {
       title: "My Account",
       items: [
-        {
-          title: "Sell Items",
-          url: ROUTE_NAMES.SELL,
-          icon: Plus,
-          preloadKey: "sell" as keyof typeof preloadRoutes,
-        },
-        {
-          title: "My Listings",
-          url: ROUTE_NAMES.MY_LISTINGS,
-          icon: ShoppingBag,
-          preloadKey: "myListings" as keyof typeof preloadRoutes,
-        },
+        // [ECOMMERCE] Sell Items & My Listings - only visible to admin
+        ...(isAdmin
+          ? [
+              {
+                title: "Sell Items",
+                url: ROUTE_NAMES.SELL,
+                icon: Plus,
+                preloadKey: "sell" as keyof typeof preloadRoutes,
+              },
+              {
+                title: "My Listings",
+                url: ROUTE_NAMES.MY_LISTINGS,
+                icon: ShoppingBag,
+                preloadKey: "myListings" as keyof typeof preloadRoutes,
+              },
+            ]
+          : []),
         {
           title: "My Orders",
           url: ROUTE_NAMES.MY_ORDERS,
@@ -84,12 +92,13 @@ const data = {
           icon: MapPin,
           preloadKey: "myAddresses" as keyof typeof preloadRoutes,
         },
-        {
-          title: "Payment Methods",
-          url: ROUTE_NAMES.PAYMENT_METHODS,
-          icon: CreditCard,
-          preloadKey: "paymentMethods" as keyof typeof preloadRoutes,
-        },
+        // [MARKETPLACE REMOVED] Payment Methods - seller payment methods, only admin needs this
+        // {
+        //   title: "Payment Methods",
+        //   url: ROUTE_NAMES.PAYMENT_METHODS,
+        //   icon: CreditCard,
+        //   preloadKey: "paymentMethods" as keyof typeof preloadRoutes,
+        // },
         // {
         //   title: "Settings",
         //   url: ROUTE_NAMES.SETTINGS,
@@ -99,10 +108,12 @@ const data = {
       ],
     },
   ],
-};
+});
 
 export function AppSidebar() {
   const { toggleSidebar } = useSidebar();
+  const { isAdmin } = useAdmin();
+  const data = getNavData(isAdmin);
 
   // Preload route on hover for better performance
   const handleRoutePreload = (

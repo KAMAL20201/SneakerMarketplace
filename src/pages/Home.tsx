@@ -1,14 +1,17 @@
-import { Sparkles, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
+// [MARKETPLACE REMOVED] Plus icon and Button were used for "Sell Now" CTA
+// import { Plus } from "lucide-react";
+// import { Button } from "@/components/ui/button";
 import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { categories } from "@/constants/sellConstants";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { supabaseUrl } from "@/lib/supabase";
 import RecentlyListed from "@/components/RecentlyListed";
 import FeaturedListings from "@/components/FeaturedListings";
-import HowItWorks from "@/components/HowItWorks";
+// [MARKETPLACE REMOVED] HowItWorks section - escrow system explanation not relevant for ecommerce
+// import HowItWorks from "@/components/HowItWorks";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -87,11 +90,11 @@ const Home = () => {
             </span>
           </h1>
           <p className="text-gray-700 text-lg mb-2">
-            Connect with collectors and sellers across India for hyped sneakers,
-            streetwear, collectibles & more
+            Shop hyped sneakers, streetwear, collectibles & more —
+            authentic products, quality guaranteed
           </p>
 
-          {/* Trust & Safety Features */}
+          {/* Trust badges - ecommerce focused */}
           <div className="flex flex-wrap justify-center gap-4 mb-6">
             <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-full border border-green-200">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -99,6 +102,8 @@ const Home = () => {
                 Quality Verified
               </span>
             </div>
+            {/* [MARKETPLACE REMOVED] Buyer Protection and Secure Payments badges
+               These were marketplace trust signals for multi-seller model.
             <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-full border border-blue-200">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               <span className="text-blue-700 text-sm font-medium">
@@ -111,6 +116,13 @@ const Home = () => {
                 Secure Payments
               </span>
             </div>
+            */}
+            <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-full border border-purple-200">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-purple-700 text-sm font-medium">
+                100% Authentic
+              </span>
+            </div>
           </div>
         </div>
 
@@ -118,7 +130,7 @@ const Home = () => {
           <SearchDropdown />
         </div>
 
-        {/* Quick Actions */}
+        {/* [MARKETPLACE REMOVED] "Sell Now" CTA - only admin can sell in ecommerce model
         <div className="flex gap-4">
           <Button
             asChild
@@ -130,6 +142,7 @@ const Home = () => {
             </Link>
           </Button>
         </div>
+        */}
       </section>
 
       {/* Categories */}
@@ -250,8 +263,8 @@ const Home = () => {
       {/* Featured Listings Section */}
       <FeaturedListings />
 
-      {/* How It Works Section */}
-      <HowItWorks />
+      {/* [MARKETPLACE REMOVED] How It Works Section - escrow system not used in ecommerce model */}
+      {/* <HowItWorks /> */}
 
       {/* Bottom spacing */}
       <div className="h-8"></div>

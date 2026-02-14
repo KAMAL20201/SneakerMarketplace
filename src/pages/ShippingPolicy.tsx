@@ -47,9 +47,8 @@ export default function ShippingPolicy() {
                   Who Ships Items?
                 </h3>
                 <p className="text-blue-700 text-sm">
-                  Individual sellers are responsible for shipping their items to
-                  buyers. We provide secure payment processing and buyer
-                  protection.
+                  We handle all shipping directly. Every order is carefully
+                  packed and shipped with secure payment processing.
                 </p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
@@ -57,8 +56,8 @@ export default function ShippingPolicy() {
                   Shipping Protection
                 </h3>
                 <p className="text-green-700 text-sm">
-                  All items are protected by our buyer protection program until
-                  you approve the purchase.
+                  All items are securely packaged and shipped with tracking
+                  so you can follow your order every step of the way.
                 </p>
               </div>
             </div>
@@ -75,8 +74,8 @@ export default function ShippingPolicy() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-gray-700">
-              Since our sellers ship directly to buyers, delivery times depend
-              on the seller's location, shipping method chosen, and destination.
+              We ship all orders from our warehouse. Delivery times depend
+              on the shipping method chosen and your destination.
               Here's how the process works:
             </p>
             <div className="space-y-4">
@@ -85,10 +84,10 @@ export default function ShippingPolicy() {
                   Standard Shipping
                 </h3>
                 <p className="text-gray-700 text-sm">
-                  • Seller chooses shipping method and timeline
+                  • We ship via trusted carriers
                   <br />
                   • Delivery time varies by location and carrier
-                  <br />• Tracking information provided by seller
+                  <br />• Tracking information provided for every order
                 </p>
               </div>
               <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
@@ -96,10 +95,9 @@ export default function ShippingPolicy() {
                   Important Note
                 </h3>
                 <p className="text-yellow-700 text-sm">
-                  Delivery times are not predetermined by The Plug Market. Each
-                  seller manages their own shipping timeline and method. Check
-                  individual listings for estimated delivery times or contact
-                  the seller directly.
+                  Delivery times may vary based on your location and the
+                  shipping carrier. Check individual listings for estimated
+                  delivery times.
                 </p>
               </div>
             </div>
@@ -128,12 +126,11 @@ export default function ShippingPolicy() {
                     • <strong>Maximum delivery time:</strong> 18-21 business
                     days
                   </li>
-                  <li>• Sellers typically ship within 1-3 business days</li>
+                  <li>• Orders are typically shipped within 1-3 business days</li>
                   <li>
-                    • Delivery time depends on seller's location and destination
+                    • Delivery time depends on your location
                   </li>
-                  <li>• Distance between seller and buyer affects timing</li>
-                  <li>• Shipping method chosen by seller impacts speed</li>
+                  <li>• Shipping method impacts delivery speed</li>
                 </ul>
               </div>
               <div>
@@ -141,19 +138,17 @@ export default function ShippingPolicy() {
                   Communication
                 </h3>
                 <ul className="space-y-2 text-sm text-gray-700">
-                  <li>• Sellers provide tracking information</li>
-                  <li>• Contact seller for specific delivery estimates</li>
-                  <li>• Check listing details for shipping notes</li>
-                  <li>• Reach out to us if seller is unresponsive</li>
+                  <li>• Tracking information provided for every order</li>
+                  <li>• Check listing details for estimated delivery times</li>
+                  <li>• Contact us for any shipping questions</li>
                 </ul>
               </div>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h3 className="font-semibold text-blue-800 mb-2">Pro Tip</h3>
               <p className="text-blue-700 text-sm">
-                Before purchasing, check the seller's location and any shipping
-                notes in the listing. This will give you a better idea of
-                expected delivery time.
+                Check the shipping notes in each listing for estimated
+                delivery times specific to your location.
               </p>
             </div>
           </CardContent>
@@ -171,19 +166,19 @@ export default function ShippingPolicy() {
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">
-                  Seller Responsibilities
+                  Our Shipping Standards
                 </h3>
                 <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-4">
-                  <li>Package items securely with appropriate materials</li>
+                  <li>Items are packaged securely with appropriate materials</li>
                   <li>
-                    Provide tracking information within 24 hours of shipping
+                    Tracking information provided within 24 hours of shipping
                   </li>
-                  <li>Ship within 1-3 business days of payment confirmation</li>
+                  <li>Orders shipped within 1-3 business days of payment confirmation</li>
                   <li>
-                    Choose reliable shipping carriers (Blue Dart, DTDC, etc.)
+                    We use reliable shipping carriers (Blue Dart, DTDC, etc.)
                   </li>
-                  <li>Ensure items match listing description exactly</li>
-                  <li>Communicate any shipping delays to buyers</li>
+                  <li>Every item is verified to match its listing description</li>
+                  <li>We communicate any shipping delays proactively</li>
                 </ul>
               </div>
               <div>
@@ -235,7 +230,7 @@ export default function ShippingPolicy() {
                   Delivered
                 </h3>
                 <p className="text-sm text-purple-700">
-                  Package delivered and awaiting approval
+                  Package delivered to your doorstep
                 </p>
               </div>
             </div>
@@ -255,34 +250,32 @@ export default function ShippingPolicy() {
               Our transparent pricing structure ensures you know exactly what
               you're paying for:
             </p>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900">For Buyers</h3>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">
-                    No Hidden Fees
-                  </h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-green-700 ml-4">
-                    <li>Pay only the listed price for items</li>
-                    <li>No additional platform fees for buyers</li>
-                    <li>Free buyer protection included</li>
-                    <li>Secure payment processing at no extra cost</li>
-                  </ul>
-                </div>
+            <div className="space-y-4">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-green-800 mb-2">
+                  No Hidden Fees
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-green-700 ml-4">
+                  <li>Pay only the listed price for items</li>
+                  <li>No additional platform fees</li>
+                  <li>Secure payment processing at no extra cost</li>
+                  <li>Shipping included in the listed price</li>
+                </ul>
               </div>
-              <div className="space-y-4">
-                <h3 className="font-semibold text-gray-900">For Sellers</h3>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-blue-800 mb-2">
-                    Transparent Fee Structure
-                  </h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-blue-700 ml-4">
-                    <li>Platform fee: 0.5% of sale price</li>
-                    <li>Payment gateway charges: 2% of sale price</li>
-                    <li>Total deduction: 2.5% of sale price</li>
-                    <li>You receive: 97.5% of listed price</li>
-                  </ul>
-                </div>
+            </div>
+            {/* [MARKETPLACE REMOVED] "For Sellers" fee structure - only admin sells
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">For Sellers</h3>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">
+                  Transparent Fee Structure
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-blue-700 ml-4">
+                  <li>Platform fee: 0.5% of sale price</li>
+                  <li>Payment gateway charges: 2% of sale price</li>
+                  <li>Total deduction: 2.5% of sale price</li>
+                  <li>You receive: 97.5% of listed price</li>
+                </ul>
               </div>
             </div>
             <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
@@ -295,6 +288,7 @@ export default function ShippingPolicy() {
                 costs.
               </p>
             </div>
+            */}
           </CardContent>
         </Card>
 

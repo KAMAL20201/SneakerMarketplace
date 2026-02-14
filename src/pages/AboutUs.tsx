@@ -23,9 +23,8 @@ export default function AboutUs() {
             About The Plug Market
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            India's premier marketplace connecting collectors and sellers for
-            authentic sneakers, streetwear, and collectibles. Where passion
-            meets opportunity.
+            India's premier destination for authentic sneakers, streetwear,
+            and collectibles. Where passion meets quality.
           </p>
           <Badge variant="secondary" className="mt-4 text-lg px-6 py-2">
             Est. 2025
@@ -43,14 +42,13 @@ export default function AboutUs() {
             </CardHeader>
             <CardContent className="space-y-4 text-gray-700">
               <p className="text-lg leading-relaxed">
-                To create the most trusted and vibrant marketplace for sneaker
-                and streetwear enthusiasts across India, ensuring authenticity,
-                security, and exceptional user experience.
+                To be the most trusted destination for sneaker and streetwear
+                enthusiasts across India, ensuring authenticity, quality,
+                and an exceptional shopping experience.
               </p>
               <p>
                 We believe everyone deserves access to authentic, high-quality
-                items while supporting a community of passionate collectors and
-                sellers.
+                items backed by a team that's passionate about the culture.
               </p>
             </CardContent>
           </Card>
@@ -65,12 +63,12 @@ export default function AboutUs() {
             <CardContent className="space-y-4 text-gray-700">
               <p className="text-lg leading-relaxed">
                 To become India's leading destination for authentic streetwear
-                culture, fostering a global community where collectors can
-                discover, trade, and celebrate their passion.
+                culture, building a community where enthusiasts can discover
+                and celebrate their passion.
               </p>
               <p>
                 We envision a future where The Plug Market is synonymous with
-                trust, authenticity, and community in the streetwear world.
+                trust, authenticity, and quality in the streetwear world.
               </p>
             </CardContent>
           </Card>
@@ -92,7 +90,7 @@ export default function AboutUs() {
                 <h3 className="font-semibold text-gray-900">The Beginning</h3>
                 <p className="text-sm">
                   Founded by passionate sneaker enthusiasts who saw the need for
-                  a trusted marketplace in India's growing streetwear scene.
+                  a trusted store in India's growing streetwear scene.
                 </p>
               </div>
 
@@ -102,8 +100,8 @@ export default function AboutUs() {
                 </div>
                 <h3 className="font-semibold text-gray-900">Building Trust</h3>
                 <p className="text-sm">
-                  Developed robust verification systems and buyer protection to
-                  ensure every transaction is secure and authentic.
+                  Developed a rigorous quality verification process to
+                  ensure every product we sell is authentic and as described.
                 </p>
               </div>
 
@@ -115,9 +113,8 @@ export default function AboutUs() {
                   Growing Community
                 </h3>
                 <p className="text-sm">
-                  Today, we serve thousands of collectors and sellers across
-                  India, building the largest streetwear community in the
-                  country.
+                  Today, we serve thousands of customers across India,
+                  building the largest streetwear community in the country.
                 </p>
               </div>
             </div>
@@ -150,8 +147,8 @@ export default function AboutUs() {
                 </div>
                 <h3 className="font-semibold text-gray-900">Community</h3>
                 <p className="text-sm text-gray-600">
-                  Building connections between passionate collectors and
-                  sellers.
+                  Building connections with passionate collectors and
+                  enthusiasts.
                 </p>
               </div>
 
@@ -186,48 +183,47 @@ export default function AboutUs() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                  For Buyers
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">
-                        Quality Verification
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        Items are reviewed for quality and accurate description
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">
-                        Secure Payments
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        Multiple payment options with buyer protection
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <div>
-                      <h4 className="font-medium text-gray-900">
-                        Wide Selection
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        Access to rare and exclusive items
-                      </p>
-                    </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      Quality Verification
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Every item is reviewed for quality and authenticity
+                    </p>
                   </div>
                 </div>
               </div>
-
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      Secure Payments
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Multiple payment options with secure processing
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">
+                      Wide Selection
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Access to rare and exclusive items
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* [MARKETPLACE REMOVED] "For Sellers" section - only admin sells in ecommerce model
               <div className="space-y-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">
                   For Sellers
@@ -268,6 +264,7 @@ export default function AboutUs() {
                   </div>
                 </div>
               </div>
+              */}
             </div>
           </CardContent>
         </Card>
@@ -306,7 +303,7 @@ export default function AboutUs() {
               Meet Our Team
             </CardTitle>
             <p className="text-gray-600">
-              Passionate individuals dedicated to building the best marketplace
+              Passionate individuals dedicated to building the best shopping
               experience
             </p>
           </CardHeader>
@@ -348,8 +345,8 @@ export default function AboutUs() {
               Join Our Community
             </CardTitle>
             <p className="text-gray-300">
-              Ready to discover amazing items or start selling? Join thousands
-              of users today!
+              Ready to discover amazing items? Join thousands of happy
+              customers today!
             </p>
           </CardHeader>
           <CardContent className="text-center">
@@ -361,10 +358,10 @@ export default function AboutUs() {
                 <p className="font-semibold">Get in Touch</p>
                 <p>Email: support@theplugmarket.in</p>
                 <p>Phone: +91-78885-27970</p>
-                <p>
+                {/* <p>
                   Address: #222, Near Ram Mandir, Patiala Gate, Sangrur, Punjab
                   148001, India
-                </p>
+                </p> */}
               </div>
             </div>
           </CardContent>

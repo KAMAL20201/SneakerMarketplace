@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { OrderService, type Order as OrderType } from "@/lib/orderService";
 import { toast } from "sonner";
@@ -117,6 +118,7 @@ const EmptyOrdersState = ({ type }: { type: "buy" | "sell" }) => (
 
 const MyOrders = () => {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const [buyOrders, setBuyOrders] = useState<Order[]>([]);
   const [sellOrders, setSellOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,10 +186,12 @@ const MyOrders = () => {
         setBuyOrders(buyerOrders);
         setBuyTotalPages(Math.ceil(buyerOrders.length / itemsPerPage));
 
-        // Fetch sell orders
-        const sellerOrders = await OrderService.getSellerOrders(user.id);
-        setSellOrders(sellerOrders);
-        setSellTotalPages(Math.ceil(sellerOrders.length / itemsPerPage));
+        // [ECOMMERCE] Only fetch sell orders for admin
+        if (isAdmin) {
+          const sellerOrders = await OrderService.getSellerOrders(user.id);
+          setSellOrders(sellerOrders);
+          setSellTotalPages(Math.ceil(sellerOrders.length / itemsPerPage));
+        }
       } catch (error) {
         console.error("Error fetching orders:", error);
         toast.error("Failed to load your orders");
@@ -199,7 +203,7 @@ const MyOrders = () => {
     if (user) {
       fetchOrders();
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   // Get paginated orders for current tab
   const getPaginatedOrders = (orders: Order[], currentPage: number) => {
@@ -230,7 +234,7 @@ const MyOrders = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
           <p className="text-gray-600">
-            Track your purchases and sales history
+            Track your purchase history
           </p>
         </div>
 
@@ -240,13 +244,16 @@ const MyOrders = () => {
           onValueChange={(value) => setActiveTab(value as "buy" | "sell")}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          {/* [ECOMMERCE] Only show sell orders tab for admin */}
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} mb-8`}>
             <TabsTrigger value="buy" className="text-sm font-medium">
-              My Buy Orders ({buyOrders.length})
+              My Orders ({buyOrders.length})
             </TabsTrigger>
-            <TabsTrigger value="sell" className="text-sm font-medium">
-              My Sell Orders ({sellOrders.length})
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="sell" className="text-sm font-medium">
+                My Sell Orders ({sellOrders.length})
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Buy Orders Tab */}
