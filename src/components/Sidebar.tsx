@@ -153,7 +153,8 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="px-2">
-        {data.navMain.map((item) => (
+        {/* Hide sections that have no items (e.g. My Account for non-admin guests) */}
+        {data.navMain.filter((section) => section.items.length > 0).map((item) => (
           <SidebarGroup key={item.title}>
             <SidebarGroupLabel className="text-gray-700 font-semibold px-3">
               {item.title}
