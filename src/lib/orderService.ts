@@ -13,7 +13,7 @@ export interface Order {
   payment_id: string;
   razorpay_order_id: string;
   amount: number;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "pending_payment" | "confirmed" | "shipped" | "delivered" | "cancelled";
   shipping_address?: ShippingAddress;
   tracking_number?: string;
   // [GUEST CHECKOUT] Guest buyer contact info stored directly on order
@@ -28,10 +28,11 @@ export interface CreateOrderRequest {
   buyer_id: string;
   seller_id: string;
   product_id: string;
-  payment_id: string;
-  razorpay_order_id: string;
+  payment_id?: string;
+  razorpay_order_id?: string;
   amount: number;
   shipping_address?: ShippingAddress;
+  status?: Order["status"];
   // [GUEST CHECKOUT] Guest buyer contact info stored directly on order
   buyer_email?: string;
   buyer_name?: string;
@@ -65,11 +66,11 @@ export class OrderService {
             buyer_id: orderData.buyer_id || null,
             seller_id: orderData.seller_id,
             product_id: orderData.product_id,
-            payment_id: orderData.payment_id,
-            razorpay_order_id: orderData.razorpay_order_id,
+            payment_id: orderData.payment_id || null,
+            razorpay_order_id: orderData.razorpay_order_id || null,
             amount: orderData.amount,
             shipping_address: orderData.shipping_address || {},
-            status: "confirmed",
+            status: orderData.status || "confirmed",
             // [GUEST CHECKOUT] Store guest buyer contact info directly on order
             buyer_email: orderData.buyer_email || null,
             buyer_name: orderData.buyer_name || null,
@@ -243,6 +244,127 @@ export class OrderService {
       return orders;
     } catch (error) {
       console.error("Error processing cart checkout:", error);
+      throw error;
+    }
+  }
+
+  // Process WhatsApp checkout - create orders with pending_payment status
+  static async processWhatsAppCheckout(
+    cartItems: CartItem[],
+    orderRef: string,
+    buyerId: string,
+    buyerDetails: { full_name: string; email: string; phone?: string },
+    shippingAddress?: ShippingAddress
+  ): Promise<Order[]> {
+    try {
+      // Validate all cart items are still available before processing
+      await StockValidationService.validateBeforeCheckout(cartItems);
+
+      const orders: Order[] = [];
+      const failedItems: string[] = [];
+
+      for (const item of cartItems) {
+        const availability =
+          await StockValidationService.checkProductAvailability(item.productId);
+
+        if (!availability.isAvailable) {
+          logger.warn(
+            `Product ${item.productName} (${item.productId}) is no longer available. Status: ${availability.currentStatus}`
+          );
+          failedItems.push(item.productName);
+          continue;
+        }
+
+        const productDetails = await this.getProductDetails(item.productId);
+
+        if (!productDetails) {
+          logger.warn(`Product ${item.productId} not found, skipping`);
+          failedItems.push(item.productName);
+          continue;
+        }
+
+        // Mark product as sold to prevent double-selling
+        const markedAsSold = await StockValidationService.markProductAsSold(
+          item.productId
+        );
+
+        if (!markedAsSold) {
+          logger.error(
+            `Failed to mark product ${item.productName} as sold - already sold or unavailable`
+          );
+          failedItems.push(item.productName);
+          continue;
+        }
+
+        // Create order with pending_payment status
+        const order = await this.createOrder({
+          buyer_id: buyerId,
+          seller_id: item.sellerId,
+          product_id: item.productId,
+          razorpay_order_id: orderRef,
+          amount: item.price,
+          shipping_address: shippingAddress || undefined,
+          status: "pending_payment",
+          buyer_email: buyerDetails.email,
+          buyer_name: buyerDetails.full_name,
+          buyer_phone: buyerDetails.phone,
+        });
+
+        orders.push(order);
+
+        // Prepare order email data
+        const orderEmailData: OrderEmailData = {
+          order_id: order.id,
+          product_title: item.productName,
+          product_image:
+            productDetails.product_images?.find(
+              (img: { is_poster_image: boolean }) => img.is_poster_image
+            )?.image_url || productDetails.product_images?.[0]?.image_url,
+          amount: item.price,
+          currency: "INR",
+          buyer_name: buyerDetails.full_name,
+          buyer_email: buyerDetails.email,
+          seller_name: item.sellerName,
+          seller_email: item.sellerEmail,
+          order_status: "pending_payment",
+          shipping_address: shippingAddress || undefined,
+        };
+
+        // Send email notifications
+        try {
+          if (buyerDetails.email) {
+            await EmailService.sendOrderConfirmationToBuyer(
+              buyerDetails.email,
+              buyerDetails.full_name,
+              orderEmailData
+            );
+          }
+
+          if (item.sellerEmail) {
+            await EmailService.sendOrderConfirmationToSeller(
+              item.sellerEmail,
+              item.sellerName,
+              orderEmailData
+            );
+          }
+        } catch (emailError) {
+          logger.warn(
+            `Failed to send email notifications: ${
+              emailError instanceof Error ? emailError.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (failedItems.length > 0) {
+        throw new Error(
+          `Some items could not be processed: ${failedItems.join(", ")}. Please refresh your cart and try again.`
+        );
+      }
+
+      return orders;
+    } catch (error) {
+      console.error("Error processing WhatsApp checkout:", error);
       throw error;
     }
   }

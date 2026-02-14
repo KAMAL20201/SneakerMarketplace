@@ -5,7 +5,8 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
-import { PaymentService } from "../lib/paymentService";
+// [WHATSAPP CHECKOUT] Razorpay imports commented out until payment provider is set up
+// import { PaymentService } from "../lib/paymentService";
 import { OrderService } from "../lib/orderService";
 // [GUEST CHECKOUT] Auth still imported for optional admin prefill
 import { useAuth } from "./AuthContext";
@@ -15,19 +16,21 @@ import { ROUTE_NAMES } from "@/constants/enums";
 import { useNavigate } from "react-router";
 import type { CartItem } from "../lib/orderService";
 
-import {
-  createRazorpayInstance,
-  formatAmount,
-  formatCurrency,
-  loadRazorpayScript,
-  RAZORPAY_KEY_ID,
-} from "@/lib/razorpay";
-import type {
-  RazorpayOptions,
-  RazorpayResponse,
-  CreateOrderRequest,
-} from "../types/razorpay";
+// [WHATSAPP CHECKOUT] Razorpay imports commented out
+// import {
+//   createRazorpayInstance,
+//   formatAmount,
+//   formatCurrency,
+//   loadRazorpayScript,
+//   RAZORPAY_KEY_ID,
+// } from "@/lib/razorpay";
+// import type {
+//   RazorpayOptions,
+//   RazorpayResponse,
+//   CreateOrderRequest,
+// } from "../types/razorpay";
 import type { ShippingAddress } from "@/types/shipping";
+import { WhatsAppService } from "@/lib/whatsappService";
 
 interface PaymentContextType {
   isLoading: boolean;
@@ -72,7 +75,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const initiatePayment = useCallback(
     async (
       amount: number,
-      currency: string,
+      _currency: string,
       metadata: Record<string, string> = {},
       items: CartItem[] = [],
       shippingAddress?: ShippingAddress
@@ -81,133 +84,153 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(true);
         setError(null);
 
-        // Load razorpay script
-        await loadRazorpayScript();
+        if (!shippingAddress) {
+          throw new Error("Shipping address is required");
+        }
 
-        // Create order on server with required customer details and cart items for one-click checkout
-        const orderData: CreateOrderRequest = {
-          amount: formatAmount(amount),
-          currency: formatCurrency(currency),
-          receipt: `receipt_${Date.now()}`,
-          notes: metadata,
-          // customer_details: {
-          //   customer_id: user?.id || `user_${Date.now()}`,
-          //   customer_name: user?.user_metadata?.full_name || "Customer",
-          //   customer_email: user?.email || "customer@example.com",
-          //   customer_phone: "9999999999", // Dummy phone number as required by Cashfree
-          // },
-          // cart_details: {
-          //   cart_items:
-          //     items?.length > 0
-          //       ? items?.map((item, index) => ({
-          //           item_id: item.id || `item_${index}`,
-          //           item_name: item.productName || `Item ${index + 1}`,
-          //           item_description: `${item.brand} - ${item.condition} - Size: ${item.size}`,
-          //           item_original_unit_price: item.price,
-          //           item_discounted_unit_price: item.price,
-          //           item_quantity: item.quantity,
-          //           item_currency: currency,
-          //         }))
-          //       : [],
-          // },
-        };
+        if (!items || items.length === 0) {
+          throw new Error("No items to checkout");
+        }
 
-        const order = await PaymentService.createOrder(orderData);
+        // Generate order reference
+        const orderRef = WhatsAppService.generateOrderRef();
 
-        // Configure Razorpay options
-        const options: RazorpayOptions = {
-          key: RAZORPAY_KEY_ID,
-          amount: order.amount,
-          currency: order.currency,
-          name: "The Plug Market",
-          // description: description,
-          order_id: order.id,
-          // [GUEST CHECKOUT] Prefill with guest info from shipping address, fallback to admin user data
-          prefill: {
-            name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
-            email: shippingAddress?.email || user?.email || "",
-            contact: shippingAddress?.phone || "",
-          },
-          notes: metadata,
-          theme: {
-            color: "#3B82F6",
-          },
-          handler: async (response: RazorpayResponse) => {
-            try {
-              // Verify payment
-
-              const verification = await PaymentService.verifyPayment(response);
-
-              if (verification.verified && verification.payment) {
-                // Save payment to database
-                await PaymentService.savePayment({
-                  amount: amount,
-                  currency: currency,
-                  status: "completed",
-                  order_id: response.razorpay_order_id,
-                  payment_id: response.razorpay_payment_id,
-                  // [GUEST CHECKOUT] user_id is empty for guest orders
-                  user_id: user?.id || "",
-                });
-                // Check if this is a cart checkout
-                if (metadata.type === "cart_checkout" && items.length > 0) {
-                  // Process cart checkout - create orders and notify sellers
-                  await OrderService.processCartCheckout(
-                    items,
-                    response.razorpay_payment_id,
-                    response.razorpay_order_id,
-                    // [GUEST CHECKOUT] buyer_id is empty for guest orders, nullable in DB
-                    user?.id || "",
-                    {
-                      // [GUEST CHECKOUT] Guest info from shipping address
-                      full_name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
-                      email: shippingAddress?.email || user?.email || "",
-                      phone: shippingAddress?.phone || "",
-                    },
-                    shippingAddress
-                  );
-                  if (isOpen) {
-                    toggleCart();
-                  }
-                  clearCart();
-                  // [GUEST CHECKOUT] Navigate to home — guests have no orders page.
-                  // Order confirmation is sent via email.
-                  navigate(ROUTE_NAMES.HOME);
-                  toast.success(
-                    "🎉 Purchase successful! You'll receive a confirmation email shortly."
-                  );
-                }
-              } else {
-                setError("Payment verification failed");
-              }
-            } catch (err) {
-              setError(
-                err instanceof Error
-                  ? err.message
-                  : "Payment verification failed"
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          },
-          modal: {
-            ondismiss: () => {
-              setIsLoading(false);
+        // Process checkout - create orders with pending_payment status
+        // This also validates stock and marks products as sold
+        if (metadata.type === "cart_checkout" && items.length > 0) {
+          await OrderService.processWhatsAppCheckout(
+            items,
+            orderRef,
+            user?.id || "",
+            {
+              full_name:
+                shippingAddress.full_name ||
+                user?.user_metadata?.full_name ||
+                "",
+              email: shippingAddress.email || user?.email || "",
+              phone: shippingAddress.phone || "",
             },
-          },
-        };
-        // Open Razorpay modal
-        const razorpay = createRazorpayInstance(options);
-        razorpay.open();
+            shippingAddress
+          );
+
+          // Generate WhatsApp URL and redirect
+          const whatsappURL = WhatsAppService.generateWhatsAppURL(
+            items,
+            shippingAddress,
+            orderRef,
+            amount
+          );
+
+          // Open WhatsApp in new tab
+          window.open(whatsappURL, "_blank");
+
+          // Clean up cart and navigate
+          if (isOpen) {
+            toggleCart();
+          }
+          clearCart();
+          navigate(ROUTE_NAMES.HOME);
+          toast.success(
+            "Order placed! Complete the payment on WhatsApp to confirm your order."
+          );
+        }
       } catch (error) {
-        console.error("Payment error:", error);
-        toast.error("Payment failed. Please try again.");
+        console.error("Order error:", error);
+        const message =
+          error instanceof Error ? error.message : "Order failed. Please try again.";
+        setError(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
     },
     [user, isOpen, toggleCart, navigate, clearCart]
   );
+
+  /* [WHATSAPP CHECKOUT] Original Razorpay payment flow commented out.
+   * Uncomment and restore this when Razorpay/payment provider is ready.
+   *
+   * const initiatePayment_razorpay = useCallback(
+   *   async (
+   *     amount: number,
+   *     currency: string,
+   *     metadata: Record<string, string> = {},
+   *     items: CartItem[] = [],
+   *     shippingAddress?: ShippingAddress
+   *   ) => {
+   *     try {
+   *       setIsLoading(true);
+   *       setError(null);
+   *       await loadRazorpayScript();
+   *       const orderData: CreateOrderRequest = {
+   *         amount: formatAmount(amount),
+   *         currency: formatCurrency(currency),
+   *         receipt: `receipt_${Date.now()}`,
+   *         notes: metadata,
+   *       };
+   *       const order = await PaymentService.createOrder(orderData);
+   *       const options: RazorpayOptions = {
+   *         key: RAZORPAY_KEY_ID,
+   *         amount: order.amount,
+   *         currency: order.currency,
+   *         name: "The Plug Market",
+   *         order_id: order.id,
+   *         prefill: {
+   *           name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
+   *           email: shippingAddress?.email || user?.email || "",
+   *           contact: shippingAddress?.phone || "",
+   *         },
+   *         notes: metadata,
+   *         theme: { color: "#3B82F6" },
+   *         handler: async (response: RazorpayResponse) => {
+   *           try {
+   *             const verification = await PaymentService.verifyPayment(response);
+   *             if (verification.verified && verification.payment) {
+   *               await PaymentService.savePayment({
+   *                 amount, currency, status: "completed",
+   *                 order_id: response.razorpay_order_id,
+   *                 payment_id: response.razorpay_payment_id,
+   *                 user_id: user?.id || "",
+   *               });
+   *               if (metadata.type === "cart_checkout" && items.length > 0) {
+   *                 await OrderService.processCartCheckout(
+   *                   items, response.razorpay_payment_id,
+   *                   response.razorpay_order_id, user?.id || "",
+   *                   {
+   *                     full_name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
+   *                     email: shippingAddress?.email || user?.email || "",
+   *                     phone: shippingAddress?.phone || "",
+   *                   },
+   *                   shippingAddress
+   *                 );
+   *                 if (isOpen) toggleCart();
+   *                 clearCart();
+   *                 navigate(ROUTE_NAMES.HOME);
+   *                 toast.success("🎉 Purchase successful! You'll receive a confirmation email shortly.");
+   *               }
+   *             } else {
+   *               setError("Payment verification failed");
+   *             }
+   *           } catch (err) {
+   *             setError(err instanceof Error ? err.message : "Payment verification failed");
+   *           } finally {
+   *             setIsLoading(false);
+   *           }
+   *         },
+   *         modal: { ondismiss: () => setIsLoading(false) },
+   *       };
+   *       const razorpay = createRazorpayInstance(options);
+   *       razorpay.open();
+   *     } catch (error) {
+   *       console.error("Payment error:", error);
+   *       toast.error("Payment failed. Please try again.");
+   *     } finally {
+   *       setIsLoading(false);
+   *     }
+   *   },
+   *   [user, isOpen, toggleCart, navigate, clearCart]
+   * );
+   */
 
   const value: PaymentContextType = {
     isLoading,
