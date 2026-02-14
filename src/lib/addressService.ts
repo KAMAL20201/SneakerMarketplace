@@ -1,3 +1,8 @@
+// [GUEST CHECKOUT] Original Supabase-based address service commented out.
+// Addresses now stored in localStorage for guest checkout.
+// No user auth required.
+
+/* Original Supabase address service:
 import { supabase } from "./supabase";
 import type { ShippingAddress } from "../types/shipping";
 
@@ -61,11 +66,9 @@ export const addressService = {
     address: Omit<ShippingAddress, "id" | "created_at" | "updated_at">
   ): Promise<ShippingAddress | null> {
     try {
-      // If this is the first address or explicitly set as default, set is_default to true
       const isFirstAddress = await this.isFirstAddress(userId);
       const isDefault = isFirstAddress || address.is_default;
 
-      // If setting as default, remove default from other addresses
       if (isDefault) {
         await this.removeDefaultFromOtherAddresses(userId);
       }
@@ -74,7 +77,7 @@ export const addressService = {
         .from("user_addresses")
         .insert({
           user_id: userId,
-          type: "other", // Default type
+          type: "other",
           label: "Shipping Address",
           full_name: address.full_name,
           phone: address.phone,
@@ -138,7 +141,6 @@ export const addressService = {
       if (updates.is_default !== undefined)
         updateData.is_default = updates.is_default;
 
-      // If setting as default, remove default from other addresses
       if (updates.is_default) {
         await this.removeDefaultFromOtherAddresses(userId);
       }
@@ -174,7 +176,6 @@ export const addressService = {
         throw error;
       }
 
-      // If deleting default address, set first remaining as default
       const remainingAddresses = await this.getAddresses(userId);
       if (remainingAddresses.length > 0) {
         const firstAddress = remainingAddresses[0];
@@ -192,10 +193,8 @@ export const addressService = {
 
   async setDefaultAddress(userId: string, addressId: string): Promise<boolean> {
     try {
-      // Remove default from all addresses
       await this.removeDefaultFromOtherAddresses(userId);
 
-      // Set the specified address as default
       const { error } = await supabase
         .from("user_addresses")
         .update({ is_default: true })
@@ -226,7 +225,6 @@ export const addressService = {
 
       if (error) {
         if (error.code === "PGRST116") {
-          // No default address found
           return null;
         }
         console.error("Error fetching default address:", error);
@@ -268,7 +266,6 @@ export const addressService = {
 
       if (error) {
         if (error.code === "PGRST116") {
-          // Address not found
           return null;
         }
         console.error("Error fetching address by ID:", error);
@@ -330,5 +327,172 @@ export const addressService = {
     } catch (error) {
       console.error("Error in removeDefaultFromOtherAddresses:", error);
     }
+  },
+};
+*/
+
+// [GUEST CHECKOUT] localStorage-based address service
+// Same interface as the original so all consumers (useAddressStorage, ShippingStep, etc.) work unchanged.
+import type { ShippingAddress } from "../types/shipping";
+
+const STORAGE_KEY = "guest_shipping_addresses";
+
+function generateId(): string {
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : `addr_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function loadFromStorage(): ShippingAddress[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return (parsed as ShippingAddress[]).map((addr) => ({
+      ...addr,
+      created_at: addr.created_at ? new Date(addr.created_at) : undefined,
+      updated_at: addr.updated_at ? new Date(addr.updated_at) : undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function saveToStorage(addresses: ShippingAddress[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(addresses));
+}
+
+// userId parameters kept for interface compatibility but not used
+export const addressService = {
+  async getAddresses(_userId?: string): Promise<ShippingAddress[]> {
+    const addresses = loadFromStorage();
+    return addresses.sort((a, b) => {
+      if (a.is_default && !b.is_default) return -1;
+      if (!a.is_default && b.is_default) return 1;
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    });
+  },
+
+  async addAddress(
+    _userId: string,
+    address: Omit<ShippingAddress, "id" | "created_at" | "updated_at">
+  ): Promise<ShippingAddress | null> {
+    try {
+      const addresses = loadFromStorage();
+      const isFirst = addresses.length === 0;
+      const isDefault = isFirst || address.is_default;
+
+      if (isDefault) {
+        addresses.forEach((a) => (a.is_default = false));
+      }
+
+      const now = new Date();
+      const newAddress: ShippingAddress = {
+        ...address,
+        id: generateId(),
+        is_default: isDefault,
+        country: address.country || "India",
+        created_at: now,
+        updated_at: now,
+      };
+
+      addresses.push(newAddress);
+      saveToStorage(addresses);
+      return newAddress;
+    } catch (error) {
+      console.error("Error in addAddress:", error);
+      return null;
+    }
+  },
+
+  async updateAddress(
+    _userId: string,
+    addressId: string,
+    updates: Partial<Omit<ShippingAddress, "id" | "created_at" | "updated_at">>
+  ): Promise<boolean> {
+    try {
+      const addresses = loadFromStorage();
+      const index = addresses.findIndex((a) => a.id === addressId);
+      if (index === -1) return false;
+
+      if (updates.is_default) {
+        addresses.forEach((a) => (a.is_default = false));
+      }
+
+      addresses[index] = {
+        ...addresses[index],
+        ...updates,
+        updated_at: new Date(),
+      };
+
+      saveToStorage(addresses);
+      return true;
+    } catch (error) {
+      console.error("Error in updateAddress:", error);
+      return false;
+    }
+  },
+
+  async deleteAddress(_userId: string, addressId: string): Promise<boolean> {
+    try {
+      let addresses = loadFromStorage();
+      const deletedAddr = addresses.find((a) => a.id === addressId);
+      addresses = addresses.filter((a) => a.id !== addressId);
+
+      if (deletedAddr?.is_default && addresses.length > 0) {
+        addresses[0].is_default = true;
+      }
+
+      saveToStorage(addresses);
+      return true;
+    } catch (error) {
+      console.error("Error in deleteAddress:", error);
+      return false;
+    }
+  },
+
+  async setDefaultAddress(
+    _userId: string,
+    addressId: string
+  ): Promise<boolean> {
+    try {
+      const addresses = loadFromStorage();
+      addresses.forEach((a) => {
+        a.is_default = a.id === addressId;
+      });
+      saveToStorage(addresses);
+      return true;
+    } catch (error) {
+      console.error("Error in setDefaultAddress:", error);
+      return false;
+    }
+  },
+
+  async getDefaultAddress(
+    _userId?: string
+  ): Promise<ShippingAddress | null> {
+    const addresses = loadFromStorage();
+    return addresses.find((a) => a.is_default) || addresses[0] || null;
+  },
+
+  async getAddressById(
+    _userId: string,
+    addressId: string
+  ): Promise<ShippingAddress | null> {
+    const addresses = loadFromStorage();
+    return addresses.find((a) => a.id === addressId) || null;
+  },
+
+  async isFirstAddress(_userId?: string): Promise<boolean> {
+    const addresses = loadFromStorage();
+    return addresses.length === 0;
+  },
+
+  async removeDefaultFromOtherAddresses(_userId?: string): Promise<void> {
+    const addresses = loadFromStorage();
+    addresses.forEach((a) => (a.is_default = false));
+    saveToStorage(addresses);
   },
 };
