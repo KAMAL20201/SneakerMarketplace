@@ -27,9 +27,9 @@ export function Footer() {
             </div>
           </div>
           <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-            The ultimate marketplace connecting collectors and sellers across
-            India. Buy, sell, and discover hyped sneakers, streetwear,
-            collectibles & more from trusted community members.
+            Your destination for hyped sneakers, streetwear,
+            collectibles & more. Shop authentic products with
+            secure payments and fast delivery across India.
           </p>
           <div className="flex space-x-3 md:space-x-4">
             <a
@@ -43,40 +43,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8 mb-8">
-          {/* Trust & Safety */}
-          <div className="space-y-3 md:space-y-4">
-            <h4 className="text-base md:text-lg font-bold text-white">
-              Trust & Safety
-            </h4>
-            <ul className="space-y-2 md:space-y-3">
-              <li>
-                <Link
-                  to={ROUTE_NAMES.BUYER_PROTECTION}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Buyer Protection
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to={ROUTE_NAMES.SECURE_PAYMENTS}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Secure Payments
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to={ROUTE_NAMES.REVIEW_PROCESS}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Review Process
-                </Link>
-              </li>
-            </ul>
-          </div>
-
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-8 mb-8">
           {/* Support */}
           <div className="space-y-3 md:space-y-4">
             <h4 className="text-base md:text-lg font-bold text-white">
@@ -93,18 +60,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to={ROUTE_NAMES.RETURNS}
+                  to={ROUTE_NAMES.SECURE_PAYMENTS}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
-                  Returns & Exchanges
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to={ROUTE_NAMES.CANCELLATIONS_REFUNDS}
-                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
-                >
-                  Cancellations & Refunds
+                  Secure Payments
                 </Link>
               </li>
             </ul>
@@ -164,15 +123,6 @@ export function Footer() {
                 </p>
               </div>
             </div>
-            {/* <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/10 rounded-xl">
-                <Phone className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-300">Phone</p>
-                <p className="text-white font-semibold">+91-98765-43210</p>
-              </div>
-            </div> */}
           </div>
         </div>
 

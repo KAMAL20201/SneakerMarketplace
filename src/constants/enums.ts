@@ -2,42 +2,29 @@ export const ROUTE_NAMES = {
   LOGIN: "/login",
   SIGNUP: "/signup",
   HOME: "/",
-  SELL: "/sell",
-  MY_LISTINGS: "/my-listings",
   MY_ORDERS: "/my-orders",
   PRODUCT_DETAIL: "/product/:id",
   CART: "/cart",
   CHECKOUT: "/checkout",
-  PAYMENT_METHODS: "/payment-methods",
   BROWSE: "/browse",
-  EDIT_LISTING: "/edit-listing/:id",
-  ADMIN_REVIEW: "/admin/review",
   PROFILE: "/profile",
   MY_ADDRESSES: "/my-addresses",
   SETTINGS: "/settings",
-  // Additional routes found in the codebase
   FORGOT_PASSWORD: "/forgot-password",
   TERMS: "/terms",
   PRIVACY: "/privacy",
-  BUYER_PROTECTION: "/buyer-protection",
   SECURE_PAYMENTS: "/secure-payments",
-  REVIEW_PROCESS: "/review-process",
   HELP: "/help",
   FAQ: "/faq",
   SHIPPING: "/shipping",
-  RETURNS: "/returns",
   ABOUT: "/about",
-  SELLER_AGREEMENT: "/seller-agreement",
-  // Razorpay required pages
   CONTACT_US: "/contact-us",
   SHIPPING_POLICY: "/shipping-policy",
-  CANCELLATIONS_REFUNDS: "/cancellations-refunds",
 } as const;
 
 // Helper functions for dynamic routes
 export const ROUTE_HELPERS = {
   PRODUCT_DETAIL: (id: string) => `/product/${id}`,
-  EDIT_LISTING: (id: string) => `/edit-listing/${id}`,
 } as const;
 
 // Product condition constants
@@ -149,18 +136,6 @@ export const CLOTHING_SIZES = {
   XXXL: "xxxl",
 } as const;
 
-// Delivery timeline constants
-export const DELIVERY_TIMELINES = {
-  THREE_TO_FIVE: "3-5",
-  SEVEN_TO_TEN: "7-10",
-  TWELVE_TO_FIFTEEN: "12-15",
-  EIGHTEEN_TO_TWENTY_ONE: "18-21",
-  CUSTOM: "custom",
-} as const;
-
-export type DeliveryTimeline =
-  (typeof DELIVERY_TIMELINES)[keyof typeof DELIVERY_TIMELINES];
-
 // Category IDs
 export const CATEGORY_IDS = {
   SNEAKERS: "sneakers",
@@ -172,25 +147,3 @@ export const CATEGORY_IDS = {
 } as const;
 
 export type CategoryId = (typeof CATEGORY_IDS)[keyof typeof CATEGORY_IDS];
-
-// Payment method types
-export const PAYMENT_METHOD_TYPES = {
-  UPI: "upi",
-  BANK_ACCOUNT: "bank_account",
-} as const;
-
-export type PaymentMethodType =
-  (typeof PAYMENT_METHOD_TYPES)[keyof typeof PAYMENT_METHOD_TYPES];
-
-// Listing status
-export const LISTING_STATUS = {
-  DRAFT: "draft",
-  UNDER_REVIEW: "under_review",
-  APPROVED: "approved",
-  REJECTED: "rejected",
-  SOLD: "sold",
-  EXPIRED: "expired",
-} as const;
-
-export type ListingStatus =
-  (typeof LISTING_STATUS)[keyof typeof LISTING_STATUS];

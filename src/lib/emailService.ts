@@ -10,8 +10,6 @@ export interface OrderEmailData {
   currency: string;
   buyer_name?: string;
   buyer_email?: string;
-  seller_name?: string;
-  seller_email?: string;
   shipping_address?: ShippingAddress;
   tracking_number?: string;
   order_status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
@@ -23,8 +21,7 @@ export interface EmailNotificationRequest {
     | "order_confirmed"
     | "order_shipped"
     | "order_delivered"
-    | "order_cancelled"
-    | "payment_received";
+    | "order_cancelled";
   recipient_email: string;
   recipient_name: string;
   order_data: OrderEmailData;
@@ -53,7 +50,7 @@ export class EmailService {
   }
 
   /**
-   * Send email via Supabase (fallback)
+   * Send email via Supabase
    */
   private static async sendEmailViaSupabase(
     type: string,
@@ -106,30 +103,9 @@ export class EmailService {
       buyerName,
       orderData,
       {
-        subject: "🎉 Order Confirmed! Your purchase is being processed",
+        subject: "Order Confirmed! Your purchase is being processed",
         action_text: "View Order Details",
         action_url: `${window.location.origin}/orders/${orderData.order_id}`,
-      }
-    );
-  }
-
-  /**
-   * Send order confirmation email to seller
-   */
-  static async sendOrderConfirmationToSeller(
-    sellerEmail: string,
-    sellerName: string,
-    orderData: OrderEmailData
-  ): Promise<boolean> {
-    return await this.sendEmail(
-      "payment_received",
-      sellerEmail,
-      sellerName,
-      orderData,
-      {
-        subject: "💰 Payment Received! New order to fulfill",
-        action_text: "View Order Details",
-        action_url: `${window.location.origin}/seller/orders/${orderData.order_id}`,
       }
     );
   }
@@ -148,7 +124,7 @@ export class EmailService {
       buyerName,
       orderData,
       {
-        subject: "📦 Your order has been shipped!",
+        subject: "Your order has been shipped!",
         action_text: "Track Order",
         action_url: `${window.location.origin}/orders/${orderData.order_id}`,
       }
@@ -169,7 +145,7 @@ export class EmailService {
       buyerName,
       orderData,
       {
-        subject: "✅ Your order has been delivered!",
+        subject: "Your order has been delivered!",
         action_text: "Review Product",
         action_url: `${window.location.origin}/orders/${orderData.order_id}/review`,
       }
@@ -190,30 +166,9 @@ export class EmailService {
       buyerName,
       orderData,
       {
-        subject: "❌ Order Cancelled",
+        subject: "Order Cancelled",
         action_text: "View Refund Status",
         action_url: `${window.location.origin}/orders/${orderData.order_id}`,
-      }
-    );
-  }
-
-  /**
-   * Send shipping reminder to seller
-   */
-  static async sendShippingReminderToSeller(
-    sellerEmail: string,
-    sellerName: string,
-    orderData: OrderEmailData
-  ): Promise<boolean> {
-    return await this.sendEmail(
-      "shipping_reminder",
-      sellerEmail,
-      sellerName,
-      orderData,
-      {
-        subject: "⏰ Reminder: Ship your order within 24 hours",
-        action_text: "Mark as Shipped",
-        action_url: `${window.location.origin}/seller/orders/${orderData.order_id}/ship`,
       }
     );
   }

@@ -2,8 +2,6 @@ import { supabase } from "./supabase";
 import {
   type Notification,
   type CreateNotificationRequest,
-  NotificationType,
-  type OrderNotificationData,
 } from "../types/notifications";
 
 export class NotificationService {
@@ -117,47 +115,5 @@ export class NotificationService {
       console.error("Error getting unread count:", error);
       return 0;
     }
-  }
-
-  // Helper method to create order-related notifications
-  static async notifyOrderReceived(
-    sellerId: string,
-    orderData: OrderNotificationData
-  ): Promise<Notification> {
-    return this.createNotification({
-      user_id: sellerId,
-      type: NotificationType.ITEM_SOLD,
-      title: "🎉 Item Sold!",
-      message: `Your ${orderData.product_title} has been purchased for ₹${orderData.amount}. Ship it within 24 hours!`,
-      data: orderData,
-    });
-  }
-
-  // Helper method to create payment confirmation notifications
-  static async notifyPaymentConfirmed(
-    sellerId: string,
-    orderData: OrderNotificationData
-  ): Promise<Notification> {
-    return this.createNotification({
-      user_id: sellerId,
-      type: NotificationType.PAYMENT_CONFIRMED,
-      title: "💰 Payment Received!",
-      message: `Payment of ₹${orderData.amount} confirmed for ${orderData.product_title}. Ready to ship!`,
-      data: orderData,
-    });
-  }
-
-  // Helper method to create shipping reminders
-  static async notifyShippingReminder(
-    sellerId: string,
-    orderData: OrderNotificationData
-  ): Promise<Notification> {
-    return this.createNotification({
-      user_id: sellerId,
-      type: NotificationType.SHIPPING_REMINDER,
-      title: "⏰ Shipping Reminder",
-      message: `Don't forget to ship ${orderData.product_title}. Maintain your seller rating!`,
-      data: orderData,
-    });
   }
 }

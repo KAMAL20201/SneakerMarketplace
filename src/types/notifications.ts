@@ -12,11 +12,6 @@ export interface Notification {
 
 export const NotificationType = {
   ORDER_RECEIVED: "order_received",
-  PAYMENT_CONFIRMED: "payment_confirmed",
-  ITEM_SOLD: "item_sold",
-  SHIPPING_REMINDER: "shipping_reminder",
-  LISTING_APPROVED: "listing_approved",
-  LISTING_REJECTED: "listing_rejected",
   ORDER_SHIPPED: "order_shipped",
   ORDER_DELIVERED: "order_delivered",
 } as const;
@@ -49,7 +44,6 @@ export interface OrderNotificationData {
   product_title: string;
   product_image?: string;
   buyer_name?: string;
-  seller_name?: string;
   amount: number;
   shipping_address?: string;
 }

@@ -1,35 +1,35 @@
-import { Shield, Clock, CheckCircle, CreditCard } from "lucide-react";
+import { Search, CreditCard, Truck, CheckCircle } from "lucide-react";
 
 const HowItWorks = () => {
   const steps = [
     {
-      icon: CreditCard,
-      title: "Secure Payment",
+      icon: Search,
+      title: "Browse & Discover",
       description:
-        "Buyer pays and we hold the money securely until you're satisfied",
+        "Explore our curated collection of authentic sneakers, streetwear, and collectibles",
       color: "bg-blue-100",
       iconColor: "text-blue-600",
     },
     {
-      icon: Shield,
-      title: "Money Protected",
+      icon: CreditCard,
+      title: "Secure Payment",
       description:
-        "Your payment is safe with us - no risk of losing your money",
+        "Pay safely with Razorpay - UPI, cards, net banking, and more supported",
       color: "bg-green-100",
       iconColor: "text-green-600",
     },
     {
-      icon: Clock,
-      title: "1 Day to Approve",
-      description: "You have 24 hours to inspect and approve your purchase",
+      icon: Truck,
+      title: "Fast Delivery",
+      description: "We ship your order quickly with tracking across India",
       color: "bg-purple-100",
       iconColor: "text-purple-600",
     },
     {
       icon: CheckCircle,
-      title: "Money Released",
+      title: "Enjoy Your Purchase",
       description:
-        "Once approved, seller gets paid. If not satisfied, full refund",
+        "Receive authentic, quality-verified products at your doorstep",
       color: "bg-orange-100",
       iconColor: "text-orange-600",
     },
@@ -40,7 +40,7 @@ const HowItWorks = () => {
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold mb-2 text-gray-800">How It Works</h2>
         <p className="text-gray-600">
-          Your money is safe with our secure escrow system
+          Shop authentic sneakers and streetwear in just a few steps
         </p>
       </div>
 
@@ -63,7 +63,7 @@ const HowItWorks = () => {
             </p>
           </div>
         ))}
-      </div>      
+      </div>
     </section>
   );
 };

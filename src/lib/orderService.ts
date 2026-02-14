@@ -101,7 +101,7 @@ export class OrderService {
     }
   }
 
-  // Process cart checkout - create orders and notify sellers
+  // Process cart checkout - create orders and send confirmation emails
   static async processCartCheckout(
     cartItems: CartItem[],
     paymentId: string,
@@ -117,7 +117,7 @@ export class OrderService {
       const orders: Order[] = [];
       const failedItems: string[] = [];
 
-      // Create orders for each item and notify sellers
+      // Create orders for each item
       for (const item of cartItems) {
         // Double-check product availability (in case of race condition)
         const availability = await StockValidationService.checkProductAvailability(
@@ -142,7 +142,6 @@ export class OrderService {
         }
 
         // Mark product as sold using optimistic locking
-        // This prevents race conditions where multiple users try to buy the same item
         const markedAsSold = await StockValidationService.markProductAsSold(
           item.productId
         );
@@ -179,28 +178,16 @@ export class OrderService {
           currency: "INR",
           buyer_name: buyerDetails.full_name,
           buyer_email: buyerDetails.email,
-          seller_name: item.sellerName,
-          seller_email: item.sellerEmail,
           order_status: "confirmed",
           shipping_address: shippingAddress || undefined,
         };
 
-        // Send email notifications
+        // Send email notification to buyer
         try {
-          // Send order confirmation to buyer
           if (buyerDetails.email) {
             await EmailService.sendOrderConfirmationToBuyer(
               buyerDetails.email,
               buyerDetails.full_name,
-              orderEmailData
-            );
-          }
-
-          // Send payment confirmation to seller
-          if (item.sellerEmail) {
-            await EmailService.sendOrderConfirmationToSeller(
-              item.sellerEmail,
-              item.sellerName,
               orderEmailData
             );
           }
@@ -210,7 +197,6 @@ export class OrderService {
               emailError instanceof Error ? emailError.message : "Unknown error"
             }`
           );
-          // Don't fail the order creation if emails fail
         }
       }
 
@@ -257,35 +243,6 @@ export class OrderService {
     }
   }
 
-  // Get orders for a user (as seller)
-  static async getSellerOrders(sellerId: string): Promise<Order[]> {
-    try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          `
-          *,
-          product_listings (
-            title,
-            brand,
-            product_images (
-              image_url,
-              is_poster_image
-            )
-          )
-        `
-        )
-        .eq("seller_id", sellerId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error("Error fetching seller orders:", error);
-      throw error;
-    }
-  }
-
   // Update order status
   static async updateOrderStatus(
     orderId: string,
@@ -304,123 +261,9 @@ export class OrderService {
         .eq("id", orderId);
 
       if (error) throw error;
-
-      // Send email notifications based on status change
-      // await this.sendStatusUpdateEmails(orderId, status, trackingNumber);
     } catch (error) {
       console.error("Error updating order status:", error);
       throw error;
     }
   }
-
-  // Send email notifications when order status changes
-  // private static async sendStatusUpdateEmails(
-  //   orderId: string,
-  //   status: Order["status"],
-  //   trackingNumber?: string
-  // ): Promise<void> {
-  //   try {
-  //     // Get order details with buyer and seller information
-  //     const { data: order, error } = await supabase
-  //       .from("orders")
-  //       .select(
-  //         `
-  //         *,
-  //         product_listings (
-  //           title,
-  //           product_images (
-  //             image_url,
-  //             is_poster_image
-  //           )
-  //         )
-  //       `
-  //       )
-  //       .eq("id", orderId)
-  //       .single();
-
-  //     if (error || !order) {
-  //       logger.warn(`Order ${orderId} not found for email notifications`);
-  //       return;
-  //     }
-
-  //     // Get buyer and seller details
-  //     const buyerDetails = await this.getBuyerDetails(order.buyer_id);
-  //     const sellerDetails = await this.getSellerDetails(order.seller_id);
-
-  //     // Prepare order email data
-  //     const orderEmailData: OrderEmailData = {
-  //       order_id: order.id,
-  //       product_title: order.product_listings?.title || "Product",
-  //       product_image:
-  //         order.product_listings?.product_images?.find(
-  //           (img: { is_poster_image: boolean }) => img.is_poster_image
-  //         )?.image_url ||
-  //         order.product_listings?.product_images?.[0]?.image_url,
-  //       amount: order.amount,
-  //       currency: "INR",
-  //       buyer_name: buyerDetails.full_name,
-  //       buyer_email: buyerDetails.email,
-  //       seller_name: sellerDetails.full_name,
-  //       seller_email: sellerDetails.email,
-  //       order_status: status,
-  //       tracking_number: trackingNumber,
-  //     };
-
-  //     // Send appropriate emails based on status
-  //     switch (status) {
-  //       case "shipped":
-  //         if (buyerDetails.email) {
-  //           await EmailService.sendShippingNotificationToBuyer(
-  //             buyerDetails.email,
-  //             buyerDetails.full_name,
-  //             orderEmailData
-  //           );
-  //         }
-  //         break;
-
-  //       case "delivered":
-  //         if (buyerDetails.email) {
-  //           await EmailService.sendDeliveryConfirmationToBuyer(
-  //             buyerDetails.email,
-  //             buyerDetails.full_name,
-  //             orderEmailData
-  //           );
-  //         }
-  //         break;
-
-  //       case "cancelled":
-  //         if (buyerDetails.email) {
-  //           await EmailService.sendOrderCancellationToBuyer(
-  //             buyerDetails.email,
-  //             buyerDetails.full_name,
-  //             orderEmailData
-  //           );
-  //         }
-  //         break;
-  //     }
-  //   } catch (emailError) {
-  //     logger.warn(
-  //       `Failed to send status update emails: ${
-  //         emailError instanceof Error ? emailError.message : "Unknown error"
-  //       }`
-  //     );
-  //     // Don't fail the order update if emails fail
-  //   }
-  // }
-
-  // Get order by ID
-  // private static async getOrderById(orderId: string): Promise<Order | null> {
-  //   try {
-  //     const { data, error } = await supabase
-  //       .from("orders")
-  //       .select("*")
-  //       .eq("id", orderId)
-  //       .single();
-
-  //     if (error) return null;
-  //     return data;
-  //   } catch {
-  //     return null;
-  //   }
-  // }
 }

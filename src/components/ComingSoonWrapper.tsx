@@ -25,12 +25,9 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
     ROUTE_NAMES.PRIVACY,
     ROUTE_NAMES.TERMS,
     ROUTE_NAMES.ABOUT,
-    ROUTE_NAMES.BUYER_PROTECTION,
     ROUTE_NAMES.SECURE_PAYMENTS,
-    ROUTE_NAMES.REVIEW_PROCESS,
     ROUTE_NAMES.CONTACT_US,
     ROUTE_NAMES.SHIPPING_POLICY,
-    ROUTE_NAMES.CANCELLATIONS_REFUNDS,
   ];
 
   // Check if current page is an allowed policy page
@@ -137,7 +134,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
             Coming Soon
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed">
-            We're working hard to bring you the best marketplace experience for
+            We're working hard to bring you the best shopping experience for
             sneakers, streetwear, and collectibles. Get ready for exclusive
             drops, authentic products, and seamless transactions.
           </p>
@@ -165,7 +162,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
               Authentic Products
             </h3>
             <p className="text-sm text-gray-600">
-              Verified sneakers from trusted sellers
+              Every product is quality verified
             </p>
           </div>
 
@@ -187,7 +184,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
             </div>
             <h3 className="font-semibold text-gray-800 mb-1">Fast & Secure</h3>
             <p className="text-sm text-gray-600">
-              Quick transactions with buyer protection
+              Secure payments with fast delivery
             </p>
           </div>
         </div>
@@ -199,7 +196,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
               How It Works
             </h3>
             <p className="text-gray-600 text-sm">
-              Your money is safe with our secure escrow system
+              Shop authentic sneakers and streetwear in just a few steps
             </p>
           </div>
 
@@ -216,15 +213,15 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
               </div>
               <h4 className="font-semibold text-gray-800 mb-1 text-sm">
-                Secure Payment
+                Browse & Discover
               </h4>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Buyer pays and we hold the money securely until you're satisfied
+                Explore our curated collection of authentic sneakers and streetwear
               </p>
             </div>
 
@@ -240,15 +237,15 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                   />
                 </svg>
               </div>
               <h4 className="font-semibold text-gray-800 mb-1 text-sm">
-                Money Protected
+                Secure Payment
               </h4>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Your payment is safe with us - no risk of losing your money
+                Pay safely with UPI, cards, net banking, and more
               </p>
             </div>
 
@@ -264,15 +261,15 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
                   />
                 </svg>
               </div>
               <h4 className="font-semibold text-gray-800 mb-1 text-sm">
-                1 Day to Approve
+                Fast Delivery
               </h4>
               <p className="text-xs text-gray-600 leading-relaxed">
-                You have 24 hours to inspect and approve your purchase
+                We ship your order quickly with tracking across India
               </p>
             </div>
 
@@ -293,10 +290,10 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
                 </svg>
               </div>
               <h4 className="font-semibold text-gray-800 mb-1 text-sm">
-                Money Released
+                Enjoy Your Purchase
               </h4>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Once approved, seller gets paid. If not satisfied, full refund
+                Receive authentic, quality-verified products at your doorstep
               </p>
             </div>
           </div>

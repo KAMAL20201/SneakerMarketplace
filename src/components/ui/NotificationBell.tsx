@@ -18,16 +18,8 @@ import {
 // Helper function to get notification icon
 const getNotificationIcon = (type: NotificationTypeValue) => {
   switch (type) {
-    case NotificationType.ITEM_SOLD:
+    case NotificationType.ORDER_RECEIVED:
       return "🎉";
-    case NotificationType.PAYMENT_CONFIRMED:
-      return "💰";
-    case NotificationType.SHIPPING_REMINDER:
-      return "⏰";
-    case NotificationType.LISTING_APPROVED:
-      return "✅";
-    case NotificationType.LISTING_REJECTED:
-      return "❌";
     case NotificationType.ORDER_SHIPPED:
       return "🚚";
     case NotificationType.ORDER_DELIVERED:
@@ -40,15 +32,8 @@ const getNotificationIcon = (type: NotificationTypeValue) => {
 // Helper function to get notification color
 const getNotificationColor = (type: NotificationTypeValue) => {
   switch (type) {
-    case NotificationType.ITEM_SOLD:
-    case NotificationType.PAYMENT_CONFIRMED:
+    case NotificationType.ORDER_RECEIVED:
       return "text-green-600 bg-green-50";
-    case NotificationType.SHIPPING_REMINDER:
-      return "text-orange-600 bg-orange-50";
-    case NotificationType.LISTING_APPROVED:
-      return "text-blue-600 bg-blue-50";
-    case NotificationType.LISTING_REJECTED:
-      return "text-red-600 bg-red-50";
     case NotificationType.ORDER_SHIPPED:
     case NotificationType.ORDER_DELIVERED:
       return "text-purple-600 bg-purple-50";

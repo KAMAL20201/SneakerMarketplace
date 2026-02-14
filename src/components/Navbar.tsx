@@ -12,13 +12,11 @@ import { toast } from "sonner";
 import { Link, useNavigate } from "react-router";
 import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAdmin } from "@/hooks/useAdmin";
 import { preloadRoutes } from "@/Router";
 import { ROUTE_NAMES } from "@/constants/enums";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const handleLogout = () => {
     signOut();
@@ -80,9 +78,6 @@ export function Navbar() {
           {/* Shopping Cart - only show if authenticated */}
           <CartButton />
 
-          {/* Notifications - only show if authenticated */}
-          {/* {user && <NotificationBell />} */}
-
           {/* Authentication Section */}
           {user ? (
             /* Profile Menu for authenticated users */
@@ -126,37 +121,15 @@ export function Navbar() {
                   className="rounded-xl mx-1 my-1 cursor-pointer"
                 >
                   <Link
-                    to={ROUTE_NAMES.MY_LISTINGS}
+                    to={ROUTE_NAMES.MY_ORDERS}
                     className="text-gray-700"
-                    onMouseEnter={() => handleRoutePreload("myListings")}
+                    onMouseEnter={() => handleRoutePreload("myOrders")}
                   >
-                    My Listings
+                    My Orders
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
-                  <DropdownMenuItem
-                    asChild
-                    className="rounded-xl mx-1 my-1 cursor-pointer"
-                  >
-                    <Link
-                      to={ROUTE_NAMES.ADMIN_REVIEW}
-                      className="text-purple-700 font-medium"
-                      onMouseEnter={() => handleRoutePreload("adminReview")}
-                    >
-                      🔍 Admin Review
-                    </Link>
-                  </DropdownMenuItem>
-                )}
 
                 <DropdownMenuSeparator className="bg-white/30" />
-                {/* <DropdownMenuItem
-                  asChild
-                  className="rounded-xl mx-1 my-1 cursor-pointer"
-                >
-                  <Link to={ROUTE_NAMES.SETTINGS} className="text-gray-700">
-                    Settings
-                  </Link>
-                </DropdownMenuItem> */}
                 <DropdownMenuItem
                   className="rounded-xl mx-1 my-1 text-red-600 hover:text-red-700 hover:bg-red-50/80 cursor-pointer"
                   onClick={handleLogout}

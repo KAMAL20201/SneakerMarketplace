@@ -4,53 +4,32 @@ import { toast } from "sonner";
 
 export const useOrderEmails = () => {
   /**
-   * Send order confirmation emails to both buyer and seller
+   * Send order confirmation email to buyer
    */
   const sendOrderConfirmationEmails = useCallback(
     async (
       buyerEmail: string,
       buyerName: string,
-      sellerEmail: string,
-      sellerName: string,
       orderData: OrderEmailData
     ) => {
       try {
-        const [buyerEmailSent, sellerEmailSent] = await Promise.allSettled([
-          EmailService.sendOrderConfirmationToBuyer(
-            buyerEmail,
-            buyerName,
-            orderData
-          ),
-          EmailService.sendOrderConfirmationToSeller(
-            sellerEmail,
-            sellerName,
-            orderData
-          ),
-        ]);
+        const result = await EmailService.sendOrderConfirmationToBuyer(
+          buyerEmail,
+          buyerName,
+          orderData
+        );
 
-        const buyerSuccess =
-          buyerEmailSent.status === "fulfilled" && buyerEmailSent.value;
-        const sellerSuccess =
-          sellerEmailSent.status === "fulfilled" && sellerEmailSent.value;
-
-        if (buyerSuccess && sellerSuccess) {
-          toast.success("Order confirmation emails sent successfully");
-          return { success: true, buyer: true, seller: true };
-        } else if (buyerSuccess || sellerSuccess) {
-          toast.warning("Some confirmation emails failed to send");
-          return {
-            success: false,
-            buyer: buyerSuccess,
-            seller: sellerSuccess,
-          };
+        if (result) {
+          toast.success("Order confirmation email sent successfully");
+          return { success: true };
         } else {
-          toast.error("Failed to send order confirmation emails");
-          return { success: false, buyer: false, seller: false };
+          toast.error("Failed to send order confirmation email");
+          return { success: false };
         }
       } catch (error) {
-        toast.error("Error sending order confirmation emails");
-        console.error("Error sending order confirmation emails:", error);
-        return { success: false, buyer: false, seller: false };
+        toast.error("Error sending order confirmation email");
+        console.error("Error sending order confirmation email:", error);
+        return { success: false };
       }
     },
     []
@@ -153,38 +132,6 @@ export const useOrderEmails = () => {
   );
 
   /**
-   * Send shipping reminder to seller
-   */
-  const sendShippingReminder = useCallback(
-    async (
-      sellerEmail: string,
-      sellerName: string,
-      orderData: OrderEmailData
-    ) => {
-      try {
-        const success = await EmailService.sendShippingReminderToSeller(
-          sellerEmail,
-          sellerName,
-          orderData
-        );
-
-        if (success) {
-          toast.success("Shipping reminder sent to seller");
-          return true;
-        } else {
-          toast.error("Failed to send shipping reminder");
-          return false;
-        }
-      } catch (error) {
-        toast.error("Error sending shipping reminder");
-        console.error("Error sending shipping reminder:", error);
-        return false;
-      }
-    },
-    []
-  );
-
-  /**
    * Send bulk email notifications
    */
   const sendBulkNotifications = useCallback(
@@ -194,8 +141,7 @@ export const useOrderEmails = () => {
           | "order_confirmed"
           | "order_shipped"
           | "order_delivered"
-          | "order_cancelled"
-          | "payment_received";
+          | "order_cancelled";
         recipient_email: string;
         recipient_name: string;
         order_data: OrderEmailData;
@@ -230,7 +176,6 @@ export const useOrderEmails = () => {
     sendShippingNotification,
     sendDeliveryConfirmation,
     sendOrderCancellation,
-    sendShippingReminder,
     sendBulkNotifications,
   };
 };
