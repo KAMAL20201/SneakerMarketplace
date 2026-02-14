@@ -12,9 +12,10 @@ import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router";
-import { ROUTE_NAMES } from "@/constants/enums";
+// [GUEST CHECKOUT] Auth import commented out - guests can buy without login
+// import { useAuth } from "@/contexts/AuthContext";
+// import { useNavigate } from "react-router";
+// import { ROUTE_NAMES } from "@/constants/enums";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Carousel,
@@ -35,8 +36,9 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [buyNowOpen, setBuyNowOpen] = useState(false);
-  const { user, setOperationAfterLogin } = useAuth();
-  const navigate = useNavigate();
+  // [GUEST CHECKOUT] Auth check removed - guests can buy directly
+  // const { user, setOperationAfterLogin } = useAuth();
+  // const navigate = useNavigate();
   const [zoomOpen, setZoomOpen] = useState(false);
   const [emblaApi, setEmblaApi] = useState<EmblaCarouselType | null>(null);
   const [zoomEmblaApi, setZoomEmblaApi] = useState<EmblaCarouselType | null>(
@@ -418,12 +420,14 @@ export default function ProductDetailPage() {
             <Button
               size="lg"
               onClick={() => {
+                /* [GUEST CHECKOUT] Login check removed - guests can buy directly
                 if (!user) {
                   setOperationAfterLogin(() => () => setBuyNowOpen(true));
                   toast.error("Please login to continue");
                   navigate(ROUTE_NAMES.LOGIN);
                   return;
                 }
+                */
                 setBuyNowOpen(true);
               }}
               disabled={!selectedSize}

@@ -1,3 +1,8 @@
+// [GUEST CHECKOUT] PublicRoute auth check commented out.
+// No longer needed since user registration/login is removed for guests.
+// Admin login is accessed directly via URL.
+
+/* Original PublicRoute with auth redirect:
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router";
 import { toast } from "sonner";
@@ -44,4 +49,14 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
       </div>
     </div>
   );
+};
+*/
+
+// [GUEST CHECKOUT] Pass-through: just render children without auth check
+interface PublicRouteProps {
+  children: React.ReactNode;
+}
+
+export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
+  return <>{children}</>;
 };

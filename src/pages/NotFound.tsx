@@ -76,13 +76,6 @@ const NotFound = () => {
                 >
                   My Listings
                 </Link>
-                <span className="text-gray-300">•</span>
-                <Link
-                  to={ROUTE_NAMES.MY_ORDERS}
-                  className="text-sm text-blue-600 hover:text-blue-800 underline"
-                >
-                  My Orders
-                </Link>
               </div>
             </div>
           </CardContent>

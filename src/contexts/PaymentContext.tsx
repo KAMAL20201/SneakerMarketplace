@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { PaymentService } from "../lib/paymentService";
 import { OrderService } from "../lib/orderService";
+// [GUEST CHECKOUT] Auth still imported for optional admin prefill
 import { useAuth } from "./AuthContext";
 import { useCart } from "./CartContext";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // [GUEST CHECKOUT] user may be null for guest checkout — that's expected
   const { user } = useAuth();
   const { toggleCart, isOpen, clearCart } = useCart();
   const navigate = useNavigate();
@@ -120,9 +122,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           name: "The Plug Market",
           // description: description,
           order_id: order.id,
+          // [GUEST CHECKOUT] Prefill with guest info from shipping address, fallback to admin user data
           prefill: {
-            name: user?.user_metadata?.full_name || "",
-            email: user?.email || "",
+            name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
+            email: shippingAddress?.email || user?.email || "",
+            contact: shippingAddress?.phone || "",
           },
           notes: metadata,
           theme: {
@@ -142,6 +146,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                   status: "completed",
                   order_id: response.razorpay_order_id,
                   payment_id: response.razorpay_payment_id,
+                  // [GUEST CHECKOUT] user_id is empty for guest orders
                   user_id: user?.id || "",
                 });
                 // Check if this is a cart checkout
@@ -151,10 +156,13 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     items,
                     response.razorpay_payment_id,
                     response.razorpay_order_id,
+                    // [GUEST CHECKOUT] buyer_id is empty for guest orders, nullable in DB
                     user?.id || "",
                     {
-                      full_name: user?.user_metadata?.full_name || "",
-                      email: user?.email || "",
+                      // [GUEST CHECKOUT] Guest info from shipping address
+                      full_name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
+                      email: shippingAddress?.email || user?.email || "",
+                      phone: shippingAddress?.phone || "",
                     },
                     shippingAddress
                   );
@@ -162,9 +170,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     toggleCart();
                   }
                   clearCart();
-                  navigate(ROUTE_NAMES.MY_ORDERS);
+                  // [GUEST CHECKOUT] Navigate to home — guests have no orders page.
+                  // Order confirmation is sent via email.
+                  navigate(ROUTE_NAMES.HOME);
                   toast.success(
-                    "🎉 Purchase successful! Sellers have been notified."
+                    "🎉 Purchase successful! You'll receive a confirmation email shortly."
                   );
                 }
               } else {

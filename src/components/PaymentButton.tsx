@@ -2,11 +2,14 @@ import React from "react";
 import { Button } from "./ui/button";
 import { usePayment } from "../contexts/PaymentContext";
 import { Loader2, CreditCard } from "lucide-react";
-import { toast } from "sonner";
-import { ROUTE_NAMES } from "@/constants/enums";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router";
-import { useCart } from "@/contexts/CartContext";
+// [GUEST CHECKOUT] toast import commented out - no login error toast needed
+// import { toast } from "sonner";
+// [GUEST CHECKOUT] Auth imports commented out - guests can pay without login
+// import { ROUTE_NAMES } from "@/constants/enums";
+// import { useAuth } from "@/contexts/AuthContext";
+// import { useNavigate } from "react-router";
+// [GUEST CHECKOUT] useCart was only used for login redirect flow
+// import { useCart } from "@/contexts/CartContext";
 import type { ShippingAddress } from "@/types/shipping";
 import type { CartItem } from "@/lib/orderService";
 
@@ -44,11 +47,14 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   shippingAddress,
 }) => {
   const { initiatePayment, isLoading, error } = usePayment();
-  const { user, setOperationAfterLogin } = useAuth();
-  const { isOpen, toggleCart } = useCart();
-  const navigate = useNavigate();
+  // [GUEST CHECKOUT] Auth check removed - guests can pay directly
+  // const { user, setOperationAfterLogin } = useAuth();
+  // [GUEST CHECKOUT] isOpen/toggleCart were used for login redirect flow
+  // const { isOpen, toggleCart } = useCart();
+  // const navigate = useNavigate();
   const handlePayment = async () => {
     try {
+      /* [GUEST CHECKOUT] Login redirect removed - guests proceed to payment
       if (!user) {
         if (isOpen) {
           toggleCart();
@@ -62,6 +68,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
 
         return;
       }
+      */
 
       await initiatePayment(amount, currency, metadata, items, shippingAddress);
     } catch (err) {

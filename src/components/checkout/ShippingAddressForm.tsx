@@ -102,7 +102,7 @@ export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      {/* Name and Phone */}
+      {/* Name, Email, and Phone */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="full_name">
@@ -116,6 +116,22 @@ export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
           />
           {errors.full_name && (
             <p className="text-sm text-red-500">{errors.full_name.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">
+            Email <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            {...register("email")}
+            placeholder="Enter your email"
+            className={errors.email ? "border-red-500" : ""}
+          />
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email.message}</p>
           )}
         </div>
 
