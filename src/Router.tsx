@@ -35,6 +35,8 @@ const AboutUs = lazy(() => import("./pages/AboutUs"));
 // const SecurePayments = lazy(() => import("./pages/SecurePayments"));
 // const ReviewProcess = lazy(() => import("./pages/ReviewProcess"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const NewArrivals = lazy(() => import("./pages/NewArrivals"));
 
 // Preload functions for critical routes
 export const preloadRoutes = {
@@ -61,6 +63,8 @@ export const preloadRoutes = {
   // reviewProcess: () => import("./pages/ReviewProcess"),
   contactUs: () => import("./pages/ContactUs"),
   shippingPolicy: () => import("./pages/ShippingPolicy"),
+  wishlist: () => import("./pages/Wishlist"),
+  newArrivals: () => import("./pages/NewArrivals"),
   // cancellationsRefunds: () => import("./pages/Cancellations"),
 };
 
@@ -254,6 +258,22 @@ const Router = () => {
         element={
           <Suspense fallback={<PageSkeleton />}>
             <ContactUs />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.WISHLIST}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <Wishlist />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.NEW_ARRIVALS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <NewArrivals />
           </Suspense>
         }
       />

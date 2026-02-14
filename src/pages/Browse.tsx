@@ -8,7 +8,9 @@ import {
   X,
   SlidersHorizontal,
   SortAsc,
+  Heart,
 } from "lucide-react";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -137,6 +139,7 @@ const parseFiltersFromURL = (
 };
 
 const Browse = () => {
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const [searchParams, setSearchParams] = useSearchParams();
   const [listings, setListings] = useState<Listing[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
@@ -987,57 +990,79 @@ const Browse = () => {
             }
           >
             {filteredListings.map((listing) => (
-              <Link
-                to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}
-                key={listing.id}
-              >
-                <Card
-                  key={listing.id}
-                  className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group"
+              <div key={listing.id} className="relative">
+                <Link
+                  to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}
                 >
-                  <CardContent className="p-0">
-                    <>
-                      <div className="relative h-40 sm:h-48 overflow-hidden">
-                        <CardImage
-                          src={listing.image_url || "/placeholder.svg"}
-                          alt={listing.title}
-                          aspectRatio="aspect-[4/3]"
-                          className="w-full h-full group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-3 md:p-4">
-                        <div className="flex items-start justify-between mb-2 md:mb-3">
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-600 font-semibold capitalize mb-1">
-                              {listing.brand}
-                            </p>
-                            <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
-                              {listing.title}
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                          <div className="flex items-center gap-1 md:gap-2">
-                            <span className="font-bold text-gray-800 text-base md:text-lg">
-                              ₹{listing.price.toLocaleString()}
-                            </span>
-                          </div>
-                          <ConditionBadge
-                            condition={listing.condition}
-                            // variant="glass"
-                            className="text-xs"
+                  <Card
+                    className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group"
+                  >
+                    <CardContent className="p-0">
+                      <>
+                        <div className="relative h-40 sm:h-48 overflow-hidden">
+                          <CardImage
+                            src={listing.image_url || "/placeholder.svg"}
+                            alt={listing.title}
+                            aspectRatio="aspect-[4/3]"
+                            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
-                        <div className="flex items-center justify-between">
-                          <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
-                            {listing.size_value}
-                          </Badge>
+                        <div className="p-3 md:p-4">
+                          <div className="flex items-start justify-between mb-2 md:mb-3">
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-600 font-semibold capitalize mb-1">
+                                {listing.brand}
+                              </p>
+                              <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
+                                {listing.title}
+                              </h3>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mb-2 md:mb-3">
+                            <div className="flex items-center gap-1 md:gap-2">
+                              <span className="font-bold text-gray-800 text-base md:text-lg">
+                                ₹{listing.price.toLocaleString()}
+                              </span>
+                            </div>
+                            <ConditionBadge
+                              condition={listing.condition}
+                              className="text-xs"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
+                              {listing.size_value}
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  </CardContent>
-                </Card>
-              </Link>
+                      </>
+                    </CardContent>
+                  </Card>
+                </Link>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleWishlist({
+                      id: listing.id,
+                      title: listing.title,
+                      brand: listing.brand,
+                      price: listing.price,
+                      image_url: listing.image_url,
+                      condition: listing.condition,
+                      size_value: listing.size_value,
+                    });
+                  }}
+                  className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-pink-50 transition-colors shadow-sm z-10"
+                  title={isInWishlist(listing.id) ? "Remove from wishlist" : "Add to wishlist"}
+                >
+                  <Heart
+                    className={`h-4 w-4 transition-colors ${
+                      isInWishlist(listing.id) ? "text-red-500 fill-red-500" : "text-gray-500"
+                    }`}
+                  />
+                </button>
+              </div>
             ))}
           </div>
         )}

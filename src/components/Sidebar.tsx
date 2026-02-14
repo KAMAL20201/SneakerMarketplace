@@ -2,13 +2,13 @@ import {
   Home,
   Search,
   Plus,
-  // User,
-  // Settings,
   ShoppingBag,
-  // [MARKETPLACE REMOVED] Payment Methods icon - seller payment methods not needed for regular users
-  // CreditCard,
   Package,
   MapPin,
+  Heart,
+  Sparkles,
+  MessageCircle,
+  ChevronRight,
 } from "lucide-react";
 
 import {
@@ -21,6 +21,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -28,8 +31,15 @@ import { Link } from "react-router";
 import { preloadRoutes } from "@/Router";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useAdmin } from "@/hooks/useAdmin";
+import { categories } from "@/constants/sellConstants";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { useState } from "react";
 
-// [ECOMMERCE] Navigation items - sell/listing items only shown to admin
+// Navigation items - sell/listing items only shown to admin
 const getNavData = (isAdmin: boolean) => ({
   navMain: [
     {
@@ -47,12 +57,23 @@ const getNavData = (isAdmin: boolean) => ({
           icon: Search,
           preloadKey: "browse" as keyof typeof preloadRoutes,
         },
+        {
+          title: "New Arrivals",
+          url: ROUTE_NAMES.NEW_ARRIVALS,
+          icon: Sparkles,
+          preloadKey: "newArrivals" as keyof typeof preloadRoutes,
+        },
+        {
+          title: "Wishlist",
+          url: ROUTE_NAMES.WISHLIST,
+          icon: Heart,
+          preloadKey: "wishlist" as keyof typeof preloadRoutes,
+        },
       ],
     },
     {
       title: "My Account",
       items: [
-        // [ECOMMERCE] Sell Items, My Listings & Orders - only visible to admin
         ...(isAdmin
           ? [
               {
@@ -67,7 +88,6 @@ const getNavData = (isAdmin: boolean) => ({
                 icon: ShoppingBag,
                 preloadKey: "myListings" as keyof typeof preloadRoutes,
               },
-              // [GUEST CHECKOUT] Orders page is admin-only — guests get order info via email
               {
                 title: "Orders",
                 url: ROUTE_NAMES.MY_ORDERS,
@@ -81,31 +101,18 @@ const getNavData = (isAdmin: boolean) => ({
     {
       title: "Settings",
       items: [
-        // {
-        //   title: "Profile",
-        //   url: ROUTE_NAMES.PROFILE,
-        //   icon: User,
-        //   preloadKey: null, // No preload for this route
-        // },
         {
           title: "My Addresses",
           url: ROUTE_NAMES.MY_ADDRESSES,
           icon: MapPin,
           preloadKey: "myAddresses" as keyof typeof preloadRoutes,
         },
-        // [MARKETPLACE REMOVED] Payment Methods - seller payment methods, only admin needs this
-        // {
-        //   title: "Payment Methods",
-        //   url: ROUTE_NAMES.PAYMENT_METHODS,
-        //   icon: CreditCard,
-        //   preloadKey: "paymentMethods" as keyof typeof preloadRoutes,
-        // },
-        // {
-        //   title: "Settings",
-        //   url: ROUTE_NAMES.SETTINGS,
-        //   icon: Settings,
-        //   preloadKey: null, // No preload for this route
-        // },
+        {
+          title: "Contact Us",
+          url: ROUTE_NAMES.CONTACT_US,
+          icon: MessageCircle,
+          preloadKey: "contactUs" as keyof typeof preloadRoutes,
+        },
       ],
     },
   ],
@@ -115,6 +122,7 @@ export function AppSidebar() {
   const { toggleSidebar } = useSidebar();
   const { isAdmin } = useAdmin();
   const data = getNavData(isAdmin);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
 
   // Preload route on hover for better performance
   const handleRoutePreload = (
@@ -186,6 +194,56 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {/* Categories Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-gray-700 font-semibold px-3">
+            Categories
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Collapsible
+                open={categoriesOpen}
+                onOpenChange={setCategoriesOpen}
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="rounded-xl border-0 mx-1 my-0.5 hover:bg-white/20 text-gray-700">
+                      <Package className="h-4 w-4" />
+                      <span>All Categories</span>
+                      <ChevronRight
+                        className={`ml-auto h-4 w-4 transition-transform duration-200 ${
+                          categoriesOpen ? "rotate-90" : ""
+                        }`}
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {categories.map((category) => (
+                        <SidebarMenuSubItem key={category.id}>
+                          <SidebarMenuSubButton
+                            asChild
+                            className="rounded-lg hover:bg-white/20"
+                          >
+                            <Link
+                              to={`${ROUTE_NAMES.BROWSE}?category=${category.id}`}
+                              className="text-gray-600"
+                              onClick={() => toggleSidebar()}
+                            >
+                              <category.icon className="h-3.5 w-3.5" />
+                              <span>{category.name}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarRail />
