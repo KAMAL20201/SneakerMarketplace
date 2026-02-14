@@ -6,7 +6,8 @@ import { StockValidationService } from "./stockValidationService";
 
 export interface Order {
   id: string;
-  buyer_id: string;
+  // [GUEST CHECKOUT] buyer_id is nullable for guest orders
+  buyer_id: string | null;
   seller_id: string;
   product_id: string;
   payment_id: string;
@@ -15,6 +16,10 @@ export interface Order {
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   shipping_address?: ShippingAddress;
   tracking_number?: string;
+  // [GUEST CHECKOUT] Guest buyer contact info stored directly on order
+  buyer_email?: string;
+  buyer_name?: string;
+  buyer_phone?: string;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +32,10 @@ export interface CreateOrderRequest {
   razorpay_order_id: string;
   amount: number;
   shipping_address?: ShippingAddress;
+  // [GUEST CHECKOUT] Guest buyer contact info stored directly on order
+  buyer_email?: string;
+  buyer_name?: string;
+  buyer_phone?: string;
 }
 
 export interface CartItem {
@@ -52,7 +61,8 @@ export class OrderService {
         .from("orders")
         .insert([
           {
-            buyer_id: orderData.buyer_id,
+            // [GUEST CHECKOUT] buyer_id may be empty for guest orders (nullable in DB)
+            buyer_id: orderData.buyer_id || null,
             seller_id: orderData.seller_id,
             product_id: orderData.product_id,
             payment_id: orderData.payment_id,
@@ -60,6 +70,10 @@ export class OrderService {
             amount: orderData.amount,
             shipping_address: orderData.shipping_address || {},
             status: "confirmed",
+            // [GUEST CHECKOUT] Store guest buyer contact info directly on order
+            buyer_email: orderData.buyer_email || null,
+            buyer_name: orderData.buyer_name || null,
+            buyer_phone: orderData.buyer_phone || null,
           },
         ])
         .select()
@@ -107,7 +121,8 @@ export class OrderService {
     paymentId: string,
     razorpayOrderId: string,
     buyerId: string,
-    buyerDetails: { full_name: string; email: string },
+    // [GUEST CHECKOUT] phone added for guest buyer contact info
+    buyerDetails: { full_name: string; email: string; phone?: string },
     shippingAddress?: ShippingAddress
   ): Promise<Order[]> {
     try {
@@ -164,6 +179,10 @@ export class OrderService {
           razorpay_order_id: razorpayOrderId,
           amount: item.price,
           shipping_address: shippingAddress || undefined,
+          // [GUEST CHECKOUT] Store guest buyer contact info on each order
+          buyer_email: buyerDetails.email,
+          buyer_name: buyerDetails.full_name,
+          buyer_phone: buyerDetails.phone,
         });
 
         orders.push(order);

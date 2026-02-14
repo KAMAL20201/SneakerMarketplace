@@ -42,6 +42,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                   <p>Near: {shippingAddress.landmark}</p>
                 )}
                 <p className="text-gray-500">{shippingAddress.phone}</p>
+                {shippingAddress.email && (
+                  <p className="text-gray-500">{shippingAddress.email}</p>
+                )}
               </div>
             </div>
           </div>

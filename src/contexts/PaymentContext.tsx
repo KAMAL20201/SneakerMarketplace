@@ -122,11 +122,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           name: "The Plug Market",
           // description: description,
           order_id: order.id,
-          // [GUEST CHECKOUT] Prefill with user data if logged in (admin), empty for guests
-          // Razorpay will collect contact info from guest during payment
+          // [GUEST CHECKOUT] Prefill with guest info from shipping address, fallback to admin user data
           prefill: {
-            name: user?.user_metadata?.full_name || "",
-            email: user?.email || "",
+            name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
+            email: shippingAddress?.email || user?.email || "",
+            contact: shippingAddress?.phone || "",
           },
           notes: metadata,
           theme: {
@@ -156,12 +156,13 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
                     items,
                     response.razorpay_payment_id,
                     response.razorpay_order_id,
-                    // [GUEST CHECKOUT] buyer_id will be empty for guest orders
+                    // [GUEST CHECKOUT] buyer_id is empty for guest orders, nullable in DB
                     user?.id || "",
                     {
-                      // [GUEST CHECKOUT] For guests, name/email will come from shipping address in later phases
-                      full_name: user?.user_metadata?.full_name || "",
-                      email: user?.email || "",
+                      // [GUEST CHECKOUT] Guest info from shipping address
+                      full_name: shippingAddress?.full_name || user?.user_metadata?.full_name || "",
+                      email: shippingAddress?.email || user?.email || "",
+                      phone: shippingAddress?.phone || "",
                     },
                     shippingAddress
                   );
