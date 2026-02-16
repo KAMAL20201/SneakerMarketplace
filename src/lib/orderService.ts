@@ -84,9 +84,10 @@ export class OrderService {
         .from("orders")
         .insert([insertData])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error("Failed to create order — no data returned");
       return data;
     } catch (error) {
       console.error("Error creating order:", error);
