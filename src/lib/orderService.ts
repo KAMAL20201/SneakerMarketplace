@@ -58,25 +58,31 @@ export class OrderService {
   // Create a new order
   static async createOrder(orderData: CreateOrderRequest): Promise<Order> {
     try {
+      // Build insert payload — only include columns that exist in the DB
+      const insertData: Record<string, unknown> = {
+        // [GUEST CHECKOUT] buyer_id may be empty for guest orders (nullable in DB)
+        buyer_id: orderData.buyer_id || null,
+        seller_id: orderData.seller_id,
+        product_id: orderData.product_id,
+        amount: orderData.amount,
+        shipping_address: orderData.shipping_address || {},
+        status: orderData.status || "confirmed",
+        // [GUEST CHECKOUT] Store guest buyer contact info directly on order
+        buyer_email: orderData.buyer_email || null,
+        buyer_name: orderData.buyer_name || null,
+        buyer_phone: orderData.buyer_phone || null,
+      };
+      // Only include payment fields if they have values (columns may not exist in DB)
+      if (orderData.payment_id) {
+        insertData.payment_id = orderData.payment_id;
+      }
+      if (orderData.razorpay_order_id) {
+        insertData.razorpay_order_id = orderData.razorpay_order_id;
+      }
+
       const { data, error } = await supabase
         .from("orders")
-        .insert([
-          {
-            // [GUEST CHECKOUT] buyer_id may be empty for guest orders (nullable in DB)
-            buyer_id: orderData.buyer_id || null,
-            seller_id: orderData.seller_id,
-            product_id: orderData.product_id,
-            payment_id: orderData.payment_id || null,
-            razorpay_order_id: orderData.razorpay_order_id || null,
-            amount: orderData.amount,
-            shipping_address: orderData.shipping_address || {},
-            status: orderData.status || "confirmed",
-            // [GUEST CHECKOUT] Store guest buyer contact info directly on order
-            buyer_email: orderData.buyer_email || null,
-            buyer_name: orderData.buyer_name || null,
-            buyer_phone: orderData.buyer_phone || null,
-          },
-        ])
+        .insert([insertData])
         .select()
         .single();
 
@@ -294,7 +300,6 @@ export class OrderService {
           buyer_id: buyerId,
           seller_id: item.sellerId,
           product_id: item.productId,
-          razorpay_order_id: orderRef,
           amount: item.price,
           shipping_address: shippingAddress || undefined,
           status: "pending_payment",
