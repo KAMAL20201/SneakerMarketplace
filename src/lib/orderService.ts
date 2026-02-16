@@ -283,18 +283,11 @@ export class OrderService {
           continue;
         }
 
-        // Mark product as sold to prevent double-selling
-        const markedAsSold = await StockValidationService.markProductAsSold(
-          item.productId
-        );
-
-        if (!markedAsSold) {
-          logger.error(
-            `Failed to mark product ${item.productName} as sold - already sold or unavailable`
-          );
-          failedItems.push(item.productName);
-          continue;
-        }
+        // NOTE: Product is NOT marked as sold here because:
+        // 1. Guest users can't update product_listings (RLS)
+        // 2. Payment hasn't been received yet — marking sold prematurely
+        //    would lock products if the buyer never pays.
+        // Product will be marked as sold when admin clicks "Confirm Payment".
 
         // Create order with pending_payment status
         const order = await this.createOrder({

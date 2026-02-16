@@ -30,6 +30,7 @@ import PickupAddressModal, {
 } from "@/components/PickupAddressModal";
 import { supabase } from "@/lib/supabase";
 import { addPickupToShiprocket } from "@/lib/shiprocket";
+import { StockValidationService } from "@/lib/stockValidationService";
 
 // Use the OrderType from orderService, but extend it with product details
 interface Order extends OrderType {
@@ -378,6 +379,8 @@ const MyOrders = () => {
                                 className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white border-gray-200 rounded-2xl"
                                 onClick={async () => {
                                   try {
+                                    // Mark product as sold and confirm order
+                                    await StockValidationService.markProductAsSold(order.product_id);
                                     await OrderService.updateOrderStatus(order.id, "confirmed");
                                     setSellOrders((prev) =>
                                       prev.map((o) =>

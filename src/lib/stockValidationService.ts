@@ -130,7 +130,7 @@ export class StockValidationService {
         .eq("id", productId)
         .eq("status", "active") // Only update if still active (optimistic locking)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Error marking product as sold:", error);
