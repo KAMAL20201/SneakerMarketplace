@@ -73,7 +73,6 @@ export class OrderService {
           p_buyer_name: orderData.buyer_name || null,
           p_buyer_phone: orderData.buyer_phone || null,
           p_payment_id: orderData.payment_id || null,
-          p_razorpay_order_id: orderData.razorpay_order_id || null,
         });
 
         if (error) throw error;
@@ -98,10 +97,6 @@ export class OrderService {
       if (orderData.payment_id) {
         insertData.payment_id = orderData.payment_id;
       }
-      if (orderData.razorpay_order_id) {
-        insertData.razorpay_order_id = orderData.razorpay_order_id;
-      }
-
       const { data, error } = await supabase
         .from("orders")
         .insert([insertData])
