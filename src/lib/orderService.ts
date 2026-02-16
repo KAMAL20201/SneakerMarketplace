@@ -58,21 +58,43 @@ export class OrderService {
   // Create a new order
   static async createOrder(orderData: CreateOrderRequest): Promise<Order> {
     try {
-      // Build insert payload — only include columns that exist in the DB
+      const isGuestOrder = !orderData.buyer_id;
+
+      // [GUEST CHECKOUT] Use SECURITY DEFINER RPC function to bypass RLS for
+      // guest orders, since anonymous users can't insert into the orders table.
+      if (isGuestOrder) {
+        const { data, error } = await supabase.rpc("create_guest_order", {
+          p_seller_id: orderData.seller_id,
+          p_product_id: orderData.product_id,
+          p_amount: orderData.amount,
+          p_shipping_address: orderData.shipping_address || {},
+          p_status: orderData.status || "pending_payment",
+          p_buyer_email: orderData.buyer_email || null,
+          p_buyer_name: orderData.buyer_name || null,
+          p_buyer_phone: orderData.buyer_phone || null,
+          p_payment_id: orderData.payment_id || null,
+          p_razorpay_order_id: orderData.razorpay_order_id || null,
+        });
+
+        if (error) throw error;
+        if (!data) throw new Error("Failed to create order — no data returned");
+        // RPC with RETURNS SETOF returns an array; take the first row
+        const order = Array.isArray(data) ? data[0] : data;
+        return order;
+      }
+
+      // Authenticated user — direct insert (existing RLS policies allow this)
       const insertData: Record<string, unknown> = {
-        // [GUEST CHECKOUT] buyer_id may be empty for guest orders (nullable in DB)
-        buyer_id: orderData.buyer_id || null,
+        buyer_id: orderData.buyer_id,
         seller_id: orderData.seller_id,
         product_id: orderData.product_id,
         amount: orderData.amount,
         shipping_address: orderData.shipping_address || {},
         status: orderData.status || "confirmed",
-        // [GUEST CHECKOUT] Store guest buyer contact info directly on order
         buyer_email: orderData.buyer_email || null,
         buyer_name: orderData.buyer_name || null,
         buyer_phone: orderData.buyer_phone || null,
       };
-      // Only include payment fields if they have values (columns may not exist in DB)
       if (orderData.payment_id) {
         insertData.payment_id = orderData.payment_id;
       }
