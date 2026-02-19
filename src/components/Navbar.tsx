@@ -150,6 +150,20 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {isAdmin && (
+                  <DropdownMenuItem
+                    asChild
+                    className="rounded-xl mx-1 my-1 cursor-pointer"
+                  >
+                    <Link
+                      to={ROUTE_NAMES.ADMIN_IMPORT}
+                      className="text-purple-700 font-medium"
+                      onMouseEnter={() => handleRoutePreload("adminImport")}
+                    >
+                      📥 Import Products
+                    </Link>
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuSeparator className="bg-white/30" />
                 {/* <DropdownMenuItem
@@ -169,24 +183,19 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            /* [GUEST CHECKOUT] Login/Signup buttons hidden for guests.
-               Admin can still access /login directly via URL.
-            <div className="flex items-center gap-2">
-              <Button
-                asChild
-                size="sm"
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-xl shadow-lg"
+            <Button
+              asChild
+              size="sm"
+              variant="ghost"
+              className="glass-button border-0 rounded-xl text-gray-600 text-sm"
+            >
+              <Link
+                to={ROUTE_NAMES.LOGIN}
+                onMouseEnter={() => handleRoutePreload("login")}
               >
-                <Link
-                  to={ROUTE_NAMES.LOGIN}
-                  onMouseEnter={() => handleRoutePreload("login")}
-                >
-                  Log In
-                </Link>
-              </Button>
-            </div>
-            */
-            null
+                Login as Admin
+              </Link>
+            </Button>
           )}
         </div>
       </div>

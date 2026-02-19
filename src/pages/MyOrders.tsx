@@ -30,6 +30,7 @@ import PickupAddressModal, {
 } from "@/components/PickupAddressModal";
 import { supabase } from "@/lib/supabase";
 import { addPickupToShiprocket } from "@/lib/shiprocket";
+import { StockValidationService } from "@/lib/stockValidationService";
 
 // Use the OrderType from orderService, but extend it with product details
 interface Order extends OrderType {
@@ -46,6 +47,8 @@ interface Order extends OrderType {
 const getStatusIcon = (status: Order["status"]) => {
   switch (status) {
     case "pending":
+      return <Clock className="h-4 w-4" />;
+    case "pending_payment":
       return <Clock className="h-4 w-4" />;
     case "confirmed":
       return <CheckCircle className="h-4 w-4" />;
@@ -64,6 +67,8 @@ const getStatusColor = (status: Order["status"]) => {
   switch (status) {
     case "pending":
       return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    case "pending_payment":
+      return "bg-orange-100 text-orange-800 border-orange-200";
     case "confirmed":
       return "bg-blue-100 text-blue-800 border-blue-200";
     case "shipped":
@@ -75,6 +80,11 @@ const getStatusColor = (status: Order["status"]) => {
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
+};
+
+const getStatusLabel = (status: Order["status"]) => {
+  if (status === "pending_payment") return "Awaiting Payment";
+  return status;
 };
 
 const formatDate = (dateString: string) => {
@@ -256,7 +266,7 @@ const MyOrders = () => {
                               order.status
                             )} border rounded-xl capitalize`}
                           >
-                            {order.status}
+                            {getStatusLabel(order.status)}
                           </Badge>
                         </div>
                       </CardHeader>
@@ -362,6 +372,31 @@ const MyOrders = () => {
                                 View Product
                               </Button>
                             </Link>
+                            {order.status === "pending_payment" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white border-gray-200 rounded-2xl"
+                                onClick={async () => {
+                                  try {
+                                    // Mark product as sold and confirm order
+                                    await StockValidationService.markProductAsSold(order.product_id);
+                                    await OrderService.updateOrderStatus(order.id, "confirmed");
+                                    setSellOrders((prev) =>
+                                      prev.map((o) =>
+                                        o.id === order.id ? { ...o, status: "confirmed" as const } : o
+                                      )
+                                    );
+                                    toast.success("Payment confirmed! Order is now ready to ship.");
+                                  } catch {
+                                    toast.error("Failed to confirm payment");
+                                  }
+                                }}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Confirm Payment
+                              </Button>
+                            )}
                             {order.status === "confirmed" && (
                               <Button
                                 variant="outline"

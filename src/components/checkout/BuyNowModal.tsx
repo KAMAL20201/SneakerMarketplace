@@ -66,7 +66,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
           <div className="flex flex-col h-[70vh]">
             <div className="px-4 pt-4">
               <DialogHeader>
-                <DialogTitle>Confirm & Pay</DialogTitle>
+                <DialogTitle>Confirm & Order</DialogTitle>
               </DialogHeader>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -135,7 +135,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                 }}
                 items={[item]}
                 shippingAddress={shippingAddress || undefined}
-                className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg text-lg font-bold"
+                className="w-full h-12 bg-[#25D366] hover:bg-[#1da851] text-white border-0 rounded-2xl shadow-lg text-lg font-bold"
               />
               <Button
                 onClick={handleBackToShipping}

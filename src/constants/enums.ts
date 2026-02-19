@@ -12,6 +12,7 @@ export const ROUTE_NAMES = {
   BROWSE: "/browse",
   EDIT_LISTING: "/edit-listing/:id",
   ADMIN_REVIEW: "/admin/review",
+  ADMIN_IMPORT: "/admin/import",
   PROFILE: "/profile",
   MY_ADDRESSES: "/my-addresses",
   SETTINGS: "/settings",

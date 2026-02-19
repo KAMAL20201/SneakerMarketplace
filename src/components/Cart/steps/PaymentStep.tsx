@@ -85,7 +85,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
           }}
           items={items}
           shippingAddress={shippingAddress}
-          className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg text-lg font-bold"
+          className="w-full h-12 bg-[#25D366] hover:bg-[#1da851] text-white border-0 rounded-2xl shadow-lg text-lg font-bold"
         />
         <Button
           onClick={onBack}
