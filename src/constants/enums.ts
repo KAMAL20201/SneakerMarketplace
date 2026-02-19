@@ -33,6 +33,8 @@ export const ROUTE_NAMES = {
   CONTACT_US: "/contact-us",
   SHIPPING_POLICY: "/shipping-policy",
   CANCELLATIONS_REFUNDS: "/cancellations-refunds",
+  WISHLIST: "/wishlist",
+  NEW_ARRIVALS: "/new-arrivals",
 } as const;
 
 // Helper functions for dynamic routes
