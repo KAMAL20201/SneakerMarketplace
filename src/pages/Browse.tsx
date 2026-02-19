@@ -10,9 +10,9 @@ import {
   SortAsc,
   ArrowUp,
   Loader2,
-  Heart,
+  // Heart,
 } from "lucide-react";
-import { useWishlist } from "@/contexts/WishlistContext";
+// import { useWishlist } from "@/contexts/WishlistContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,6 +46,7 @@ interface Listing {
   product_id: string;
   title: string;
   description: string;
+  min_price: number;
   price: number;
   brand: string;
   size_value: string;
@@ -110,7 +111,7 @@ const parseFiltersFromURL = (searchParams: URLSearchParams): Partial<FilterState
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const Browse = () => {
-  const { toggleWishlist, isInWishlist } = useWishlist();
+  // const { toggleWishlist, isInWishlist } = useWishlist();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const defaultFilters: FilterState = {

@@ -14,7 +14,7 @@ export interface OrderEmailData {
   seller_email?: string;
   shipping_address?: ShippingAddress;
   tracking_number?: string;
-  order_status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  order_status: "pending" | "pending_payment" | "confirmed" | "shipped" | "delivered" | "cancelled";
   estimated_delivery?: string;
 }
 

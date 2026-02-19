@@ -100,7 +100,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         if (metadata.type === "cart_checkout" && items.length > 0) {
           await OrderService.processWhatsAppCheckout(
             items,
-            orderRef,
+            // orderRef,
             user?.id || "",
             {
               full_name:

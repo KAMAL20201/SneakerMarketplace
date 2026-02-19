@@ -275,7 +275,7 @@ export class OrderService {
   // Process WhatsApp checkout - create orders with pending_payment status
   static async processWhatsAppCheckout(
     cartItems: CartItem[],
-    orderRef: string,
+    // orderRef: string,
     buyerId: string,
     buyerDetails: { full_name: string; email: string; phone?: string },
     shippingAddress?: ShippingAddress
