@@ -29,6 +29,8 @@ import type { EmblaCarouselType } from "embla-carousel";
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
+  const [availableSizes, setAvailableSizes] = useState<{ size_value: string; price: number }[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { addToCart, items } = useCart();
   const [listing, setListing] = useState<any>(null);
@@ -94,7 +96,7 @@ export default function ProductDetailPage() {
       brand: listing?.brand,
       size: selectedSize,
       condition: listing?.condition,
-      price: listing?.price,
+      price: selectedPrice ?? listing?.price,
       image: images?.[0]?.image_url,
       sellerId: seller?.id?.toString(),
       sellerName: seller?.display_name,
@@ -176,11 +178,28 @@ export default function ProductDetailPage() {
       };
       delete transformedListing.sellers;
 
+      // Query 3: Get size variants from product_listing_sizes (multi-size listings)
+      const { data: sizesData } = await supabase
+        .from("product_listing_sizes")
+        .select("size_value, price")
+        .eq("listing_id", productId)
+        .order("price", { ascending: true });
+
       setListing(transformedListing);
-      if (transformedListing.size_value) {
-        setSelectedSize(transformedListing.size_value);
-      }
       setImages(imagesData || []);
+
+      const sizes = sizesData ?? [];
+      setAvailableSizes(sizes);
+
+      if (sizes.length > 0) {
+        // Multi-size listing — auto-select cheapest
+        setSelectedSize(sizes[0].size_value);
+        setSelectedPrice(sizes[0].price);
+      } else if (transformedListing.size_value) {
+        // Single-size listing — use the listing's own size/price
+        setSelectedSize(transformedListing.size_value);
+        setSelectedPrice(transformedListing.price ?? null);
+      }
 
       // Set the first image (poster or first available) as selected
       setSelectedImageIndex(0);
@@ -247,10 +266,10 @@ export default function ProductDetailPage() {
                 )}
               </CarouselContent>
               {/* Desktop arrows */}
-              <div className="hidden sm:block">
+              {/* <div className="hidden sm:block">
                 <CarouselPrevious />
                 <CarouselNext />
-              </div>
+              </div> */}
             </Carousel>
           </div>
 
@@ -280,7 +299,7 @@ export default function ProductDetailPage() {
         <div className="lg:w-[40%] lg:py-6">
           <div className="px-4 py-5 flex items-center justify-between lg:px-0 lg:py-0 lg:mb-6">
             <h2 className="text-3xl font-bold text-gray-800 lg:px-0 px-4">
-              ₹ {listing?.price}
+              ₹ {(selectedPrice ?? listing?.price)?.toLocaleString("en-IN")}
             </h2>
 
             <div className="flex items-center">
@@ -303,7 +322,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Sellers List */}
-          <div className="px-4 pb-8 lg:px-0 lg:pb-6">
+          {/* <div className="px-4 pb-8 lg:px-0 lg:pb-6">
             <Card className="glass-card border-0 rounded-3xl">
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold mb-6 text-gray-800">
@@ -367,35 +386,60 @@ export default function ProductDetailPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           {/* Size Selection */}
-          {listing?.size_value && (
+          {(availableSizes.length > 0 || listing?.size_value) && (
             <div className="px-4 pb-6 lg:px-0">
               <Card className="glass-card border-0 rounded-3xl">
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold mb-4 text-gray-800">
                     Available Sizes
                   </h3>
-                  <div className="grid grid-cols-4 gap-3">
-                    <Button
-                      key={listing?.size_value}
-                      variant={
-                        selectedSize === listing?.size_value
-                          ? "default"
-                          : "outline"
-                      }
-                      // size="sm"
-                      onClick={() => setSelectedSize(listing?.size_value)}
-                      className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
-                        selectedSize === listing?.size_value
-                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                          : "glass-button text-gray-700 hover:bg-white/30"
-                      }`}
-                    >
-                      {listing?.size_value}
-                    </Button>
-                  </div>
+
+                  {availableSizes.length > 0 ? (
+                    // ── Multi-size listing: grid of UK sizes with per-size price ──
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                      {availableSizes.map((s) => {
+                        const isSelected = selectedSize === s.size_value;
+                        return (
+                          <Button
+                            key={s.size_value}
+                            variant={isSelected ? "default" : "outline"}
+                            onClick={() => {
+                              setSelectedSize(s.size_value);
+                              setSelectedPrice(s.price);
+                            }}
+                            className={`flex flex-col h-auto py-3 rounded-2xl border-0 font-semibold uppercase gap-0.5 ${
+                              isSelected
+                                ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                                : "glass-button text-gray-700 hover:bg-white/30"
+                            }`}
+                          >
+                            <span className="text-sm">{s.size_value.toUpperCase()}</span>
+                            <span className={`text-xs font-normal ${isSelected ? "text-white/80" : "text-gray-500"}`}>
+                              ₹{s.price.toLocaleString("en-IN")}
+                            </span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    // ── Single-size listing: one button, no price (shown at top) ──
+                    <div className="grid grid-cols-4 gap-3">
+                      <Button
+                        variant={selectedSize === listing?.size_value ? "default" : "outline"}
+                        onClick={() => setSelectedSize(listing?.size_value)}
+                        className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
+                          selectedSize === listing?.size_value
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                            : "glass-button text-gray-700 hover:bg-white/30"
+                        }`}
+                      >
+                        {listing?.size_value}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -441,7 +485,7 @@ export default function ProductDetailPage() {
             <BuyNowModal
               open={buyNowOpen}
               onOpenChange={setBuyNowOpen}
-              amount={listing?.price || 0}
+              amount={selectedPrice ?? listing?.price ?? 0}
               item={{
                 id: listing?.id,
                 productId: listing?.id,
@@ -449,7 +493,7 @@ export default function ProductDetailPage() {
                 brand: listing?.brand,
                 size: selectedSize || "",
                 condition: listing?.condition,
-                price: listing?.price,
+                price: selectedPrice ?? listing?.price,
                 image: images?.[0]?.image_url,
                 sellerId: listing?.seller_details?.id?.toString(),
                 sellerName: listing?.seller_details?.display_name,

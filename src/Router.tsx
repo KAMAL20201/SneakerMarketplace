@@ -24,6 +24,7 @@ const MyAddresses = lazy(() => import("./pages/MyAddresses"));
 const EditListing = lazy(() => import("./pages/EditListing"));
 const Browse = lazy(() => import("./pages/Browse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
+const AdminImport = lazy(() => import("./pages/AdminImport"));
 const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -50,6 +51,7 @@ export const preloadRoutes = {
   productDetail: () => import("./pages/ProductDetailPage"),
   editListing: () => import("./pages/EditListing"),
   adminReview: () => import("./pages/AdminReview"),
+  adminImport: () => import("./pages/AdminImport"),
   paymentMethods: () => import("./pages/PaymentMethods"),
   notFound: () => import("./pages/NotFound"),
   privacyPolicy: () => import("./pages/PrivacyPolicy"),
@@ -183,6 +185,16 @@ const Router = () => {
           <Suspense fallback={<PageSkeleton />}>
             <AdminRoute>
               <AdminReview />
+            </AdminRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.ADMIN_IMPORT}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <AdminRoute>
+              <AdminImport />
             </AdminRoute>
           </Suspense>
         }
