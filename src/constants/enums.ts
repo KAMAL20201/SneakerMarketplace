@@ -78,17 +78,6 @@ export const CLOTHING_BRANDS = {
   ESSENTIALS: "essentials",
 } as const;
 
-export const ACCESSORY_BRANDS = {
-  ROLEX: "rolex",
-  OMEGA: "omega",
-  CASIO: "casio",
-  G_SHOCK: "g-shock",
-  APPLE: "apple",
-  SAMSUNG: "samsung",
-  LOUIS_VUITTON: "louis vuitton",
-  GUCCI: "gucci",
-} as const;
-
 export const ELECTRONIC_BRANDS = {
   APPLE: "apple",
   SAMSUNG: "samsung",
@@ -98,17 +87,6 @@ export const ELECTRONIC_BRANDS = {
   PLAYSTATION: "playstation",
   XBOX: "xbox",
   GOOGLE: "google",
-} as const;
-
-export const GAMING_BRANDS = {
-  NINTENDO: "nintendo",
-  PLAYSTATION: "playstation",
-  XBOX: "xbox",
-  STEAM: "steam",
-  RAZER: "razer",
-  LOGITECH: "logitech",
-  CORSAIR: "corsair",
-  STEELSERIES: "steelseries",
 } as const;
 
 export const COLLECTIBLE_BRANDS = {
@@ -158,6 +136,7 @@ export const DELIVERY_TIMELINES = {
   SEVEN_TO_TEN: "7-10",
   TWELVE_TO_FIFTEEN: "12-15",
   EIGHTEEN_TO_TWENTY_ONE: "18-21",
+  TWENTY_ONE_TO_TWENTY_EIGHT: "21-28",
   CUSTOM: "custom",
 } as const;
 
@@ -168,9 +147,7 @@ export type DeliveryTimeline =
 export const CATEGORY_IDS = {
   SNEAKERS: "sneakers",
   CLOTHING: "clothing",
-  ACCESSORIES: "accessories",
   ELECTRONICS: "electronics",
-  GAMING: "gaming",
   COLLECTIBLES: "collectibles",
 } as const;
 

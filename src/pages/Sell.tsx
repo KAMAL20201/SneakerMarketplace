@@ -1,6 +1,6 @@
 import type React from "react";
 
-import { useRef, useState, useEffect, useContext } from "react";
+import { useRef, useState,  useContext } from "react";
 import {
   Camera,
   Upload,
@@ -9,11 +9,11 @@ import {
   ArrowRight,
   Sparkles,
   Package,
-  Check,
+  // Check,
   Eye,
-  CreditCard,
-  Smartphone,
-  AlertTriangle,
+  // CreditCard,
+  // Smartphone,
+  // AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,22 +35,23 @@ import { supabase } from "@/lib/supabase";
 import { categories } from "@/constants/sellConstants";
 import { smartCompressImages } from "@/lib/imageCompression";
 import { ProductImage } from "@/components/ui/OptimizedImage";
-import { PaymentMethodsService } from "@/lib/paymentMethodsService";
-import type { PaymentMethod } from "@/lib/encryptionService";
+// import { PaymentMethodsService } from "@/lib/paymentMethodsService";
+// import type { PaymentMethod } from "@/lib/encryptionService";
 import {
   ROUTE_NAMES,
   PRODUCT_CONDITIONS,
   DELIVERY_TIMELINES,
   LISTING_STATUS,
 } from "@/constants/enums";
-import { SellerFormContext } from "@/contexts/SellerFormContext";
+import { SellerFormContext, type SizeEntry } from "@/contexts/SellerFormContext";
 
 export default function SellPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+  // const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  // const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [showOtherBrandInput, setShowOtherBrandInput] = useState(false);
   const [otherBrandName, setOtherBrandName] = useState("");
+  const [multiSizeMode, setMultiSizeMode] = useState(false);
 
   const { user, setOperationAfterLogin } = useAuth();
   const {
@@ -97,33 +98,26 @@ export default function SellPage() {
       title: "Shipping",
       description: "Shipping charges and delivery time",
     },
-    { id: 7, title: "Payment", description: "Choose payment method" },
-    { id: 8, title: "Review", description: "Review and submit for approval" },
+    // Payment step removed — admin-only listing doesn't need payment method
+    // { id: 7, title: "Payment", description: "Choose payment method" },
+    { id: 7, title: "Review", description: "Review and submit for approval" },
   ];
 
   const selectedCategory = categories.find(
     (cat) => cat.id === formData.category
   );
 
-  // Fetch payment methods when user is available
-  useEffect(() => {
+  // Payment method fetch — commented out (admin-only listing, no payment method needed)
+  /* useEffect(() => {
     const fetchPaymentMethods = async () => {
       if (user) {
         try {
           setLoadingPaymentMethods(true);
-          const methods = await PaymentMethodsService.getPaymentMethods(
-            user.id
-          );
+          const methods = await PaymentMethodsService.getPaymentMethods(user.id);
           setPaymentMethods(methods);
-
-          // Set default payment method if available and none selected
           if (methods.length > 0 && !formData.paymentMethodId) {
-            const defaultMethod =
-              methods.find((m) => m.is_default) || methods[0];
-            setFormData((prev) => ({
-              ...prev,
-              paymentMethodId: defaultMethod.id,
-            }));
+            const defaultMethod = methods.find((m) => m.is_default) || methods[0];
+            setFormData((prev) => ({ ...prev, paymentMethodId: defaultMethod.id }));
           }
         } catch (error) {
           console.error("Error fetching payment methods:", error);
@@ -133,9 +127,43 @@ export default function SellPage() {
         }
       }
     };
-
     fetchPaymentMethods();
-  }, [user]);
+  }, [user]); */
+
+  // ── Multi-size helpers ───────────────────────────────────────────────────
+  const handleMultiSizeModeToggle = (enabled: boolean) => {
+    setMultiSizeMode(enabled);
+    if (enabled) {
+      // Switch to multi: clear single size selection
+      setFormData((prev) => ({ ...prev, size: "" }));
+    } else {
+      // Switch to single: clear multi-size entries
+      setFormData((prev) => ({ ...prev, sizes: [] }));
+    }
+  };
+
+  const toggleSizeEntry = (sizeValue: string) => {
+    setFormData((prev) => {
+      const prevSizes = prev.sizes ?? [];
+      const exists = prevSizes.find((e) => e.size_value === sizeValue);
+      return {
+        ...prev,
+        sizes: exists
+          ? prevSizes.filter((e) => e.size_value !== sizeValue)
+          : [...prevSizes, { size_value: sizeValue, price: "" }],
+      };
+    });
+  };
+
+  const updateSizePrice = (sizeValue: string, price: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      sizes: (prev.sizes ?? []).map((e) =>
+        e.size_value === sizeValue ? { ...e, price } : e
+      ),
+    }));
+  };
+  // ─────────────────────────────────────────────────────────────────────────
 
   const validateStep = (step: number): boolean => {
     switch (step) {
@@ -151,7 +179,14 @@ export default function SellPage() {
       case 4:
         return (
           formData.condition !== "" &&
-          (selectedCategory?.hasSize ? formData.size !== "" : true)
+          (selectedCategory?.hasSize
+            ? multiSizeMode
+              ? (formData.sizes ?? []).length > 0 &&
+                (formData.sizes ?? []).every(
+                  (e) => e.price !== "" && parseFloat(e.price) > 0
+                )
+              : formData.size !== ""
+            : true)
         );
       case 5:
         return formData.price !== "";
@@ -165,8 +200,8 @@ export default function SellPage() {
         return formData.shippingCharges !== "" && formData.deliveryDays !== "";
       case 7:
         return true; // Review step - no validation needed
-      case 8:
-        return formData.paymentMethodId !== "";
+      // case 8: payment method step removed — admin-only listing
+      // case 8: return formData.paymentMethodId !== "";
       default:
         return true;
     }
@@ -344,17 +379,16 @@ export default function SellPage() {
       return;
     }
 
-    // Check if user has payment methods
-    if (paymentMethods.length === 0) {
+    // Payment method checks — commented out (admin-only listing)
+    /* if (paymentMethods.length === 0) {
       toast.error("Please add a payment method before listing items");
       navigate(ROUTE_NAMES.PAYMENT_METHODS);
       return;
     }
-
     if (!formData.paymentMethodId) {
       toast.error("Please select a payment method");
       return;
-    }
+    } */
 
     setIsLoading(true);
 
@@ -365,6 +399,11 @@ export default function SellPage() {
         toast.error("Failed to create seller profile. Please try again.");
         return;
       }
+      const isMultiSize = (formData.sizes ?? []).length > 0;
+      const listingPrice = isMultiSize
+        ? Math.min(...(formData.sizes ?? []).map((e) => parseFloat(e.price)))
+        : parseFloat(formData.price);
+
       const { data: listing, error: listingError } = await supabase
         .from("product_listings")
         .insert({
@@ -373,12 +412,17 @@ export default function SellPage() {
           category: formData.category,
           brand: formData.brand,
           model: formData.model,
-          size_value: formData.size,
+          // Multi-size: size_value is null (sizes live in product_listing_sizes)
+          size_value: isMultiSize ? null : formData.size,
           condition: formData.condition,
-          price: parseFloat(formData.price),
+          price: listingPrice,
+          retail_price:
+            formData.retailPrice && parseFloat(formData.retailPrice) > 0
+              ? parseFloat(formData.retailPrice)
+              : null,
           description: formData.description,
           status: LISTING_STATUS.UNDER_REVIEW,
-          payment_method_id: formData.paymentMethodId,
+          // payment_method_id: formData.paymentMethodId, // commented out — admin listing
           shipping_charges: parseFloat(formData.shippingCharges) || 0,
           delivery_days:
             formData.deliveryDays === DELIVERY_TIMELINES.CUSTOM
@@ -389,6 +433,19 @@ export default function SellPage() {
         .single();
 
       if (listingError) throw listingError;
+
+      // Insert per-size prices for multi-size listings
+      if (isMultiSize) {
+        const sizeRows = (formData.sizes ?? []).map((e) => ({
+          listing_id: listing.id,
+          size_value: e.size_value,
+          price: parseFloat(e.price),
+        }));
+        const { error: sizesError } = await supabase
+          .from("product_listing_sizes")
+          .insert(sizeRows);
+        if (sizesError) throw sizesError;
+      }
 
       if (images && images.length > 0) {
         for (let i = 0; i < images.length; i++) {
@@ -752,16 +809,43 @@ export default function SellPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex gap-6">
-                  {selectedCategory?.hasSize && (
-                    <div>
-                      <Label
-                        htmlFor="size"
-                        className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
-                      >
+                {selectedCategory?.hasSize && (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-gray-800 font-semibold text-base md:text-lg">
                         Size *
                       </Label>
+                      {/* Single / Multiple toggle */}
+                      <div className="flex items-center bg-gray-100 rounded-xl p-1 text-xs font-semibold gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleMultiSizeModeToggle(false)}
+                          className={`px-3 py-1.5 rounded-lg transition-all ${
+                            !multiSizeMode
+                              ? "bg-white text-purple-700 shadow"
+                              : "text-gray-500 hover:text-gray-700"
+                          }`}
+                        >
+                          Single
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMultiSizeModeToggle(true)}
+                          className={`px-3 py-1.5 rounded-lg transition-all ${
+                            multiSizeMode
+                              ? "bg-white text-purple-700 shadow"
+                              : "text-gray-500 hover:text-gray-700"
+                          }`}
+                        >
+                          Multiple
+                        </button>
+                      </div>
+                    </div>
+
+                    {!multiSizeMode ? (
+                      // ── Single-size dropdown ──
                       <Select
+                        value={formData.size}
                         onValueChange={(value) =>
                           setFormData({ ...formData, size: value })
                         }
@@ -781,9 +865,67 @@ export default function SellPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      // ── Multi-size grid ──
+                      <div>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Select all available sizes and set a price for each
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {selectedCategory.sizes.map((sz) => {
+                            const entry = (formData.sizes ?? []).find(
+                              (e) => e.size_value === sz.toLowerCase()
+                            );
+                            const isSelected = !!entry;
+                            return (
+                              <div key={sz} className="flex flex-col gap-1">
+                                <Button
+                                  type="button"
+                                  onClick={() =>
+                                    toggleSizeEntry(sz.toLowerCase())
+                                  }
+                                  className={`rounded-2xl border-0 h-10 text-xs font-semibold uppercase transition-all ${
+                                    isSelected
+                                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                                      : "glass-button text-gray-700 hover:bg-white/30"
+                                  }`}
+                                >
+                                  {sz}
+                                </Button>
+                                {isSelected && (
+                                  <div className="relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-semibold pointer-events-none">
+                                      ₹
+                                    </span>
+                                    <Input
+                                      type="number"
+                                      placeholder="Price"
+                                      min={1}
+                                      value={entry.price}
+                                      onChange={(e) =>
+                                        updateSizePrice(
+                                          sz.toLowerCase(),
+                                          e.target.value
+                                        )
+                                      }
+                                      className="pl-6 h-8 text-xs rounded-xl glass-input border-0 text-gray-700"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {(formData.sizes ?? []).length > 0 && (
+                          <p className="text-xs text-purple-600 mt-2 font-medium">
+                            {(formData.sizes ?? []).length} size
+                            {(formData.sizes ?? []).length > 1 ? "s" : ""} selected
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <Label className="text-gray-800 font-semibold text-base md:text-lg">
@@ -918,27 +1060,84 @@ export default function SellPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label
-                    htmlFor="price"
-                    className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
-                  >
-                    Price (INR) *
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-gray-600 text-lg md:text-xl font-bold">
-                      ₹
-                    </span>
-                    <Input
-                      id="price"
-                      type="number"
-                      placeholder="0.00"
-                      value={formData.price}
-                      onChange={(e) =>
-                        setFormData({ ...formData, price: e.target.value })
-                      }
-                      className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-14 md:h-16 text-gray-700 placeholder:text-gray-500 text-lg md:text-xl font-semibold"
-                    />
+                  {/* Selling price + Retail/MRP price side by side */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="price"
+                        className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
+                      >
+                        Selling Price (INR) *
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-gray-600 text-lg md:text-xl font-bold">
+                          ₹
+                        </span>
+                        <Input
+                          id="price"
+                          type="number"
+                          placeholder="0.00"
+                          value={formData.price}
+                          onChange={(e) =>
+                            setFormData({ ...formData, price: e.target.value })
+                          }
+                          className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-14 md:h-16 text-gray-700 placeholder:text-gray-500 text-lg md:text-xl font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label
+                        htmlFor="retailPrice"
+                        className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
+                      >
+                        Retail / MRP Price (INR){" "}
+                        <span className="text-xs font-normal text-gray-400">
+                          (optional)
+                        </span>
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-gray-600 text-lg md:text-xl font-bold">
+                          ₹
+                        </span>
+                        <Input
+                          id="retailPrice"
+                          type="number"
+                          placeholder="0.00"
+                          value={formData.retailPrice}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              retailPrice: e.target.value,
+                            })
+                          }
+                          className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-14 md:h-16 text-gray-700 placeholder:text-gray-500 text-lg md:text-xl font-semibold"
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Live % off preview */}
+                  {formData.price &&
+                    formData.retailPrice &&
+                    parseFloat(formData.retailPrice) >
+                      parseFloat(formData.price) && (
+                      <div className="flex items-center gap-2 mt-3">
+                        <span className="text-sm text-gray-500">Discount:</span>
+                        <span className="text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg">
+                          {Math.round(
+                            ((parseFloat(formData.retailPrice) -
+                              parseFloat(formData.price)) /
+                              parseFloat(formData.retailPrice)) *
+                              100
+                          )}
+                          % off
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          will show on product page
+                        </span>
+                      </div>
+                    )}
 
                   {/* Charges Calculator */}
                   {formData.price && parseFloat(formData.price) > 0 && (
@@ -953,6 +1152,7 @@ export default function SellPage() {
                             ₹{parseFloat(formData.price).toFixed(2)}
                           </span>
                         </div>
+                        {/* Payment Gateway + Platform charges — commented out for now
                         <div className="flex justify-between items-center text-red-600">
                           <span>Payment Gateway Charges (2%):</span>
                           <span>
@@ -965,17 +1165,19 @@ export default function SellPage() {
                             -₹{(parseFloat(formData.price) * 0.005).toFixed(2)}
                           </span>
                         </div>
+                        */}
                         <div className="border-t border-gray-300 pt-2 mt-2">
                           <div className="flex justify-between items-center">
                             <span className="font-semibold text-gray-800">
                               You'll Receive:
                             </span>
                             <span className="font-bold text-lg text-green-600">
-                              ₹{(parseFloat(formData.price) * 0.975).toFixed(2)}
+                              ₹{parseFloat(formData.price).toFixed(2)}
                             </span>
                           </div>
                         </div>
                       </div>
+                      {/* Charges note — commented out for now
                       <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
                         <p className="text-xs text-blue-700">
                           💡 Total charges: 2.5% (₹
@@ -983,6 +1185,7 @@ export default function SellPage() {
                           Only on item price, not shipping
                         </p>
                       </div>
+                      */}
                     </div>
                   )}
                 </div>
@@ -1250,11 +1453,26 @@ export default function SellPage() {
                             <strong>Model:</strong> {formData.model}
                           </p>
                         )}
-                        {formData.size && (
+                        {(formData.sizes ?? []).length > 0 ? (
+                          <div>
+                            <strong>Sizes & Prices:</strong>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {(formData.sizes ?? []).map((e) => (
+                                <span
+                                  key={e.size_value}
+                                  className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-lg uppercase font-medium"
+                                >
+                                  {e.size_value} — ₹
+                                  {parseFloat(e.price).toLocaleString("en-IN")}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : formData.size ? (
                           <p>
                             <strong>Size:</strong> {formData.size}
                           </p>
-                        )}
+                        ) : null}
                         {formData.condition && (
                           <p>
                             <strong>Condition:</strong> {formData.condition}
@@ -1262,41 +1480,58 @@ export default function SellPage() {
                         )}
 
                         <p>
-                          <strong>Price:</strong> ₹ {formData.price || "0.00"}
+                          <strong>Price:</strong> ₹{formData.price || "0.00"}
                         </p>
+                        {formData.retailPrice &&
+                          parseFloat(formData.retailPrice) > 0 && (
+                            <p className="flex items-center gap-2 flex-wrap">
+                              <strong>Retail / MRP:</strong>{" "}
+                              <span className="line-through text-gray-400">
+                                ₹
+                                {parseFloat(
+                                  formData.retailPrice
+                                ).toLocaleString("en-IN")}
+                              </span>
+                              {parseFloat(formData.retailPrice) >
+                                parseFloat(formData.price) && (
+                                <span className="text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-1.5 py-0.5 rounded-md">
+                                  {Math.round(
+                                    ((parseFloat(formData.retailPrice) -
+                                      parseFloat(formData.price)) /
+                                      parseFloat(formData.retailPrice)) *
+                                      100
+                                  )}
+                                  % off
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        {/* Charges breakdown — commented out for now
                         {formData.price && parseFloat(formData.price) > 0 && (
                           <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                             <div className="text-xs space-y-1">
                               <div className="flex justify-between">
                                 <span>Payment Gateway (2%):</span>
                                 <span className="text-red-600">
-                                  -₹
-                                  {(parseFloat(formData.price) * 0.02).toFixed(
-                                    2
-                                  )}
+                                  -₹{(parseFloat(formData.price) * 0.02).toFixed(2)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Platform (0.5%):</span>
                                 <span className="text-red-600">
-                                  -₹
-                                  {(parseFloat(formData.price) * 0.005).toFixed(
-                                    2
-                                  )}
+                                  -₹{(parseFloat(formData.price) * 0.005).toFixed(2)}
                                 </span>
                               </div>
                               <div className="flex justify-between font-semibold border-t border-gray-300 pt-1">
                                 <span>You'll Receive:</span>
                                 <span className="text-green-600">
-                                  ₹
-                                  {(parseFloat(formData.price) * 0.975).toFixed(
-                                    2
-                                  )}
+                                  ₹{(parseFloat(formData.price) * 0.975).toFixed(2)}
                                 </span>
                               </div>
                             </div>
                           </div>
                         )}
+                        */}
 
                         {/* Shipping Information */}
                         {formData.shippingCharges && (
@@ -1381,107 +1616,12 @@ export default function SellPage() {
             </Card>
           )}
 
-          {/* Step 8: Payment Method */}
-          {currentStep === 8 && (
+          {/* Step 8: Payment Method — commented out (admin-only listing, no payment method needed) */}
+          {/* {currentStep === 8 && (
             <Card className="glass-card border-0 rounded-3xl shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-3">
-                  <div className="p-2 md:p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl">
-                    <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-white" />
-                  </div>
-                  Choose Payment Method
-                </CardTitle>
-                <p className="text-sm md:text-base text-gray-600">
-                  Select how you want to receive payment for this item
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {loadingPaymentMethods ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="text-gray-600 mt-2">
-                      Loading payment methods...
-                    </p>
-                  </div>
-                ) : paymentMethods.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
-                      <div className="flex items-center justify-center mb-4">
-                        <AlertTriangle className="w-12 h-12 text-amber-600" />
-                      </div>
-                      <h3 className="font-medium text-amber-800 mb-2">
-                        No Payment Methods Found
-                      </h3>
-                      <p className="text-amber-700 text-sm mb-4">
-                        You need to add at least one payment method to list
-                        items for sale.
-                      </p>
-                      <Button
-                        onClick={() => {
-                          navigate(ROUTE_NAMES.PAYMENT_METHODS);
-                          setOperationAfterLogin(() => () => {
-                            navigate(ROUTE_NAMES.SELL);
-                          });
-                        }}
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
-                      >
-                        Add Payment Method
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {paymentMethods.map((method) => (
-                      <div
-                        key={method.id}
-                        className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                          formData.paymentMethodId === method.id
-                            ? "border-green-500 bg-green-500"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            paymentMethodId: method.id,
-                          }))
-                        }
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            {method.method_type === "upi" ? (
-                              <Smartphone className="w-5 h-5 text-blue-600" />
-                            ) : (
-                              <CreditCard className="w-5 h-5 text-green-600" />
-                            )}
-                            <div>
-                              <h4 className="font-medium">
-                                {method.method_name}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {method.method_type === "upi"
-                                  ? "UPI Payment"
-                                  : "Bank Account"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            {method.is_default && (
-                              <Badge variant="secondary" className="text-xs">
-                                Default
-                              </Badge>
-                            )}
-                            {formData.paymentMethodId === method.id && (
-                              <Check className="w-5 h-5 text-green-600" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+              ...payment method selection UI...
             </Card>
-          )}
+          )} */}
 
           {/* Navigation Buttons */}
           <div className="flex items-center justify-between pt-6">

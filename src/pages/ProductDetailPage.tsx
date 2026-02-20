@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShoppingCart, ZoomIn, X, Heart, Ruler } from "lucide-react";
+import { ShoppingCart, ZoomIn, X, Heart, Ruler, Truck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -310,9 +310,37 @@ export default function ProductDetailPage() {
         {/* Product Details - Right side on desktop, below images on mobile */}
         <div className="lg:w-[40%] lg:py-6">
           <div className="px-4 py-5 flex items-center justify-between lg:px-0 lg:py-0 lg:mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 lg:px-0 px-4">
-              ₹ {(selectedPrice ?? listing?.price)?.toLocaleString("en-IN")}
-            </h2>
+            {/* Price block with optional % off badge + strikethrough retail */}
+            {(() => {
+              const currentPrice = selectedPrice ?? listing?.price ?? 0;
+              const retailInr: number | null = listing?.retail_price ?? null;
+              const pctOff =
+                retailInr && retailInr > currentPrice
+                  ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
+                  : null;
+              return (
+                <div className="flex flex-col lg:px-0 px-4">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <h2 className="text-3xl font-bold text-gray-800">
+                      ₹{currentPrice.toLocaleString("en-IN")}
+                    </h2>
+                    {pctOff && (
+                      <span className="text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg">
+                        {pctOff}% off
+                      </span>
+                    )}
+                  </div>
+                  {retailInr && retailInr > currentPrice && (
+                    <p className="text-sm text-gray-400 mt-0.5">
+                      Retail:{" "}
+                      <span className="line-through">
+                        ₹{retailInr.toLocaleString("en-IN")}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="flex items-center gap-3">
               <div className="flex items-center">
@@ -373,6 +401,19 @@ export default function ProductDetailPage() {
                 >
                   {descExpanded ? "View less" : "View more"}
                 </button>
+              </div>
+            )}
+
+            {/* Delivery Timeline */}
+            {listing?.delivery_days && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+                <Truck className="h-4 w-4 text-purple-400 flex-shrink-0" />
+                <span>
+                  Estimated delivery:{" "}
+                  <span className="font-semibold text-gray-700">
+                    {listing.delivery_days} days
+                  </span>
+                </span>
               </div>
             )}
           </div>
@@ -539,7 +580,10 @@ export default function ProductDetailPage() {
                 */
                 setBuyNowOpen(true);
               }}
-              disabled={!selectedSize}
+              disabled={
+                // Only require a size selection if this listing actually has sizes
+                (availableSizes.length > 0 || listing?.size_value) && !selectedSize
+              }
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
             >
               Buy Now

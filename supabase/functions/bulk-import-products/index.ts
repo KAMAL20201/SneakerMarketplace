@@ -27,6 +27,9 @@ interface ImportRow {
 
   // ── Multi-size format (all-sizes CSV) ──
   sizes?: SizeEntry[];
+
+  // ── Retail price in INR (converted from Retail $ using admin-supplied rate) ──
+  retail_price?: number | null;
 }
 
 // ── Structured logger ─────────────────────────────────────────────────────────
@@ -211,6 +214,7 @@ Deno.serve(async (req: Request) => {
         size_value:       isMultiSize ? null : (row.size_value ?? null),
         condition:        "new",
         price:            listingPrice,
+        retail_price:     row.retail_price ?? null,
         description:      null,
         status:           "active",
         shipping_charges: 0,

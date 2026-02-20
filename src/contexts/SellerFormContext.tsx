@@ -5,13 +5,20 @@ import {
   type SetStateAction,
 } from "react";
 
+export interface SizeEntry {
+  size_value: string;
+  price: string; // string for input binding, parsed to number on submit
+}
+
 export interface SellerFormData {
   title: string;
   brand: string;
   model: string;
   size: string;
+  sizes: SizeEntry[]; // multi-size entries; empty = single-size mode
   condition: string;
   price: string;
+  retailPrice: string; // optional retail / MRP price in INR
   description: string;
   category: string;
   paymentMethodId: string;
@@ -32,13 +39,15 @@ export interface SellerFormContextType {
   clearFormData: () => void;
 }
 
-const DEFAULT_SELLER_FORM_DATA = {
+const DEFAULT_SELLER_FORM_DATA: SellerFormData = {
   title: "",
   brand: "",
   model: "",
   size: "",
+  sizes: [],
   condition: "new",
   price: "",
+  retailPrice: "",
   description: "",
   category: "sneakers",
   paymentMethodId: "",

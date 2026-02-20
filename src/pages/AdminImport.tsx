@@ -30,6 +30,9 @@ interface ParsedRow {
   // ── Multi-size (new format) — empty array = single-size ──
   sizes: SizeEntry[];
 
+  // ── Retail price in INR (converted from Retail $ using usdToInr rate) ──
+  retail_price: number | null;
+
   // display / control
   selected: boolean;
   sizeValid: boolean;
@@ -105,7 +108,7 @@ function mapUsSize(sizeUs: number): string | null {
 
 // ── CSV parser ───────────────────────────────────────────────────────────────
 
-function parseCSV(text: string): ParsedRow[] {
+function parseCSV(text: string, usdToInr: number): ParsedRow[] {
   const lines = text.trim().split("\n");
   if (lines.length < 2) return [];
 
@@ -123,6 +126,7 @@ function parseCSV(text: string): ParsedRow[] {
   const brandIdx      = indexOf("Brand");
   const silhouetteIdx = indexOf("Silhouette");
   const urlIdx        = indexOf("URL");
+  const retailIdx     = indexOf("Retail $");
   // Accept "image_urls" (enriched CSV) or "image" (raw GOAT export)
   const imageUrlsIdx  = [indexOf("image_urls"), indexOf("image")].find(i => i >= 0) ?? -1;
 
@@ -172,6 +176,12 @@ function parseCSV(text: string): ParsedRow[] {
       ? imageUrlRaw.split("|").map((u) => u.trim()).filter(Boolean)
       : [];
 
+    // ── Retail price conversion (shared by both formats) ─────────────────
+    const retailUsd   = retailIdx >= 0 ? parseFloat(raw(retailIdx)) : NaN;
+    const retail_price = !isNaN(retailUsd) && retailUsd > 0
+      ? Math.round(retailUsd * usdToInr)
+      : null;
+
     if (isAllSizes) {
       // ── All-sizes format ─────────────────────────────────────────────────
       // Collect sizes that have a non-zero INR price
@@ -196,6 +206,7 @@ function parseCSV(text: string): ParsedRow[] {
         goat_url,
         image_urls,
         sizes,
+        retail_price,
         // Single-size fields not used in this format
         size_value:     "",
         price:          minPrice,
@@ -221,6 +232,7 @@ function parseCSV(text: string): ParsedRow[] {
         goat_url,
         image_urls,
         sizes:          [],
+        retail_price,
         size_value:     mapped ?? sizeUsRaw,
         price,
         raw_landed_inr: landedInr,
@@ -243,6 +255,7 @@ export default function AdminImport() {
   const [results, setResults]         = useState<RowResult[] | null>(null);
   const [summary, setSummary]         = useState<ImportSummary | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [usdToInr, setUsdToInr]       = useState<number>(84);
 
   // ── File upload ─────────────────────────────────────────────────────────
 
@@ -258,7 +271,7 @@ export default function AdminImport() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
-      const parsed = parseCSV(text);
+      const parsed = parseCSV(text, usdToInr);
       if (parsed.length === 0) {
         toast.error("No valid rows found in CSV");
         return;
@@ -313,10 +326,11 @@ export default function AdminImport() {
             },
             body: JSON.stringify({
               row: {
-                title:    r.title,
-                brand:    r.brand,
-                model:    r.model,
-                goat_url: r.goat_url,
+                title:        r.title,
+                brand:        r.brand,
+                model:        r.model,
+                goat_url:     r.goat_url,
+                retail_price: r.retail_price ?? null,
                 ...(r.image_urls.length > 0 ? { image_urls: r.image_urls } : {}),
                 // Multi-size vs single-size payload
                 ...(isMulti
@@ -401,6 +415,22 @@ export default function AdminImport() {
               <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
             </div>
 
+            {/* USD → INR rate input */}
+            <div className="flex flex-wrap items-center gap-3 p-3 bg-amber-50/60 rounded-xl text-sm">
+              <span className="text-amber-800 font-semibold whitespace-nowrap">USD → INR rate:</span>
+              <span className="text-amber-600">1 USD =</span>
+              <input
+                type="number"
+                min={1}
+                step={0.01}
+                value={usdToInr}
+                onChange={(e) => setUsdToInr(parseFloat(e.target.value) || 84)}
+                className="w-24 px-2 py-1 border border-amber-200 rounded-lg text-center text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+              />
+              <span className="text-amber-600">INR</span>
+              <span className="text-amber-500 text-xs">(used to convert <code className="font-mono bg-amber-100 px-1 rounded">Retail $</code> column to INR)</span>
+            </div>
+
             {/* Column mapping hint */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-blue-50/60 rounded-xl p-3 text-xs text-blue-700 space-y-1">
@@ -482,6 +512,7 @@ export default function AdminImport() {
                       <th className="px-3 py-2 font-semibold">Brand</th>
                       <th className="px-3 py-2 font-semibold">Size / Sizes</th>
                       <th className="px-3 py-2 font-semibold">Price (INR)</th>
+                      <th className="px-3 py-2 font-semibold">Retail (INR)</th>
                       <th className="px-3 py-2 font-semibold">Images</th>
                       <th className="px-3 py-2 font-semibold">Status</th>
                     </tr>
@@ -536,6 +567,11 @@ export default function AdminImport() {
                             ) : (
                               <span className="text-red-500 text-xs">Missing</span>
                             )}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-gray-500">
+                            {row.retail_price
+                              ? `₹${row.retail_price.toLocaleString("en-IN")}`
+                              : <span className="text-gray-300">—</span>}
                           </td>
                           <td className="px-3 py-2 text-xs">
                             {row.image_urls.length > 0 ? (
