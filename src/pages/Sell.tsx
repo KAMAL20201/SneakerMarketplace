@@ -43,7 +43,7 @@ import {
   DELIVERY_TIMELINES,
   LISTING_STATUS,
 } from "@/constants/enums";
-import { SellerFormContext, type SizeEntry } from "@/contexts/SellerFormContext";
+import { SellerFormContext } from "@/contexts/SellerFormContext";
 
 export default function SellPage() {
   const [isLoading, setIsLoading] = useState(false);
