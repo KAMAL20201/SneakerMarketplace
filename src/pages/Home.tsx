@@ -10,6 +10,9 @@ import { ROUTE_NAMES } from "@/constants/enums";
 import { supabaseUrl } from "@/lib/supabase";
 import RecentlyListed from "@/components/RecentlyListed";
 import FeaturedListings from "@/components/FeaturedListings";
+import BrandSpotlight from "@/components/BrandSpotlight";
+import InstagramBanner from "@/components/InstagramBanner";
+import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 // [MARKETPLACE REMOVED] HowItWorks section - escrow system explanation not relevant for ecommerce
 // import HowItWorks from "@/components/HowItWorks";
 import { CardImage } from "@/components/ui/OptimizedImage";
@@ -145,6 +148,9 @@ const Home = () => {
         */}
       </section>
 
+      {/* Brand Spotlight */}
+      <BrandSpotlight />
+
       {/* Categories */}
       <section className="px-4 py-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
@@ -262,6 +268,12 @@ const Home = () => {
 
       {/* Featured Listings Section */}
       <FeaturedListings />
+
+      {/* Instagram Banner */}
+      <InstagramBanner />
+
+      {/* Why Buy From Us */}
+      <WhyBuyFromUs />
 
       {/* [MARKETPLACE REMOVED] How It Works Section - escrow system not used in ecommerce model */}
       {/* <HowItWorks /> */}
