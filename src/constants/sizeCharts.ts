@@ -1,0 +1,203 @@
+// Brand-specific size charts
+// Each row: { uk, us, eu, cm }
+// Brands without their own chart fall back to NIKE_CHART (Jordan, Converse, Vans, Puma, Reebok)
+
+export interface SizeRow {
+  uk: string;
+  us: string;
+  eu: string;
+  cm: string;
+}
+
+export interface BrandSizeChart {
+  men: SizeRow[];
+  women?: SizeRow[];
+  kids?: SizeRow[];
+}
+
+// ─── NIKE ──────────────────────────────────────────────────────────────────
+const NIKE_CHART: BrandSizeChart = {
+  men: [
+    { uk: "6",    us: "7",    eu: "40",   cm: "25"   },
+    { uk: "7",    us: "8",    eu: "41",   cm: "26"   },
+    { uk: "7.5",  us: "8.5",  eu: "42",   cm: "26.5" },
+    { uk: "8",    us: "9",    eu: "42.5", cm: "27"   },
+    { uk: "8.5",  us: "9.5",  eu: "43",   cm: "27.5" },
+    { uk: "9",    us: "10",   eu: "44",   cm: "28"   },
+    { uk: "9.5",  us: "10.5", eu: "44.5", cm: "28.5" },
+    { uk: "10",   us: "11",   eu: "45",   cm: "29"   },
+    { uk: "10.5", us: "11.5", eu: "45.5", cm: "29.5" },
+    { uk: "11",   us: "12",   eu: "46",   cm: "30"   },
+    { uk: "12",   us: "13",   eu: "47",   cm: "31"   },
+  ],
+  women: [
+    { uk: "2.5",  us: "5",    eu: "35.5", cm: "22"   },
+    { uk: "3",    us: "5.5",  eu: "36",   cm: "22.5" },
+    { uk: "3.5",  us: "6",    eu: "36.5", cm: "23"   },
+    { uk: "4",    us: "6.5",  eu: "37.5", cm: "23.5" },
+    { uk: "4.5",  us: "7",    eu: "38",   cm: "24"   },
+    { uk: "5",    us: "7.5",  eu: "38.5", cm: "24.5" },  // ≈ corrected interpolation
+    { uk: "5.5",  us: "8",    eu: "39",   cm: "25"   },
+    { uk: "6",    us: "8.5",  eu: "40",   cm: "25.5" },
+    { uk: "6.5",  us: "9",    eu: "40.5", cm: "26"   },
+    { uk: "7",    us: "9.5",  eu: "41",   cm: "26.5" },
+    { uk: "7.5",  us: "10",   eu: "42",   cm: "27"   },
+  ],
+  kids: [
+    { uk: "7.5",  us: "8C",   eu: "25",   cm: "15"   },
+    { uk: "8.5",  us: "9C",   eu: "26",   cm: "16"   },
+    { uk: "9.5",  us: "10C",  eu: "27",   cm: "17"   },
+    { uk: "10.5", us: "11C",  eu: "28",   cm: "18"   },
+    { uk: "11.5", us: "12C",  eu: "29",   cm: "19"   },
+    { uk: "12.5", us: "13C",  eu: "30",   cm: "20"   },
+    { uk: "13.5", us: "1Y",   eu: "31",   cm: "21"   },
+    { uk: "1.5",  us: "2Y",   eu: "33.5", cm: "22"   },
+    { uk: "2.5",  us: "3Y",   eu: "35",   cm: "23"   },
+  ],
+};
+
+// ─── ADIDAS ────────────────────────────────────────────────────────────────
+// Source: Adidas official size guide (UK / EU / US Men / US Women)
+const ADIDAS_CHART: BrandSizeChart = {
+  men: [
+    { uk: "3.5",  us: "4",    eu: "36",   cm: "22"   },
+    { uk: "4",    us: "4.5",  eu: "37",   cm: "22.5" },
+    { uk: "4.5",  us: "5",    eu: "37.5", cm: "23"   },
+    { uk: "5",    us: "5.5",  eu: "38",   cm: "23.5" },
+    { uk: "5.5",  us: "6",    eu: "38.5", cm: "24"   },
+    { uk: "6",    us: "6.5",  eu: "39.5", cm: "24.5" },
+    { uk: "6.5",  us: "7",    eu: "40",   cm: "25"   },
+    { uk: "7",    us: "7.5",  eu: "40.5", cm: "25.5" },
+    { uk: "7.5",  us: "8",    eu: "41.5", cm: "26"   },
+    { uk: "8",    us: "8.5",  eu: "42",   cm: "26.5" },
+    { uk: "8.5",  us: "9",    eu: "42.5", cm: "27"   },
+    { uk: "9",    us: "9.5",  eu: "43",   cm: "27.5" },
+    { uk: "9.5",  us: "10",   eu: "44",   cm: "28"   },
+    { uk: "10",   us: "10.5", eu: "44.5", cm: "28.5" },
+    { uk: "10.5", us: "11",   eu: "45",   cm: "29"   },
+    { uk: "11",   us: "11.5", eu: "45.5", cm: "29.5" },
+    { uk: "11.5", us: "12",   eu: "46.5", cm: "30"   },
+    { uk: "12",   us: "12.5", eu: "47",   cm: "30.5" },
+    { uk: "12.5", us: "13",   eu: "47.5", cm: "31"   },
+    { uk: "13.5", us: "14",   eu: "49",   cm: "32"   },
+    { uk: "14.5", us: "15",   eu: "50",   cm: "33"   },
+    { uk: "15.5", us: "16",   eu: "51",   cm: "34"   },
+    { uk: "16.5", us: "17",   eu: "52",   cm: "35"   },
+    { uk: "17.5", us: "18",   eu: "53",   cm: "36"   },
+  ],
+  women: [
+    { uk: "2.5",  us: "4",    eu: "35",   cm: "21.5" },
+    { uk: "3",    us: "4.5",  eu: "35.5", cm: "22"   },
+    { uk: "3.5",  us: "5",    eu: "36",   cm: "22.5" },
+    { uk: "4",    us: "5.5",  eu: "36.5", cm: "23"   },
+    { uk: "4.5",  us: "6",    eu: "37.5", cm: "23.5" },
+    { uk: "5",    us: "6.5",  eu: "38",   cm: "24"   },
+    { uk: "5.5",  us: "7",    eu: "38.5", cm: "24.5" },
+    { uk: "6",    us: "7.5",  eu: "39.5", cm: "25"   },
+    { uk: "6.5",  us: "8",    eu: "40",   cm: "25.5" },
+    { uk: "7",    us: "8.5",  eu: "40.5", cm: "26"   },
+    { uk: "7.5",  us: "9",    eu: "41.5", cm: "26.5" },
+    { uk: "8",    us: "9.5",  eu: "42",   cm: "27"   },
+    { uk: "8.5",  us: "10",   eu: "42.5", cm: "27.5" },
+  ],
+};
+
+// ─── NEW BALANCE ───────────────────────────────────────────────────────────
+// Source: New Balance Men's Sizing & Conversion Guide
+const NEW_BALANCE_CHART: BrandSizeChart = {
+  men: [
+    { uk: "3.5",  us: "4",    eu: "36",   cm: "22"   },
+    { uk: "4",    us: "4.5",  eu: "37",   cm: "22.5" },
+    { uk: "4.5",  us: "5",    eu: "37.5", cm: "23"   },
+    { uk: "5",    us: "5.5",  eu: "38",   cm: "23.5" },
+    { uk: "5.5",  us: "6",    eu: "38.5", cm: "24"   },
+    { uk: "6",    us: "6.5",  eu: "39.5", cm: "24.5" },
+    { uk: "6.5",  us: "7",    eu: "40",   cm: "25"   },
+    { uk: "7",    us: "7.5",  eu: "40.5", cm: "25.5" },
+    { uk: "7.5",  us: "8",    eu: "41.5", cm: "26"   },
+    { uk: "8",    us: "8.5",  eu: "42",   cm: "26.5" },
+    { uk: "8.5",  us: "9",    eu: "42.5", cm: "27"   },
+    { uk: "9",    us: "9.5",  eu: "43",   cm: "27.5" },
+    { uk: "9.5",  us: "10",   eu: "44",   cm: "28"   },
+    { uk: "10",   us: "10.5", eu: "44.5", cm: "28.5" },
+    { uk: "10.5", us: "11",   eu: "45",   cm: "29"   },
+    { uk: "11",   us: "11.5", eu: "45.5", cm: "29.5" },
+    { uk: "11.5", us: "12",   eu: "46.5", cm: "30"   },
+    { uk: "12",   us: "12.5", eu: "47",   cm: "30.5" },
+    { uk: "12.5", us: "13",   eu: "47.5", cm: "31"   },
+    { uk: "13.5", us: "14",   eu: "49",   cm: "32"   },
+    { uk: "14.5", us: "15",   eu: "50",   cm: "33"   },
+    { uk: "15.5", us: "16",   eu: "51",   cm: "34"   },
+    { uk: "16.5", us: "17",   eu: "52",   cm: "35"   },
+    { uk: "17.5", us: "18",   eu: "53",   cm: "36"   },
+  ],
+  women: [
+    { uk: "2.5",  us: "4",    eu: "35",   cm: "21.5" },
+    { uk: "3",    us: "4.5",  eu: "35.5", cm: "22"   },
+    { uk: "3.5",  us: "5",    eu: "36",   cm: "22.5" },
+    { uk: "4",    us: "5.5",  eu: "36.5", cm: "23"   },
+    { uk: "4.5",  us: "6",    eu: "37.5", cm: "23.5" },
+    { uk: "5",    us: "6.5",  eu: "38",   cm: "24"   },
+    { uk: "5.5",  us: "7",    eu: "38.5", cm: "24.5" },
+    { uk: "6",    us: "7.5",  eu: "39.5", cm: "25"   },
+    { uk: "6.5",  us: "8",    eu: "40",   cm: "25.5" },
+    { uk: "7",    us: "8.5",  eu: "40.5", cm: "26"   },
+    { uk: "7.5",  us: "9",    eu: "41.5", cm: "26.5" },
+    { uk: "8",    us: "9.5",  eu: "42",   cm: "27"   },
+    { uk: "8.5",  us: "10",   eu: "42.5", cm: "27.5" },
+  ],
+};
+
+// ─── ON RUNNING ────────────────────────────────────────────────────────────
+// Source: On Running size chart
+const ON_CHART: BrandSizeChart = {
+  men: [
+    { uk: "6.5",  us: "7",    eu: "40",   cm: "25"   },
+    { uk: "7",    us: "7.5",  eu: "40.5", cm: "25.5" },
+    { uk: "7.5",  us: "8",    eu: "41",   cm: "26"   },
+    { uk: "8",    us: "8.5",  eu: "42",   cm: "26.5" },
+    { uk: "8.5",  us: "9",    eu: "42.5", cm: "27"   },
+    { uk: "9",    us: "9.5",  eu: "43",   cm: "27.5" },
+    { uk: "9.5",  us: "10",   eu: "44",   cm: "28"   },
+    { uk: "10",   us: "10.5", eu: "44.5", cm: "28.5" },
+    { uk: "10.5", us: "11",   eu: "45",   cm: "29"   },
+    { uk: "11",   us: "11.5", eu: "46",   cm: "29.5" },
+    { uk: "11.5", us: "12",   eu: "47",   cm: "30"   },
+    { uk: "12.5", us: "13",   eu: "48",   cm: "31"   },
+    { uk: "13.5", us: "14",   eu: "49",   cm: "31.5" },
+  ],
+  women: [
+    { uk: "3",    us: "5",    eu: "36",   cm: "22"   },
+    { uk: "3.5",  us: "5.5",  eu: "36.5", cm: "22.5" },
+    { uk: "4",    us: "6",    eu: "37",   cm: "23"   },
+    { uk: "4.5",  us: "6.5",  eu: "37.5", cm: "23.5" },
+    { uk: "5",    us: "7",    eu: "38",   cm: "24"   },
+    { uk: "5.5",  us: "7.5",  eu: "38.5", cm: "24.5" },
+    { uk: "6",    us: "8",    eu: "39",   cm: "25"   },
+    { uk: "6.5",  us: "8.5",  eu: "40",   cm: "25.5" },
+    { uk: "7",    us: "9",    eu: "40.5", cm: "26"   },
+    { uk: "7.5",  us: "9.5",  eu: "41",   cm: "26.5" },
+    { uk: "8",    us: "10",   eu: "42",   cm: "27"   },
+    { uk: "8.5",  us: "10.5", eu: "42.5", cm: "27.5" },
+    { uk: "9",    us: "11",   eu: "43",   cm: "28"   },
+  ],
+};
+
+// ─── BRAND → CHART LOOKUP ──────────────────────────────────────────────────
+// Any brand not listed here falls back to NIKE_CHART
+const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
+  nike:        NIKE_CHART,
+  jordan:      NIKE_CHART, // Jordan runs on Nike sizing
+  converse:    NIKE_CHART,
+  vans:        NIKE_CHART,
+  puma:        NIKE_CHART,
+  reebok:      NIKE_CHART,
+  adidas:      ADIDAS_CHART,
+  "new balance": NEW_BALANCE_CHART,
+  on:          ON_CHART,
+};
+
+export function getSizeChart(brand: string): BrandSizeChart {
+  const key = brand?.toLowerCase().trim();
+  return BRAND_CHART_MAP[key] ?? NIKE_CHART;
+}

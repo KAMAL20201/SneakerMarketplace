@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
-import {  ShoppingCart,  ZoomIn, X } from "lucide-react";
+import { ShoppingCart, ZoomIn, X, Heart, Ruler } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
 import { useParams } from "react-router";
 import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
-// [GUEST CHECKOUT] Auth import commented out - guests can buy without login
-// import { useAuth } from "@/contexts/AuthContext";
-// import { useNavigate } from "react-router";
-// import { ROUTE_NAMES } from "@/constants/enums";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ProductCard from "@/components/ui/ProductCard";
+import { getSizeChart } from "@/constants/sizeCharts";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Carousel,
   CarouselContent,
@@ -33,14 +31,15 @@ export default function ProductDetailPage() {
   const [availableSizes, setAvailableSizes] = useState<{ size_value: string; price: number }[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { addToCart, items } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const [listing, setListing] = useState<any>(null);
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [buyNowOpen, setBuyNowOpen] = useState(false);
-  // [GUEST CHECKOUT] Auth check removed - guests can buy directly
-  // const { user, setOperationAfterLogin } = useAuth();
-  // const navigate = useNavigate();
+  const [similarProducts, setSimilarProducts] = useState<any[]>([]);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [emblaApi, setEmblaApi] = useState<EmblaCarouselType | null>(null);
   const [zoomEmblaApi, setZoomEmblaApi] = useState<EmblaCarouselType | null>(
@@ -216,6 +215,19 @@ export default function ProductDetailPage() {
     }
   }, [productId]);
 
+  useEffect(() => {
+    if (!listing) return;
+    supabase
+      .from("listings_with_images")
+      .select("*")
+      .eq("status", "active")
+      .eq("brand", listing.brand)
+      .neq("id", productId)
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .then(({ data }) => setSimilarProducts(data ?? []));
+  }, [listing]);
+
   if (loading) return <ProductDetailSkeleton />;
   if (error) return <div>Error: {error}</div>;
 
@@ -302,13 +314,40 @@ export default function ProductDetailPage() {
               ₹ {(selectedPrice ?? listing?.price)?.toLocaleString("en-IN")}
             </h2>
 
-            <div className="flex items-center">
-              <span className="font-bold">Condition:</span>
-              <ConditionBadge
-                condition={listing?.condition}
-                // variant="glass"
-                className="uppercase"
-              />
+            <div className="flex items-center gap-3">
+              <div className="flex items-center">
+                <span className="font-bold">Condition:</span>
+                <ConditionBadge
+                  condition={listing?.condition}
+                  className="uppercase"
+                />
+              </div>
+              {listing && (
+                <button
+                  type="button"
+                  aria-label={isInWishlist(listing.id) ? "Remove from wishlist" : "Add to wishlist"}
+                  onClick={() =>
+                    toggleWishlist({
+                      id: listing.id,
+                      title: listing.title,
+                      brand: listing.brand,
+                      price: selectedPrice ?? listing.price,
+                      image_url: images?.[0]?.image_url ?? "",
+                      condition: listing.condition,
+                      size_value: selectedSize ?? listing.size_value ?? "",
+                    })
+                  }
+                  className="rounded-full p-2 bg-white/80 hover:bg-white shadow transition-colors"
+                >
+                  <Heart
+                    className={`h-5 w-5 transition-colors ${
+                      isInWishlist(listing.id)
+                        ? "fill-red-500 text-red-500"
+                        : "text-gray-400"
+                    }`}
+                  />
+                </button>
+              )}
             </div>
           </div>
 
@@ -319,6 +358,23 @@ export default function ProductDetailPage() {
             <h2 className="text-md text-gray-800 capitalize">
               {listing?.title}
             </h2>
+            {listing?.description && (
+              <div className="mt-2">
+                <p
+                  className={`text-sm text-gray-500 leading-relaxed whitespace-pre-line ${
+                    descExpanded ? "" : "line-clamp-2"
+                  }`}
+                >
+                  {listing.description}
+                </p>
+                <button
+                  onClick={() => setDescExpanded(!descExpanded)}
+                  className="text-purple-600 text-xs font-medium mt-1 hover:underline"
+                >
+                  {descExpanded ? "View less" : "View more"}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Sellers List */}
@@ -393,9 +449,18 @@ export default function ProductDetailPage() {
             <div className="px-4 pb-6 lg:px-0">
               <Card className="glass-card border-0 rounded-3xl">
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">
-                    Available Sizes
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">
+                      Available Sizes
+                    </h3>
+                    <button
+                      onClick={() => setSizeGuideOpen(true)}
+                      className="text-purple-600 text-xs font-medium hover:underline flex items-center gap-1"
+                    >
+                      <Ruler className="h-3 w-3" />
+                      Size Guide
+                    </button>
+                  </div>
 
                   {availableSizes.length > 0 ? (
                     // ── Multi-size listing: grid of UK sizes with per-size price ──
@@ -502,8 +567,108 @@ export default function ProductDetailPage() {
               }}
             />
           )}
+
+          {/* Size Guide Modal */}
+          <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
+            <DialogContent className="max-w-sm rounded-3xl flex flex-col max-h-[80dvh]">
+              {(() => {
+                const chart = getSizeChart(listing?.brand ?? "");
+                const hasWomen = !!chart.women?.length;
+                const hasKids  = !!chart.kids?.length;
+
+                const SizeTable = ({ rows }: { rows: typeof chart.men }) => (
+                  <div className="overflow-y-auto overflow-x-hidden flex-1 min-h-0">
+                    <table className="w-full text-sm text-center">
+                      <thead className="sticky top-0 bg-white z-10">
+                        <tr className="text-gray-500 font-semibold border-b border-gray-200">
+                          <th className="py-2 px-3 text-left">UK</th>
+                          <th className="py-2 px-3">US</th>
+                          <th className="py-2 px-3">EU</th>
+                          <th className="py-2 px-3">CM</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => {
+                          const isSelected =
+                            selectedSize?.toLowerCase().includes(`uk ${row.uk}`) ||
+                            selectedSize?.toLowerCase().includes(row.uk);
+                          return (
+                            <tr
+                              key={`${row.uk}-${row.us}`}
+                              className={`border-b border-gray-100 transition-colors ${
+                                isSelected
+                                  ? "bg-purple-50 font-semibold text-purple-700"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              <td className="py-2 px-3 text-left">{row.uk}</td>
+                              <td className="py-2 px-3">{row.us}</td>
+                              <td className="py-2 px-3">{row.eu}</td>
+                              <td className="py-2 px-3">{row.cm}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+
+                return (
+                  <>
+                    <h3 className="text-lg font-bold text-gray-800 flex-shrink-0 capitalize">
+                      {listing?.brand} Size Guide
+                    </h3>
+                    {hasWomen || hasKids ? (
+                      <Tabs defaultValue="men" className="flex flex-col min-h-0 flex-1 mt-3 gap-0">
+                        <TabsList className="bg-white/60 rounded-xl flex-shrink-0 w-full mb-3">
+                          <TabsTrigger value="men" className="flex-1 rounded-lg text-xs font-semibold">Men</TabsTrigger>
+                          {hasWomen && (
+                            <TabsTrigger value="women" className="flex-1 rounded-lg text-xs font-semibold">Women</TabsTrigger>
+                          )}
+                          {hasKids && (
+                            <TabsTrigger value="kids" className="flex-1 rounded-lg text-xs font-semibold">Kids</TabsTrigger>
+                          )}
+                        </TabsList>
+                        <TabsContent value="men" className="flex flex-col flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
+                          <SizeTable rows={chart.men} />
+                        </TabsContent>
+                        {hasWomen && (
+                          <TabsContent value="women" className="flex flex-col flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
+                            <SizeTable rows={chart.women!} />
+                          </TabsContent>
+                        )}
+                        {hasKids && (
+                          <TabsContent value="kids" className="flex flex-col flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
+                            <SizeTable rows={chart.kids!} />
+                          </TabsContent>
+                        )}
+                      </Tabs>
+                    ) : (
+                      <div className="flex flex-col flex-1 min-h-0 mt-3">
+                        <SizeTable rows={chart.men} />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
+
+      {/* You May Also Like */}
+      {similarProducts.length > 0 && (
+        <section className="px-4 py-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">You May Also Like</h2>
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {similarProducts.map((item) => (
+              <div key={item.id} className="flex-shrink-0 w-48 sm:w-64">
+                <ProductCard product={item} variant="vertical" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Bottom spacing */}
       <div className="h-8"></div>
