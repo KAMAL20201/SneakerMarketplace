@@ -16,15 +16,8 @@ export const useAdmin = () => {
       }
 
       try {
-        // Method 1: Check user metadata (if using metadata approach)
-        const userMetadata = user.user_metadata;
-        if (userMetadata?.isAdmin === true) {
-          setIsAdmin(true);
-          setLoading(false);
-          return;
-        }
-
-        // Method 2: Check admin_users table (if using table approach)
+        // Check admin_users table as the single source of truth.
+        // Never trust user_metadata — users can potentially modify it themselves.
         const { data, error } = await supabase
           .from("admin_users")
           .select("user_id")
