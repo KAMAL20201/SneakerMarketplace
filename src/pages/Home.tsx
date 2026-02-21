@@ -185,6 +185,9 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Wishlist Section - only rendered when user has saved items */}
+      <WishlistSection />
+
       {/* Recently Listed Section */}
       <RecentlyListed />
 
@@ -269,9 +272,6 @@ const Home = () => {
 
       {/* Featured Listings Section */}
       <FeaturedListings />
-
-      {/* Wishlist Section - only rendered when user has saved items */}
-      <WishlistSection />
 
       {/* Instagram Banner */}
       <InstagramBanner />
