@@ -195,6 +195,9 @@ export class OrderService {
           continue;
         }
 
+        // Use the server-side price from the DB, never trust the client-supplied price.
+        const verifiedPrice: number = productDetails.price;
+
         // Create order
         const order = await this.createOrder({
           buyer_id: buyerId,
@@ -202,7 +205,7 @@ export class OrderService {
           product_id: item.productId,
           payment_id: paymentId,
           razorpay_order_id: razorpayOrderId,
-          amount: item.price,
+          amount: verifiedPrice,
           shipping_address: shippingAddress || undefined,
           // [GUEST CHECKOUT] Store guest buyer contact info on each order
           buyer_email: buyerDetails.email,
@@ -219,7 +222,7 @@ export class OrderService {
           product_image:
             productDetails.product_images?.find((img) => img.is_poster_image)
               ?.image_url || productDetails.product_images?.[0]?.image_url,
-          amount: item.price,
+          amount: verifiedPrice,
           currency: "INR",
           buyer_name: buyerDetails.full_name,
           buyer_email: buyerDetails.email,
@@ -313,12 +316,15 @@ export class OrderService {
         //    would lock products if the buyer never pays.
         // Product will be marked as sold when admin clicks "Confirm Payment".
 
+        // Use the server-side price from the DB, never trust the client-supplied price.
+        const verifiedPrice: number = productDetails.price;
+
         // Create order with pending_payment status
         const order = await this.createOrder({
           buyer_id: buyerId,
           seller_id: item.sellerId,
           product_id: item.productId,
-          amount: item.price,
+          amount: verifiedPrice,
           shipping_address: shippingAddress || undefined,
           status: "pending_payment",
           buyer_email: buyerDetails.email,
@@ -336,7 +342,7 @@ export class OrderService {
             productDetails.product_images?.find(
               (img: { is_poster_image: boolean }) => img.is_poster_image
             )?.image_url || productDetails.product_images?.[0]?.image_url,
-          amount: item.price,
+          amount: verifiedPrice,
           currency: "INR",
           buyer_name: buyerDetails.full_name,
           buyer_email: buyerDetails.email,

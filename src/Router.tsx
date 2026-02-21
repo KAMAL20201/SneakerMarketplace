@@ -25,7 +25,8 @@ const EditListing = lazy(() => import("./pages/EditListing"));
 const Browse = lazy(() => import("./pages/Browse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
 const AdminImport = lazy(() => import("./pages/AdminImport"));
-const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
+// [PAYMENT METHODS HIDDEN] Page disabled — seller payout methods not in use
+// const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -54,7 +55,7 @@ export const preloadRoutes = {
   editListing: () => import("./pages/EditListing"),
   adminReview: () => import("./pages/AdminReview"),
   adminImport: () => import("./pages/AdminImport"),
-  paymentMethods: () => import("./pages/PaymentMethods"),
+  // [PAYMENT METHODS HIDDEN] paymentMethods: () => import("./pages/PaymentMethods"),
   notFound: () => import("./pages/NotFound"),
   privacyPolicy: () => import("./pages/PrivacyPolicy"),
   termsOfService: () => import("./pages/TermsOfService"),
@@ -203,7 +204,7 @@ const Router = () => {
           </Suspense>
         }
       />
-      {/* [ECOMMERCE] Payment Methods - admin only (seller payment methods) */}
+      {/* [PAYMENT METHODS HIDDEN] Seller payment methods page disabled
       <Route
         path={ROUTE_NAMES.PAYMENT_METHODS}
         element={
@@ -214,6 +215,7 @@ const Router = () => {
           </Suspense>
         }
       />
+      */}
       <Route
         path={ROUTE_NAMES.PRIVACY}
         element={
