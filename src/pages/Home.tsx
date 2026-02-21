@@ -10,6 +10,7 @@ import { ROUTE_NAMES } from "@/constants/enums";
 import { supabaseUrl } from "@/lib/supabase";
 import RecentlyListed from "@/components/RecentlyListed";
 import FeaturedListings from "@/components/FeaturedListings";
+import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
 import InstagramBanner from "@/components/InstagramBanner";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
@@ -268,6 +269,9 @@ const Home = () => {
 
       {/* Featured Listings Section */}
       <FeaturedListings />
+
+      {/* Wishlist Section - only rendered when user has saved items */}
+      <WishlistSection />
 
       {/* Instagram Banner */}
       <InstagramBanner />
