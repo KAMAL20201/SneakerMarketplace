@@ -66,11 +66,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const addToCart = (item: any) => {
-    // Check if item already exists in cart (by productId and sellerId)
+    // Check if item already exists in cart (by productId, sellerId, and size)
     const existingItem = items.find(
       (cartItem) =>
         cartItem.productId === item.productId &&
-        cartItem.sellerId === item.sellerId
+        cartItem.sellerId === item.sellerId &&
+        cartItem.size === item.size
     );
 
     if (existingItem) {
