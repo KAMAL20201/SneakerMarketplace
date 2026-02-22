@@ -13,7 +13,7 @@ import ConditionBadge from "@/components/ui/ConditionBadge";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ProductCard from "@/components/ui/ProductCard";
-import { getSizeChart } from "@/constants/sizeCharts";
+import { getSizeChart, getApparelSizeChart } from "@/constants/sizeCharts";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Carousel,
@@ -616,11 +616,65 @@ export default function ProductDetailPage() {
           <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
             <DialogContent className="max-w-sm rounded-3xl flex flex-col max-h-[80dvh]">
               {(() => {
+                const isApparel = listing?.category === "clothing";
+
+                if (isApparel) {
+                  // ── Apparel size guide: measurement table ──────────────────
+                  const apparelChart = getApparelSizeChart(listing?.brand ?? "");
+
+                  return (
+                    <>
+                      <h3 className="text-lg font-bold text-gray-800 flex-shrink-0 capitalize">
+                        {listing?.brand} Size Guide
+                      </h3>
+                      <p className="text-xs text-gray-400 flex-shrink-0 -mt-1">All measurements in cm</p>
+                      <div className="overflow-y-auto overflow-x-auto flex-1 min-h-0 mt-3">
+                        <table className="w-full text-sm text-center">
+                          <thead className="sticky top-0 bg-white z-10">
+                            <tr className="text-gray-500 font-semibold border-b border-gray-200">
+                              <th className="py-2 px-2 text-left">Size</th>
+                              <th className="py-2 px-2">Length</th>
+                              <th className="py-2 px-2">Shoulder</th>
+                              <th className="py-2 px-2">Chest</th>
+                              <th className="py-2 px-2">Sleeve</th>
+                              <th className="py-2 px-2">Hem</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {apparelChart.rows.map((row) => {
+                              const isSelected =
+                                selectedSize?.toUpperCase() === row.size.toUpperCase();
+                              return (
+                                <tr
+                                  key={row.size}
+                                  className={`border-b border-gray-100 transition-colors ${
+                                    isSelected
+                                      ? "bg-purple-50 font-semibold text-purple-700"
+                                      : "text-gray-700"
+                                  }`}
+                                >
+                                  <td className="py-2 px-2 text-left font-semibold">{row.size}</td>
+                                  <td className="py-2 px-2">{row.length}</td>
+                                  <td className="py-2 px-2">{row.shoulder}</td>
+                                  <td className="py-2 px-2">{row.chest}</td>
+                                  <td className="py-2 px-2">{row.sleeve}</td>
+                                  <td className="py-2 px-2">{row.hem}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                }
+
+                // ── Sneaker size guide: UK / US / EU / CM ─────────────────
                 const chart = getSizeChart(listing?.brand ?? "");
                 const hasWomen = !!chart.women?.length;
                 const hasKids  = !!chart.kids?.length;
 
-                const SizeTable = ({ rows }: { rows: typeof chart.men }) => (
+                const SneakerTable = ({ rows }: { rows: typeof chart.men }) => (
                   <div className="overflow-y-auto overflow-x-hidden flex-1 min-h-0">
                     <table className="w-full text-sm text-center">
                       <thead className="sticky top-0 bg-white z-10">
@@ -674,22 +728,22 @@ export default function ProductDetailPage() {
                           )}
                         </TabsList>
                         <TabsContent value="men" className="flex flex-col flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
-                          <SizeTable rows={chart.men} />
+                          <SneakerTable rows={chart.men} />
                         </TabsContent>
                         {hasWomen && (
                           <TabsContent value="women" className="flex flex-col flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
-                            <SizeTable rows={chart.women!} />
+                            <SneakerTable rows={chart.women!} />
                           </TabsContent>
                         )}
                         {hasKids && (
                           <TabsContent value="kids" className="flex flex-col flex-1 min-h-0 mt-0 data-[state=inactive]:hidden">
-                            <SizeTable rows={chart.kids!} />
+                            <SneakerTable rows={chart.kids!} />
                           </TabsContent>
                         )}
                       </Tabs>
                     ) : (
                       <div className="flex flex-col flex-1 min-h-0 mt-3">
-                        <SizeTable rows={chart.men} />
+                        <SneakerTable rows={chart.men} />
                       </div>
                     )}
                   </>
