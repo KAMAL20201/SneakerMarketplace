@@ -17,7 +17,7 @@ import {
 export const categories = [
   {
     id: CATEGORY_IDS.SNEAKERS,
-    name: "Sneakers & Shoes",
+    name: "Sneakers",
     icon: Package,
     image: "/storage/v1/object/public/static-assets/sneakers.webp",
     brands: Object.values(SNEAKER_BRANDS),
