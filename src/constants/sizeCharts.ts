@@ -15,6 +15,86 @@ export interface BrandSizeChart {
   kids?: SizeRow[];
 }
 
+// ─── APPAREL SIZE CHARTS ────────────────────────────────────────────────────
+// Each row: { size, length, shoulder, chest, sleeve, hem } (all measurements in cm)
+
+export interface ApparelSizeRow {
+  size: string;
+  length: string;
+  shoulder: string;
+  chest: string;
+  sleeve: string;
+  hem: string;
+}
+
+export interface ApparelBrandSizeChart {
+  rows: ApparelSizeRow[];
+}
+
+// Generic apparel size chart (standard streetwear / oversized fit)
+const GENERIC_APPAREL_CHART: ApparelBrandSizeChart = {
+  rows: [
+    { size: "XS", length: "68", shoulder: "46", chest: "106", sleeve: "20",   hem: "106" },
+    { size: "S",  length: "70", shoulder: "48", chest: "110", sleeve: "21",   hem: "110" },
+    { size: "M",  length: "72", shoulder: "50", chest: "114", sleeve: "22",   hem: "114" },
+    { size: "L",  length: "74", shoulder: "52", chest: "118", sleeve: "23",   hem: "118" },
+    { size: "XL", length: "76", shoulder: "54", chest: "122", sleeve: "24",   hem: "122" },
+    { size: "XXL",length: "78", shoulder: "56", chest: "126", sleeve: "25",   hem: "126" },
+    { size: "XXXL",length:"80", shoulder: "58", chest: "130", sleeve: "26",   hem: "130" },
+  ],
+};
+
+// CLOT apparel size chart (from official CLOT size reference)
+const CLOT_APPAREL_CHART: ApparelBrandSizeChart = {
+  rows: [
+    { size: "S",   length: "72", shoulder: "50", chest: "114", sleeve: "22.5", hem: "114" },
+    { size: "M",   length: "74", shoulder: "52", chest: "118", sleeve: "23.5", hem: "118" },
+    { size: "L",   length: "76", shoulder: "54", chest: "122", sleeve: "24.5", hem: "122" },
+    { size: "XL",  length: "78", shoulder: "56", chest: "126", sleeve: "25.5", hem: "126" },
+    { size: "XXL", length: "80", shoulder: "58", chest: "130", sleeve: "26.5", hem: "130" },
+  ],
+};
+
+// Supreme apparel size chart
+const SUPREME_APPAREL_CHART: ApparelBrandSizeChart = {
+  rows: [
+    { size: "S",   length: "70", shoulder: "47", chest: "108", sleeve: "21",   hem: "108" },
+    { size: "M",   length: "72", shoulder: "49", chest: "112", sleeve: "22",   hem: "112" },
+    { size: "L",   length: "74", shoulder: "51", chest: "116", sleeve: "23",   hem: "116" },
+    { size: "XL",  length: "76", shoulder: "53", chest: "120", sleeve: "24",   hem: "120" },
+    { size: "XXL", length: "78", shoulder: "55", chest: "124", sleeve: "25",   hem: "124" },
+  ],
+};
+
+// Essentials / Fear of God apparel size chart (relaxed fit)
+const FOG_APPAREL_CHART: ApparelBrandSizeChart = {
+  rows: [
+    { size: "XS",  length: "69", shoulder: "46", chest: "108", sleeve: "20",   hem: "108" },
+    { size: "S",   length: "71", shoulder: "48", chest: "112", sleeve: "21",   hem: "112" },
+    { size: "M",   length: "73", shoulder: "50", chest: "116", sleeve: "22",   hem: "116" },
+    { size: "L",   length: "75", shoulder: "52", chest: "120", sleeve: "23",   hem: "120" },
+    { size: "XL",  length: "77", shoulder: "54", chest: "124", sleeve: "24",   hem: "124" },
+    { size: "XXL", length: "79", shoulder: "56", chest: "128", sleeve: "25",   hem: "128" },
+  ],
+};
+
+const APPAREL_BRAND_CHART_MAP: Record<string, ApparelBrandSizeChart> = {
+  clot:          CLOT_APPAREL_CHART,
+  supreme:       SUPREME_APPAREL_CHART,
+  "fear of god": FOG_APPAREL_CHART,
+  essentials:    FOG_APPAREL_CHART,
+  kith:          GENERIC_APPAREL_CHART,
+  "off-white":   GENERIC_APPAREL_CHART,
+  "stone island":GENERIC_APPAREL_CHART,
+  nike:          GENERIC_APPAREL_CHART,
+  adidas:        GENERIC_APPAREL_CHART,
+};
+
+export function getApparelSizeChart(brand: string): ApparelBrandSizeChart {
+  const key = brand?.toLowerCase().trim();
+  return APPAREL_BRAND_CHART_MAP[key] ?? GENERIC_APPAREL_CHART;
+}
+
 // ─── NIKE ──────────────────────────────────────────────────────────────────
 const NIKE_CHART: BrandSizeChart = {
   men: [
