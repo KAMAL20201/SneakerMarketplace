@@ -634,7 +634,7 @@ const Browse = () => {
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {listings.map((listing) => (
                 <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)} key={listing.id}>
                   <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
