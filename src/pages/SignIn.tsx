@@ -6,17 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Link } from "react-router";
+// import { Link } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
-import { ROUTE_NAMES } from "@/constants/enums";
-import { useGoogleAuthPopup } from "@/hooks/useGooglePopup";
+// import { ROUTE_NAMES } from "@/constants/enums";
+// import { useGoogleAuthPopup } from "@/hooks/useGooglePopup";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  // const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,11 +24,11 @@ export default function LoginPage() {
 
   const { signIn } = useAuth();
   // const navigate = useNavigate();
-  const { signInWithGooglePopup } = useGoogleAuthPopup(() => {
-    // Handle successful Google authentication
-    toast.success("Welcome back!");
-    // navigate(ROUTE_NAMES.HOME);
-  });
+  // const { signInWithGooglePopup } = useGoogleAuthPopup(() => {
+  //   // Handle successful Google authentication
+  //   toast.success("Welcome back!");
+  //   // navigate(ROUTE_NAMES.HOME);
+  // });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
