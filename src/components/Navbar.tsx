@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { preloadRoutes } from "@/Router";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { ShieldCheck } from "lucide-react";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -185,15 +186,16 @@ export function Navbar() {
           ) : (
             <Button
               asChild
-              size="sm"
+              size="icon"
               variant="ghost"
-              className="glass-button border-0 rounded-xl text-gray-600 text-sm"
+              className="glass-button border-0 rounded-xl h-10 w-10 text-gray-500 hover:text-purple-600"
+              title="Admin Login"
             >
               <Link
                 to={ROUTE_NAMES.LOGIN}
                 onMouseEnter={() => handleRoutePreload("login")}
               >
-                Login as Admin
+                <ShieldCheck className="h-5 w-5" />
               </Link>
             </Button>
           )}
