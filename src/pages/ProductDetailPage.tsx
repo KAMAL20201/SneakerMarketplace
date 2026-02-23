@@ -89,7 +89,7 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = (seller: any) => {
     const cartItem = {
-      id: `${listing?.id}`,
+      id: `${listing?.id}-${selectedSize}`,
       productId: listing?.id,
       productName: listing?.title,
       brand: listing?.brand,
@@ -111,14 +111,15 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Check if item is already in cart
+  // Check if item is already in cart (for the currently selected size)
   const isItemInCart = () => {
     if (!listing || !listing.seller_details) return false;
 
     return items.some(
       (cartItem) =>
         cartItem.productId === listing.id &&
-        cartItem.sellerId === listing.seller_details.id?.toString()
+        cartItem.sellerId === listing.seller_details.id?.toString() &&
+        cartItem.size === selectedSize
     );
   };
 
