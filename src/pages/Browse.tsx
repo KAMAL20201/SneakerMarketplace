@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, useLocation } from "react-router";
 import {
   Search,
   Package,
@@ -68,6 +68,7 @@ interface FilterState {
 }
 
 const PAGE_SIZE = 12;
+const BROWSE_STATE_KEY = "browse_page_state";
 
 // ── URL helpers ───────────────────────────────────────────────────────────────
 
@@ -153,6 +154,15 @@ const Browse = () => {
   const filtersRef = useRef<FilterState>(filters);
   filtersRef.current = filters;
 
+  // ── Scroll restoration refs ────────────────────────────────────────────────
+  const location = useLocation();
+  const skipInitialFetchRef = useRef(false);
+  const listingsRef = useRef<Listing[]>([]);
+  const offsetRef = useRef(0);
+  const hasMoreRef = useRef(true);
+  const totalCountRef = useRef(0);
+  const scrollYRef = useRef(0);
+
   // ── Filter options ────────────────────────────────────────────────────────
   const conditions = [
     PRODUCT_CONDITIONS.NEW,
@@ -234,8 +244,37 @@ const Browse = () => {
     }
   }, []);
 
+  // ── Restore scroll position when navigating back from a product page ───────
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(BROWSE_STATE_KEY);
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.locationKey === location.key && state.listings?.length > 0) {
+          skipInitialFetchRef.current = true;
+          setListings(state.listings);
+          setOffset(state.offset);
+          setHasMore(state.hasMore);
+          setTotalCount(state.totalCount);
+          setLoadingInitial(false);
+          // Wait for the restored listings to render before scrolling
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              window.scrollTo({ top: state.scrollY, behavior: "instant" });
+            });
+          });
+        }
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Reset + refetch whenever filters/URL change ───────────────────────────
   useEffect(() => {
+    if (skipInitialFetchRef.current) {
+      skipInitialFetchRef.current = false;
+      return;
+    }
     const urlParsed = parseFiltersFromURL(searchParams);
     const merged: FilterState = { ...defaultFilters, ...urlParsed };
     setFilters(merged);
@@ -265,11 +304,38 @@ const Browse = () => {
     return () => observer.disconnect();
   }, [hasMore, loadingMore, loadingInitial, offset, fetchPage]);
 
-  // ── Show/hide scroll-to-top button ────────────────────────────────────────
+  // ── Show/hide scroll-to-top button + track scroll position ───────────────
   useEffect(() => {
-    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    const onScroll = () => {
+      scrollYRef.current = window.scrollY;
+      setShowScrollTop(window.scrollY > 400);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // ── Keep refs in sync so the unmount snapshot has latest values ───────────
+  useEffect(() => { listingsRef.current = listings; }, [listings]);
+  useEffect(() => { offsetRef.current = offset; }, [offset]);
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { totalCountRef.current = totalCount; }, [totalCount]);
+
+  // ── Save state to sessionStorage when leaving the browse page ─────────────
+  useEffect(() => {
+    return () => {
+      sessionStorage.setItem(
+        BROWSE_STATE_KEY,
+        JSON.stringify({
+          listings: listingsRef.current,
+          offset: offsetRef.current,
+          hasMore: hasMoreRef.current,
+          totalCount: totalCountRef.current,
+          scrollY: scrollYRef.current,
+          locationKey: location.key,
+        })
+      );
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
