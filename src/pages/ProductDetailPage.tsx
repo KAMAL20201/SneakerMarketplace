@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { ShoppingCart, ZoomIn, X, Heart, Ruler, Truck } from "lucide-react";
+import { ShoppingCart, ZoomIn, X, Heart, Ruler, Truck, PackageX, Search, Home, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
-import { useParams } from "react-router";
+import { useParams, Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { ROUTE_NAMES } from "@/constants/enums";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import ConditionBadge from "@/components/ui/ConditionBadge";
@@ -26,6 +27,7 @@ import type { EmblaCarouselType } from "embla-carousel";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [availableSizes, setAvailableSizes] = useState<{ size_value: string; price: number }[]>([]);
@@ -36,6 +38,8 @@ export default function ProductDetailPage() {
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [unavailableInfo, setUnavailableInfo] = useState<{ brand?: string; title?: string; status?: string } | null>(null);
   const [buyNowOpen, setBuyNowOpen] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<any[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -153,7 +157,18 @@ export default function ProductDetailPage() {
         .eq("status", "active")
         .single();
 
-      if (listingError) throw listingError;
+      if (listingError) {
+        // Check if the listing exists but is no longer active (sold, removed, etc.)
+        const { data: anyListing } = await supabase
+          .from("product_listings")
+          .select("id, status, brand, title")
+          .eq("id", productId)
+          .maybeSingle();
+
+        setNotFound(true);
+        setUnavailableInfo(anyListing ? { brand: anyListing.brand, title: anyListing.title, status: anyListing.status } : null);
+        return;
+      }
 
       // Query 2: Get all images for the listing (same as before)
       const { data: imagesData, error: imagesError } = await supabase
@@ -231,6 +246,76 @@ export default function ProductDetailPage() {
 
   if (loading) return <ProductDetailSkeleton />;
   if (error) return <div>Error: {error}</div>;
+
+  if (notFound) {
+    const statusLabel =
+      unavailableInfo?.status === "sold"
+        ? "This listing has been sold."
+        : unavailableInfo?.status
+        ? "This listing is no longer available."
+        : "This listing doesn't exist or has been removed.";
+
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full">
+          <Card className="glass-card border-0 rounded-3xl shadow-xl">
+            <CardContent className="p-10 text-center">
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="rounded-full bg-gray-100 p-5">
+                  <PackageX className="h-12 w-12 text-gray-400" />
+                </div>
+              </div>
+
+              {/* Heading */}
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                Listing Unavailable
+              </h1>
+
+              {/* Context */}
+              {unavailableInfo?.brand && unavailableInfo?.title && (
+                <p className="text-sm text-gray-500 mb-1 capitalize">
+                  {unavailableInfo.brand} &mdash; {unavailableInfo.title}
+                </p>
+              )}
+              <p className="text-gray-500 text-sm leading-relaxed mb-8">
+                {statusLabel} It may have been sold, taken down by the seller, or the URL might be incorrect.
+              </p>
+
+              {/* Actions */}
+              <div className="space-y-3">
+                <Button
+                  onClick={() => navigate(-1)}
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2 h-12 rounded-2xl border-0 glass-button"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Go Back
+                </Button>
+
+                <Link to={ROUTE_NAMES.BROWSE} className="block">
+                  <Button className="w-full flex items-center justify-center gap-2 h-12 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0">
+                    <Search className="h-4 w-4" />
+                    Browse Other Listings
+                  </Button>
+                </Link>
+
+                <Link to={ROUTE_NAMES.HOME} className="block">
+                  <Button
+                    variant="ghost"
+                    className="w-full flex items-center justify-center gap-2 h-12 rounded-2xl text-gray-500 hover:text-gray-800"
+                  >
+                    <Home className="h-4 w-4" />
+                    Back to Home
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
