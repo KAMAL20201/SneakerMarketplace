@@ -48,6 +48,7 @@ interface Listing {
   description: string;
   min_price: number;
   price: number;
+  retail_price: number | null;
   brand: string;
   size_value: string;
   condition: string;
@@ -65,6 +66,7 @@ interface FilterState {
   category: string[];
   priceRange: [number, number];
   sortBy: string;
+  deals: boolean;
 }
 
 const PAGE_SIZE = 12;
@@ -83,6 +85,7 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
     params.set("priceMax", filters.priceRange[1].toString());
   }
   if (filters.sortBy !== "newest") params.set("sortBy", filters.sortBy);
+  if (filters.deals) params.set("deals", "true");
   return params;
 };
 
@@ -106,6 +109,7 @@ const parseFiltersFromURL = (searchParams: URLSearchParams): Partial<FilterState
   }
   const sortBy = searchParams.get("sortBy");
   if (sortBy) filters.sortBy = sortBy;
+  if (searchParams.get("deals") === "true") filters.deals = true;
   return filters;
 };
 
@@ -122,6 +126,7 @@ const Browse = () => {
     category: [],
     priceRange: [0, 100000],
     sortBy: "newest",
+    deals: false,
   };
 
   const urlFilters = parseFiltersFromURL(searchParams);
@@ -176,9 +181,9 @@ const Browse = () => {
     "Vans", "Puma", "Reebok", "New Balance", "Asics",
   ];
   const sortOptions = [
-    { value: "newest",     label: "Newest First" },
-    { value: "oldest",     label: "Oldest First" },
-    { value: "price-low",  label: "Price: Low to High" },
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+    { value: "price-low", label: "Price: Low to High" },
     { value: "price-high", label: "Price: High to Low" },
   ];
 
@@ -190,9 +195,13 @@ const Browse = () => {
 
     try {
       let query = supabase
-        .from("listings_with_images")
-        .select("*", { count: replace ? "exact" : undefined })
-        .eq("status", "active");
+        .from(currentFilters.deals ? "hot_deals_with_images" : "listings_with_images")
+        .select("*", { count: replace ? "exact" : undefined });
+
+      // Non-deals mode needs active filter (hot_deals_with_images view already filters it)
+      if (!currentFilters.deals) {
+        query = query.eq("status", "active");
+      }
 
       // Search
       if (currentFilters.search?.trim()) {
@@ -217,10 +226,10 @@ const Browse = () => {
         .lte("price", currentFilters.priceRange[1]);
       // Sort
       switch (currentFilters.sortBy) {
-        case "oldest":     query = query.order("created_at", { ascending: true }); break;
-        case "price-low":  query = query.order("price",      { ascending: true }); break;
-        case "price-high": query = query.order("price",      { ascending: false }); break;
-        default:           query = query.order("created_at", { ascending: false });
+        case "oldest": query = query.order("created_at", { ascending: true }); break;
+        case "price-low": query = query.order("price", { ascending: true }); break;
+        case "price-high": query = query.order("price", { ascending: false }); break;
+        default: query = query.order("created_at", { ascending: false });
       }
 
       // Pagination slice
@@ -230,6 +239,7 @@ const Browse = () => {
       if (error) throw error;
 
       const rows = data ?? [];
+
       if (replace && count !== null && count !== undefined) setTotalCount(count);
 
       setListings((prev) => replace ? rows : [...prev, ...rows]);
@@ -406,9 +416,13 @@ const Browse = () => {
 
         {/* Header */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">Browse Items</h1>
+          <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">
+            {filters.deals ? "🔥 Hot Deals" : "Browse Items"}
+          </h1>
           <p className="text-gray-600 text-sm md:text-base mb-3">
-            Discover amazing items from our collector community - all listings are manually reviewed and approved
+            {filters.deals
+              ? "Listings with 50% off or more on retail price"
+              : "Discover amazing items from our collector community - all listings are manually reviewed and approved"}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
@@ -479,11 +493,10 @@ const Browse = () => {
                       key={option.value}
                       variant={filters.sortBy === option.value ? "default" : "ghost"}
                       onClick={() => handleImmediateFilterChange("sortBy", option.value)}
-                      className={`w-full justify-start rounded-xl ${
-                        filters.sortBy === option.value
+                      className={`w-full justify-start rounded-xl ${filters.sortBy === option.value
                           ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
                           : "glass-button border-0 text-gray-700 hover:bg-white/30"
-                      }`}
+                        }`}
                     >
                       {option.label}
                     </Button>
@@ -700,40 +713,47 @@ const Browse = () => {
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
-              {listings.map((listing) => (
-                <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)} key={listing.id}>
-                  <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
-                    <CardContent className="p-0">
-                      <div className="relative h-40 sm:h-48 overflow-hidden">
-                        <CardImage
-                          src={listing.image_url || "/placeholder.svg"}
-                          alt={listing.title}
-                          aspectRatio="aspect-[4/3]"
-                          className="w-full h-full group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-3 md:p-4">
-                        <div className="flex items-start justify-between mb-2 md:mb-3">
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-600 font-semibold capitalize mb-1">{listing.brand}</p>
-                            <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">{listing.title}</h3>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                          <span className="font-bold text-gray-800 text-base md:text-lg">₹{(listing.min_price ?? listing.price).toLocaleString()}</span>
-                          <ConditionBadge condition={listing.condition} className="text-xs" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
-                            {listing.size_value || "Multiple sizes"}
-                          </Badge>
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">              {listings.map((listing) => (
+              <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)} key={listing.id}>
+                <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
+                  <CardContent className="p-0">
+                    <div className="relative h-40 sm:h-48 overflow-hidden">
+                      <CardImage
+                        src={listing.image_url || "/placeholder.svg"}
+                        alt={listing.title}
+                        aspectRatio="aspect-[4/3]"
+                        className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {listing.retail_price && listing.retail_price > listing.price && (() => {
+                        const pct = Math.round(((listing.retail_price - listing.price) / listing.retail_price) * 100);
+                        return pct >= 10 ? (
+                          <span className="absolute top-2 left-2 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg z-10">
+                            {pct}% off
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                    <div className="p-3 md:p-4">
+                      <div className="flex items-start justify-between mb-2 md:mb-3">
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-600 font-semibold capitalize mb-1">{listing.brand}</p>
+                          <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">{listing.title}</h3>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                      <div className="flex items-center justify-between mb-2 md:mb-3">
+                        <span className="font-bold text-gray-800 text-base md:text-lg">₹{(listing.min_price ?? listing.price).toLocaleString()}</span>
+                        <ConditionBadge condition={listing.condition} className="text-xs" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
+                          {listing.size_value || "Multiple sizes"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
             </div>
 
             {/* Sentinel + load-more spinner */}

@@ -7,25 +7,23 @@ const InstagramBanner = () => {
         href="https://instagram.com/the.plugmarket"
         target="_blank"
         rel="noopener noreferrer"
-        className="block w-full rounded-3xl overflow-hidden bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 p-5 hover:opacity-95 transition-opacity"
+        className="flex items-center justify-between p-4 rounded-2xl border border-purple-100 bg-purple-50 hover:border-purple-300 hover:bg-purple-100 transition-all duration-200"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-2xl">
-              <Instagram className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <p className="text-white font-bold text-base leading-tight">
-                Follow us on Instagram
-              </p>
-              <p className="text-white/80 text-sm">
-                @the.plugmarket · Latest drops & restocks
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-purple-100">
+            <Instagram className="h-5 w-5 text-purple-600" />
           </div>
-          <div className="flex-shrink-0 bg-white/20 hover:bg-white/30 transition-colors text-white text-sm font-semibold px-4 py-2 rounded-full">
-            Follow
+          <div>
+            <p className="font-bold text-sm text-gray-800 leading-tight">
+              Follow us on Instagram
+            </p>
+            <p className="text-xs text-gray-500">
+              @the.plugmarket · Latest drops & restocks
+            </p>
           </div>
+        </div>
+        <div className="flex-shrink-0 px-4 py-1.5 rounded-full border border-purple-300 bg-white text-purple-600 text-sm font-semibold hover:bg-purple-600 hover:text-white transition-colors duration-200">
+          Follow
         </div>
       </a>
     </section>

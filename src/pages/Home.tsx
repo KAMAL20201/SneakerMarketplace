@@ -14,6 +14,8 @@ import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
 import InstagramBanner from "@/components/InstagramBanner";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
+import HotDeals from "@/components/HotDeals";
+// import DealSubscriptionBanner from "@/components/DealSubscriptionBanner";
 // [MARKETPLACE REMOVED] HowItWorks section - escrow system explanation not relevant for ecommerce
 // import HowItWorks from "@/components/HowItWorks";
 import { CardImage } from "@/components/ui/OptimizedImage";
@@ -130,7 +132,7 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-2">
           <SearchDropdown />
         </div>
 
@@ -148,6 +150,9 @@ const Home = () => {
         </div>
         */}
       </section>
+
+      {/* Deal Subscription Banner */}
+      {/* <DealSubscriptionBanner /> */}
 
       {/* Brand Spotlight */}
       <BrandSpotlight />
@@ -187,6 +192,8 @@ const Home = () => {
 
       {/* Wishlist Section - only rendered when user has saved items */}
       <WishlistSection />
+      {/* Hot Deals Section */}
+      <HotDeals />
 
       {/* Recently Listed Section */}
       <RecentlyListed />
@@ -271,7 +278,7 @@ const Home = () => {
       </section> */}
 
       {/* Featured Listings Section */}
-      <FeaturedListings />
+      {/* <FeaturedListings /> */}
 
       {/* Instagram Banner */}
       <InstagramBanner />

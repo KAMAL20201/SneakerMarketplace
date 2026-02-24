@@ -14,6 +14,7 @@ interface ProductCardProps {
     brand: string;
     price: number;
     originalPrice?: number;
+    retail_price?: number | null;
     condition: string;
     size_value: string;
     image_url: string;
@@ -39,6 +40,13 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
     });
   };
 
+  const discountPct =
+    product.retail_price && product.retail_price > product.price
+      ? Math.round(
+          ((product.retail_price - product.price) / product.retail_price) * 100
+        )
+      : null;
+
   if (variant === "vertical") {
     return (
       <div className="h-full flex relative">
@@ -55,6 +63,11 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                   aspectRatio="aspect-[4/3]"
                   className="w-full sm:h-48 h-36"
                 />
+                {discountPct && discountPct >= 10 && (
+                  <span className="absolute top-2 left-2 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg z-10">
+                    {discountPct}% off
+                  </span>
+                )}
               </div>
               <div className="p-4 flex flex-col h-full">
                 <div className="flex justify-between items-start mb-2">

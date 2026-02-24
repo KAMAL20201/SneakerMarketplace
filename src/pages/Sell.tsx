@@ -1263,24 +1263,9 @@ export default function SellPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       {
-                        value: DELIVERY_TIMELINES.THREE_TO_FIVE,
-                        label: "3-5 Days",
-                        color: "from-green-500 to-emerald-500",
-                      },
-                      {
-                        value: DELIVERY_TIMELINES.SEVEN_TO_TEN,
-                        label: "7-10 Days",
-                        color: "from-blue-500 to-purple-500",
-                      },
-                      {
-                        value: DELIVERY_TIMELINES.TWELVE_TO_FIFTEEN,
-                        label: "12-15 Days",
-                        color: "from-yellow-500 to-orange-500",
-                      },
-                      {
-                        value: DELIVERY_TIMELINES.EIGHTEEN_TO_TWENTY_ONE,
-                        label: "18-21 Days",
-                        color: "from-gray-500 to-slate-500",
+                        value: DELIVERY_TIMELINES.TWENTY_ONE_TO_TWENTY_EIGHT,
+                        label: "21-28 Days",
+                        color: "from-purple-500 to-indigo-500",
                       },
                     ].map((option) => (
                       <div
@@ -1544,21 +1529,8 @@ export default function SellPage() {
                           <p>
                             <strong>Delivery Time:</strong>{" "}
                             {formData.deliveryDays ===
-                            DELIVERY_TIMELINES.THREE_TO_FIVE
-                              ? "3-5 Days"
-                              : formData.deliveryDays ===
-                                DELIVERY_TIMELINES.SEVEN_TO_TEN
-                              ? "7-10 Days"
-                              : formData.deliveryDays ===
-                                DELIVERY_TIMELINES.TWELVE_TO_FIFTEEN
-                              ? "12-15 Days"
-                              : formData.deliveryDays ===
-                                DELIVERY_TIMELINES.EIGHTEEN_TO_TWENTY_ONE
-                              ? "18-21 Days"
-                              : formData.deliveryDays === "3-weeks"
-                              ? "3 Weeks"
-                              : formData.deliveryDays === "1-month"
-                              ? "1 Month"
+                            DELIVERY_TIMELINES.TWENTY_ONE_TO_TWENTY_EIGHT
+                              ? "21-28 Days"
                               : formData.deliveryDays ===
                                 DELIVERY_TIMELINES.CUSTOM
                               ? formData.customDeliveryDays || "Custom"
