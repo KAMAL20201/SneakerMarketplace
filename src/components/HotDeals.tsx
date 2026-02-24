@@ -40,7 +40,7 @@ const HotDeals = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Hot Deals</h2>
-            <p className="text-xs text-orange-600 font-medium">50% off or more</p>
+            <p className="text-xs text-orange-600 font-medium">30% off or more</p>
           </div>
         </div>
         <Button

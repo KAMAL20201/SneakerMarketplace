@@ -120,10 +120,10 @@ export default function ShippingPolicy() {
                 </h3>
                 <ul className="space-y-2 text-sm text-gray-700">
                   <li>
-                    • <strong>Minimum delivery time:</strong> 2-3 business days
+                    • <strong>Minimum delivery time:</strong> 3-7 business days
                   </li>
                   <li>
-                    • <strong>Maximum delivery time:</strong> 18-21 business
+                    • <strong>Maximum delivery time:</strong> 21-28 business
                     days
                   </li>
                   <li>• Orders are typically shipped within 1-3 business days</li>

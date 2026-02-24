@@ -245,8 +245,8 @@ const Browse = () => {
       // Sort
       switch (currentFilters.sortBy) {
         case "oldest": query = query.order("created_at", { ascending: true }); break;
-        case "price-low": query = query.order("price", { ascending: true }); break;
-        case "price-high": query = query.order("price", { ascending: false }); break;
+        case "price-low": query = query.order("min_price", { ascending: true, nullsFirst: false }); break;
+        case "price-high": query = query.order("min_price", { ascending: false, nullsFirst: false }); break;
         default: query = query.order("created_at", { ascending: false });
       }
 
