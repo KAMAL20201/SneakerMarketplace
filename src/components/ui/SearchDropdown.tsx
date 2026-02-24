@@ -19,6 +19,21 @@ interface SearchResult {
   image_url: string;
 }
 
+function buildMultiWordSearchFilter(rawQuery: string, columns: string[]): string | null {
+  const trimmed = rawQuery.trim();
+  if (!trimmed) return null;
+  const tokens = trimmed.split(/\s+/).filter(Boolean).map((t) => t.replace(/[%_]/g, ""));
+  if (tokens.length === 0) return null;
+  if (tokens.length === 1) {
+    const pat = `%${tokens[0]}%`;
+    return columns.map((col) => `${col}.ilike.${pat}`).join(",");
+  }
+  return columns.map((col) => {
+    const andParts = tokens.map((t) => `${col}.ilike.%${t}%`).join(",");
+    return `and(${andParts})`;
+  }).join(",");
+}
+
 export function SearchDropdown({
   placeholder = "Search sneakers, streetwear, collectibles...",
   className = "",
@@ -56,14 +71,22 @@ export function SearchDropdown({
 
     setIsLoading(true);
     try {
-      const { data } = await supabase
+      const filterStr = buildMultiWordSearchFilter(query, ["title", "brand"]);
+      let q = supabase
         .from("listings_with_images")
         .select("id, title, brand, price, image_url")
-        .eq("status", "active")
-        .or(`title.ilike.%${query}%,brand.ilike.%${query}%`)
-        .limit(5);
+        .eq("status", "active");
+      if (filterStr) q = q.or(filterStr);
+      const { data } = await q.limit(5);
 
-      setResults(data ?? []);
+      // Client-side relevance sort: exact phrase matches bubble to top
+      const lq = query.trim().toLowerCase();
+      const ranked = (data ?? []).sort((a, b) => {
+        const aExact = a.title.toLowerCase().includes(lq) ? 0 : 1;
+        const bExact = b.title.toLowerCase().includes(lq) ? 0 : 1;
+        return aExact - bExact;
+      });
+      setResults(ranked);
     } catch {
       setResults([]);
     } finally {

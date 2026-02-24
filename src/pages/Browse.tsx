@@ -72,6 +72,21 @@ interface FilterState {
 const PAGE_SIZE = 12;
 const BROWSE_STATE_KEY = "browse_page_state";
 
+function buildMultiWordSearchFilter(rawQuery: string, columns: string[]): string | null {
+  const trimmed = rawQuery.trim();
+  if (!trimmed) return null;
+  const tokens = trimmed.split(/\s+/).filter(Boolean).map((t) => t.replace(/[%_]/g, ""));
+  if (tokens.length === 0) return null;
+  if (tokens.length === 1) {
+    const pat = `%${tokens[0]}%`;
+    return columns.map((col) => `${col}.ilike.${pat}`).join(",");
+  }
+  return columns.map((col) => {
+    const andParts = tokens.map((t) => `${col}.ilike.%${t}%`).join(",");
+    return `and(${andParts})`;
+  }).join(",");
+}
+
 // ── URL helpers ───────────────────────────────────────────────────────────────
 
 const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
@@ -205,8 +220,11 @@ const Browse = () => {
 
       // Search
       if (currentFilters.search?.trim()) {
-        const p = `%${currentFilters.search.trim()}%`;
-        query = query.or(`title.ilike.${p},brand.ilike.${p},description.ilike.${p}`);
+        const filterStr = buildMultiWordSearchFilter(
+          currentFilters.search,
+          ["title", "brand", "description"]
+        );
+        if (filterStr) query = query.or(filterStr);
       }
       // Brand
       if (currentFilters.brand.length > 0) {
