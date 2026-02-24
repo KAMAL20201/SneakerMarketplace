@@ -20,6 +20,7 @@ export interface Order {
   buyer_email?: string;
   buyer_name?: string;
   buyer_phone?: string;
+  ordered_size?: string;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +38,7 @@ export interface CreateOrderRequest {
   buyer_email?: string;
   buyer_name?: string;
   buyer_phone?: string;
+  ordered_size?: string;
 }
 
 export interface CartItem {
@@ -73,6 +75,7 @@ export class OrderService {
           p_buyer_name: orderData.buyer_name || null,
           p_buyer_phone: orderData.buyer_phone || null,
           p_payment_id: orderData.payment_id || null,
+          p_ordered_size: orderData.ordered_size || null,
         });
 
         if (error) throw error;
@@ -93,6 +96,7 @@ export class OrderService {
         buyer_email: orderData.buyer_email || null,
         buyer_name: orderData.buyer_name || null,
         buyer_phone: orderData.buyer_phone || null,
+        ordered_size: orderData.ordered_size || null,
       };
       if (orderData.payment_id) {
         insertData.payment_id = orderData.payment_id;
@@ -181,15 +185,16 @@ export class OrderService {
           continue;
         }
 
-        // Mark product as sold using optimistic locking
+        // Mark the specific size (or whole product for single-size) as sold
         // This prevents race conditions where multiple users try to buy the same item
-        const markedAsSold = await StockValidationService.markProductAsSold(
-          item.productId
+        const markedAsSold = await StockValidationService.markSizeAsSold(
+          item.productId,
+          item.size
         );
 
         if (!markedAsSold) {
           logger.error(
-            `Failed to mark product ${item.productName} as sold - already sold or unavailable`
+            `Failed to mark product ${item.productName} (size ${item.size}) as sold - already sold or unavailable`
           );
           failedItems.push(item.productName);
           continue;
@@ -211,6 +216,7 @@ export class OrderService {
           buyer_email: buyerDetails.email,
           buyer_name: buyerDetails.full_name,
           buyer_phone: buyerDetails.phone,
+          ordered_size: item.size,
         });
 
         orders.push(order);
@@ -330,52 +336,12 @@ export class OrderService {
           buyer_email: buyerDetails.email,
           buyer_name: buyerDetails.full_name,
           buyer_phone: buyerDetails.phone,
+          ordered_size: item.size,
         });
 
         orders.push(order);
-
-        // Prepare order email data
-        const orderEmailData: OrderEmailData = {
-          order_id: order.id,
-          product_title: item.productName,
-          product_image:
-            productDetails.product_images?.find(
-              (img: { is_poster_image: boolean }) => img.is_poster_image
-            )?.image_url || productDetails.product_images?.[0]?.image_url,
-          amount: verifiedPrice,
-          currency: "INR",
-          buyer_name: buyerDetails.full_name,
-          buyer_email: buyerDetails.email,
-          seller_name: item.sellerName,
-          seller_email: item.sellerEmail,
-          order_status: "pending_payment",
-          shipping_address: shippingAddress || undefined,
-        };
-
-        // Send email notifications
-        try {
-          if (buyerDetails.email) {
-            await EmailService.sendOrderConfirmationToBuyer(
-              buyerDetails.email,
-              buyerDetails.full_name,
-              orderEmailData
-            );
-          }
-
-          if (item.sellerEmail) {
-            await EmailService.sendOrderConfirmationToSeller(
-              item.sellerEmail,
-              item.sellerName,
-              orderEmailData
-            );
-          }
-        } catch (emailError) {
-          logger.warn(
-            `Failed to send email notifications: ${
-              emailError instanceof Error ? emailError.message : "Unknown error"
-            }`
-          );
-        }
+        // NOTE: Emails are NOT sent here. Order confirmation emails are sent
+        // only when the admin confirms payment from the orders dashboard.
       }
 
       if (failedItems.length > 0) {

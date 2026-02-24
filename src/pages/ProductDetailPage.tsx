@@ -28,7 +28,7 @@ export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
-  const [availableSizes, setAvailableSizes] = useState<{ size_value: string; price: number }[]>([]);
+  const [availableSizes, setAvailableSizes] = useState<{ size_value: string; price: number; is_sold: boolean }[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { addToCart, items } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -181,7 +181,7 @@ export default function ProductDetailPage() {
       // Query 3: Get size variants from product_listing_sizes (multi-size listings)
       const { data: sizesData } = await supabase
         .from("product_listing_sizes")
-        .select("size_value, price")
+        .select("size_value, price, is_sold")
         .eq("listing_id", productId)
         .order("price", { ascending: true });
 
@@ -192,9 +192,10 @@ export default function ProductDetailPage() {
       setAvailableSizes(sizes);
 
       if (sizes.length > 0) {
-        // Multi-size listing — auto-select cheapest
-        setSelectedSize(sizes[0].size_value);
-        setSelectedPrice(sizes[0].price);
+        // Multi-size listing — auto-select cheapest available (non-sold) size
+        const firstAvailable = sizes.find((s) => !s.is_sold) ?? sizes[0];
+        setSelectedSize(firstAvailable.size_value);
+        setSelectedPrice(firstAvailable.price);
       } else if (transformedListing.size_value) {
         // Single-size listing — use the listing's own size/price
         setSelectedSize(transformedListing.size_value);
@@ -513,19 +514,24 @@ export default function ProductDetailPage() {
                           <Button
                             key={s.size_value}
                             variant={isSelected ? "default" : "outline"}
+                            disabled={s.is_sold}
                             onClick={() => {
-                              setSelectedSize(s.size_value);
-                              setSelectedPrice(s.price);
+                              if (!s.is_sold) {
+                                setSelectedSize(s.size_value);
+                                setSelectedPrice(s.price);
+                              }
                             }}
                             className={`flex flex-col h-auto py-3 rounded-2xl border-0 font-semibold uppercase gap-0.5 ${
-                              isSelected
+                              s.is_sold
+                                ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
+                                : isSelected
                                 ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
                                 : "glass-button text-gray-700 hover:bg-white/30"
                             }`}
                           >
                             <span className="text-sm">{s.size_value.toUpperCase()}</span>
-                            <span className={`text-xs font-normal ${isSelected ? "text-white/80" : "text-gray-500"}`}>
-                              ₹{s.price.toLocaleString("en-IN")}
+                            <span className={`text-xs font-normal ${s.is_sold ? "text-gray-400" : isSelected ? "text-white/80" : "text-gray-500"}`}>
+                              {s.is_sold ? "Sold Out" : `₹${s.price.toLocaleString("en-IN")}`}
                             </span>
                           </Button>
                         );

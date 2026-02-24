@@ -1,6 +1,3 @@
-import type { CartItem } from "./orderService";
-import type { ShippingAddress } from "@/types/shipping";
-
 // WhatsApp business number (with country code, no + sign)
 // Update this with your WhatsApp number via VITE_WHATSAPP_NUMBER env variable
 const WHATSAPP_NUMBER =
@@ -8,71 +5,32 @@ const WHATSAPP_NUMBER =
 
 export class WhatsAppService {
   /**
-   * Generate a short order reference ID
+   * Format a minimal WhatsApp message containing only the DB order IDs.
+   * The admin can look up all details (items, address) on the orders dashboard.
    */
-  static generateOrderRef(): string {
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `TPM-${timestamp}-${random}`;
-  }
+  static formatOrderMessage(orderIds: string[]): string {
+    const shortIds = orderIds.map((id) => `#${id.slice(0, 8)}`);
 
-  /**
-   * Format the WhatsApp message with order details
-   */
-  static formatOrderMessage(
-    items: CartItem[],
-    shippingAddress: ShippingAddress,
-    orderRef: string,
-    totalAmount: number
-  ): string {
-    let message = `Hi! I'd like to place an order on The Plug Market.\n\n`;
-    message += `*Order Ref:* ${orderRef}\n\n`;
-
-    message += `*Items:*\n`;
-    items.forEach((item, index) => {
-      message += `${index + 1}. ${item.productName}`;
-      if (item.size) message += ` (Size: ${item.size})`;
-      message += ` - ₹${item.price}\n`;
-      message += `   Brand: ${item.brand} | Condition: ${item.condition}\n`;
-    });
-
-    message += `\n*Total: ₹${totalAmount}*\n\n`;
-
-    message += `*Shipping Address:*\n`;
-    message += `${shippingAddress.full_name}\n`;
-    message += `${shippingAddress.address_line1}\n`;
-    if (shippingAddress.address_line2) {
-      message += `${shippingAddress.address_line2}\n`;
-    }
-    message += `${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.pincode}\n`;
-    if (shippingAddress.landmark) {
-      message += `Landmark: ${shippingAddress.landmark}\n`;
-    }
-    message += `Phone: ${shippingAddress.phone}\n`;
-    if (shippingAddress.email) {
-      message += `Email: ${shippingAddress.email}\n`;
+    if (shortIds.length === 1) {
+      return (
+        `Hi! I'd like to confirm my order on The Plug Market.\n\n` +
+        `*Order ID:* ${shortIds[0]}\n\n` +
+        `Please share the payment details. Thank you!`
+      );
     }
 
-    message += `\nPlease share the payment details. Thank you!`;
-
-    return message;
-  }
-
-  /**
-   * Generate WhatsApp redirect URL with prefilled message
-   */
-  static generateWhatsAppURL(
-    items: CartItem[],
-    shippingAddress: ShippingAddress,
-    orderRef: string,
-    totalAmount: number
-  ): string {
-    const message = this.formatOrderMessage(
-      items,
-      shippingAddress,
-      orderRef,
-      totalAmount
+    return (
+      `Hi! I'd like to confirm my orders on The Plug Market.\n\n` +
+      `*Order IDs:*\n${shortIds.join("\n")}\n\n` +
+      `Please share the payment details. Thank you!`
     );
+  }
+
+  /**
+   * Generate WhatsApp redirect URL with prefilled message containing order IDs.
+   */
+  static generateWhatsAppURL(orderIds: string[]): string {
+    const message = this.formatOrderMessage(orderIds);
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
   }

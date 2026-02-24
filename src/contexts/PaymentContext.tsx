@@ -36,7 +36,7 @@ interface PaymentContextType {
   isLoading: boolean;
   error: string | null;
   initiatePayment: (
-    amount: number,
+    // amount: number,
     currency: string,
     metadata?: Record<string, string>,
     items?: CartItem[],
@@ -74,7 +74,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
 
   const initiatePayment = useCallback(
     async (
-      amount: number,
+      // amount: number,
       _currency: string,
       metadata: Record<string, string> = {},
       items: CartItem[] = [],
@@ -92,15 +92,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           throw new Error("No items to checkout");
         }
 
-        // Generate order reference
-        const orderRef = WhatsAppService.generateOrderRef();
-
         // Process checkout - create orders with pending_payment status
-        // This also validates stock and marks products as sold
+        // Returns the created orders so we can use their real DB IDs in the WhatsApp message
         if (metadata.type === "cart_checkout" && items.length > 0) {
-          await OrderService.processWhatsAppCheckout(
+          const createdOrders = await OrderService.processWhatsAppCheckout(
             items,
-            // orderRef,
             user?.id || "",
             {
               full_name:
@@ -113,13 +109,9 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             shippingAddress
           );
 
-          // Generate WhatsApp URL and redirect
-          const whatsappURL = WhatsAppService.generateWhatsAppURL(
-            items,
-            shippingAddress,
-            orderRef,
-            amount
-          );
+          // Build WhatsApp URL using the real DB order IDs so they match the dashboard
+          const orderIds = createdOrders.map((o) => o.id);
+          const whatsappURL = WhatsAppService.generateWhatsAppURL(orderIds);
 
           // Open WhatsApp in new tab
           window.open(whatsappURL, "_blank");

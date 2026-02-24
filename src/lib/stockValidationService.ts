@@ -20,10 +20,13 @@ export interface CartValidationResult {
  */
 export class StockValidationService {
   /**
-   * Check if a single product is still available for purchase
+   * Check if a single product (and optionally a specific size) is still available.
+   * For multi-size listings, pass `size` to check that specific size's is_sold flag.
+   * For single-size listings (or when size is omitted), checks product_listings.status.
    */
   static async checkProductAvailability(
-    productId: string
+    productId: string,
+    size?: string
   ): Promise<StockValidationResult> {
     try {
       const { data: product, error } = await supabase
@@ -40,6 +43,27 @@ export class StockValidationService {
         };
       }
 
+      // If a size is provided, check per-size availability in product_listing_sizes
+      if (size) {
+        const { data: sizeRow } = await supabase
+          .from("product_listing_sizes")
+          .select("is_sold")
+          .eq("listing_id", productId)
+          .eq("size_value", size)
+          .maybeSingle();
+
+        if (sizeRow) {
+          // Multi-size listing: product must be active AND size must not be sold
+          return {
+            productId,
+            isAvailable: product.status === "active" && !sizeRow.is_sold,
+            currentStatus: sizeRow.is_sold ? "sold" : product.status,
+            productName: product.title,
+          };
+        }
+      }
+
+      // Single-size listing or no size provided: use product-level status
       return {
         productId,
         isAvailable: product.status === "active",
@@ -57,7 +81,7 @@ export class StockValidationService {
   }
 
   /**
-   * Validate all items in cart are still available
+   * Validate all items in cart are still available (size-aware)
    */
   static async validateCartItems(
     cartItems: CartItem[]
@@ -88,27 +112,51 @@ export class StockValidationService {
       products?.map((p) => [p.id, { status: p.status, title: p.title }]) || []
     );
 
+    // Fetch sold sizes for all multi-size products in cart
+    const { data: soldSizes } = await supabase
+      .from("product_listing_sizes")
+      .select("listing_id, size_value, is_sold")
+      .in("listing_id", productIds)
+      .eq("is_sold", true);
+
+    const soldSizeSet = new Set(
+      (soldSizes || []).map((s) => `${s.listing_id}::${s.size_value}`)
+    );
+
     const unavailableItems: StockValidationResult[] = [];
     const availableItems: StockValidationResult[] = [];
 
-    for (const productId of productIds) {
-      const productInfo = productStatusMap.get(productId);
+    for (const item of cartItems) {
+      const productInfo = productStatusMap.get(item.productId);
 
       if (!productInfo || productInfo.status !== "active") {
         unavailableItems.push({
-          productId,
+          productId: item.productId,
           isAvailable: false,
           currentStatus: productInfo?.status || "not_found",
           productName: productInfo?.title,
         });
-      } else {
-        availableItems.push({
-          productId,
-          isAvailable: true,
-          currentStatus: productInfo.status,
+        continue;
+      }
+
+      // Check if the specific size is sold out
+      const sizeKey = `${item.productId}::${item.size}`;
+      if (soldSizeSet.has(sizeKey)) {
+        unavailableItems.push({
+          productId: item.productId,
+          isAvailable: false,
+          currentStatus: "sold",
           productName: productInfo.title,
         });
+        continue;
       }
+
+      availableItems.push({
+        productId: item.productId,
+        isAvailable: true,
+        currentStatus: productInfo.status,
+        productName: productInfo.title,
+      });
     }
 
     return {
@@ -116,6 +164,61 @@ export class StockValidationService {
       unavailableItems,
       availableItems,
     };
+  }
+
+  /**
+   * Mark a specific size as sold for a multi-size listing, or the whole product
+   * for single-size listings. If all sizes of a multi-size listing are sold,
+   * also marks the product_listings row as sold.
+   *
+   * Returns true if successfully marked, false if already sold or not found.
+   */
+  static async markSizeAsSold(productId: string, size: string): Promise<boolean> {
+    try {
+      // Check whether this product has size variants
+      const { data: sizeRows } = await supabase
+        .from("product_listing_sizes")
+        .select("size_value, is_sold")
+        .eq("listing_id", productId);
+
+      if (sizeRows && sizeRows.length > 0) {
+        // ── Multi-size listing: mark the specific size as sold ──
+        const { data: updated, error } = await supabase
+          .from("product_listing_sizes")
+          .update({ is_sold: true })
+          .eq("listing_id", productId)
+          .eq("size_value", size)
+          .eq("is_sold", false) // Optimistic lock — only update if not already sold
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error marking size as sold:", error);
+          return false;
+        }
+
+        if (!updated) {
+          // Size was already sold or not found
+          return false;
+        }
+
+        // Check if all sizes are now sold — if so, mark the whole listing as sold
+        const remaining = sizeRows.filter(
+          (s) => s.size_value !== size && !s.is_sold
+        );
+        if (remaining.length === 0) {
+          await this.markProductAsSold(productId);
+        }
+
+        return true;
+      }
+
+      // ── Single-size listing: mark the whole product as sold ──
+      return this.markProductAsSold(productId);
+    } catch (error) {
+      console.error("Error in markSizeAsSold:", error);
+      return false;
+    }
   }
 
   /**

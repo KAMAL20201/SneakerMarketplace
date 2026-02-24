@@ -31,6 +31,10 @@ const Home = () => {
   };
 
   useEffect(() => {
+    // Only run the auth callback flow when opened as a popup (e.g. Google OAuth redirect).
+    // window.opener is null for regular page navigation, so skip entirely in that case.
+    if (!window.opener) return;
+
     const handleAuthCallback = async () => {
       try {
         const {
