@@ -37,7 +37,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
-import { ROUTE_HELPERS, PRODUCT_CONDITIONS } from "@/constants/enums";
+import { ROUTE_HELPERS, PRODUCT_CONDITIONS, SNEAKER_SIZES, CATEGORY_IDS } from "@/constants/enums";
 import { categories } from "@/constants/sellConstants";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 
@@ -64,6 +64,7 @@ interface FilterState {
   condition: string[];
   brand: string[];
   category: string[];
+  size: string[];
   priceRange: [number, number];
   sortBy: string;
   deals: boolean;
@@ -95,6 +96,7 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   if (filters.condition.length > 0) params.set("condition", filters.condition.join(","));
   if (filters.brand.length > 0) params.set("brand", filters.brand.join(","));
   if (filters.category.length > 0) params.set("category", filters.category.join(","));
+  if (filters.size.length > 0) params.set("size", filters.size.join(","));
   if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
     params.set("priceMin", filters.priceRange[0].toString());
     params.set("priceMax", filters.priceRange[1].toString());
@@ -114,6 +116,8 @@ const parseFiltersFromURL = (searchParams: URLSearchParams): Partial<FilterState
   if (brand) filters.brand = brand.split(",").filter(Boolean);
   const category = searchParams.get("category");
   if (category) filters.category = category.split(",").filter(Boolean);
+  const size = searchParams.get("size");
+  if (size) filters.size = size.split(",").filter(Boolean);
   const priceMin = searchParams.get("priceMin");
   const priceMax = searchParams.get("priceMax");
   if (priceMin || priceMax) {
@@ -139,6 +143,7 @@ const Browse = () => {
     condition: [],
     brand: [],
     category: [],
+    size: [],
     priceRange: [0, 100000],
     sortBy: "newest",
     deals: false,
@@ -155,6 +160,7 @@ const Browse = () => {
     condition: false,
     brand: false,
     category: false,
+    size: false,
   });
 
   // ── Infinite scroll state ─────────────────────────────────────────────────
@@ -201,6 +207,9 @@ const Browse = () => {
     { value: "price-low", label: "Price: Low to High" },
     { value: "price-high", label: "Price: High to Low" },
   ];
+  const sneakerSizes = Object.values(SNEAKER_SIZES);
+  const isSneakerCategorySelected = (categoryList: string[]) =>
+    categoryList.includes(CATEGORY_IDS.SNEAKERS);
 
   // ── Core fetch function ───────────────────────────────────────────────────
   // `fromOffset` = where to start; `replace` = reset list (new filter/search)
@@ -237,6 +246,10 @@ const Browse = () => {
       // Condition
       if (currentFilters.condition.length > 0) {
         query = query.in("condition", currentFilters.condition);
+      }
+      // Size (only applies when sneakers category is selected)
+      if (currentFilters.size.length > 0 && currentFilters.category.includes(CATEGORY_IDS.SNEAKERS)) {
+        query = query.in("size_value", currentFilters.size);
       }
       // Price
       query = query
@@ -414,6 +427,7 @@ const Browse = () => {
     if (filters.condition.length > 0) n++;
     if (filters.brand.length > 0) n++;
     if (filters.category.length > 0) n++;
+    if (filters.size.length > 0 && isSneakerCategorySelected(filters.category)) n++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) n++;
     return n;
   };
@@ -423,6 +437,7 @@ const Browse = () => {
     if (tempFilters.condition.length > 0) n++;
     if (tempFilters.brand.length > 0) n++;
     if (tempFilters.category.length > 0) n++;
+    if (tempFilters.size.length > 0 && isSneakerCategorySelected(tempFilters.category)) n++;
     if (tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000) n++;
     return n;
   };
@@ -559,9 +574,17 @@ const Browse = () => {
                               <Checkbox
                                 id={category.id}
                                 checked={tempFilters.category.includes(category.id)}
-                                onCheckedChange={(checked) => handleTempFilterChange("category",
-                                  checked ? [...tempFilters.category, category.id] : tempFilters.category.filter((c) => c !== category.id)
-                                )}
+                                onCheckedChange={(checked) => {
+                                  const newCategory = checked
+                                    ? [...tempFilters.category, category.id]
+                                    : tempFilters.category.filter((c) => c !== category.id);
+                                  // Clear size filter when sneakers is deselected
+                                  if (!checked && category.id === CATEGORY_IDS.SNEAKERS) {
+                                    setTempFilters((prev) => ({ ...prev, category: newCategory, size: [] }));
+                                  } else {
+                                    handleTempFilterChange("category", newCategory);
+                                  }
+                                }}
                                 className="rounded-md"
                               />
                               <Label htmlFor={category.id} className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2">
@@ -574,6 +597,40 @@ const Browse = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Size (only shown when Sneakers category is selected) */}
+                  {isSneakerCategorySelected(tempFilters.category) && (
+                    <div>
+                      <button onClick={() => toggleSection("size")} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                        <Label className="text-sm font-medium text-gray-700 cursor-pointer">
+                          Size
+                          {tempFilters.size.length > 0 && <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 rounded-full">{tempFilters.size.length}</span>}
+                        </Label>
+                        {collapsedSections.size ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronUp className="h-4 w-4 text-gray-500" />}
+                      </button>
+                      {!collapsedSections.size && (
+                        <div className="px-3 pb-3">
+                          <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                            {sneakerSizes.map((sizeVal) => (
+                              <div key={sizeVal} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                                <Checkbox
+                                  id={`size-${sizeVal}`}
+                                  checked={tempFilters.size.includes(sizeVal)}
+                                  onCheckedChange={(checked) => handleTempFilterChange("size",
+                                    checked ? [...tempFilters.size, sizeVal] : tempFilters.size.filter((s) => s !== sizeVal)
+                                  )}
+                                  className="rounded-md"
+                                />
+                                <Label htmlFor={`size-${sizeVal}`} className="text-sm font-medium text-gray-700 cursor-pointer uppercase tracking-wide">
+                                  {sizeVal}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Price Range */}
                   <div>
@@ -676,12 +733,23 @@ const Browse = () => {
         </div>
 
         {/* Active Filter Chips */}
-        {(filters.condition.length > 0 || filters.brand.length > 0 || filters.category.length > 0 || filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
+        {(filters.condition.length > 0 || filters.brand.length > 0 || filters.category.length > 0 || (filters.size.length > 0 && isSneakerCategorySelected(filters.category)) || filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
           <div className="flex flex-wrap items-center gap-2 mb-4 py-4 bg-gray-50/50">
             {filters.category.map((categoryId) => (
               <Badge key={categoryId} className="bg-indigo-100 text-indigo-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
                 {getCategoryName(categoryId)}
-                <button onClick={() => { const u = { ...filters, category: filters.category.filter((c) => c !== categoryId) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+                <button onClick={() => {
+                  const newCategory = filters.category.filter((c) => c !== categoryId);
+                  // Also clear size if removing sneakers category
+                  const u = { ...filters, category: newCategory, size: categoryId === CATEGORY_IDS.SNEAKERS ? [] : filters.size };
+                  setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true });
+                }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+              </Badge>
+            ))}
+            {isSneakerCategorySelected(filters.category) && filters.size.map((sizeVal) => (
+              <Badge key={sizeVal} className="bg-orange-100 text-orange-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
+                {sizeVal}
+                <button onClick={() => { const u = { ...filters, size: filters.size.filter((s) => s !== sizeVal) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
               </Badge>
             ))}
             {filters.condition.map((condition) => (
@@ -759,7 +827,12 @@ const Browse = () => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mb-2 md:mb-3">
-                        <span className="font-bold text-gray-800 text-base md:text-lg">₹{(listing.min_price ?? listing.price).toLocaleString()}</span>
+                        <span className="font-bold text-gray-800 text-base md:text-lg">
+                          ₹{(filters.size.length > 0 && listing.category === CATEGORY_IDS.SNEAKERS
+                            ? listing.price
+                            : (listing.min_price ?? listing.price)
+                          ).toLocaleString()}
+                        </span>
                         <ConditionBadge condition={listing.condition} className="text-xs" />
                       </div>
                       <div className="flex items-center justify-between">
