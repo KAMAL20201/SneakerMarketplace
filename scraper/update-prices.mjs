@@ -41,6 +41,8 @@ const USD_TO_INR        = parseFloat(process.env.USD_TO_INR || "91");
 const DELAY_MS          = 400;
 // How many results to consider from GOAT search before picking best match
 const SEARCH_LIMIT      = 3;
+// Number of parallel browser pages (workers)
+const CONCURRENCY       = 5;
 
 // ─── Validate ──────────────────────────────────────────────────────────────
 
@@ -140,12 +142,112 @@ async function fetchSizePrices(page, templateId) {
   }, templateId);
 }
 
+// ─── Process a single listing ──────────────────────────────────────────────
+
+async function processListing(page, listing, idx, total) {
+  const label = `[${idx + 1}/${total}] "${listing.title.slice(0, 50)}"`;
+
+  // Search GOAT for this title
+  const results = await searchGoat(page, listing.title);
+  await delay(DELAY_MS);
+
+  if (!results.length) {
+    console.log(`${label} → ❌ not found on GOAT`);
+    return { status: "notFound", title: listing.title };
+  }
+
+  const match = pickBestMatch(listing.title, results);
+  if (!match) {
+    console.log(`${label} → ❌ no match`);
+    return { status: "notFound", title: listing.title };
+  }
+
+  // Fetch per-size prices via buy_bar_data API
+  const sizePrices = await fetchSizePrices(page, match.id);
+  await delay(DELAY_MS);
+
+  if (!sizePrices.length) {
+    console.log(`${label} → ⚠️  matched "${match.title.slice(0, 40)}" but no size data`);
+    return { status: "noChange" };
+  }
+
+  // Min price across all sizes (for listing-level price)
+  const minPriceUsd  = Math.min(...sizePrices.map(s => s.priceUsd));
+  const newPriceInr  = usdToInr(minPriceUsd);
+  const newRetailInr = match.retailPriceCents ? usdToInr(match.retailPriceCents / 100) : null;
+
+  const priceChanged  = newPriceInr !== null && newPriceInr !== listing.price;
+  const retailChanged = newRetailInr !== null && newRetailInr !== listing.retail_price;
+
+  // Build size map: US size number → INR price
+  const goatSizeMap = new Map();
+  for (const sp of sizePrices) {
+    goatSizeMap.set(parseFloat(sp.size), usdToInr(sp.priceUsd));
+  }
+
+  // FIX 2: Batch size updates — collect all changed sizes, fire in parallel
+  const dbSizes = listing.product_listing_sizes || [];
+  const sizeUpdatePromises = [];
+  for (const dbSize of dbSizes) {
+    const usMatch = dbSize.size_value.match(/us\s*([0-9.]+)/i);
+    const ukMatch = dbSize.size_value.match(/uk\s*([0-9.]+)/i);
+    let usSize = null;
+    if (usMatch)      usSize = parseFloat(usMatch[1]);
+    else if (ukMatch) usSize = parseFloat(ukMatch[1]) + 0.5; // UK → US mens
+
+    if (usSize == null) continue;
+    const newSizeInr = goatSizeMap.get(usSize);
+    if (!newSizeInr || newSizeInr === dbSize.price) continue;
+
+    sizeUpdatePromises.push(
+      supabase
+        .from("product_listing_sizes")
+        .update({ price: newSizeInr })
+        .eq("id", dbSize.id)
+    );
+  }
+
+  const sizeResults = await Promise.all(sizeUpdatePromises);
+  const sizeUpdateCount = sizeResults.filter(r => !r.error).length;
+
+  // Update listing-level price
+  let listingUpdated = false;
+  if (priceChanged || retailChanged) {
+    const payload = { updated_at: new Date().toISOString() };
+    if (priceChanged)  payload.price        = newPriceInr;
+    if (retailChanged) payload.retail_price = newRetailInr;
+
+    const { error: listingErr } = await supabase
+      .from("product_listings")
+      .update(payload)
+      .eq("id", listing.id);
+
+    if (listingErr) {
+      console.log(`${label} → ⚠️  DB error: ${listingErr.message}`);
+      return { status: "error" };
+    }
+    listingUpdated = true;
+  }
+
+  const tag = listingUpdated ? "✅" : "—";
+  console.log(
+    `${label} → ${tag} ₹${listing.price}→₹${newPriceInr}` +
+    (sizeUpdateCount > 0 ? ` | ${sizeUpdateCount} sizes` : "")
+  );
+
+  return {
+    status: listingUpdated ? "updated" : "noChange",
+    sizeUpdateCount,
+  };
+}
+
 // ─── Main update logic ─────────────────────────────────────────────────────
 
 async function main() {
   console.log("🏃 SneakInMarket — DB-First Price Updater");
   console.log(`   ${new Date().toLocaleString()}`);
-  console.log(`   USD → INR rate: ${USD_TO_INR}\n`);
+  console.log(`   USD → INR rate: ${USD_TO_INR}`);
+  console.log(`   Concurrency: ${CONCURRENCY} parallel workers\n`);
 
   // 1. Fetch all active DB listings with their sizes
   console.log("📡 Fetching active listings from DB...");
@@ -157,7 +259,7 @@ async function main() {
   if (fetchErr) { console.error("❌ DB fetch failed:", fetchErr.message); process.exit(1); }
   console.log(`   Found ${listings.length} active listings\n`);
 
-  // 2. Launch stealth browser (single session for all API calls)
+  // 2. Launch stealth browser
   console.log("🚀 Launching browser for GOAT API access...");
   const browser = await stealthChromium.launch({
     headless: true,
@@ -173,118 +275,42 @@ async function main() {
   await context.addInitScript(() => {
     Object.defineProperty(navigator, "webdriver", { get: () => undefined });
   });
-  const page = await context.newPage();
 
-  // Load GOAT HK storefront to establish session/cookies with HK region
-  console.log("   Loading GOAT session (HK region)...");
-  await page.goto("https://www.goat.com", { waitUntil: "domcontentloaded", timeout: 60000 });
+  // FIX 1: Create N pages and warm them all up in parallel
+  console.log(`   Warming up ${CONCURRENCY} pages with GOAT session (HK region)...`);
+  const pages = await Promise.all(
+    Array.from({ length: CONCURRENCY }, () => context.newPage())
+  );
+  await Promise.all(
+    pages.map(p => p.goto("https://www.goat.com", { waitUntil: "domcontentloaded", timeout: 60000 }))
+  );
   await delay(3000);
-  console.log("   ✅ Session ready\n");
+  console.log(`   ✅ All ${CONCURRENCY} pages ready\n`);
 
-  // 3. For each listing: search → match → fetch sizes → update DB
-  let matched = 0, updated = 0, sizesUpdated = 0, notFound = 0, noChange = 0;
-  const notFoundTitles = [];
+  // 3. FIX 1: Worker pool — each page pulls the next listing from a shared cursor
+  let cursor = 0;
+  const stats = { matched: 0, updated: 0, sizesUpdated: 0, notFound: 0, noChange: 0, notFoundTitles: [] };
 
-  for (let i = 0; i < listings.length; i++) {
-    const listing = listings[i];
-    process.stdout.write(`[${i + 1}/${listings.length}] "${listing.title.slice(0, 50)}" → `);
+  async function runWorker(page) {
+    while (cursor < listings.length) {
+      const idx = cursor++;
+      const result = await processListing(page, listings[idx], idx, listings.length);
 
-    // Search GOAT for this title
-    const results = await searchGoat(page, listing.title);
-    await delay(DELAY_MS);
-
-    if (!results.length) {
-      process.stdout.write("❌ not found on GOAT\n");
-      notFound++;
-      notFoundTitles.push(listing.title);
-      continue;
-    }
-
-    const match = pickBestMatch(listing.title, results);
-    if (!match) {
-      process.stdout.write("❌ no match\n");
-      notFound++;
-      notFoundTitles.push(listing.title);
-      continue;
-    }
-
-    matched++;
-
-    // Fetch per-size prices via buy_bar_data API
-    const sizePrices = await fetchSizePrices(page, match.id);
-    await delay(DELAY_MS);
-
-    if (!sizePrices.length) {
-      process.stdout.write(`⚠️  matched "${match.title.slice(0, 40)}" but no size data\n`);
-      noChange++;
-      continue;
-    }
-
-    // Min price across all sizes (for listing-level price)
-    const minPriceUsd  = Math.min(...sizePrices.map(s => s.priceUsd));
-    const newPriceInr  = usdToInr(minPriceUsd);
-    const newRetailInr = match.retailPriceCents ? usdToInr(match.retailPriceCents / 100) : null;
-
-    const priceChanged  = newPriceInr !== null && newPriceInr !== listing.price;
-    const retailChanged = newRetailInr !== null && newRetailInr !== listing.retail_price;
-
-    // Build size map: US size number → INR price
-    const goatSizeMap = new Map();
-    for (const sp of sizePrices) {
-      goatSizeMap.set(parseFloat(sp.size), usdToInr(sp.priceUsd));
-    }
-
-    // Update product_listing_sizes
-    const dbSizes = listing.product_listing_sizes || [];
-    let sizeUpdateCount = 0;
-    for (const dbSize of dbSizes) {
-      // Match US size from DB size_value e.g. "uk 8 / us 8.5 / eu 42" or "uk 8.5"
-      const usMatch = dbSize.size_value.match(/us\s*([0-9.]+)/i);
-      const ukMatch = dbSize.size_value.match(/uk\s*([0-9.]+)/i);
-      let usSize = null;
-      if (usMatch)      usSize = parseFloat(usMatch[1]);
-      else if (ukMatch) usSize = parseFloat(ukMatch[1]) + 0.5; // UK → US mens
-
-      if (usSize == null) continue;
-      const newSizeInr = goatSizeMap.get(usSize);
-      if (!newSizeInr || newSizeInr === dbSize.price) continue;
-
-      const { error: sizeErr } = await supabase
-        .from("product_listing_sizes")
-        .update({ price: newSizeInr })
-        .eq("id", dbSize.id);
-      if (!sizeErr) sizeUpdateCount++;
-    }
-
-    // Update listing-level price
-    if (priceChanged || retailChanged) {
-      const payload = { updated_at: new Date().toISOString() };
-      if (priceChanged)  payload.price        = newPriceInr;
-      if (retailChanged) payload.retail_price = newRetailInr;
-
-      const { error: listingErr } = await supabase
-        .from("product_listings")
-        .update(payload)
-        .eq("id", listing.id);
-
-      if (listingErr) {
-        process.stdout.write(`⚠️  DB error: ${listingErr.message}\n`);
-        continue;
+      if (result.status === "notFound") {
+        stats.notFound++;
+        stats.notFoundTitles.push(result.title);
+      } else if (result.status === "updated") {
+        stats.matched++;
+        stats.updated++;
+        stats.sizesUpdated += result.sizeUpdateCount || 0;
+      } else if (result.status === "noChange") {
+        stats.matched++;
+        stats.noChange++;
       }
-      updated++;
-    } else {
-      noChange++;
     }
-
-    sizesUpdated += sizeUpdateCount;
-
-    const tag = (priceChanged || retailChanged) ? "✅" : "—";
-    process.stdout.write(
-      `${tag} ₹${listing.price}→₹${newPriceInr}` +
-      (sizeUpdateCount > 0 ? ` | ${sizeUpdateCount} sizes` : "") +
-      "\n"
-    );
   }
+
+  await Promise.all(pages.map(page => runWorker(page)));
 
   await browser.close();
 
@@ -293,21 +319,21 @@ async function main() {
   console.log("📊 PRICE UPDATE SUMMARY");
   console.log("═".repeat(55));
   console.log(`  Total listings checked : ${listings.length}`);
-  console.log(`  Matched on GOAT        : ${matched}`);
-  console.log(`  Listing prices updated : ${updated}`);
-  console.log(`  Size prices updated    : ${sizesUpdated}`);
-  console.log(`  No change              : ${noChange}`);
-  console.log(`  Not found on GOAT      : ${notFound}`);
+  console.log(`  Matched on GOAT        : ${stats.matched}`);
+  console.log(`  Listing prices updated : ${stats.updated}`);
+  console.log(`  Size prices updated    : ${stats.sizesUpdated}`);
+  console.log(`  No change              : ${stats.noChange}`);
+  console.log(`  Not found on GOAT      : ${stats.notFound}`);
   console.log("═".repeat(55));
 
-  if (notFoundTitles.length > 0 && notFoundTitles.length <= 15) {
+  if (stats.notFoundTitles.length > 0 && stats.notFoundTitles.length <= 15) {
     console.log("\n⚠️  Not found on GOAT:");
-    notFoundTitles.forEach(t => console.log(`   - ${t}`));
-  } else if (notFoundTitles.length > 15) {
-    console.log(`\n⚠️  ${notFoundTitles.length} listings not found on GOAT`);
+    stats.notFoundTitles.forEach(t => console.log(`   - ${t}`));
+  } else if (stats.notFoundTitles.length > 15) {
+    console.log(`\n⚠️  ${stats.notFoundTitles.length} listings not found on GOAT`);
   }
 
-  console.log(`\n🎉 Done! ${updated} listing price(s) + ${sizesUpdated} size price(s) updated.`);
+  console.log(`\n🎉 Done! ${stats.updated} listing price(s) + ${stats.sizesUpdated} size price(s) updated.`);
 }
 
 main().catch(err => {
