@@ -22,7 +22,7 @@ import { fileURLToPath } from "url";
 import { chromium as playwrightChromium } from "playwright";
 import { chromium as stealthChromium } from "playwright-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { createClient } from "../node_modules/@supabase/supabase-js/dist/index.mjs";
+import { createClient } from "@supabase/supabase-js";
 
 stealthChromium.use(StealthPlugin());
 
