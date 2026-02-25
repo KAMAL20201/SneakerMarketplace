@@ -167,6 +167,8 @@ const Browse = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  // Maps listing id → size-specific price (populated when a size filter is active)
+  const [sizeSpecificPrices, setSizeSpecificPrices] = useState<Record<string, number>>({});
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -249,7 +251,36 @@ const Browse = () => {
       }
       // Size (only applies when sneakers category is selected)
       if (currentFilters.size.length > 0 && currentFilters.category.includes(CATEGORY_IDS.SNEAKERS)) {
-        query = query.in("size_value", currentFilters.size);
+        // Pre-fetch from product_listing_sizes to catch multi-size listings
+        // (multi-size listings store size_value=null on the listing itself)
+        const { data: sizeRows } = await supabase
+          .from("product_listing_sizes")
+          .select("listing_id, price")
+          .in("size_value", currentFilters.size)
+          .eq("is_sold", false);
+
+        const multiSizeIds = [...new Set((sizeRows ?? []).map((r: { listing_id: string; price: number }) => r.listing_id))];
+
+        // Build a price map: listingId → size-specific price
+        const priceMap: Record<string, number> = {};
+        (sizeRows ?? []).forEach((r: { listing_id: string; price: number }) => {
+          // Keep the lower price if a listing appears multiple times (multiple selected sizes)
+          if (priceMap[r.listing_id] === undefined || r.price < priceMap[r.listing_id]) {
+            priceMap[r.listing_id] = r.price;
+          }
+        });
+        setSizeSpecificPrices((prev) => replace ? priceMap : { ...prev, ...priceMap });
+
+        if (multiSizeIds.length > 0) {
+          // Match single-size listings by size_value OR multi-size listings by id
+          const sizeVals = currentFilters.size.map((s) => `"${s}"`).join(",");
+          query = query.or(`size_value.in.(${sizeVals}),id.in.(${multiSizeIds.join(",")})`);
+        } else {
+          // No multi-size matches; single-size only
+          query = query.in("size_value", currentFilters.size);
+        }
+      } else if (replace) {
+        setSizeSpecificPrices({});
       }
       // Price
       query = query
@@ -829,7 +860,7 @@ const Browse = () => {
                       <div className="flex items-center justify-between mb-2 md:mb-3">
                         <span className="font-bold text-gray-800 text-base md:text-lg">
                           ₹{(filters.size.length > 0 && listing.category === CATEGORY_IDS.SNEAKERS
-                            ? listing.price
+                            ? (sizeSpecificPrices[listing.id] ?? listing.price)
                             : (listing.min_price ?? listing.price)
                           ).toLocaleString()}
                         </span>
