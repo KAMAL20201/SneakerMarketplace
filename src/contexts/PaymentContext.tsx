@@ -270,16 +270,19 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             open it directly.
           </p>
 
-          <a
-            href={popupBlockedUrl || "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setPopupBlockedUrl(null)}
+          <button
+            type="button"
+            onClick={() => {
+              if (popupBlockedUrl) {
+                window.location.href = popupBlockedUrl;
+              }
+              setPopupBlockedUrl(null);
+            }}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-6 py-3 text-base font-semibold text-white shadow-lg transition-colors hover:bg-[#1da851]"
           >
             Open WhatsApp
             <ExternalLink className="h-4 w-4" />
-          </a>
+          </button>
 
           <p className="mt-3 text-center text-xs text-gray-400">
             Tip: Allow pop-ups for this site so it opens automatically next time.
