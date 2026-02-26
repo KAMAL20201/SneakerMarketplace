@@ -626,6 +626,27 @@ export default function ProductDetailPage() {
                 const isApparel = listing?.category === "clothing";
 
                 if (isApparel) {
+                  // Check if the listing is "one size" (e.g. bags)
+                  const isOneSize =
+                    listing?.size_value?.toLowerCase() === "one size" ||
+                    (availableSizes.length === 1 &&
+                      availableSizes[0]?.size_value?.toLowerCase() === "one size");
+
+                  if (isOneSize) {
+                    return (
+                      <>
+                        <h3 className="text-lg font-bold text-gray-800 flex-shrink-0 capitalize">
+                          {listing?.brand} Size Guide
+                        </h3>
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <p className="text-gray-600 text-sm">
+                            This item is <span className="font-semibold text-purple-600">One Size</span> — no size chart available.
+                          </p>
+                        </div>
+                      </>
+                    );
+                  }
+
                   // ── Apparel size guide: measurement table ──────────────────
                   const apparelChart = getApparelSizeChart(listing?.brand ?? "");
 
