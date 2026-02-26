@@ -181,7 +181,7 @@ function buildOrderConfirmed(
       <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${addressBlock(order.shipping_address)}</p>
     </div>` : ""}
 
-    ${ctaButton("View Order Details", actionUrl)}
+    ${ctaButton("Continue Shopping", actionUrl)}
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
       We'll email you when your order ships. Thank you for shopping with us!
@@ -215,7 +215,7 @@ function buildPaymentReceived(
       <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${addressBlock(order.shipping_address)}</p>
     </div>` : ""}
 
-    ${ctaButton("View Order & Ship", actionUrl)}
+    ${ctaButton("View Orders", actionUrl)}
 
     <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-top:8px;">
       <p style="margin:0;color:#92400e;font-size:13px;font-weight:600;">⏰ Please ship within 2 business days to maintain your seller rating.</p>
@@ -244,7 +244,7 @@ function buildOrderShipped(
       ${order.estimated_delivery ? orderSummaryRow("Expected Delivery", order.estimated_delivery) : ""}
     </table>
 
-    ${ctaButton("Track Your Order", actionUrl)}
+    ${ctaButton("Contact Support", actionUrl)}
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
       Keep an eye on your tracking number for live updates.
@@ -271,7 +271,7 @@ function buildOrderDelivered(
       ${orderSummaryRow("Amount", formatAmount(order.amount, order.currency))}
     </table>
 
-    ${ctaButton("Leave a Review", actionUrl)}
+    ${ctaButton("Shop Again", actionUrl)}
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
       Loved your purchase? Share it with friends and tag us on Instagram!
@@ -302,7 +302,7 @@ function buildOrderCancelled(
       <p style="margin:0;color:#92400e;font-size:14px;">Your refund will be processed within 5–7 business days to your original payment method.</p>
     </div>
 
-    ${ctaButton("View Refund Status", actionUrl)}
+    ${ctaButton("Contact Support", actionUrl)}
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
       Sorry for the inconvenience. Browse our other listings to find something you'll love!
@@ -335,7 +335,7 @@ function buildShippingReminder(
       <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${addressBlock(order.shipping_address)}</p>
     </div>` : ""}
 
-    ${ctaButton("Mark as Shipped", actionUrl)}
+    ${ctaButton("View Orders", actionUrl)}
 
     <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;margin-top:8px;">
       <p style="margin:0;color:#dc2626;font-size:13px;font-weight:600;">Please ship within 24 hours to avoid order cancellation.</p>
@@ -345,9 +345,20 @@ function buildShippingReminder(
 
 // ── Build email for a given type ───────────────────────────────────────────────
 
+const BASE_URL = "https://theplugmarket.in";
+
+const DEFAULT_ACTION_URLS: Record<EmailRequest["type"], string> = {
+  order_confirmed:   BASE_URL,
+  payment_received:  `${BASE_URL}/my-orders`,
+  order_shipped:     `${BASE_URL}/contact-us`,
+  order_delivered:   BASE_URL,
+  order_cancelled:   `${BASE_URL}/contact-us`,
+  shipping_reminder: `${BASE_URL}/my-orders`,
+};
+
 function buildEmailContent(req: EmailRequest): { subject: string; html: string } {
   const { type, recipient_name, order_data, template_data } = req;
-  const actionUrl = template_data?.action_url ?? "https://theplugmarket.in";
+  const actionUrl = template_data?.action_url ?? DEFAULT_ACTION_URLS[type] ?? BASE_URL;
   const subject =
     template_data?.subject ?? getDefaultSubject(type, order_data.product_title);
 
