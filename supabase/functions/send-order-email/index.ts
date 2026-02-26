@@ -7,7 +7,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
 ];
 
-const FROM_ADDRESS = "The Plug Market <orders@theplugmarket.in>";
+const FROM_ADDRESS = "The Plug Market <support@theplugmarket.in>";
 
 function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get("Origin") ?? "";
