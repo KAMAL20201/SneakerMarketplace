@@ -125,6 +125,7 @@ export const SNEAKER_SIZES = {
 } as const;
 
 export const CLOTHING_SIZES = {
+  ONE_SIZE: "one size",
   XS: "xs",
   S: "s",
   M: "m",
