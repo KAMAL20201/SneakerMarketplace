@@ -44,7 +44,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
         const success = await addAddress(address);
         if (success) {
           setShowNewAddressForm(false);
-          setShippingAddress(address);
+          onNext(address);
         }
       }
     } catch (error) {
@@ -85,7 +85,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Content */}
-      <div className="flex-1 overflow-y-auto max-h-[calc(100dvh-260px)] p-4">
+      <div className="flex-1 overflow-y-auto p-4">
         {/* Loading State */}
         {loading && (
           <div className="flex items-center justify-center py-8">
@@ -160,8 +160,8 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
           ))}
       </div>
 
-      {/* Footer with Continue Button */}
-      <div className="fixed bottom-2 w-full border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
+      {/* Footer with Continue Button — hidden when form is open (form has its own submit) */}
+      {!showNewAddressForm && <div className="flex-shrink-0 border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
         <Button
           onClick={handleContinue}
           disabled={!isFormValid}
@@ -183,7 +183,7 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
             Please select or add a shipping address to continue
           </p>
         )}
-      </div>
+      </div>}
     </div>
   );
 };

@@ -257,7 +257,7 @@ export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
             ? "Saving..."
             : isEdit
             ? "Update Address"
-            : "Save Address"}
+            : "Continue to Payment"}
         </Button>
         {onCancel && (
           <Button

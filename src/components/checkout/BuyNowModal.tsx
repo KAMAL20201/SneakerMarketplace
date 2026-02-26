@@ -58,7 +58,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                 <DialogTitle>Select Shipping Address</DialogTitle>
               </DialogHeader>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 h-full overflow-hidden">
               <ShippingStep onBack={handleClose} onNext={handleShippingNext} />
             </div>
           </div>
