@@ -1263,6 +1263,26 @@ export default function SellPage() {
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       {
+                        value: DELIVERY_TIMELINES.THREE_TO_FIVE,
+                        label: "3-5 Days",
+                        color: "from-green-500 to-emerald-500",
+                      },
+                      {
+                        value: DELIVERY_TIMELINES.SEVEN_TO_TEN,
+                        label: "7-10 Days",
+                        color: "from-blue-500 to-cyan-500",
+                      },
+                      {
+                        value: DELIVERY_TIMELINES.TWELVE_TO_FIFTEEN,
+                        label: "12-15 Days",
+                        color: "from-orange-500 to-amber-500",
+                      },
+                      {
+                        value: DELIVERY_TIMELINES.EIGHTEEN_TO_TWENTY_ONE,
+                        label: "18-21 Days",
+                        color: "from-pink-500 to-rose-500",
+                      },
+                      {
                         value: DELIVERY_TIMELINES.TWENTY_ONE_TO_TWENTY_EIGHT,
                         label: "21-28 Days",
                         color: "from-purple-500 to-indigo-500",
@@ -1529,12 +1549,9 @@ export default function SellPage() {
                           <p>
                             <strong>Delivery Time:</strong>{" "}
                             {formData.deliveryDays ===
-                            DELIVERY_TIMELINES.TWENTY_ONE_TO_TWENTY_EIGHT
-                              ? "21-28 Days"
-                              : formData.deliveryDays ===
-                                DELIVERY_TIMELINES.CUSTOM
+                            DELIVERY_TIMELINES.CUSTOM
                               ? formData.customDeliveryDays || "Custom"
-                              : formData.deliveryDays}
+                              : `${formData.deliveryDays} Days`}
                           </p>
                         )}
 
