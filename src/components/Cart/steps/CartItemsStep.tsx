@@ -1,7 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useCart } from "@/contexts/CartContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
@@ -124,18 +123,6 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
-
-                      {/* Seller Info */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarFallback className="text-xs bg-gray-100">
-                            {item.sellerName?.charAt(0) || "S"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <p className="text-xs text-gray-600">
-                          Sold by {item.sellerName}
-                        </p>
                       </div>
 
                       {/* Price */}
