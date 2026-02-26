@@ -85,19 +85,20 @@ function usdToInr(usd) {
 /**
  * UK → US size offset per brand.
  *   US = UK + offset
- *   +1   → Nike, Jordan, ASICS
+ *   +1   → Nike, Jordan, ASICS, Onitsuka Tiger
  *   +0.5 → Adidas, New Balance, On Cloud, Yeezy
  *    0   → Converse (same)
  */
 const BRAND_SIZE_OFFSET = {
-  nike:         1,
-  jordan:       1,
-  asics:        1,
-  adidas:       0.5,
-  "new balance": 0.5,
-  "on cloud":   0.5,
-  yeezy:        0.5,
-  converse:     0,
+  nike:              1,
+  jordan:            1,
+  asics:             1,
+  "onitsuka tiger":  1,
+  adidas:            0.5,
+  "new balance":     0.5,
+  "on cloud":        0.5,
+  yeezy:             0.5,
+  converse:          0,
 };
 
 /** Return UK→US offset for a brand string. Falls back to 1 (most common). */
@@ -194,9 +195,9 @@ async function fetchSizePrices(page, templateId, p) {
       if (!res.ok) return { ok: false, status: res.status };
       const variants = await res.json();
       const firstRaw    = variants[0] ?? null;
-      const firstNewRaw = variants.find(v => v.shoeCondition === "new_no_defects") ?? null;
+      const firstNewRaw = variants.find(v => v.shoeCondition === "new_no_defects" && v.boxCondition === "good_condition") ?? null;
       const mapped = variants
-        .filter(v => v.shoeCondition === "new_no_defects" && v.stockStatus !== "not_in_stock")
+        .filter(v => v.shoeCondition === "new_no_defects" && v.boxCondition === "good_condition" && v.stockStatus !== "not_in_stock")
         .map(v => ({
           size:        String(v.sizeOption?.value ?? "?"),
           stockStatus: v.stockStatus,
@@ -217,7 +218,7 @@ async function fetchSizePrices(page, templateId, p) {
   }
 
   if (raw.firstRaw) {
-    console.log(`${p} 💰 [BUY_BAR] firstVariant(any)  → condition="${raw.firstRaw.shoeCondition}" size=${raw.firstRaw.sizeOption?.value} lowestPriceCents=${JSON.stringify(raw.firstRaw.lowestPriceCents)}`);
+    console.log(`${p} 💰 [BUY_BAR] firstVariant(any)  → shoe="${raw.firstRaw.shoeCondition}" box="${raw.firstRaw.boxCondition}" size=${raw.firstRaw.sizeOption?.value} lowestPriceCents=${JSON.stringify(raw.firstRaw.lowestPriceCents)}`);
   }
   if (raw.firstNewRaw) {
     console.log(`${p} 💰 [BUY_BAR] firstVariant(new)  → size=${raw.firstNewRaw.sizeOption?.value} amount=${raw.firstNewRaw.lowestPriceCents?.amount} currency=${raw.firstNewRaw.lowestPriceCents?.currency ?? "MISSING"}`);
