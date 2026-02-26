@@ -150,6 +150,7 @@ const Browse = () => {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [tempFilters, setTempFilters] = useState<FilterState>(initialFilters);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({
     priceRange: false,
     condition: false,
@@ -495,7 +496,7 @@ const Browse = () => {
         <div className="flex justify-end gap-3 mb-2">
           <div className="flex items-center gap-2">
             {/* Sort */}
-            <Popover>
+            <Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30">
                   <SortAsc className="h-4 w-4 mr-2" />
@@ -510,7 +511,7 @@ const Browse = () => {
                     <Button
                       key={option.value}
                       variant={filters.sortBy === option.value ? "default" : "ghost"}
-                      onClick={() => handleImmediateFilterChange("sortBy", option.value)}
+                      onClick={() => { handleImmediateFilterChange("sortBy", option.value); setSortPopoverOpen(false); }}
                       className={`w-full justify-start rounded-xl ${filters.sortBy === option.value
                           ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
                           : "glass-button border-0 text-gray-700 hover:bg-white/30"
