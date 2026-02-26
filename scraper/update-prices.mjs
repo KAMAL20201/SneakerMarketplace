@@ -82,6 +82,34 @@ function usdToInr(usd) {
   return ((usd + 10) * USD_TO_INR) + MARGIN_INR;
 }
 
+/**
+ * UK → US size offset per brand.
+ *   US = UK + offset
+ *   +1   → Nike, Jordan, ASICS
+ *   +0.5 → Adidas, New Balance, On Cloud, Yeezy
+ *    0   → Converse (same)
+ */
+const BRAND_SIZE_OFFSET = {
+  nike:         1,
+  jordan:       1,
+  asics:        1,
+  adidas:       0.5,
+  "new balance": 0.5,
+  "on cloud":   0.5,
+  yeezy:        0.5,
+  converse:     0,
+};
+
+/** Return UK→US offset for a brand string. Falls back to 1 (most common). */
+function brandSizeOffset(brand) {
+  if (!brand) return 1;
+  const b = brand.toLowerCase().trim();
+  for (const [key, offset] of Object.entries(BRAND_SIZE_OFFSET)) {
+    if (b === key || b.includes(key)) return offset;
+  }
+  return 1; // default: +1 (Nike-style, most sneakers)
+}
+
 /** Normalise title for fuzzy matching: lowercase, strip punctuation */
 function normalise(str) {
   return str.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
@@ -269,7 +297,9 @@ async function processListing(page, listing, idx, total) {
     console.log(`${pg} 📐 size=${sp.size} | $${sp.priceUsd} → ₹${inr}`);
   }
 
-  // Match DB sizes → GOAT sizes
+  // Match DB sizes → GOAT sizes (brand-aware UK→US conversion)
+  const offset = brandSizeOffset(listing.brand);
+  console.log(`${pg} 📐 brand="${listing.brand}" → UK→US offset=${offset}`);
   const dbSizes = listing.product_listing_sizes || [];
   const sizeUpdatePromises = [];
   for (const dbSize of dbSizes) {
@@ -277,7 +307,7 @@ async function processListing(page, listing, idx, total) {
     const ukMatch = dbSize.size_value.match(/uk\s*([0-9.]+)/i);
     let usSize = null;
     if (usMatch)      usSize = parseFloat(usMatch[1]);
-    else if (ukMatch) usSize = parseFloat(ukMatch[1]) + 0.5;
+    else if (ukMatch) usSize = parseFloat(ukMatch[1]) + offset;
 
     if (usSize == null) {
       console.log(`${pg} 📐 DB size="${dbSize.size_value}" → could not parse US size, skipping`);
@@ -345,7 +375,7 @@ async function main() {
   console.log("📡 Fetching active listings from DB...");
   const { data: listings, error: fetchErr } = await supabase
     .from("product_listings")
-    .select("id, title, price, retail_price, product_listing_sizes(id, size_value, price)")
+    .select("id, title, brand, price, retail_price, product_listing_sizes(id, size_value, price)")
     .eq("status", "active");
 
   if (fetchErr) { console.error("❌ DB fetch failed:", fetchErr.message); process.exit(1); }
