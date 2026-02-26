@@ -104,7 +104,9 @@ export function CartSidebar() {
           <CartHeader currentStep={currentStep} onClose={handleCloseCart} />
 
           {/* Dynamic content based on step */}
-          {renderStep()}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {renderStep()}
+          </div>
         </div>
       </div>
     </>
