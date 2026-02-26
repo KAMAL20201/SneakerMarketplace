@@ -108,8 +108,8 @@ export class EmailService {
       orderData,
       {
         subject: "🎉 Order Confirmed! Your purchase is being processed",
-        action_text: "View Order Details",
-        action_url: `${window.location.origin}/orders/${orderData.order_id}`,
+        action_text: "Continue Shopping",
+        action_url: `${window.location.origin}/`,
       }
     );
   }
@@ -129,8 +129,8 @@ export class EmailService {
       orderData,
       {
         subject: "💰 Payment Received! New order to fulfill",
-        action_text: "View Order Details",
-        action_url: `${window.location.origin}/seller/orders/${orderData.order_id}`,
+        action_text: "View Orders",
+        action_url: `${window.location.origin}/my-orders`,
       }
     );
   }
@@ -150,8 +150,8 @@ export class EmailService {
       orderData,
       {
         subject: "📦 Your order has been shipped!",
-        action_text: "Track Order",
-        action_url: `${window.location.origin}/orders/${orderData.order_id}`,
+        action_text: "Contact Support",
+        action_url: `${window.location.origin}/contact-us`,
       }
     );
   }
@@ -171,8 +171,8 @@ export class EmailService {
       orderData,
       {
         subject: "✅ Your order has been delivered!",
-        action_text: "Review Product",
-        action_url: `${window.location.origin}/orders/${orderData.order_id}/review`,
+        action_text: "Shop Again",
+        action_url: `${window.location.origin}/`,
       }
     );
   }
@@ -192,8 +192,8 @@ export class EmailService {
       orderData,
       {
         subject: "❌ Order Cancelled",
-        action_text: "View Refund Status",
-        action_url: `${window.location.origin}/orders/${orderData.order_id}`,
+        action_text: "Contact Support",
+        action_url: `${window.location.origin}/contact-us`,
       }
     );
   }
@@ -213,8 +213,8 @@ export class EmailService {
       orderData,
       {
         subject: "⏰ Reminder: Ship your order within 24 hours",
-        action_text: "Mark as Shipped",
-        action_url: `${window.location.origin}/seller/orders/${orderData.order_id}/ship`,
+        action_text: "View Orders",
+        action_url: `${window.location.origin}/my-orders`,
       }
     );
   }
