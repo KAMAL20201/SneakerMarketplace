@@ -23,6 +23,7 @@ const MyOrders = lazy(() => import("./pages/MyOrders"));
 const MyAddresses = lazy(() => import("./pages/MyAddresses"));
 const EditListing = lazy(() => import("./pages/EditListing"));
 const Browse = lazy(() => import("./pages/Browse"));
+const CategoryBrowse = lazy(() => import("./pages/CategoryBrowse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
 const AdminImport = lazy(() => import("./pages/AdminImport"));
 // [PAYMENT METHODS HIDDEN] Page disabled — seller payout methods not in use
@@ -44,6 +45,10 @@ const NewArrivals = lazy(() => import("./pages/NewArrivals"));
 export const preloadRoutes = {
   home: () => import("./pages/Home"),
   browse: () => import("./pages/Browse"),
+  sneakers: () => import("./pages/CategoryBrowse"),
+  apparels: () => import("./pages/CategoryBrowse"),
+  electronics: () => import("./pages/CategoryBrowse"),
+  collectibles: () => import("./pages/CategoryBrowse"),
   sell: () => import("./pages/Sell"),
   login: () => import("./pages/SignIn"),
   // [GUEST CHECKOUT] signup preload commented out
@@ -176,11 +181,44 @@ const Router = () => {
           </Suspense>
         }
       />
+      {/* /browse kept for search dropdown backwards compatibility */}
       <Route
         path={ROUTE_NAMES.BROWSE}
         element={
           <Suspense fallback={<PageSkeleton />}>
             <Browse />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.SNEAKERS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <CategoryBrowse categoryId="sneakers" />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.APPARELS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <CategoryBrowse categoryId="clothing" />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.ELECTRONICS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <CategoryBrowse categoryId="electronics" />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.COLLECTIBLES}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <CategoryBrowse categoryId="collectibles" />
           </Suspense>
         }
       />

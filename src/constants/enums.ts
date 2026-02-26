@@ -35,6 +35,10 @@ export const ROUTE_NAMES = {
   CANCELLATIONS_REFUNDS: "/cancellations-refunds",
   WISHLIST: "/wishlist",
   NEW_ARRIVALS: "/new-arrivals",
+  SNEAKERS: "/sneakers",
+  APPARELS: "/apparels",
+  ELECTRONICS: "/electronics",
+  COLLECTIBLES: "/collectibles",
 } as const;
 
 // Helper functions for dynamic routes

@@ -1,6 +1,5 @@
 import {
   Home,
-  Search,
   Plus,
   ShoppingBag,
   Package,
@@ -8,7 +7,9 @@ import {
   Heart,
   Sparkles,
   MessageCircle,
-  ChevronRight,
+  Shirt,
+  Headphones,
+  Book,
 } from "lucide-react";
 
 import {
@@ -21,9 +22,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -31,13 +29,6 @@ import { Link } from "react-router";
 import { preloadRoutes } from "@/Router";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useAdmin } from "@/hooks/useAdmin";
-import { categories } from "@/constants/sellConstants";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { useState } from "react";
 
 // Navigation items - sell/listing items only shown to admin
 const getNavData = (isAdmin: boolean) => ({
@@ -52,12 +43,6 @@ const getNavData = (isAdmin: boolean) => ({
           preloadKey: "home" as keyof typeof preloadRoutes,
         },
         {
-          title: "Browse",
-          url: ROUTE_NAMES.BROWSE,
-          icon: Search,
-          preloadKey: "browse" as keyof typeof preloadRoutes,
-        },
-        {
           title: "New Arrivals",
           url: ROUTE_NAMES.NEW_ARRIVALS,
           icon: Sparkles,
@@ -68,6 +53,35 @@ const getNavData = (isAdmin: boolean) => ({
           url: ROUTE_NAMES.WISHLIST,
           icon: Heart,
           preloadKey: "wishlist" as keyof typeof preloadRoutes,
+        },
+      ],
+    },
+    {
+      title: "Categories",
+      items: [
+        {
+          title: "Sneakers",
+          url: ROUTE_NAMES.SNEAKERS,
+          icon: Package,
+          preloadKey: "sneakers" as keyof typeof preloadRoutes,
+        },
+        {
+          title: "Apparels & Bags",
+          url: ROUTE_NAMES.APPARELS,
+          icon: Shirt,
+          preloadKey: "apparels" as keyof typeof preloadRoutes,
+        },
+        {
+          title: "Electronics",
+          url: ROUTE_NAMES.ELECTRONICS,
+          icon: Headphones,
+          preloadKey: "electronics" as keyof typeof preloadRoutes,
+        },
+        {
+          title: "Collectibles & Art",
+          url: ROUTE_NAMES.COLLECTIBLES,
+          icon: Book,
+          preloadKey: "collectibles" as keyof typeof preloadRoutes,
         },
       ],
     },
@@ -122,7 +136,6 @@ export function AppSidebar() {
   const { toggleSidebar } = useSidebar();
   const { isAdmin } = useAdmin();
   const data = getNavData(isAdmin);
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
 
   // Preload route on hover for better performance
   const handleRoutePreload = (
@@ -162,22 +175,19 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="px-2">
         {/* Hide sections that have no items (e.g. My Account for non-admin guests) */}
-        {data.navMain.filter((section) => section.items.length > 0).map((item) => (
-          <SidebarGroup key={item.title}>
+        {data.navMain.filter((section) => section.items.length > 0).map((section) => (
+          <SidebarGroup key={section.title}>
             <SidebarGroupLabel className="text-gray-700 font-semibold px-3">
-              {item.title}
+              {section.title}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {item.items.map((item) => (
+                {section.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className=" rounded-xl border-0 mx-1 my-0.5 hover:bg-white/20"
-                      onClick={() => {
-                        //close the sidebar
-                        toggleSidebar();
-                      }}
+                      className="rounded-xl border-0 mx-1 my-0.5 hover:bg-white/20"
+                      onClick={() => toggleSidebar()}
                     >
                       <Link
                         to={item.url}
@@ -194,56 +204,6 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
-
-        {/* Categories Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-700 font-semibold px-3">
-            Categories
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <Collapsible
-                open={categoriesOpen}
-                onOpenChange={setCategoriesOpen}
-              >
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="rounded-xl border-0 mx-1 my-0.5 hover:bg-white/20 text-gray-700">
-                      <Package className="h-4 w-4" />
-                      <span>All Categories</span>
-                      <ChevronRight
-                        className={`ml-auto h-4 w-4 transition-transform duration-200 ${
-                          categoriesOpen ? "rotate-90" : ""
-                        }`}
-                      />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {categories.map((category) => (
-                        <SidebarMenuSubItem key={category.id}>
-                          <SidebarMenuSubButton
-                            asChild
-                            className="rounded-lg hover:bg-white/20"
-                          >
-                            <Link
-                              to={`${ROUTE_NAMES.BROWSE}?category=${category.id}`}
-                              className="text-gray-600"
-                              onClick={() => toggleSidebar()}
-                            >
-                              <category.icon className="h-3.5 w-3.5" />
-                              <span>{category.name}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarRail />

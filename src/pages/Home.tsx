@@ -1,23 +1,16 @@
 import { Sparkles } from "lucide-react";
-// [MARKETPLACE REMOVED] Plus icon and Button were used for "Sell Now" CTA
-// import { Plus } from "lucide-react";
-// import { Button } from "@/components/ui/button";
 import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router";
 import { categories } from "@/constants/sellConstants";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { supabaseUrl } from "@/lib/supabase";
-import RecentlyListed from "@/components/RecentlyListed";
-// import FeaturedListings from "@/components/FeaturedListings";
+import CategorySection from "@/components/CategorySection";
 import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
 import InstagramBanner from "@/components/InstagramBanner";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 import HotDeals from "@/components/HotDeals";
-// import DealSubscriptionBanner from "@/components/DealSubscriptionBanner";
-// [MARKETPLACE REMOVED] HowItWorks section - escrow system explanation not relevant for ecommerce
-// import HowItWorks from "@/components/HowItWorks";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -25,9 +18,15 @@ import { supabase } from "@/lib/supabase";
 const Home = () => {
   const navigate = useNavigate();
 
+  const categoryRoutes: Record<string, string> = {
+    sneakers: ROUTE_NAMES.SNEAKERS,
+    clothing: ROUTE_NAMES.APPARELS,
+    electronics: ROUTE_NAMES.ELECTRONICS,
+    collectibles: ROUTE_NAMES.COLLECTIBLES,
+  };
+
   const handleCategoryClick = (categoryId: string) => {
-    // Navigate to browse page with category filter
-    navigate(`${ROUTE_NAMES.BROWSE}?category=${categoryId}`);
+    navigate(categoryRoutes[categoryId] ?? ROUTE_NAMES.SNEAKERS);
   };
 
   useEffect(() => {
@@ -199,8 +198,19 @@ const Home = () => {
       {/* Hot Deals Section */}
       <HotDeals />
 
-      {/* Recently Listed Section */}
-      <RecentlyListed />
+      {/* Sneakers Section */}
+      <CategorySection
+        categoryId="sneakers"
+        title="Sneakers"
+        viewAllUrl={ROUTE_NAMES.SNEAKERS}
+      />
+
+      {/* Apparels Section */}
+      <CategorySection
+        categoryId="clothing"
+        title="Apparels & Bags"
+        viewAllUrl={ROUTE_NAMES.APPARELS}
+      />
 
       {/* Trending Section */}
       {/* <section className="px-4 py-6">
