@@ -84,22 +84,22 @@ const UK_SIZE_COLS: { col: string; size_value: string }[] = [
 // ── Single-size US→UK/US/EU mapping (for old format) ─────────────────────────
 
 const US_SIZE_MAP: Record<number, string> = {
-  6:    "uk 5 / us 6 / eu 40",
-  6.5:  "uk 5.5 / us 6.5 / eu 40",
-  7:    "uk 6 / us 7 / eu 41",
-  7.5:  "uk 6.5 / us 7.5 / eu 41",
-  8:    "uk 7 / us 8 / eu 42",
-  8.5:  "uk 7.5 / us 8.5 / eu 42",
-  9:    "uk 8 / us 9 / eu 43",
-  9.5:  "uk 8.5 / us 9.5 / eu 43",
-  10:   "uk 9 / us 10 / eu 44",
-  10.5: "uk 9.5 / us 10.5 / eu 44",
-  11:   "uk 10 / us 11 / eu 45",
-  11.5: "uk 10.5 / us 11.5 / eu 45",
-  12:   "uk 11 / us 12 / eu 46",
-  13:   "uk 12 / us 13 / eu 47",
-  14:   "uk 13 / us 14 / eu 48",
-  15:   "uk 14 / us 15 / eu 49",
+  6:    "uk 5",
+  6.5:  "uk 5.5",
+  7:    "uk 6",
+  7.5:  "uk 6.5",
+  8:    "uk 7",
+  8.5:  "uk 7.5",
+  9:    "uk 8",
+  9.5:  "uk 8.5",
+  10:   "uk 9",
+  10.5: "uk 9.5",
+  11:   "uk 10",
+  11.5: "uk 10.5",
+  12:   "uk 11",
+  13:   "uk 12",
+  14:   "uk 13",
+  15:   "uk 14",
 };
 
 function mapUsSize(sizeUs: number): string | null {

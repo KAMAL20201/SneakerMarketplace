@@ -106,22 +106,22 @@ export const COLLECTIBLE_BRANDS = {
 
 // Size enums
 export const SNEAKER_SIZES = {
-  UK_5_US_6_EU_40: "uk 5 / us 6 / eu 40",
-  UK_5_5_US_6_5_EU_40: "uk 5.5 / us 6.5 / eu 40",
-  UK_6_US_7_EU_41: "uk 6 / us 7 / eu 41",
-  UK_6_5_US_7_5_EU_41: "uk 6.5 / us 7.5 / eu 41",
-  UK_7_US_8_EU_42: "uk 7 / us 8 / eu 42",
-  UK_7_5_US_8_5_EU_42: "uk 7.5 / us 8.5 / eu 42",
-  UK_8_US_9_EU_43: "uk 8 / us 9 / eu 43",
-  UK_8_5_US_9_5_EU_43: "uk 8.5 / us 9.5 / eu 43",
-  UK_9_US_10_EU_44: "uk 9 / us 10 / eu 44",
-  UK_9_5_US_10_5_EU_44: "uk 9.5 / us 10.5 / eu 44",
-  UK_10_US_11_EU_45: "uk 10 / us 11 / eu 45",
-  UK_10_5_US_11_5_EU_45: "uk 10.5 / us 11.5 / eu 45",
-  UK_11_US_12_EU_46: "uk 11 / us 12 / eu 46",
-  UK_12_US_13_EU_47: "uk 12 / us 13 / eu 47",
-  UK_13_US_14_EU_48: "uk 13 / us 14 / eu 48",
-  UK_14_US_15_EU_49: "uk 14 / us 15 / eu 49",
+  UK_5: "uk 5",
+  UK_5_5: "uk 5.5",
+  UK_6: "uk 6",
+  UK_6_5: "uk 6.5",
+  UK_7: "uk 7",
+  UK_7_5: "uk 7.5",
+  UK_8: "uk 8",
+  UK_8_5: "uk 8.5",
+  UK_9: "uk 9",
+  UK_9_5: "uk 9.5",
+  UK_10: "uk 10",
+  UK_10_5: "uk 10.5",
+  UK_11: "uk 11",
+  UK_12: "uk 12",
+  UK_13: "uk 13",
+  UK_14: "uk 14",
 } as const;
 
 export const CLOTHING_SIZES = {

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
-import { useParams } from "react-router";
+import { useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
@@ -26,6 +26,8 @@ import type { EmblaCarouselType } from "embla-carousel";
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const preSelectedSize = searchParams.get("size");
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [availableSizes, setAvailableSizes] = useState<{ size_value: string; price: number; is_sold: boolean }[]>([]);
@@ -192,10 +194,17 @@ export default function ProductDetailPage() {
       setAvailableSizes(sizes);
 
       if (sizes.length > 0) {
-        // Multi-size listing — auto-select cheapest available (non-sold) size
-        const firstAvailable = sizes.find((s) => !s.is_sold) ?? sizes[0];
-        setSelectedSize(firstAvailable.size_value);
-        setSelectedPrice(firstAvailable.price);
+        // Multi-size listing
+        // Try to match URL-provided size first (from browse page filter)
+        let target = preSelectedSize
+          ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
+          : null;
+        // Fall back to cheapest available
+        if (!target) {
+          target = sizes.find((s) => !s.is_sold) ?? sizes[0];
+        }
+        setSelectedSize(target.size_value);
+        setSelectedPrice(target.price);
       } else if (transformedListing.size_value) {
         // Single-size listing — use the listing's own size/price
         setSelectedSize(transformedListing.size_value);
@@ -232,12 +241,17 @@ export default function ProductDetailPage() {
 
   if (loading) return <ProductDetailSkeleton />;
   if (error) return <div>Error: {error}</div>;
-
+  const currentPrice = selectedPrice ?? listing?.price ?? 0;
+  const retailInr: number | null = listing?.retail_price ?? null;
+  const pctOff =
+    retailInr && retailInr > currentPrice
+      ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
+      : null;
   return (
     <div className="min-h-screen">
       <div className="lg:flex lg:gap-8 lg:p-8">
         {/* Image Gallery - Left side on desktop, full width on mobile */}
-        <div className="lg:w-[60%] lg:max-w-2xl px-4 py-6 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5">
+        <div className={`lg:w-[60%] lg:max-w-2xl px-4 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5 ${images.length <= 1 ? "pt-6 pb-2" : "py-6"}`}>
           <div className="mb-4 lg:w-[80%]">
             <Carousel
               className="lg:max-w-lg lg:mx-auto bg-gray-200 rounded-3xl"
@@ -287,17 +301,16 @@ export default function ProductDetailPage() {
             </Carousel>
           </div>
 
-          {/* Image Thumbnails */}
-          <div className="flex gap-3 overflow-x-auto p-2 lg:justify-start lg:max-w-lg lg:flex-col">
+          {/* Image Thumbnails - always visible on desktop, only when >1 image on mobile */}
+          <div className={`gap-3 overflow-x-auto p-2 lg:justify-start lg:max-w-lg lg:flex-col ${images && images.length > 1 ? "flex" : "hidden lg:flex"}`}>
             {images?.map((image, index) => (
               <button
                 key={image.id}
                 onClick={() => setSelectedImageIndex(index)}
-                className={`relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 ${
-                  selectedImageIndex === index
-                    ? "ring-3 ring-purple-500 scale-105"
-                    : "glass-button border-0 hover:scale-105"
-                }`}
+                className={`relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 ${selectedImageIndex === index
+                  ? "ring-3 ring-purple-500 scale-105"
+                  : "glass-button border-0 hover:scale-105"
+                  }`}
               >
                 <ThumbnailImage
                   src={image.image_url || "/placeholder.svg"}
@@ -310,43 +323,32 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Product Details - Right side on desktop, below images on mobile */}
-        <div className="lg:w-[40%] lg:py-6">
-          <div className="px-4 py-5 flex items-center justify-between lg:px-0 lg:py-0 lg:mb-6">
+        <div className="lg:w-[40%] lg:pt-6">
+          <div className="px-4 pt-3 flex items-center justify-between lg:px-0 lg:py-0 lg:mb-1">
             {/* Price block with optional % off badge + strikethrough retail */}
             {(() => {
-              const currentPrice = selectedPrice ?? listing?.price ?? 0;
-              const retailInr: number | null = listing?.retail_price ?? null;
-              const pctOff =
-                retailInr && retailInr > currentPrice
-                  ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
-                  : null;
+
               return (
                 <div className="flex flex-col lg:px-0 px-4">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <h2 className="text-3xl font-bold text-gray-800">
+                  <div className="flex items-baseline gap-2 relative">
+                    <h2 className="text-2xl font-bold text-gray-800">
                       ₹{currentPrice.toLocaleString("en-IN")}
-                    </h2>
-                    {pctOff && (
-                      <span className="text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg">
-                        {pctOff}% off
-                      </span>
+                    </h2> {retailInr && retailInr > currentPrice && (
+                      <p className="text-sm text-gray-400 mt-0.5">
+                        <span className="line-through">
+                          ₹{retailInr.toLocaleString("en-IN")}
+                        </span>
+                      </p>
                     )}
+
                   </div>
-                  {retailInr && retailInr > currentPrice && (
-                    <p className="text-sm text-gray-400 mt-0.5">
-                      Retail:{" "}
-                      <span className="line-through">
-                        ₹{retailInr.toLocaleString("en-IN")}
-                      </span>
-                    </p>
-                  )}
+
                 </div>
               );
             })()}
 
             <div className="flex items-center gap-3">
               <div className="flex items-center">
-                <span className="font-bold">Condition:</span>
                 <ConditionBadge
                   condition={listing?.condition}
                   className="uppercase"
@@ -370,18 +372,22 @@ export default function ProductDetailPage() {
                   className="rounded-full p-2 bg-white/80 hover:bg-white shadow transition-colors"
                 >
                   <Heart
-                    className={`h-5 w-5 transition-colors ${
-                      isInWishlist(listing.id)
-                        ? "fill-red-500 text-red-500"
-                        : "text-gray-400"
-                    }`}
+                    className={`h-5 w-5 transition-colors ${isInWishlist(listing.id)
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-400"
+                      }`}
                   />
                 </button>
               )}
             </div>
           </div>
+          {pctOff && (
+            <span className="mb-[20px] mx-[30px] lg:mx-0 text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg">
+              {pctOff}% off
+            </span>
+          )}
 
-          <div className="px-8 pb-5 lg:px-0 lg:pb-6">
+          <div className="mt-3 px-8 pb-5 lg:px-0 lg:pb-6">
             <h1 className="text-2xl font-bold text-gray-600 capitalize">
               {listing?.brand}
             </h1>
@@ -391,9 +397,8 @@ export default function ProductDetailPage() {
             {listing?.description && (
               <div className="mt-2">
                 <p
-                  className={`text-sm text-gray-500 leading-relaxed whitespace-pre-line ${
-                    descExpanded ? "" : "line-clamp-2"
-                  }`}
+                  className={`text-sm text-gray-500 leading-relaxed whitespace-pre-line ${descExpanded ? "" : "line-clamp-2"
+                    }`}
                 >
                   {listing.description}
                 </p>
@@ -521,13 +526,12 @@ export default function ProductDetailPage() {
                                 setSelectedPrice(s.price);
                               }
                             }}
-                            className={`flex flex-col h-auto py-3 rounded-2xl border-0 font-semibold uppercase gap-0.5 ${
-                              s.is_sold
-                                ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
-                                : isSelected
+                            className={`flex flex-col h-auto py-3 rounded-2xl border-0 font-semibold uppercase gap-0.5 ${s.is_sold
+                              ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
+                              : isSelected
                                 ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
                                 : "glass-button text-gray-700 hover:bg-white/30"
-                            }`}
+                              }`}
                           >
                             <span className="text-sm">{s.size_value.toUpperCase()}</span>
                             <span className={`text-xs font-normal ${s.is_sold ? "text-gray-400" : isSelected ? "text-white/80" : "text-gray-500"}`}>
@@ -543,11 +547,10 @@ export default function ProductDetailPage() {
                       <Button
                         variant={selectedSize === listing?.size_value ? "default" : "outline"}
                         onClick={() => setSelectedSize(listing?.size_value)}
-                        className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
-                          selectedSize === listing?.size_value
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                            : "glass-button text-gray-700 hover:bg-white/30"
-                        }`}
+                        className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${selectedSize === listing?.size_value
+                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                          : "glass-button text-gray-700 hover:bg-white/30"
+                          }`}
                       >
                         {listing?.size_value}
                       </Button>
@@ -564,11 +567,10 @@ export default function ProductDetailPage() {
               variant="outline"
               onClick={() => handleAddToCart(listing?.seller_details)}
               disabled={isItemInCart()}
-              className={`border-0 rounded-2xl shadow-lg h-12 ${
-                isItemInCart()
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
+              className={`border-0 rounded-2xl shadow-lg h-12 ${isItemInCart()
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
               {isItemInCart() ? "In Cart" : "Add to Cart"}
@@ -675,11 +677,10 @@ export default function ProductDetailPage() {
                               return (
                                 <tr
                                   key={row.size}
-                                  className={`border-b border-gray-100 transition-colors ${
-                                    isSelected
-                                      ? "bg-purple-50 font-semibold text-purple-700"
-                                      : "text-gray-700"
-                                  }`}
+                                  className={`border-b border-gray-100 transition-colors ${isSelected
+                                    ? "bg-purple-50 font-semibold text-purple-700"
+                                    : "text-gray-700"
+                                    }`}
                                 >
                                   <td className="py-2 px-2 text-left font-semibold">{row.size}</td>
                                   <td className="py-2 px-2">{row.length}</td>
@@ -700,7 +701,7 @@ export default function ProductDetailPage() {
                 // ── Sneaker size guide: UK / US / EU / CM ─────────────────
                 const chart = getSizeChart(listing?.brand ?? "");
                 const hasWomen = !!chart.women?.length;
-                const hasKids  = !!chart.kids?.length;
+                const hasKids = !!chart.kids?.length;
 
                 const SneakerTable = ({ rows }: { rows: typeof chart.men }) => (
                   <div className="overflow-y-auto overflow-x-hidden flex-1 min-h-0">
@@ -721,11 +722,10 @@ export default function ProductDetailPage() {
                           return (
                             <tr
                               key={`${row.uk}-${row.us}`}
-                              className={`border-b border-gray-100 transition-colors ${
-                                isSelected
-                                  ? "bg-purple-50 font-semibold text-purple-700"
-                                  : "text-gray-700"
-                              }`}
+                              className={`border-b border-gray-100 transition-colors ${isSelected
+                                ? "bg-purple-50 font-semibold text-purple-700"
+                                : "text-gray-700"
+                                }`}
                             >
                               <td className="py-2 px-3 text-left">{row.uk}</td>
                               <td className="py-2 px-3">{row.us}</td>

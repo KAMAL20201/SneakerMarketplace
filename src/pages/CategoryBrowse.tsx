@@ -41,20 +41,15 @@ import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface Listing {
   id: string;
-  product_id: string;
   title: string;
-  description: string;
-  min_price: number;
-  price: number;
-  retail_price: number | null;
   brand: string;
+  price: number;
+  min_price: number;
+  retail_price: number | null;
   size_value: string;
   condition: string;
   image_url: string;
   created_at: string;
-  views: number;
-  user_id: string;
-  category: string;
 }
 
 interface FilterState {
@@ -72,20 +67,6 @@ interface Props {
 
 const PAGE_SIZE = 12;
 
-function buildMultiWordSearchFilter(rawQuery: string, columns: string[]): string | null {
-  const trimmed = rawQuery.trim();
-  if (!trimmed) return null;
-  const tokens = trimmed.split(/\s+/).filter(Boolean).map((t) => t.replace(/[%_]/g, ""));
-  if (tokens.length === 0) return null;
-  if (tokens.length === 1) {
-    const pat = `%${tokens[0]}%`;
-    return columns.map((col) => `${col}.ilike.${pat}`).join(",");
-  }
-  return columns.map((col) => {
-    const andParts = tokens.map((t) => `${col}.ilike.%${t}%`).join(",");
-    return `and(${andParts})`;
-  }).join(",");
-}
 
 const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   const params = new URLSearchParams();
@@ -163,6 +144,7 @@ const CategoryBrowse = ({ categoryId }: Props) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [sizePriceMap, setSizePriceMap] = useState<Map<string, number> | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const filtersRef = useRef<FilterState>(filters);
@@ -175,6 +157,7 @@ const CategoryBrowse = ({ categoryId }: Props) => {
   const hasMoreRef = useRef(true);
   const totalCountRef = useRef(0);
   const scrollYRef = useRef(0);
+  const sizePriceMapRef = useRef<Map<string, number> | null>(null);
 
   const conditions = [
     PRODUCT_CONDITIONS.NEW,
@@ -197,59 +180,54 @@ const CategoryBrowse = ({ categoryId }: Props) => {
       else setLoadingMore(true);
 
       try {
-        let query = supabase
-          .from("listings_with_images")
-          .select("*", { count: replace ? "exact" : undefined })
-          .eq("status", "active")
-          .eq("category", categoryId);
-
-        if (currentFilters.search?.trim()) {
-          const filterStr = buildMultiWordSearchFilter(currentFilters.search, [
-            "title",
-            "brand",
-            "description",
-          ]);
-          if (filterStr) query = query.or(filterStr);
-        }
-        if (currentFilters.brand.length > 0) {
-          query = query.in("brand", currentFilters.brand);
-        }
-        if (currentFilters.size.length > 0) {
-          query = query.in("size_value", currentFilters.size);
-        }
-        if (currentFilters.condition.length > 0) {
-          query = query.in("condition", currentFilters.condition);
-        }
-        query = query
-          .gte("price", currentFilters.priceRange[0])
-          .lte("price", currentFilters.priceRange[1]);
-
-        switch (currentFilters.sortBy) {
-          case "oldest":
-            query = query.order("created_at", { ascending: true });
-            break;
-          case "price-low":
-            query = query.order("min_price", { ascending: true, nullsFirst: false });
-            break;
-          case "price-high":
-            query = query.order("min_price", { ascending: false, nullsFirst: false });
-            break;
-          default:
-            query = query.order("created_at", { ascending: false });
-        }
-
-        const { data, error, count } = await query.range(
-          fromOffset,
-          fromOffset + PAGE_SIZE - 1
-        );
+        // Single RPC call — the DB handles the size JOIN, all filtering, and
+        // pagination server-side. No pre-fetch, no massive id=in.(...) URL.
+        const { data, error } = await supabase.rpc("browse_category_listings", {
+          p_category: categoryId,
+          p_sizes: currentFilters.size.length > 0 ? currentFilters.size : null,
+          p_brands: currentFilters.brand.length > 0 ? currentFilters.brand : null,
+          p_conditions: currentFilters.condition.length > 0 ? currentFilters.condition : null,
+          p_price_min: currentFilters.priceRange[0],
+          p_price_max: currentFilters.priceRange[1],
+          p_search: currentFilters.search?.trim() || null,
+          p_sort: currentFilters.sortBy,
+          p_limit: PAGE_SIZE,
+          p_offset: fromOffset,
+        });
 
         if (error) throw error;
 
-        const rows = data ?? [];
-        if (replace && count !== null && count !== undefined) setTotalCount(count);
-        setListings((prev) => (replace ? rows : [...prev, ...rows]));
-        setOffset(fromOffset + rows.length);
-        setHasMore(rows.length === PAGE_SIZE);
+        type RpcRow = Listing & { matched_size_price: number | null; total_count: number };
+        const rows = (data ?? []) as RpcRow[];
+
+        // Strip RPC-only fields before storing in listings state
+        const listings: Listing[] = rows.map((row) => {
+          const { matched_size_price, total_count, ...rest } = row;
+          void matched_size_price;
+          void total_count;
+          return rest as Listing;
+        });
+
+        if (replace) setTotalCount(rows.length > 0 ? rows[0].total_count : 0);
+        setListings((prev) => (replace ? listings : [...prev, ...listings]));
+        setOffset(fromOffset + listings.length);
+        setHasMore(listings.length === PAGE_SIZE);
+
+        // Build / merge sizePriceMap from the per-listing matched_size_price
+        // returned by the RPC — no separate pre-fetch needed.
+        if (currentFilters.size.length > 0) {
+          setSizePriceMap((prev) => {
+            const next = new Map<string, number>(replace ? [] : (prev ?? []));
+            for (const row of rows) {
+              if (row.matched_size_price !== null && row.matched_size_price !== undefined) {
+                next.set(row.id, row.matched_size_price);
+              }
+            }
+            return next.size > 0 ? next : null;
+          });
+        } else if (replace) {
+          setSizePriceMap(null);
+        }
       } catch (err) {
         console.error("Error fetching listings:", err);
         toast.error("Failed to load listings");
@@ -273,6 +251,9 @@ const CategoryBrowse = ({ categoryId }: Props) => {
           setOffset(state.offset);
           setHasMore(state.hasMore);
           setTotalCount(state.totalCount);
+          if (state.sizePriceMap) {
+            setSizePriceMap(new Map(state.sizePriceMap));
+          }
           setLoadingInitial(false);
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
@@ -281,7 +262,7 @@ const CategoryBrowse = ({ categoryId }: Props) => {
           });
         }
       }
-    } catch {}
+    } catch { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -333,6 +314,7 @@ const CategoryBrowse = ({ categoryId }: Props) => {
   useEffect(() => { offsetRef.current = offset; }, [offset]);
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { totalCountRef.current = totalCount; }, [totalCount]);
+  useEffect(() => { sizePriceMapRef.current = sizePriceMap; }, [sizePriceMap]);
 
   // Save state on unmount
   useEffect(() => {
@@ -346,6 +328,9 @@ const CategoryBrowse = ({ categoryId }: Props) => {
           totalCount: totalCountRef.current,
           scrollY: scrollYRef.current,
           locationKey: location.key,
+          sizePriceMap: sizePriceMapRef.current
+            ? Array.from(sizePriceMapRef.current.entries())
+            : null,
         })
       );
     };
@@ -464,6 +449,33 @@ const CategoryBrowse = ({ categoryId }: Props) => {
           </div>
         )}
 
+        {/* Inline Size Chips */}
+        {categoryConfig.hasSize && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-2 scrollbar-hide">
+            {categoryConfig.sizes.map((size) => {
+              const isActive = filters.size.includes(size);
+              const label = size.toUpperCase();
+              return (
+                <button
+                  key={size}
+                  onClick={() => {
+                    const newSizes = isActive
+                      ? filters.size.filter((s) => s !== size)
+                      : [...filters.size, size];
+                    handleImmediateFilterChange("size", newSizes);
+                  }}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${isActive
+                    ? "bg-purple-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Controls Bar */}
         <div className="flex justify-end gap-3 mb-2">
           <div className="flex items-center gap-2">
@@ -484,11 +496,10 @@ const CategoryBrowse = ({ categoryId }: Props) => {
                       key={option.value}
                       variant={filters.sortBy === option.value ? "default" : "ghost"}
                       onClick={() => { handleImmediateFilterChange("sortBy", option.value); setSortPopoverOpen(false); }}
-                      className={`w-full justify-start rounded-xl ${
-                        filters.sortBy === option.value
-                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
-                          : "glass-button border-0 text-gray-700 hover:bg-white/30"
-                      }`}
+                      className={`w-full justify-start rounded-xl ${filters.sortBy === option.value
+                        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
+                        : "glass-button border-0 text-gray-700 hover:bg-white/30"
+                        }`}
                     >
                       {option.label}
                     </Button>
@@ -815,7 +826,14 @@ const CategoryBrowse = ({ categoryId }: Props) => {
           <>
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {listings.map((listing) => (
-                <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)} key={listing.id}>
+                <Link
+                  to={
+                    filters.size.length > 0
+                      ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}?size=${encodeURIComponent(filters.size[0])}`
+                      : ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)
+                  }
+                  key={listing.id}
+                >
                   <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
                     <CardContent className="p-0">
                       <div className="relative h-40 sm:h-48 overflow-hidden">
@@ -825,8 +843,10 @@ const CategoryBrowse = ({ categoryId }: Props) => {
                           aspectRatio="aspect-[4/3]"
                           className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                         />
-                        {listing.retail_price && listing.retail_price > listing.price && (() => {
-                          const pct = Math.round(((listing.retail_price - listing.price) / listing.retail_price) * 100);
+                        {listing.retail_price && (() => {
+                          const displayPrice = sizePriceMap?.get(listing.id) ?? listing.min_price ?? listing.price;
+                          if (listing.retail_price <= displayPrice) return null;
+                          const pct = Math.round(((listing.retail_price - displayPrice) / listing.retail_price) * 100);
                           return pct >= 10 ? (
                             <span className="absolute top-2 left-2 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg z-10">
                               {pct}% off
@@ -843,7 +863,7 @@ const CategoryBrowse = ({ categoryId }: Props) => {
                         </div>
                         <div className="flex items-center justify-between mb-2 md:mb-3">
                           <span className="font-bold text-gray-800 text-base md:text-lg">
-                            ₹{(listing.min_price ?? listing.price).toLocaleString()}
+                            ₹{(sizePriceMap?.get(listing.id) ?? listing.min_price ?? listing.price).toLocaleString()}
                           </span>
                           <ConditionBadge condition={listing.condition} className="text-xs" />
                         </div>
