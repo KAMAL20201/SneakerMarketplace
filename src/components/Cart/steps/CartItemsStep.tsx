@@ -51,7 +51,7 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-[calc(100dvh-100px)]">
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto  p-4 bg-gradient-to-b from-white/90 to-white/95 backdrop-blur-sm">
         {/* Validation Loading Indicator */}
@@ -62,17 +62,16 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
           </div>
         )}
 
-        <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-260px)] scrollbar-hide">
+        <div className="space-y-4 overflow-y-auto max-h-[calc(100dvh-260px)] scrollbar-hide">
           {items.map((item) => {
             const isUnavailable = unavailableProductIds.has(item.productId);
             return (
               <Card
                 key={item.id}
-                className={`bg-white/90 backdrop-blur-sm border rounded-2xl overflow-hidden shadow-lg ${
-                  isUnavailable
+                className={`bg-white/90 backdrop-blur-sm border rounded-2xl overflow-hidden shadow-lg ${isUnavailable
                     ? "border-red-300 bg-red-50/50"
                     : "border-gray-200/50"
-                }`}
+                  }`}
               >
                 <CardContent className="p-4">
                   <div className="flex gap-4">
@@ -81,9 +80,8 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                       <ThumbnailImage
                         src={item.image || "/placeholder.svg"}
                         alt={item.productName}
-                        className={`w-full h-full ${
-                          isUnavailable ? "opacity-50 grayscale" : ""
-                        }`}
+                        className={`w-full h-full ${isUnavailable ? "opacity-50 grayscale" : ""
+                          }`}
                       />
                     </div>
 
@@ -95,9 +93,8 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                             {item.brand}
                           </p>
                           <h4
-                            className={`font-bold text-sm line-clamp-1 ${
-                              isUnavailable ? "text-gray-500" : "text-gray-900"
-                            }`}
+                            className={`font-bold text-sm line-clamp-1 ${isUnavailable ? "text-gray-500" : "text-gray-900"
+                              }`}
                           >
                             {item.productName}
                           </h4>
@@ -128,9 +125,8 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                       {/* Price */}
                       <div className="flex items-center justify-between">
                         <p
-                          className={`text-lg font-bold ${
-                            isUnavailable ? "text-gray-500" : "text-gray-900"
-                          }`}
+                          className={`text-lg font-bold ${isUnavailable ? "text-gray-500" : "text-gray-900"
+                            }`}
                         >
                           ₹{item.price}
                         </p>
@@ -171,8 +167,8 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
           {isValidating
             ? "Checking availability..."
             : hasUnavailableItems
-            ? "Remove Unavailable Items"
-            : "Continue to Shipping"}
+              ? "Remove Unavailable Items"
+              : "Continue to Shipping"}
         </Button>
       </div>
     </div>
