@@ -6,12 +6,14 @@ import "./index.css";
 import Provider from "./Provider";
 import { AuthProvider } from "./contexts/AuthContext";
 import ScrollToTop from "./components/ScrollToTop";
+import Analytics from "./components/Analytics";
 
 const root = document.getElementById("root")!;
 
 ReactDOM.createRoot(root).render(
   <BrowserRouter>
     <ScrollToTop />
+    <Analytics />
     <AuthProvider>
       <Provider>
         <Layout>
