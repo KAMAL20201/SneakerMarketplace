@@ -441,7 +441,7 @@ const Browse = () => {
           <p className="text-gray-600 text-sm md:text-base mb-3">
             {filters.deals
               ? "Listings with huge discounts on retail price"
-              : "Discover amazing items from our collector community - all listings are manually reviewed and approved"}
+              : "All listings are manually reviewed and approved"}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
