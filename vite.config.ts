@@ -17,7 +17,7 @@ export default defineConfig({
           res.setHeader(
             "Content-Security-Policy",
             "default-src 'self'; " +
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://sdk.cashfree.com https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://*.clarity.ms; " +
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://sdk.cashfree.com https://www.google.com https://www.gstatic.com https://www.googletagmanager.com https://*.clarity.ms https://static.cloudflareinsights.com; " +
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
               "font-src 'self' https://fonts.gstatic.com; " +
               "img-src 'self' data: https: blob:; " +
