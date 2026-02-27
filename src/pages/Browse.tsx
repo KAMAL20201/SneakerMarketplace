@@ -247,9 +247,7 @@ const Browse = () => {
       switch (currentFilters.sortBy) {
         case "price-low": query = query.order("min_price", { ascending: true, nullsFirst: false }); break;
         case "price-high": query = query.order("min_price", { ascending: false, nullsFirst: false }); break;
-        // discount-high requires a computed discount_pct view column (follow-up migration);
-        // fall through to newest until that's available.
-        case "discount-high":
+        case "discount-high": query = query.order("discount_pct", { ascending: false, nullsFirst: false }); break;
         default: query = query.order("created_at", { ascending: false });
       }
 
@@ -442,7 +440,7 @@ const Browse = () => {
           </h1>
           <p className="text-gray-600 text-sm md:text-base mb-3">
             {filters.deals
-              ? "Listings with 50% off or more on retail price"
+              ? "Listings with huge discounts on retail price"
               : "Discover amazing items from our collector community - all listings are manually reviewed and approved"}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
