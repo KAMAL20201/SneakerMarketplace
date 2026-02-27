@@ -94,8 +94,12 @@ BEGIN
     c.matched_size_price, c.total_count
   FROM counted c
   ORDER BY
-    CASE WHEN p_sort = 'price-low'  THEN c.min_price  END ASC  NULLS LAST,
-    CASE WHEN p_sort = 'price-high' THEN c.min_price  END DESC NULLS LAST,
+    -- When sizes are filtered, sort by the matched size price so results
+    -- reflect the actual cost for the chosen size, not the cheapest size overall.
+    CASE WHEN p_sort = 'price-low'
+      THEN COALESCE(c.matched_size_price, c.min_price) END ASC  NULLS LAST,
+    CASE WHEN p_sort = 'price-high'
+      THEN COALESCE(c.matched_size_price, c.min_price) END DESC NULLS LAST,
     CASE WHEN p_sort = 'oldest'     THEN c.created_at END ASC  NULLS LAST,
     CASE WHEN p_sort NOT IN ('price-low', 'price-high', 'oldest')
                                     THEN c.created_at END DESC NULLS LAST
