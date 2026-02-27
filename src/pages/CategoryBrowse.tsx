@@ -78,7 +78,7 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
     params.set("priceMin", filters.priceRange[0].toString());
     params.set("priceMax", filters.priceRange[1].toString());
   }
-  if (filters.sortBy !== "newest") params.set("sortBy", filters.sortBy);
+  if (filters.sortBy !== "price-low") params.set("sortBy", filters.sortBy);
   return params;
 };
 
@@ -120,7 +120,7 @@ const CategoryBrowse = ({ categoryId }: Props) => {
     brand: [],
     size: [],
     priceRange: [0, 100000],
-    sortBy: "newest",
+    sortBy: "price-low",
   };
 
   const urlFilters = parseFiltersFromURL(searchParams);
