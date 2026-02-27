@@ -20,7 +20,7 @@ const CategorySection = ({ categoryId, title, viewAllUrl }: Props) => {
         .select("*")
         .eq("status", "active")
         .eq("category", categoryId)
-        .order("created_at", { ascending: false })
+        .order("min_price", { ascending: true })
         .limit(10);
 
       if (error) {
