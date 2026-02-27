@@ -198,9 +198,9 @@ const Browse = () => {
   ];
   const sortOptions = [
     { value: "newest", label: "Newest First" },
-    { value: "oldest", label: "Oldest First" },
     { value: "price-low", label: "Price: Low to High" },
     { value: "price-high", label: "Price: High to Low" },
+    { value: "discount-high", label: "Discount: High to Low" },
   ];
 
   // ── Core fetch function ───────────────────────────────────────────────────
@@ -245,9 +245,11 @@ const Browse = () => {
         .lte("price", currentFilters.priceRange[1]);
       // Sort
       switch (currentFilters.sortBy) {
-        case "oldest": query = query.order("created_at", { ascending: true }); break;
         case "price-low": query = query.order("min_price", { ascending: true, nullsFirst: false }); break;
         case "price-high": query = query.order("min_price", { ascending: false, nullsFirst: false }); break;
+        // discount-high requires a computed discount_pct view column (follow-up migration);
+        // fall through to newest until that's available.
+        case "discount-high":
         default: query = query.order("created_at", { ascending: false });
       }
 
