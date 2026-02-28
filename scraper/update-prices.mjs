@@ -130,8 +130,6 @@ function pickBestMatch(dbTitle, results) {
  * @param {string} p - log prefix, e.g. "[db=123|goat=?]"
  */
 async function searchGoat(page, title, p) {
-  console.log(`${p} 🔍 [SEARCH] query="${title}"`);
-
   const raw = await page.evaluate(async ({ query, limit }) => {
     try {
       const res = await fetch(
@@ -141,13 +139,10 @@ async function searchGoat(page, title, p) {
       if (!res.ok) return { ok: false, status: res.status };
       const data = await res.json();
       const products = data?.data?.productsList || [];
-      const firstProductRaw = products[0] ?? null;
       return {
         ok: true,
         status: res.status,
         totalFound: products.length,
-        firstProductRaw,
-        firstVariantRaw: firstProductRaw?.variantsList?.[0] ?? null,
         products: products.map(prod => ({
           id:               prod.id,
           title:            prod.title || "",
@@ -161,21 +156,10 @@ async function searchGoat(page, title, p) {
     }
   }, { query: title, limit: SEARCH_LIMIT });
 
-  console.log(`${p} 🔍 [SEARCH] HTTP ${raw.status} | ok=${raw.ok} | results=${raw.totalFound ?? 0}`);
   if (!raw.ok) {
-    console.log(`${p} 🔍 [SEARCH] ❌ error: ${raw.error ?? "non-OK response"}`);
+    console.log(`${p} 🔍 [SEARCH] ❌ HTTP ${raw.status} | error: ${raw.error ?? "non-OK response"}`);
     return [];
   }
-  if (raw.firstProductRaw) {
-    console.log(`${p} 🔍 [SEARCH] first product → id=${raw.firstProductRaw.id} title="${raw.firstProductRaw.title}"`);
-    console.log(`${p} 🔍 [SEARCH] first product → localizedRetailPriceCents=${JSON.stringify(raw.firstProductRaw.localizedRetailPriceCents)}`);
-  }
-  if (raw.firstVariantRaw) {
-    console.log(`${p} 🔍 [SEARCH] first variant → localizedLowestPriceCents=${JSON.stringify(raw.firstVariantRaw.localizedLowestPriceCents)}`);
-  }
-  raw.products.forEach((prod, i) => {
-    console.log(`${p} 🔍 [SEARCH] result[${i}] id=${prod.id} | lowestCents=${prod.lowestPriceCents} | retailCents=${prod.retailPriceCents} | "${prod.title}"`);
-  });
   return raw.products;
 }
 
@@ -184,8 +168,6 @@ async function searchGoat(page, title, p) {
  * @param {string} p - log prefix, e.g. "[db=123|goat=1072277]"
  */
 async function fetchSizePrices(page, templateId, p) {
-  console.log(`${p} 💰 [BUY_BAR] productTemplateId=${templateId} countryCode=HK`);
-
   const raw = await page.evaluate(async (id) => {
     try {
       const res = await fetch(
@@ -194,83 +176,57 @@ async function fetchSizePrices(page, templateId, p) {
       );
       if (!res.ok) return { ok: false, status: res.status };
       const variants = await res.json();
-      const firstRaw    = variants[0] ?? null;
-      const firstNewRaw = variants.find(v => v.shoeCondition === "new_no_defects" && v.boxCondition === "good_condition") ?? null;
       const mapped = variants
         .filter(v => v.shoeCondition === "new_no_defects" && v.boxCondition === "good_condition" && v.stockStatus !== "not_in_stock")
         .map(v => ({
-          size:        String(v.sizeOption?.value ?? "?"),
-          stockStatus: v.stockStatus,
-          rawAmount:   v.lowestPriceCents?.amount ?? null,
-          currency:    v.lowestPriceCents?.currency ?? "MISSING",
-          priceUsd:    v.lowestPriceCents?.amount != null ? v.lowestPriceCents.amount / 100 : null,
+          size:     String(v.sizeOption?.value ?? "?"),
+          priceUsd: v.lowestPriceCents?.amount != null ? v.lowestPriceCents.amount / 100 : null,
         }));
-      return { ok: true, status: res.status, totalVariants: variants.length, firstRaw, firstNewRaw, mapped };
+      return { ok: true, status: res.status, totalVariants: variants.length, mapped };
     } catch (e) {
       return { ok: false, status: -1, error: String(e) };
     }
   }, templateId);
 
-  console.log(`${p} 💰 [BUY_BAR] HTTP ${raw.status} | ok=${raw.ok} | totalVariants=${raw.totalVariants ?? 0}`);
   if (!raw.ok) {
-    console.log(`${p} 💰 [BUY_BAR] ❌ error: ${raw.error ?? "non-OK response"}`);
+    console.log(`${p} 💰 [BUY_BAR] ❌ HTTP ${raw.status} | error: ${raw.error ?? "non-OK response"}`);
     return [];
   }
-
-  if (raw.firstRaw) {
-    console.log(`${p} 💰 [BUY_BAR] firstVariant(any)  → shoe="${raw.firstRaw.shoeCondition}" box="${raw.firstRaw.boxCondition}" size=${raw.firstRaw.sizeOption?.value} lowestPriceCents=${JSON.stringify(raw.firstRaw.lowestPriceCents)}`);
-  }
-  if (raw.firstNewRaw) {
-    console.log(`${p} 💰 [BUY_BAR] firstVariant(new)  → size=${raw.firstNewRaw.sizeOption?.value} amount=${raw.firstNewRaw.lowestPriceCents?.amount} currency=${raw.firstNewRaw.lowestPriceCents?.currency ?? "MISSING"}`);
+  if (raw.mapped.length === 0) {
+    console.log(`${p} 💰 [BUY_BAR] ⚠️  no new in-stock variants (totalVariants=${raw.totalVariants ?? 0})`);
   }
 
-  if (raw.mapped.length > 0) {
-    console.log(`${p} 💰 [BUY_BAR] ${raw.mapped.length} new in-stock sizes:`);
-    raw.mapped.forEach(v => {
-      console.log(`${p} 💰 [BUY_BAR]   size=${v.size} | rawAmount=${v.rawAmount} | currency=${v.currency} | /100=$${v.priceUsd}`);
-    });
-  } else {
-    console.log(`${p} 💰 [BUY_BAR] ⚠️  no new in-stock variants`);
-  }
-
-  return raw.mapped.map(v => ({ size: v.size, priceUsd: v.priceUsd }));
+  return raw.mapped;
 }
 
 // ─── Process a single listing ──────────────────────────────────────────────
 
 async function processListing(page, listing, idx, total) {
-  // p = grep-friendly prefix attached to every log line for this listing
   const p = `[${idx + 1}/${total}][db=${listing.id}]`;
-  console.log(`\n${"─".repeat(70)}`);
-  console.log(`${p} 📦 "${listing.title.slice(0, 60)}"`);
-  console.log(`${p}    DB price=₹${listing.price} | DB retail=₹${listing.retail_price} | DB sizes=${listing.product_listing_sizes?.length ?? 0}`);
 
   // Search GOAT
   const results = await searchGoat(page, listing.title, p);
   await delay(DELAY_MS);
 
   if (!results.length) {
-    console.log(`${p} ❌ not found on GOAT`);
+    console.log(`${p} ❌ not found on GOAT — "${listing.title.slice(0, 60)}"`);
     return { status: "notFound", title: listing.title };
   }
 
   const match = pickBestMatch(listing.title, results);
   if (!match) {
-    console.log(`${p} ❌ no match after pickBestMatch`);
+    console.log(`${p} ❌ no match after pickBestMatch — "${listing.title.slice(0, 60)}"`);
     return { status: "notFound", title: listing.title };
   }
 
-  // Now we know the GOAT template id — update prefix
   const pg = `[${idx + 1}/${total}][db=${listing.id}|goat=${match.id}]`;
-  console.log(`${pg} ✔️  matched → "${match.title}"`);
-  console.log(`${pg}    GOAT lowestPriceCents=${match.lowestPriceCents} | retailPriceCents=${match.retailPriceCents}`);
 
   // Fetch per-size prices
   const sizePrices = await fetchSizePrices(page, match.id, pg);
   await delay(DELAY_MS);
 
   if (!sizePrices.length) {
-    console.log(`${pg} ⚠️  no size data returned`);
+    console.log(`${pg} ⚠️  no size data — skipping "${listing.title.slice(0, 60)}"`);
     return { status: "noChange" };
   }
 
@@ -279,28 +235,17 @@ async function processListing(page, listing, idx, total) {
   const newPriceInr  = usdToInr(minPriceUsd);
   const newRetailInr = match.retailPriceCents ? usdToInr(match.retailPriceCents / 100) : null;
 
-  console.log(`${pg} 💱 minUSD=$${minPriceUsd} → formula: (($${minPriceUsd}+10)×${USD_TO_INR})+${MARGIN_INR} = ₹${newPriceInr}`);
-  if (match.retailPriceCents) {
-    const retailUsd = match.retailPriceCents / 100;
-    console.log(`${pg} 💱 retailUSD=$${retailUsd} → ₹${newRetailInr}`);
-  }
-
   const priceChanged  = newPriceInr  !== null && newPriceInr  !== listing.price;
   const retailChanged = newRetailInr !== null && newRetailInr !== listing.retail_price;
-  console.log(`${pg}    priceChanged=${priceChanged}  (DB=₹${listing.price} → new=₹${newPriceInr})`);
-  console.log(`${pg}    retailChanged=${retailChanged} (DB=₹${listing.retail_price} → new=₹${newRetailInr})`);
 
-  // Build size map and log every size conversion
+  // Build size map
   const goatSizeMap = new Map();
   for (const sp of sizePrices) {
-    const inr = usdToInr(sp.priceUsd);
-    goatSizeMap.set(parseFloat(sp.size), inr);
-    console.log(`${pg} 📐 size=${sp.size} | $${sp.priceUsd} → ₹${inr}`);
+    goatSizeMap.set(parseFloat(sp.size), usdToInr(sp.priceUsd));
   }
 
   // Match DB sizes → GOAT sizes (brand-aware UK→US conversion)
-  const offset = brandSizeOffset(listing.brand);
-  console.log(`${pg} 📐 brand="${listing.brand}" → UK→US offset=${offset}`);
+  const offset  = brandSizeOffset(listing.brand);
   const dbSizes = listing.product_listing_sizes || [];
   const sizeUpdatePromises = [];
   for (const dbSize of dbSizes) {
@@ -311,13 +256,11 @@ async function processListing(page, listing, idx, total) {
     else if (ukMatch) usSize = parseFloat(ukMatch[1]) + offset;
 
     if (usSize == null) {
-      console.log(`${pg} 📐 DB size="${dbSize.size_value}" → could not parse US size, skipping`);
+      console.log(`${pg} ⚠️  size="${dbSize.size_value}" — could not parse US size, skipping`);
       continue;
     }
     const newSizeInr = goatSizeMap.get(usSize);
-    const willUpdate = !!newSizeInr && newSizeInr !== dbSize.price;
-    console.log(`${pg} 📐 DB size="${dbSize.size_value}" → US${usSize} | GOAT=₹${newSizeInr ?? "not found"} | DB=₹${dbSize.price} | update=${willUpdate}`);
-    if (!willUpdate) continue;
+    if (!newSizeInr || newSizeInr === dbSize.price) continue;
 
     sizeUpdatePromises.push(
       supabase
@@ -339,7 +282,6 @@ async function processListing(page, listing, idx, total) {
     const payload = { updated_at: new Date().toISOString() };
     if (priceChanged)  payload.price        = newPriceInr;
     if (retailChanged) payload.retail_price = newRetailInr;
-    console.log(`${pg} 💾 updating listing → ${JSON.stringify(payload)}`);
 
     const { error: listingErr } = await supabase
       .from("product_listings")
@@ -347,16 +289,15 @@ async function processListing(page, listing, idx, total) {
       .eq("id", listing.id);
 
     if (listingErr) {
-      console.log(`${pg} ⚠️  listing DB update error: ${listingErr.message}`);
+      console.log(`${pg} ❌ listing DB update error: ${listingErr.message}`);
       return { status: "error" };
     }
     listingUpdated = true;
-  } else {
-    console.log(`${pg} — no listing-level change needed`);
   }
 
-  const tag = listingUpdated ? "✅" : "—";
-  console.log(`${pg} ${tag} ₹${listing.price} → ₹${newPriceInr}${sizeUpdateCount > 0 ? ` | ${sizeUpdateCount} sizes updated` : ""}`);
+  if (listingUpdated || sizeUpdateCount > 0) {
+    console.log(`${pg} ✅ ₹${listing.price} → ₹${newPriceInr}${sizeUpdateCount > 0 ? ` | ${sizeUpdateCount} sizes updated` : ""}`);
+  }
 
   return { status: listingUpdated ? "updated" : "noChange", sizeUpdateCount };
 }
@@ -365,24 +306,16 @@ async function processListing(page, listing, idx, total) {
 
 async function main() {
   console.log("🏃 SneakInMarket — DB-First Price Updater");
-  console.log(`   ${new Date().toLocaleString()}`);
-  console.log(`   USD → INR rate : ${USD_TO_INR}`);
-  console.log(`   Margin (INR)   : ₹${MARGIN_INR}`);
-  console.log(`   Formula        : ((usd + 10) × ${USD_TO_INR}) + ${MARGIN_INR}`);
-  console.log(`   Country code   : HK (shipping region)`);
-  console.log(`   Concurrency    : ${CONCURRENCY} parallel workers`);
-  console.log(`\n   💡 Grep tip: grep "db=<id>" logs.txt  OR  grep "goat=<id>" logs.txt\n`);
+  console.log(`   ${new Date().toLocaleString()} | USD→INR: ${USD_TO_INR} | Margin: ₹${MARGIN_INR} | Workers: ${CONCURRENCY}`);
 
-  console.log("📡 Fetching active listings from DB...");
   const { data: listings, error: fetchErr } = await supabase
     .from("product_listings")
     .select("id, title, brand, price, retail_price, product_listing_sizes(id, size_value, price)")
     .eq("status", "active");
 
   if (fetchErr) { console.error("❌ DB fetch failed:", fetchErr.message); process.exit(1); }
-  console.log(`   Found ${listings.length} active listings\n`);
+  console.log(`📡 ${listings.length} active listings fetched\n`);
 
-  console.log("🚀 Launching browser...");
   const browser = await stealthChromium.launch({
     headless: true,
     executablePath: playwrightChromium.executablePath(),
@@ -398,7 +331,6 @@ async function main() {
     Object.defineProperty(navigator, "webdriver", { get: () => undefined });
   });
 
-  console.log(`   Warming up ${CONCURRENCY} pages with GOAT session (HK region)...`);
   const pages = await Promise.all(
     Array.from({ length: CONCURRENCY }, () => context.newPage())
   );
@@ -406,7 +338,7 @@ async function main() {
     pages.map(pg => pg.goto("https://www.goat.com", { waitUntil: "domcontentloaded", timeout: 60000 }))
   );
   await delay(3000);
-  console.log(`   ✅ All ${CONCURRENCY} pages ready\n`);
+  console.log(`🚀 ${CONCURRENCY} workers ready\n`);
 
   let cursor = 0;
   const stats = { matched: 0, updated: 0, sizesUpdated: 0, notFound: 0, noChange: 0, notFoundTitles: [] };
