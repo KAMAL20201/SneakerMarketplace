@@ -9,11 +9,10 @@ import {
   ArrowRight,
   Sparkles,
   Package,
-  // Check,
   Eye,
-  // CreditCard,
-  // Smartphone,
-  // AlertTriangle,
+  Plus,
+  Trash2,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,7 @@ import {
   DELIVERY_TIMELINES,
   LISTING_STATUS,
 } from "@/constants/enums";
-import { SellerFormContext } from "@/contexts/SellerFormContext";
+import { SellerFormContext, type ProductVariant } from "@/contexts/SellerFormContext";
 
 export default function SellPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +50,7 @@ export default function SellPage() {
   // const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [showOtherBrandInput, setShowOtherBrandInput] = useState(false);
   const [otherBrandName, setOtherBrandName] = useState("");
-  const [multiSizeMode, setMultiSizeMode] = useState(false);
+  const [samePriceForAll, setSamePriceForAll] = useState(false);
 
   const { user, setOperationAfterLogin } = useAuth();
   const {
@@ -130,38 +129,143 @@ export default function SellPage() {
     fetchPaymentMethods();
   }, [user]); */
 
-  // ── Multi-size helpers ───────────────────────────────────────────────────
-  const handleMultiSizeModeToggle = (enabled: boolean) => {
-    setMultiSizeMode(enabled);
-    if (enabled) {
-      // Switch to multi: clear single size selection
-      setFormData((prev) => ({ ...prev, size: "" }));
-    } else {
-      // Switch to single: clear multi-size entries
-      setFormData((prev) => ({ ...prev, sizes: [] }));
+  // ── Variant helpers ──────────────────────────────────────────────────────
+  const addVariant = () => {
+    const first = formData.variants[0];
+    const newVariant: ProductVariant = {
+      tempId: crypto.randomUUID(),
+      color_name: "",
+      color_hex: "",
+      // When same-price mode is on, inherit shared price / sizes so the new
+      // variant immediately passes validation without extra input from the user.
+      price: samePriceForAll && first ? first.price : "",
+      sizes: samePriceForAll && first ? first.sizes.map((s) => ({ ...s })) : [],
+      imageIndex: null,
+    };
+    setFormData((prev) => ({ ...prev, variants: [...prev.variants, newVariant] }));
+  };
+
+  const removeVariant = (tempId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((v) => v.tempId !== tempId),
+    }));
+  };
+
+  const updateVariantField = (
+    tempId: string,
+    field: "color_name" | "color_hex" | "price",
+    value: string
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v) =>
+        v.tempId === tempId ? { ...v, [field]: value } : v
+      ),
+    }));
+  };
+
+  const toggleVariantSize = (tempId: string, sizeValue: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v) => {
+        if (v.tempId !== tempId) return v;
+        const exists = v.sizes.find((s) => s.size_value === sizeValue);
+        return {
+          ...v,
+          sizes: exists
+            ? v.sizes.filter((s) => s.size_value !== sizeValue)
+            : [...v.sizes, { size_value: sizeValue, price: "" }],
+        };
+      }),
+    }));
+  };
+
+  const updateVariantImageIndex = (tempId: string, imageIndex: number | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v) =>
+        v.tempId === tempId ? { ...v, imageIndex } : v
+      ),
+    }));
+  };
+
+  const updateVariantSizePrice = (tempId: string, sizeValue: string, price: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v) => {
+        if (v.tempId !== tempId) return v;
+        return {
+          ...v,
+          sizes: v.sizes.map((s) =>
+            s.size_value === sizeValue ? { ...s, price } : s
+          ),
+        };
+      }),
+    }));
+  };
+
+  // ── Same-price-for-all helpers ────────────────────────────────────────────
+  const handleSamePriceToggle = (checked: boolean) => {
+    setSamePriceForAll(checked);
+    // When turning on, propagate first variant's values to all others
+    if (checked && formData.variants.length > 1) {
+      const first = formData.variants[0];
+      setFormData((prev) => ({
+        ...prev,
+        variants: prev.variants.map((v) => ({
+          ...v,
+          price: first.price,
+          sizes: first.sizes.map((s) => ({ ...s })),
+        })),
+      }));
     }
   };
 
-  const toggleSizeEntry = (sizeValue: string) => {
+  const setSharedPrice = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      variants: prev.variants.map((v) => ({ ...v, price: value })),
+    }));
+  };
+
+  const toggleSharedSize = (sizeValue: string) => {
     setFormData((prev) => {
-      const prevSizes = prev.sizes ?? [];
-      const exists = prevSizes.find((e) => e.size_value === sizeValue);
+      const first = prev.variants[0];
+      if (!first) return prev;
+      const exists = first.sizes.find((s) => s.size_value === sizeValue);
+      const newSizes = exists
+        ? first.sizes.filter((s) => s.size_value !== sizeValue)
+        : [...first.sizes, { size_value: sizeValue, price: "" }];
       return {
         ...prev,
-        sizes: exists
-          ? prevSizes.filter((e) => e.size_value !== sizeValue)
-          : [...prevSizes, { size_value: sizeValue, price: "" }],
+        variants: prev.variants.map((v) => ({
+          ...v,
+          sizes: newSizes.map((s) => ({ ...s })),
+        })),
       };
     });
   };
 
-  const updateSizePrice = (sizeValue: string, price: string) => {
+  const updateSharedSizePrice = (sizeValue: string, price: string) => {
     setFormData((prev) => ({
       ...prev,
-      sizes: (prev.sizes ?? []).map((e) =>
-        e.size_value === sizeValue ? { ...e, price } : e
-      ),
+      variants: prev.variants.map((v) => ({
+        ...v,
+        sizes: v.sizes.map((s) => (s.size_value === sizeValue ? { ...s, price } : s)),
+      })),
     }));
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Compute the minimum price across all variants (for display in shipping step)
+  const computeMinVariantPrice = (): number => {
+    const prices = formData.variants.flatMap((v) =>
+      selectedCategory?.hasSize && v.sizes.length > 0
+        ? v.sizes.map((s) => parseFloat(s.price) || 0)
+        : [parseFloat(v.price) || 0]
+    );
+    return prices.length > 0 ? Math.min(...prices.filter((p) => p > 0)) : 0;
   };
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -179,17 +283,23 @@ export default function SellPage() {
       case 4:
         return (
           formData.condition !== "" &&
-          (selectedCategory?.hasSize
-            ? multiSizeMode
-              ? (formData.sizes ?? []).length > 0 &&
-                (formData.sizes ?? []).every(
-                  (e) => e.price !== "" && parseFloat(e.price) > 0
-                )
-              : formData.size !== ""
-            : true)
+          formData.variants.length > 0 &&
+          formData.variants.every((v) => {
+            if (!v.color_name.trim()) return false;
+            if (selectedCategory?.hasSize) {
+              // Must have at least one size, each with a valid price
+              return (
+                v.sizes.length > 0 &&
+                v.sizes.every((s) => s.price !== "" && parseFloat(s.price) > 0)
+              );
+            }
+            // No sizes — just needs a price
+            return v.price !== "" && parseFloat(v.price) > 0;
+          })
         );
       case 5:
-        return formData.price !== "";
+        // Retail price is optional; description is optional
+        return true;
       case 6:
         if (formData.deliveryDays === DELIVERY_TIMELINES.CUSTOM) {
           return (
@@ -399,10 +509,13 @@ export default function SellPage() {
         toast.error("Failed to create seller profile. Please try again.");
         return;
       }
-      const isMultiSize = (formData.sizes ?? []).length > 0;
-      const listingPrice = isMultiSize
-        ? Math.min(...(formData.sizes ?? []).map((e) => parseFloat(e.price)))
-        : parseFloat(formData.price);
+      // Compute listing price = min across all variant prices
+      const allVariantPrices = formData.variants.flatMap((v) =>
+        selectedCategory?.hasSize && v.sizes.length > 0
+          ? v.sizes.map((s) => parseFloat(s.price))
+          : [parseFloat(v.price)]
+      );
+      const listingPrice = Math.min(...allVariantPrices);
 
       const { data: listing, error: listingError } = await supabase
         .from("product_listings")
@@ -412,8 +525,7 @@ export default function SellPage() {
           category: formData.category,
           brand: formData.brand,
           model: formData.model,
-          // Multi-size: size_value is null (sizes live in product_listing_sizes)
-          size_value: isMultiSize ? null : formData.size,
+          size_value: null, // sizes are now in product_variant_sizes
           condition: formData.condition,
           price: listingPrice,
           retail_price:
@@ -422,7 +534,6 @@ export default function SellPage() {
               : null,
           description: formData.description,
           status: LISTING_STATUS.UNDER_REVIEW,
-          // payment_method_id: formData.paymentMethodId, // commented out — admin listing
           shipping_charges: parseFloat(formData.shippingCharges) || 0,
           delivery_days:
             formData.deliveryDays === DELIVERY_TIMELINES.CUSTOM
@@ -434,22 +545,53 @@ export default function SellPage() {
 
       if (listingError) throw listingError;
 
-      // Insert per-size prices for multi-size listings
-      if (isMultiSize) {
-        const sizeRows = (formData.sizes ?? []).map((e) => ({
-          listing_id: listing.id,
-          size_value: e.size_value,
-          price: parseFloat(e.price),
-        }));
-        const { error: sizesError } = await supabase
-          .from("product_listing_sizes")
-          .insert(sizeRows);
-        if (sizesError) throw sizesError;
-      }
-
+      // Upload all images first so we can bind image_url to each variant
+      const uploadedImageUrls: (string | null)[] = [];
       if (images && images.length > 0) {
         for (let i = 0; i < images.length; i++) {
-          await uploadImage(files[i], user.id, listing.id, i === 0);
+          const result = await uploadImage(files[i], user.id, listing.id, i === 0);
+          uploadedImageUrls.push(result.url);
+        }
+      }
+
+      // Insert product_variants + product_variant_sizes
+      for (let i = 0; i < formData.variants.length; i++) {
+        const variant = formData.variants[i];
+        const variantMinPrice =
+          selectedCategory?.hasSize && variant.sizes.length > 0
+            ? Math.min(...variant.sizes.map((s) => parseFloat(s.price)))
+            : parseFloat(variant.price);
+
+        const variantImageUrl =
+          variant.imageIndex !== null &&
+          variant.imageIndex < uploadedImageUrls.length
+            ? uploadedImageUrls[variant.imageIndex]
+            : null;
+
+        const { data: pv, error: pvError } = await supabase
+          .from("product_variants")
+          .insert({
+            listing_id: listing.id,
+            color_name: variant.color_name.trim(),
+            color_hex: variant.color_hex || null,
+            price: variantMinPrice,
+            display_order: i,
+            image_url: variantImageUrl,
+          })
+          .select()
+          .single();
+        if (pvError) throw pvError;
+
+        if (selectedCategory?.hasSize && variant.sizes.length > 0) {
+          const sizeRows = variant.sizes.map((s) => ({
+            variant_id: pv.id,
+            size_value: s.size_value,
+            price: parseFloat(s.price),
+          }));
+          const { error: sizesError } = await supabase
+            .from("product_variant_sizes")
+            .insert(sizeRows);
+          if (sizesError) throw sizesError;
         }
       }
 
@@ -525,6 +667,17 @@ export default function SellPage() {
                         setFormData((prev) => ({
                           ...prev,
                           category: category.id,
+                          // Reset variants when category changes — hasSize differs per category
+                          variants: [
+                            {
+                              tempId: crypto.randomUUID(),
+                              color_name: "",
+                              color_hex: "",
+                              price: "",
+                              sizes: [],
+                              imageIndex: null,
+                            },
+                          ],
                         }));
                         setShowOtherBrandInput(false);
                         setOtherBrandName("");
@@ -809,123 +962,298 @@ export default function SellPage() {
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
-                {selectedCategory?.hasSize && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-gray-800 font-semibold text-base md:text-lg">
-                        Size *
-                      </Label>
-                      {/* Single / Multiple toggle */}
-                      <div className="flex items-center bg-gray-100 rounded-xl p-1 text-xs font-semibold gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleMultiSizeModeToggle(false)}
-                          className={`px-3 py-1.5 rounded-lg transition-all ${
-                            !multiSizeMode
-                              ? "bg-white text-purple-700 shadow"
-                              : "text-gray-500 hover:text-gray-700"
-                          }`}
-                        >
-                          Single
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMultiSizeModeToggle(true)}
-                          className={`px-3 py-1.5 rounded-lg transition-all ${
-                            multiSizeMode
-                              ? "bg-white text-purple-700 shadow"
-                              : "text-gray-500 hover:text-gray-700"
-                          }`}
-                        >
-                          Multiple
-                        </button>
-                      </div>
-                    </div>
+                {/* ── Variants (color/edition + sizes/price) ── */}
+                <div>
+                  <Label className="text-gray-800 font-semibold text-base md:text-lg mb-3 block">
+                    {selectedCategory?.variantLabel || "Variant"}s *
+                  </Label>
+                  <p className="text-xs text-gray-500 mb-4">
+                    {selectedCategory?.hasSize
+                      ? `Add each ${(selectedCategory?.variantLabel || "variant").toLowerCase()} and select the sizes available for it`
+                      : `Add each ${(selectedCategory?.variantLabel || "variant").toLowerCase()} and set its price`}
+                  </p>
 
-                    {!multiSizeMode ? (
-                      // ── Single-size dropdown ──
-                      <Select
-                        value={formData.size}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, size: value })
-                        }
-                      >
-                        <SelectTrigger className="glass-input rounded-2xl border-0 h-12 md:h-14 text-gray-700">
-                          <SelectValue placeholder="Select size" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-2xl z-50">
-                          {selectedCategory.sizes.map((size) => (
-                            <SelectItem
-                              key={size}
-                              value={size.toLowerCase()}
-                              className="uppercase"
-                            >
-                              {size}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      // ── Multi-size grid ──
-                      <div>
-                        <p className="text-xs text-gray-500 mb-3">
-                          Select all available sizes and set a price for each
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {selectedCategory.sizes.map((sz) => {
-                            const entry = (formData.sizes ?? []).find(
-                              (e) => e.size_value === sz.toLowerCase()
-                            );
-                            const isSelected = !!entry;
-                            return (
-                              <div key={sz} className="flex flex-col gap-1">
-                                <Button
-                                  type="button"
-                                  onClick={() =>
-                                    toggleSizeEntry(sz.toLowerCase())
-                                  }
-                                  className={`rounded-2xl border-0 h-10 text-xs font-semibold uppercase transition-all ${
-                                    isSelected
-                                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
-                                      : "glass-button text-gray-700 hover:bg-white/30"
-                                  }`}
-                                >
-                                  {sz}
-                                </Button>
-                                {isSelected && (
-                                  <div className="relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-semibold pointer-events-none">
-                                      ₹
-                                    </span>
-                                    <Input
-                                      type="number"
-                                      placeholder="Price"
-                                      min={1}
-                                      value={entry.price}
-                                      onChange={(e) =>
-                                        updateSizePrice(
-                                          sz.toLowerCase(),
-                                          e.target.value
-                                        )
-                                      }
-                                      className="pl-6 h-8 text-xs rounded-xl glass-input border-0 text-gray-700"
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                  {/* Same-price checkbox */}
+                  <label className="flex items-center gap-2 mb-4 cursor-pointer w-fit">
+                    <input
+                      type="checkbox"
+                      checked={samePriceForAll}
+                      onChange={(e) => handleSamePriceToggle(e.target.checked)}
+                      className="h-4 w-4 accent-purple-500 rounded"
+                    />
+                    <span className="text-sm text-gray-700 font-medium select-none">
+                      All variants have the same {selectedCategory?.hasSize ? "sizes & prices" : "price"}
+                    </span>
+                  </label>
+
+                  {/* Shared price / sizes section */}
+                  {samePriceForAll && (
+                    <div className="bg-purple-50/60 rounded-2xl p-4 border border-purple-100 mb-4 space-y-3">
+                      <p className="text-xs text-purple-600 font-semibold">
+                        Shared {selectedCategory?.hasSize ? "sizes & prices" : "price"} — applies to all variants
+                      </p>
+
+                      {/* No-size: single price */}
+                      {!selectedCategory?.hasSize && (
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-bold pointer-events-none">
+                            ₹
+                          </span>
+                          <Input
+                            type="number"
+                            placeholder="Price"
+                            min={1}
+                            value={formData.variants[0]?.price ?? ""}
+                            onChange={(e) => setSharedPrice(e.target.value)}
+                            className="pl-8 glass-input rounded-2xl border-0 h-11 text-gray-700 placeholder:text-gray-500"
+                          />
                         </div>
-                        {(formData.sizes ?? []).length > 0 && (
-                          <p className="text-xs text-purple-600 mt-2 font-medium">
-                            {(formData.sizes ?? []).length} size
-                            {(formData.sizes ?? []).length > 1 ? "s" : ""} selected
+                      )}
+
+                      {/* Has-size: shared size grid */}
+                      {selectedCategory?.hasSize && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-3">
+                            Select available sizes and set a price for each
                           </p>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {selectedCategory.sizes.map((sz) => {
+                              const entry = formData.variants[0]?.sizes.find(
+                                (s) => s.size_value === sz.toLowerCase()
+                              );
+                              const isSelected = !!entry;
+                              return (
+                                <div key={sz} className="flex flex-col gap-1">
+                                  <Button
+                                    type="button"
+                                    onClick={() => toggleSharedSize(sz.toLowerCase())}
+                                    className={`rounded-2xl border-0 h-10 text-xs font-semibold uppercase transition-all ${
+                                      isSelected
+                                        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                                        : "glass-button text-gray-700 hover:bg-white/30"
+                                    }`}
+                                  >
+                                    {sz}
+                                  </Button>
+                                  {isSelected && (
+                                    <div className="relative">
+                                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-semibold pointer-events-none">
+                                        ₹
+                                      </span>
+                                      <Input
+                                        type="number"
+                                        placeholder="Price"
+                                        min={1}
+                                        value={entry.price}
+                                        onChange={(e) =>
+                                          updateSharedSizePrice(sz.toLowerCase(), e.target.value)
+                                        }
+                                        className="pl-6 h-8 text-xs rounded-xl glass-input border-0 text-gray-700"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {(formData.variants[0]?.sizes.length ?? 0) > 0 && (
+                            <p className="text-xs text-purple-600 mt-2 font-medium">
+                              {formData.variants[0].sizes.length} size
+                              {formData.variants[0].sizes.length > 1 ? "s" : ""} selected
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {formData.variants.map((variant, idx) => (
+                      <div
+                        key={variant.tempId}
+                        className="bg-white/60 rounded-2xl p-4 border border-white/30 space-y-4"
+                      >
+                        {/* Variant header */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-700">
+                            {selectedCategory?.variantLabel || "Variant"} {idx + 1}
+                          </span>
+                          {formData.variants.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(variant.tempId)}
+                              className="p-1.5 rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Color/edition name + optional hex picker */}
+                        <div className="flex items-center gap-3">
+                          <Input
+                            placeholder={
+                              selectedCategory?.id === "sneakers"
+                                ? "e.g., University Blue, Bred, Chicago"
+                                : selectedCategory?.id === "collectibles"
+                                ? "e.g., Regular, Chase, Glow-in-Dark"
+                                : "e.g., Black, White, Red"
+                            }
+                            value={variant.color_name}
+                            onChange={(e) =>
+                              updateVariantField(variant.tempId, "color_name", e.target.value)
+                            }
+                            className="flex-1 glass-input rounded-2xl border-0 h-11 text-gray-700 placeholder:text-gray-500"
+                          />
+                          {selectedCategory?.hasColorPicker && (
+                            <input
+                              type="color"
+                              value={variant.color_hex || "#000000"}
+                              onChange={(e) =>
+                                updateVariantField(variant.tempId, "color_hex", e.target.value)
+                              }
+                              className="h-11 w-11 rounded-xl border border-white/30 cursor-pointer bg-transparent flex-shrink-0"
+                              title="Pick a color for the swatch"
+                            />
+                          )}
+                        </div>
+
+                        {/* No-size categories: just a price input */}
+                        {!selectedCategory?.hasSize && !samePriceForAll && (
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 font-bold pointer-events-none">
+                              ₹
+                            </span>
+                            <Input
+                              type="number"
+                              placeholder="Price"
+                              min={1}
+                              value={variant.price}
+                              onChange={(e) =>
+                                updateVariantField(variant.tempId, "price", e.target.value)
+                              }
+                              className="pl-8 glass-input rounded-2xl border-0 h-11 text-gray-700 placeholder:text-gray-500"
+                            />
+                          </div>
+                        )}
+
+                        {/* Size-having categories: size grid with per-size prices */}
+                        {selectedCategory?.hasSize && !samePriceForAll && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-3">
+                              Select available sizes and set a price for each
+                            </p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {selectedCategory.sizes.map((sz) => {
+                                const entry = variant.sizes.find(
+                                  (s) => s.size_value === sz.toLowerCase()
+                                );
+                                const isSelected = !!entry;
+                                return (
+                                  <div key={sz} className="flex flex-col gap-1">
+                                    <Button
+                                      type="button"
+                                      onClick={() =>
+                                        toggleVariantSize(variant.tempId, sz.toLowerCase())
+                                      }
+                                      className={`rounded-2xl border-0 h-10 text-xs font-semibold uppercase transition-all ${
+                                        isSelected
+                                          ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                                          : "glass-button text-gray-700 hover:bg-white/30"
+                                      }`}
+                                    >
+                                      {sz}
+                                    </Button>
+                                    {isSelected && (
+                                      <div className="relative">
+                                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-semibold pointer-events-none">
+                                          ₹
+                                        </span>
+                                        <Input
+                                          type="number"
+                                          placeholder="Price"
+                                          min={1}
+                                          value={entry.price}
+                                          onChange={(e) =>
+                                            updateVariantSizePrice(
+                                              variant.tempId,
+                                              sz.toLowerCase(),
+                                              e.target.value
+                                            )
+                                          }
+                                          className="pl-6 h-8 text-xs rounded-xl glass-input border-0 text-gray-700"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {variant.sizes.length > 0 && (
+                              <p className="text-xs text-purple-600 mt-2 font-medium">
+                                {variant.sizes.length} size
+                                {variant.sizes.length > 1 ? "s" : ""} selected
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Variant image picker ── */}
+                        {images.length > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-500 mb-2">
+                              Pick which photo represents this{" "}
+                              {(selectedCategory?.variantLabel || "variant").toLowerCase()}
+                            </p>
+                            <div className="flex gap-2 flex-wrap">
+                              {images.map((img, idx) => {
+                                const isSelected = variant.imageIndex === idx;
+                                return (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() =>
+                                      updateVariantImageIndex(
+                                        variant.tempId,
+                                        isSelected ? null : idx
+                                      )
+                                    }
+                                    className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${
+                                      isSelected
+                                        ? "border-purple-500 scale-105 shadow-md"
+                                        : "border-gray-200 hover:border-gray-400"
+                                    }`}
+                                  >
+                                    <img
+                                      src={img}
+                                      alt={`Photo ${idx + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    {isSelected && (
+                                      <div className="absolute inset-0 bg-purple-500/30 flex items-center justify-center">
+                                        <Check className="h-4 w-4 text-white drop-shadow" />
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
-                    )}
+                    ))}
+
+                    {/* Add variant button */}
+                    <button
+                      type="button"
+                      onClick={addVariant}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-purple-300 text-purple-600 hover:border-purple-500 hover:bg-purple-50/50 transition-all text-sm font-semibold"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add another {(selectedCategory?.variantLabel || "variant").toLowerCase()}
+                    </button>
                   </div>
-                )}
+                </div>
 
                 <div className="space-y-4">
                   <Label className="text-gray-800 font-semibold text-base md:text-lg">
@@ -1060,74 +1388,48 @@ export default function SellPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  {/* Selling price + Retail/MRP price side by side */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label
-                        htmlFor="price"
-                        className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
-                      >
-                        Selling Price (INR) *
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-gray-600 text-lg md:text-xl font-bold">
-                          ₹
-                        </span>
-                        <Input
-                          id="price"
-                          type="number"
-                          placeholder="0.00"
-                          value={formData.price}
-                          onChange={(e) =>
-                            setFormData({ ...formData, price: e.target.value })
-                          }
-                          className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-14 md:h-16 text-gray-700 placeholder:text-gray-500 text-lg md:text-xl font-semibold"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="retailPrice"
-                        className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
-                      >
-                        Retail / MRP Price (INR){" "}
-                        <span className="text-xs font-normal text-gray-400">
-                          (optional)
-                        </span>
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-gray-600 text-lg md:text-xl font-bold">
-                          ₹
-                        </span>
-                        <Input
-                          id="retailPrice"
-                          type="number"
-                          placeholder="0.00"
-                          value={formData.retailPrice}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              retailPrice: e.target.value,
-                            })
-                          }
-                          className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-14 md:h-16 text-gray-700 placeholder:text-gray-500 text-lg md:text-xl font-semibold"
-                        />
-                      </div>
+                  {/* Prices are set per-variant in Step 4. Here we only ask for
+                      the optional retail/MRP price used to compute the discount badge. */}
+                  <div>
+                    <Label
+                      htmlFor="retailPrice"
+                      className="text-gray-800 font-semibold text-base md:text-lg mb-3 block"
+                    >
+                      Retail / MRP Price (INR){" "}
+                      <span className="text-xs font-normal text-gray-400">
+                        (optional — used to show % discount badge)
+                      </span>
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-4 md:left-6 top-1/2 transform -translate-y-1/2 text-gray-600 text-lg md:text-xl font-bold">
+                        ₹
+                      </span>
+                      <Input
+                        id="retailPrice"
+                        type="number"
+                        placeholder="0.00"
+                        value={formData.retailPrice}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            retailPrice: e.target.value,
+                          })
+                        }
+                        className="pl-8 md:pl-12 glass-input rounded-2xl border-0 h-14 md:h-16 text-gray-700 placeholder:text-gray-500 text-lg md:text-xl font-semibold"
+                      />
                     </div>
                   </div>
 
-                  {/* Live % off preview */}
-                  {formData.price &&
-                    formData.retailPrice &&
-                    parseFloat(formData.retailPrice) >
-                      parseFloat(formData.price) && (
+                  {/* Live % off preview based on min variant price */}
+                  {formData.retailPrice &&
+                    parseFloat(formData.retailPrice) > 0 &&
+                    computeMinVariantPrice() > 0 &&
+                    parseFloat(formData.retailPrice) > computeMinVariantPrice() && (
                       <div className="flex items-center gap-2 mt-3">
                         <span className="text-sm text-gray-500">Discount:</span>
                         <span className="text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg">
                           {Math.round(
-                            ((parseFloat(formData.retailPrice) -
-                              parseFloat(formData.price)) /
+                            ((parseFloat(formData.retailPrice) - computeMinVariantPrice()) /
                               parseFloat(formData.retailPrice)) *
                               100
                           )}
@@ -1139,53 +1441,15 @@ export default function SellPage() {
                       </div>
                     )}
 
-                  {/* Charges Calculator */}
-                  {formData.price && parseFloat(formData.price) > 0 && (
+                  {/* Starting price summary */}
+                  {computeMinVariantPrice() > 0 && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                        Payment Breakdown
-                      </h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Listed Price:</span>
-                          <span className="font-medium">
-                            ₹{parseFloat(formData.price).toFixed(2)}
-                          </span>
-                        </div>
-                        {/* Payment Gateway + Platform charges — commented out for now
-                        <div className="flex justify-between items-center text-red-600">
-                          <span>Payment Gateway Charges (2%):</span>
-                          <span>
-                            -₹{(parseFloat(formData.price) * 0.02).toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-red-600">
-                          <span>Platform Charges (0.5%):</span>
-                          <span>
-                            -₹{(parseFloat(formData.price) * 0.005).toFixed(2)}
-                          </span>
-                        </div>
-                        */}
-                        <div className="border-t border-gray-300 pt-2 mt-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold text-gray-800">
-                              You'll Receive:
-                            </span>
-                            <span className="font-bold text-lg text-green-600">
-                              ₹{parseFloat(formData.price).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Starting from:</span>
+                        <span className="font-bold text-lg text-green-600">
+                          ₹{computeMinVariantPrice().toFixed(2)}
+                        </span>
                       </div>
-                      {/* Charges note — commented out for now
-                      <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-xs text-blue-700">
-                          💡 Total charges: 2.5% (₹
-                          {(parseFloat(formData.price) * 0.025).toFixed(2)}) -
-                          Only on item price, not shipping
-                        </p>
-                      </div>
-                      */}
                     </div>
                   )}
                 </div>
@@ -1342,16 +1606,16 @@ export default function SellPage() {
                 </div>
 
                 {/* Total Price Preview */}
-                {formData.price && formData.shippingCharges && (
+                {computeMinVariantPrice() > 0 && formData.shippingCharges && (
                   <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border border-blue-200">
                     <h4 className="text-sm font-semibold text-gray-700 mb-3">
-                      Total Price Preview
+                      Total Price Preview (starting from)
                     </h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Item Price:</span>
+                        <span className="text-gray-600">Item Price (from):</span>
                         <span className="font-medium">
-                          ₹{parseFloat(formData.price).toFixed(2)}
+                          ₹{computeMinVariantPrice().toFixed(2)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -1363,22 +1627,16 @@ export default function SellPage() {
                       <div className="border-t border-blue-300 pt-2 mt-2">
                         <div className="flex justify-between items-center">
                           <span className="font-semibold text-gray-800">
-                            Total for Buyer:
+                            Total for Buyer (from):
                           </span>
                           <span className="font-bold text-lg text-blue-600">
                             ₹
                             {(
-                              parseFloat(formData.price) +
+                              computeMinVariantPrice() +
                               parseFloat(formData.shippingCharges)
                             ).toFixed(2)}
                           </span>
                         </div>
-                      </div>
-                      <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                        <p className="text-xs text-amber-700">
-                          💡 Note: Platform charges (2.5%) are only applied to
-                          the item price, not shipping charges
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -1458,130 +1716,112 @@ export default function SellPage() {
                             <strong>Model:</strong> {formData.model}
                           </p>
                         )}
-                        {(formData.sizes ?? []).length > 0 ? (
-                          <div>
-                            <strong>Sizes & Prices:</strong>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {(formData.sizes ?? []).map((e) => (
-                                <span
-                                  key={e.size_value}
-                                  className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-lg uppercase font-medium"
-                                >
-                                  {e.size_value} — ₹
-                                  {parseFloat(e.price).toLocaleString("en-IN")}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        ) : formData.size ? (
-                          <p>
-                            <strong>Size:</strong> {formData.size}
-                          </p>
-                        ) : null}
                         {formData.condition && (
                           <p>
                             <strong>Condition:</strong> {formData.condition}
                           </p>
                         )}
 
-                        <p>
-                          <strong>Price:</strong> ₹{formData.price || "0.00"}
-                        </p>
+                        {/* Variants summary */}
+                        {formData.variants.length > 0 && (
+                          <div>
+                            <strong>{selectedCategory?.variantLabel || "Variant"}s:</strong>
+                            <div className="mt-2 space-y-2">
+                              {formData.variants.map((v) => (
+                                <div
+                                  key={v.tempId}
+                                  className="pl-3 border-l-2 border-purple-200"
+                                >
+                                  <div className="flex items-center gap-2 text-xs font-semibold text-gray-700">
+                                    {v.color_hex && (
+                                      <span
+                                        className="inline-block h-3 w-3 rounded-full border border-gray-300 flex-shrink-0"
+                                        style={{ backgroundColor: v.color_hex }}
+                                      />
+                                    )}
+                                    {v.color_name}
+                                  </div>
+                                  {selectedCategory?.hasSize && v.sizes.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {v.sizes.map((s) => (
+                                        <span
+                                          key={s.size_value}
+                                          className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-lg uppercase font-medium"
+                                        >
+                                          {s.size_value} — ₹{parseFloat(s.price).toLocaleString("en-IN")}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-gray-600">
+                                      ₹{parseFloat(v.price || "0").toLocaleString("en-IN")}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Starting price */}
+                        {computeMinVariantPrice() > 0 && (
+                          <p>
+                            <strong>Starting from:</strong>{" "}
+                            ₹{computeMinVariantPrice().toLocaleString("en-IN")}
+                          </p>
+                        )}
+
                         {formData.retailPrice &&
                           parseFloat(formData.retailPrice) > 0 && (
                             <p className="flex items-center gap-2 flex-wrap">
                               <strong>Retail / MRP:</strong>{" "}
                               <span className="line-through text-gray-400">
                                 ₹
-                                {parseFloat(
-                                  formData.retailPrice
-                                ).toLocaleString("en-IN")}
+                                {parseFloat(formData.retailPrice).toLocaleString("en-IN")}
                               </span>
-                              {parseFloat(formData.retailPrice) >
-                                parseFloat(formData.price) && (
-                                <span className="text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-1.5 py-0.5 rounded-md">
-                                  {Math.round(
-                                    ((parseFloat(formData.retailPrice) -
-                                      parseFloat(formData.price)) /
-                                      parseFloat(formData.retailPrice)) *
-                                      100
-                                  )}
-                                  % off
-                                </span>
-                              )}
+                              {parseFloat(formData.retailPrice) > computeMinVariantPrice() &&
+                                computeMinVariantPrice() > 0 && (
+                                  <span className="text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-1.5 py-0.5 rounded-md">
+                                    {Math.round(
+                                      ((parseFloat(formData.retailPrice) - computeMinVariantPrice()) /
+                                        parseFloat(formData.retailPrice)) *
+                                        100
+                                    )}
+                                    % off
+                                  </span>
+                                )}
                             </p>
                           )}
-                        {/* Charges breakdown — commented out for now
-                        {formData.price && parseFloat(formData.price) > 0 && (
-                          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <div className="text-xs space-y-1">
-                              <div className="flex justify-between">
-                                <span>Payment Gateway (2%):</span>
-                                <span className="text-red-600">
-                                  -₹{(parseFloat(formData.price) * 0.02).toFixed(2)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Platform (0.5%):</span>
-                                <span className="text-red-600">
-                                  -₹{(parseFloat(formData.price) * 0.005).toFixed(2)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between font-semibold border-t border-gray-300 pt-1">
-                                <span>You'll Receive:</span>
-                                <span className="text-green-600">
-                                  ₹{(parseFloat(formData.price) * 0.975).toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        */}
 
-                        {/* Shipping Information */}
                         {formData.shippingCharges && (
                           <p>
-                            <strong>Shipping Charges:</strong> ₹{" "}
-                            {formData.shippingCharges}
+                            <strong>Shipping Charges:</strong> ₹{formData.shippingCharges}
                           </p>
                         )}
                         {formData.deliveryDays && (
                           <p>
                             <strong>Delivery Time:</strong>{" "}
-                            {formData.deliveryDays ===
-                            DELIVERY_TIMELINES.CUSTOM
+                            {formData.deliveryDays === DELIVERY_TIMELINES.CUSTOM
                               ? formData.customDeliveryDays || "Custom"
                               : `${formData.deliveryDays} Days`}
                           </p>
                         )}
 
-                        {/* Total Price for Buyer */}
-                        {formData.price && formData.shippingCharges && (
+                        {computeMinVariantPrice() > 0 && formData.shippingCharges && (
                           <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                             <div className="text-xs space-y-1">
                               <div className="flex justify-between">
-                                <span>Item Price:</span>
-                                <span>
-                                  ₹{parseFloat(formData.price).toFixed(2)}
-                                </span>
+                                <span>Item Price (from):</span>
+                                <span>₹{computeMinVariantPrice().toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span>Shipping:</span>
-                                <span>
-                                  ₹
-                                  {parseFloat(formData.shippingCharges).toFixed(
-                                    2
-                                  )}
-                                </span>
+                                <span>₹{parseFloat(formData.shippingCharges).toFixed(2)}</span>
                               </div>
                               <div className="flex justify-between font-semibold border-t border-blue-300 pt-1">
-                                <span>Total for Buyer:</span>
+                                <span>Total for Buyer (from):</span>
                                 <span className="text-blue-600 font-bold">
-                                  ₹
-                                  {(
-                                    parseFloat(formData.price) +
-                                    parseFloat(formData.shippingCharges)
-                                  ).toFixed(2)}
+                                  ₹{(computeMinVariantPrice() + parseFloat(formData.shippingCharges)).toFixed(2)}
                                 </span>
                               </div>
                             </div>

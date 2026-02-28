@@ -71,7 +71,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       (cartItem) =>
         cartItem.productId === item.productId &&
         cartItem.sellerId === item.sellerId &&
-        cartItem.size === item.size
+        cartItem.size === item.size &&
+        (cartItem.variantId ?? null) === (item.variantId ?? null)
     );
 
     if (existingItem) {

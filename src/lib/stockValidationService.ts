@@ -20,13 +20,18 @@ export interface CartValidationResult {
  */
 export class StockValidationService {
   /**
-   * Check if a single product (and optionally a specific size) is still available.
-   * For multi-size listings, pass `size` to check that specific size's is_sold flag.
-   * For single-size listings (or when size is omitted), checks product_listings.status.
+   * Check if a single product (and optionally a specific size / variant+size) is still available.
+   *
+   * - When `variantId` + `size` are provided (new variant-based listings):
+   *   checks `product_variant_sizes` for that exact variant+size is_sold flag.
+   * - When only `size` is provided (legacy multi-size listings):
+   *   checks `product_listing_sizes` for that size's is_sold flag.
+   * - When neither is provided: falls back to product-level status.
    */
   static async checkProductAvailability(
     productId: string,
-    size?: string
+    size?: string,
+    variantId?: string | null
   ): Promise<StockValidationResult> {
     try {
       const { data: product, error } = await supabase
@@ -43,7 +48,26 @@ export class StockValidationService {
         };
       }
 
-      // If a size is provided, check per-size availability in product_listing_sizes
+      // ── Variant-based listing: check product_variant_sizes ──
+      if (variantId && size) {
+        const { data: variantSizeRow } = await supabase
+          .from("product_variant_sizes")
+          .select("is_sold")
+          .eq("variant_id", variantId)
+          .eq("size_value", size)
+          .maybeSingle();
+
+        if (variantSizeRow) {
+          return {
+            productId,
+            isAvailable: product.status === "active" && !variantSizeRow.is_sold,
+            currentStatus: variantSizeRow.is_sold ? "sold" : product.status,
+            productName: product.title,
+          };
+        }
+      }
+
+      // ── Legacy multi-size listing: check product_listing_sizes ──
       if (size) {
         const { data: sizeRow } = await supabase
           .from("product_listing_sizes")
@@ -53,7 +77,6 @@ export class StockValidationService {
           .maybeSingle();
 
         if (sizeRow) {
-          // Multi-size listing: product must be active AND size must not be sold
           return {
             productId,
             isAvailable: product.status === "active" && !sizeRow.is_sold,
@@ -63,7 +86,7 @@ export class StockValidationService {
         }
       }
 
-      // Single-size listing or no size provided: use product-level status
+      // ── Single-size listing or no size provided: use product-level status ──
       return {
         productId,
         isAvailable: product.status === "active",
@@ -112,7 +135,7 @@ export class StockValidationService {
       products?.map((p) => [p.id, { status: p.status, title: p.title }]) || []
     );
 
-    // Fetch sold sizes for all multi-size products in cart
+    // Fetch sold sizes for all legacy multi-size products in cart
     const { data: soldSizes } = await supabase
       .from("product_listing_sizes")
       .select("listing_id, size_value, is_sold")
@@ -122,6 +145,27 @@ export class StockValidationService {
     const soldSizeSet = new Set(
       (soldSizes || []).map((s) => `${s.listing_id}::${s.size_value}`)
     );
+
+    // Fetch sold variant sizes for all variant-based cart items (one batch query)
+    const variantIds = [
+      ...new Set(
+        cartItems
+          .map((item) => item.variantId)
+          .filter((id): id is string => !!id)
+      ),
+    ];
+    const soldVariantSizeSet = new Set<string>();
+    if (variantIds.length > 0) {
+      const { data: soldVariantSizes } = await supabase
+        .from("product_variant_sizes")
+        .select("variant_id, size_value")
+        .in("variant_id", variantIds)
+        .eq("is_sold", true);
+
+      (soldVariantSizes || []).forEach((s) =>
+        soldVariantSizeSet.add(`${s.variant_id}::${s.size_value}`)
+      );
+    }
 
     const unavailableItems: StockValidationResult[] = [];
     const availableItems: StockValidationResult[] = [];
@@ -139,16 +183,30 @@ export class StockValidationService {
         continue;
       }
 
-      // Check if the specific size is sold out
-      const sizeKey = `${item.productId}::${item.size}`;
-      if (soldSizeSet.has(sizeKey)) {
-        unavailableItems.push({
-          productId: item.productId,
-          isAvailable: false,
-          currentStatus: "sold",
-          productName: productInfo.title,
-        });
-        continue;
+      // Check variant-based size availability (new listings)
+      if (item.variantId) {
+        const variantSizeKey = `${item.variantId}::${item.size}`;
+        if (soldVariantSizeSet.has(variantSizeKey)) {
+          unavailableItems.push({
+            productId: item.productId,
+            isAvailable: false,
+            currentStatus: "sold",
+            productName: productInfo.title,
+          });
+          continue;
+        }
+      } else {
+        // Check legacy per-size availability
+        const sizeKey = `${item.productId}::${item.size}`;
+        if (soldSizeSet.has(sizeKey)) {
+          unavailableItems.push({
+            productId: item.productId,
+            isAvailable: false,
+            currentStatus: "sold",
+            productName: productInfo.title,
+          });
+          continue;
+        }
       }
 
       availableItems.push({
@@ -167,22 +225,78 @@ export class StockValidationService {
   }
 
   /**
-   * Mark a specific size as sold for a multi-size listing, or the whole product
-   * for single-size listings. If all sizes of a multi-size listing are sold,
-   * also marks the product_listings row as sold.
+   * Mark a specific size as sold for a listing.
+   *
+   * When `variantId` is provided (new variant-based listings), marks the size
+   * in `product_variant_sizes`. When all sizes across all variants of the product
+   * are sold, also marks the parent `product_listings` row as sold.
+   *
+   * When `variantId` is omitted (legacy listings), falls back to marking the size
+   * in `product_listing_sizes`. If all sizes are sold, marks the product as sold.
+   * For single-size legacy listings (no rows in product_listing_sizes), marks the
+   * whole product as sold directly.
    *
    * Returns true if successfully marked, false if already sold or not found.
    */
-  static async markSizeAsSold(productId: string, size: string): Promise<boolean> {
+  static async markSizeAsSold(
+    productId: string,
+    size: string,
+    variantId?: string | null
+  ): Promise<boolean> {
     try {
-      // Check whether this product has size variants
+      // ── Variant-based listing ──
+      if (variantId) {
+        const { data: updated, error } = await supabase
+          .from("product_variant_sizes")
+          .update({ is_sold: true })
+          .eq("variant_id", variantId)
+          .eq("size_value", size)
+          .eq("is_sold", false) // Optimistic lock — only update if not already sold
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error marking variant size as sold:", error);
+          return false;
+        }
+
+        if (!updated) {
+          // Already sold or size row not found
+          return false;
+        }
+
+        // Check if ALL sizes across ALL variants of this product are now sold.
+        // If so, mark the whole listing as sold.
+        const { data: variants } = await supabase
+          .from("product_variants")
+          .select("id")
+          .eq("listing_id", productId);
+
+        if (variants && variants.length > 0) {
+          const variantIds = variants.map((v) => v.id);
+          const { data: allSizes } = await supabase
+            .from("product_variant_sizes")
+            .select("is_sold")
+            .in("variant_id", variantIds);
+
+          const allSold =
+            allSizes && allSizes.length > 0 && allSizes.every((s) => s.is_sold);
+          if (allSold) {
+            await this.markProductAsSold(productId);
+          }
+        }
+
+        return true;
+      }
+
+      // ── Legacy listing: check product_listing_sizes ──
       const { data: sizeRows } = await supabase
         .from("product_listing_sizes")
         .select("size_value, is_sold")
         .eq("listing_id", productId);
 
       if (sizeRows && sizeRows.length > 0) {
-        // ── Multi-size listing: mark the specific size as sold ──
+        // Multi-size legacy listing: mark the specific size as sold
         const { data: updated, error } = await supabase
           .from("product_listing_sizes")
           .update({ is_sold: true })
@@ -213,7 +327,7 @@ export class StockValidationService {
         return true;
       }
 
-      // ── Single-size listing: mark the whole product as sold ──
+      // ── Single-size legacy listing: mark the whole product as sold ──
       return this.markProductAsSold(productId);
     } catch (error) {
       console.error("Error in markSizeAsSold:", error);

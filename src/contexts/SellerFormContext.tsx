@@ -5,19 +5,26 @@ import {
   type SetStateAction,
 } from "react";
 
-export interface SizeEntry {
+export interface VariantSizeEntry {
   size_value: string;
   price: string; // string for input binding, parsed to number on submit
+}
+
+export interface ProductVariant {
+  tempId: string;        // client-side key only, not persisted
+  color_name: string;    // "University Blue", "Chase Edition", etc.
+  color_hex: string;     // "#4169E1" — empty string when not set
+  price: string;         // used for no-size categories (electronics, collectibles)
+  sizes: VariantSizeEntry[]; // used for size-having categories (sneakers, apparels)
+  imageIndex: number | null; // index into the uploaded images[] array for this variant's photo
 }
 
 export interface SellerFormData {
   title: string;
   brand: string;
   model: string;
-  size: string;
-  sizes: SizeEntry[]; // multi-size entries; empty = single-size mode
+  variants: ProductVariant[]; // replaces the old size / sizes flat fields
   condition: string;
-  price: string;
   retailPrice: string; // optional retail / MRP price in INR
   description: string;
   category: string;
@@ -39,14 +46,21 @@ export interface SellerFormContextType {
   clearFormData: () => void;
 }
 
+const makeDefaultVariant = (): ProductVariant => ({
+  tempId: crypto.randomUUID(),
+  color_name: "",
+  color_hex: "",
+  price: "",
+  sizes: [],
+  imageIndex: null,
+});
+
 const DEFAULT_SELLER_FORM_DATA: SellerFormData = {
   title: "",
   brand: "",
   model: "",
-  size: "",
-  sizes: [],
+  variants: [makeDefaultVariant()],
   condition: "new",
-  price: "",
   retailPrice: "",
   description: "",
   category: "sneakers",
@@ -81,7 +95,10 @@ export const SellerFormProvider = ({
   const [currentStep, setCurrentStep] = useState(1);
 
   const clearFormData = () => {
-    setFormData(DEFAULT_SELLER_FORM_DATA);
+    setFormData({
+      ...DEFAULT_SELLER_FORM_DATA,
+      variants: [makeDefaultVariant()],
+    });
   };
 
   const value = {

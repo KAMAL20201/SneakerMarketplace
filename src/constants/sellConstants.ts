@@ -25,6 +25,8 @@ export const categories = [
     hasSize: true,
     hasBrand: true,
     hasModel: true,
+    variantLabel: "Colorway",
+    hasColorPicker: true,
   },
   {
     id: CATEGORY_IDS.CLOTHING,
@@ -36,6 +38,8 @@ export const categories = [
     hasSize: true,
     hasBrand: true,
     hasModel: false,
+    variantLabel: "Color",
+    hasColorPicker: true,
   },
   {
     id: CATEGORY_IDS.ELECTRONICS,
@@ -47,6 +51,8 @@ export const categories = [
     hasSize: false,
     hasBrand: true,
     hasModel: true,
+    variantLabel: "Color",
+    hasColorPicker: true,
   },
   {
     id: CATEGORY_IDS.COLLECTIBLES,
@@ -58,5 +64,7 @@ export const categories = [
     hasSize: false,
     hasBrand: true,
     hasModel: true,
+    variantLabel: "Edition / Variant",
+    hasColorPicker: false,
   },
 ];

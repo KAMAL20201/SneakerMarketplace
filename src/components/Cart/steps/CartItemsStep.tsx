@@ -98,8 +98,13 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                           >
                             {item.productName}
                           </h4>
+                          {item.variantName && (
+                            <p className="text-xs text-gray-500 font-medium capitalize">
+                              {item.variantName}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-700 font-medium uppercase">
-                            Size: {item.size}
+                            {item.size ? `Size: ${item.size}` : "One Size"}
                           </p>
                           <div className="flex items-center gap-2">
                             <ConditionBadge condition={item.condition} />

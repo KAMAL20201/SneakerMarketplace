@@ -269,11 +269,18 @@ const MyOrders = () => {
                                     {order.product_listings?.title ||
                                       "Product"}
                                   </h3>
-                                  {order.ordered_size && (
-                                    <span className="inline-block text-xs font-semibold uppercase bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">
-                                      Size: {order.ordered_size}
-                                    </span>
-                                  )}
+                                  <div className="flex flex-wrap gap-1.5 mt-1">
+                                    {order.variant_name && (
+                                      <span className="inline-block text-xs font-semibold capitalize bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg">
+                                        {order.variant_name}
+                                      </span>
+                                    )}
+                                    {order.ordered_size && (
+                                      <span className="inline-block text-xs font-semibold uppercase bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">
+                                        Size: {order.ordered_size}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                                 <div className="text-right">
                                   <p className="text-lg font-bold text-gray-900">
@@ -381,7 +388,7 @@ const MyOrders = () => {
                                 onClick={async () => {
                                   try {
                                     // Mark the ordered size (or whole product for single-size) as sold
-                                    await StockValidationService.markSizeAsSold(order.product_id, order.ordered_size || "");
+                                    await StockValidationService.markSizeAsSold(order.product_id, order.ordered_size || "", order.variant_id);
                                     await OrderService.updateOrderStatus(order.id, "confirmed");
                                     setSellOrders((prev) =>
                                       prev.map((o) =>

@@ -21,6 +21,10 @@ export interface Order {
   buyer_name?: string;
   buyer_phone?: string;
   ordered_size?: string;
+  /** UUID of the product_variant that was ordered (null for legacy listings) */
+  variant_id?: string | null;
+  /** Display name of the ordered variant e.g. "University Blue" */
+  variant_name?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +43,8 @@ export interface CreateOrderRequest {
   buyer_name?: string;
   buyer_phone?: string;
   ordered_size?: string;
+  variant_id?: string | null;
+  variant_name?: string | null;
 }
 
 export interface CartItem {
@@ -54,6 +60,10 @@ export interface CartItem {
   sellerName: string;
   sellerEmail: string;
   quantity: number;
+  /** UUID of the selected product_variant (null for legacy listings) */
+  variantId?: string | null;
+  /** Display name of the selected variant e.g. "University Blue" */
+  variantName?: string | null;
 }
 
 export class OrderService {
@@ -76,6 +86,8 @@ export class OrderService {
           p_buyer_phone: orderData.buyer_phone || null,
           p_payment_id: orderData.payment_id || null,
           p_ordered_size: orderData.ordered_size || null,
+          p_variant_id: orderData.variant_id || null,
+          p_variant_name: orderData.variant_name || null,
         });
 
         if (error) throw error;
@@ -97,6 +109,8 @@ export class OrderService {
         buyer_name: orderData.buyer_name || null,
         buyer_phone: orderData.buyer_phone || null,
         ordered_size: orderData.ordered_size || null,
+        variant_id: orderData.variant_id || null,
+        variant_name: orderData.variant_name || null,
       };
       if (orderData.payment_id) {
         insertData.payment_id = orderData.payment_id;
@@ -164,8 +178,11 @@ export class OrderService {
       // Create orders for each item and notify sellers
       for (const item of cartItems) {
         // Double-check product availability (in case of race condition)
+        // Pass size + variantId so variant-based listings are checked correctly
         const availability = await StockValidationService.checkProductAvailability(
-          item.productId
+          item.productId,
+          item.size,
+          item.variantId
         );
 
         if (!availability.isAvailable) {
@@ -189,7 +206,8 @@ export class OrderService {
         // This prevents race conditions where multiple users try to buy the same item
         const markedAsSold = await StockValidationService.markSizeAsSold(
           item.productId,
-          item.size
+          item.size,
+          item.variantId
         );
 
         if (!markedAsSold) {
@@ -217,6 +235,8 @@ export class OrderService {
           buyer_name: buyerDetails.full_name,
           buyer_phone: buyerDetails.phone,
           ordered_size: item.size,
+          variant_id: item.variantId || null,
+          variant_name: item.variantName || null,
         });
 
         orders.push(order);
@@ -298,7 +318,7 @@ export class OrderService {
 
       for (const item of cartItems) {
         const availability =
-          await StockValidationService.checkProductAvailability(item.productId);
+          await StockValidationService.checkProductAvailability(item.productId, item.size, item.variantId);
 
         if (!availability.isAvailable) {
           logger.warn(
@@ -337,6 +357,8 @@ export class OrderService {
           buyer_name: buyerDetails.full_name,
           buyer_phone: buyerDetails.phone,
           ordered_size: item.size,
+          variant_id: item.variantId || null,
+          variant_name: item.variantName || null,
         });
 
         orders.push(order);

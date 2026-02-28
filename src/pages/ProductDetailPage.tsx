@@ -31,6 +31,10 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [availableSizes, setAvailableSizes] = useState<{ size_value: string; price: number; is_sold: boolean }[]>([]);
+  // Variant state (for new listings with product_variants)
+  const [variants, setVariants] = useState<{ id: string; color_name: string; color_hex: string | null; price: number | null; display_order: number; image_url: string | null }[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [variantSizesMap, setVariantSizesMap] = useState<Record<string, { size_value: string; price: number; is_sold: boolean }[]>>({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { addToCart, items } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -90,19 +94,24 @@ export default function ProductDetailPage() {
   }, [zoomEmblaApi]);
 
   const handleAddToCart = (seller: any) => {
+    const selectedVariant = variants.find((v) => v.id === selectedVariantId);
     const cartItem = {
-      id: `${listing?.id}-${selectedSize}`,
+      // Include variantId in id so Blue/M and Red/M are distinct cart entries
+      id: `${listing?.id}-${selectedVariantId ?? "no-variant"}-${selectedSize}`,
       productId: listing?.id,
       productName: listing?.title,
       brand: listing?.brand,
       size: selectedSize,
       condition: listing?.condition,
       price: selectedPrice ?? listing?.price,
-      image: images?.[0]?.image_url,
+      // Prefer the variant's bound image, fall back to first listing image
+      image: selectedVariant?.image_url ?? images?.[0]?.image_url,
       sellerId: seller?.id?.toString(),
       sellerName: seller?.display_name,
       sellerEmail: seller?.email,
       quantity: 1,
+      variantId: selectedVariantId ?? null,
+      variantName: selectedVariant?.color_name ?? null,
     };
 
     const success = addToCart(cartItem);
@@ -113,7 +122,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  // Check if item is already in cart (for the currently selected size)
+  // Check if item is already in cart (for the currently selected variant + size)
   const isItemInCart = () => {
     if (!listing || !listing.seller_details) return false;
 
@@ -121,7 +130,8 @@ export default function ProductDetailPage() {
       (cartItem) =>
         cartItem.productId === listing.id &&
         cartItem.sellerId === listing.seller_details.id?.toString() &&
-        cartItem.size === selectedSize
+        cartItem.size === selectedSize &&
+        (cartItem.variantId ?? null) === (selectedVariantId ?? null)
     );
   };
 
@@ -180,35 +190,72 @@ export default function ProductDetailPage() {
       };
       delete transformedListing.sellers;
 
-      // Query 3: Get size variants from product_listing_sizes (multi-size listings)
-      const { data: sizesData } = await supabase
-        .from("product_listing_sizes")
-        .select("size_value, price, is_sold")
+      // Query 3: Check product_variants first (new listings)
+      const { data: variantsData } = await supabase
+        .from("product_variants")
+        .select("id, color_name, color_hex, price, display_order, image_url")
         .eq("listing_id", productId)
-        .order("price", { ascending: true });
+        .order("display_order", { ascending: true });
 
       setListing(transformedListing);
       setImages(imagesData || []);
 
-      const sizes = sizesData ?? [];
-      setAvailableSizes(sizes);
+      if (variantsData && variantsData.length > 0) {
+        // ── New variant-based listing ──
+        const variantIds = variantsData.map((v) => v.id);
+        const { data: variantSizesData } = await supabase
+          .from("product_variant_sizes")
+          .select("variant_id, size_value, price, is_sold")
+          .in("variant_id", variantIds)
+          .order("price", { ascending: true });
 
-      if (sizes.length > 0) {
-        // Multi-size listing
-        // Try to match URL-provided size first (from browse page filter)
-        let target = preSelectedSize
-          ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
-          : null;
-        // Fall back to cheapest available
-        if (!target) {
-          target = sizes.find((s) => !s.is_sold) ?? sizes[0];
+        const sizesMap: Record<string, { size_value: string; price: number; is_sold: boolean }[]> = {};
+        for (const vs of variantSizesData ?? []) {
+          if (!sizesMap[vs.variant_id]) sizesMap[vs.variant_id] = [];
+          sizesMap[vs.variant_id].push({ size_value: vs.size_value, price: vs.price, is_sold: vs.is_sold });
         }
-        setSelectedSize(target.size_value);
-        setSelectedPrice(target.price);
-      } else if (transformedListing.size_value) {
-        // Single-size listing — use the listing's own size/price
-        setSelectedSize(transformedListing.size_value);
-        setSelectedPrice(transformedListing.price ?? null);
+
+        setVariants(variantsData);
+        setVariantSizesMap(sizesMap);
+
+        const firstVariant = variantsData[0];
+        setSelectedVariantId(firstVariant.id);
+        const firstSizes = sizesMap[firstVariant.id] ?? [];
+        setAvailableSizes(firstSizes);
+
+        if (firstSizes.length > 0) {
+          const target = preSelectedSize
+            ? firstSizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
+            : null;
+          const pick = target ?? firstSizes.find((s) => !s.is_sold) ?? firstSizes[0];
+          setSelectedSize(pick.size_value);
+          setSelectedPrice(pick.price);
+        } else {
+          // No sizes (electronics/collectibles) — price is at variant level
+          setSelectedPrice(firstVariant.price ?? transformedListing.price ?? null);
+        }
+      } else {
+        // ── Legacy: product_listing_sizes or single-size ──
+        const { data: sizesData } = await supabase
+          .from("product_listing_sizes")
+          .select("size_value, price, is_sold")
+          .eq("listing_id", productId)
+          .order("price", { ascending: true });
+
+        const sizes = sizesData ?? [];
+        setAvailableSizes(sizes);
+
+        if (sizes.length > 0) {
+          let target = preSelectedSize
+            ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
+            : null;
+          if (!target) target = sizes.find((s) => !s.is_sold) ?? sizes[0];
+          setSelectedSize(target.size_value);
+          setSelectedPrice(target.price);
+        } else if (transformedListing.size_value) {
+          setSelectedSize(transformedListing.size_value);
+          setSelectedPrice(transformedListing.price ?? null);
+        }
       }
 
       // Set the first image (poster or first available) as selected
@@ -238,6 +285,28 @@ export default function ProductDetailPage() {
       .limit(10)
       .then(({ data }) => setSimilarProducts(data ?? []));
   }, [listing]);
+
+  const handleVariantSelect = (variantId: string) => {
+    const variant = variants.find((v) => v.id === variantId);
+    if (!variant) return;
+    setSelectedVariantId(variantId);
+    setSelectedSize(null);
+    setSelectedPrice(null);
+    const sizes = variantSizesMap[variantId] ?? [];
+    setAvailableSizes(sizes);
+    if (sizes.length > 0) {
+      const pick = sizes.find((s) => !s.is_sold) ?? sizes[0];
+      setSelectedSize(pick.size_value);
+      setSelectedPrice(pick.price);
+    } else {
+      setSelectedPrice(variant.price ?? listing?.price ?? null);
+    }
+    // Jump carousel to this variant's image if it has one
+    if (variant.image_url) {
+      const imgIdx = images.findIndex((img) => img.image_url === variant.image_url);
+      if (imgIdx !== -1) setSelectedImageIndex(imgIdx);
+    }
+  };
 
   if (loading) return <ProductDetailSkeleton />;
   if (error) return <div>Error: {error}</div>;
@@ -492,6 +561,72 @@ export default function ProductDetailPage() {
             </Card>
           </div> */}
 
+          {/* Color / Edition variant swatches */}
+          {variants.length > 0 && (
+            <div className="px-4 pb-4 lg:px-0">
+              <p className="text-xs text-gray-500 mb-2 font-medium">
+                {variants.find((v) => v.id === selectedVariantId)?.color_name || "Select variant"}
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {variants.map((variant) => {
+                  const isSelected = selectedVariantId === variant.id;
+                  // Show image thumbnail if variant has a bound image, otherwise color circle
+                  if (variant.image_url) {
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        title={variant.color_name}
+                        onClick={() => handleVariantSelect(variant.id)}
+                        className={`relative w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all ${
+                          isSelected
+                            ? "border-purple-500 scale-105 shadow-md"
+                            : "border-gray-200 hover:border-gray-400"
+                        }`}
+                      >
+                        <img
+                          src={variant.image_url}
+                          alt={variant.color_name}
+                          className="w-full h-full object-cover"
+                        />
+                        {isSelected && (
+                          <span className="absolute inset-0 rounded-2xl ring-2 ring-purple-500 ring-offset-1 pointer-events-none" />
+                        )}
+                      </button>
+                    );
+                  }
+                  return (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      title={variant.color_name}
+                      onClick={() => handleVariantSelect(variant.id)}
+                      className={`relative h-9 w-9 rounded-full border-2 transition-all flex items-center justify-center ${
+                        isSelected
+                          ? "border-purple-500 scale-110 shadow-md"
+                          : "border-gray-200 hover:border-gray-400"
+                      }`}
+                      style={
+                        variant.color_hex
+                          ? { backgroundColor: variant.color_hex }
+                          : { backgroundColor: "#e5e7eb" }
+                      }
+                    >
+                      {!variant.color_hex && (
+                        <span className="text-[9px] font-bold text-gray-600 leading-tight text-center px-0.5">
+                          {variant.color_name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                      {isSelected && (
+                        <span className="absolute inset-0 rounded-full ring-2 ring-purple-500 ring-offset-1 pointer-events-none" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Size Selection */}
           {(availableSizes.length > 0 || listing?.size_value) && (
             <div className="px-4 pb-6 lg:px-0">
@@ -604,20 +739,25 @@ export default function ProductDetailPage() {
               open={buyNowOpen}
               onOpenChange={setBuyNowOpen}
               amount={selectedPrice ?? listing?.price ?? 0}
-              item={{
-                id: listing?.id,
-                productId: listing?.id,
-                productName: listing?.title,
-                brand: listing?.brand,
-                size: selectedSize || "",
-                condition: listing?.condition,
-                price: selectedPrice ?? listing?.price,
-                image: images?.[0]?.image_url,
-                sellerId: listing?.seller_details?.id?.toString(),
-                sellerName: listing?.seller_details?.display_name,
-                sellerEmail: listing?.seller_details?.email,
-                quantity: 1,
-              }}
+              item={(() => {
+                const selectedVariant = variants.find((v) => v.id === selectedVariantId);
+                return {
+                  id: `${listing?.id}-${selectedVariantId ?? "no-variant"}-${selectedSize}`,
+                  productId: listing?.id,
+                  productName: listing?.title,
+                  brand: listing?.brand,
+                  size: selectedSize || "",
+                  condition: listing?.condition,
+                  price: selectedPrice ?? listing?.price,
+                  image: selectedVariant?.image_url ?? images?.[0]?.image_url,
+                  sellerId: listing?.seller_details?.id?.toString(),
+                  sellerName: listing?.seller_details?.display_name,
+                  sellerEmail: listing?.seller_details?.email,
+                  quantity: 1,
+                  variantId: selectedVariantId ?? null,
+                  variantName: selectedVariant?.color_name ?? null,
+                };
+              })()}
             />
           )}
 
