@@ -13,16 +13,16 @@ export class WhatsAppService {
 
     if (shortIds.length === 1) {
       return (
-        `Hi! I'd like to confirm my order on The Plug Market.\n\n` +
+        `Hi! I've completed my UPI payment for my order on The Plug Market.\n\n` +
         `*Order ID:* ${shortIds[0]}\n\n` +
-        `Please share the payment details. Thank you!`
+        `Please confirm once you've received the payment. Thank you!`
       );
     }
 
     return (
-      `Hi! I'd like to confirm my orders on The Plug Market.\n\n` +
+      `Hi! I've completed my UPI payment for my orders on The Plug Market.\n\n` +
       `*Order IDs:*\n${shortIds.join("\n")}\n\n` +
-      `Please share the payment details. Thank you!`
+      `Please confirm once you've received the payment. Thank you!`
     );
   }
 
