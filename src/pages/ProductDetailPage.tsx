@@ -6,7 +6,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
 import { useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { supabase, toStorageUrl } from "@/lib/supabase";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import ConditionBadge from "@/components/ui/ConditionBadge";
@@ -347,7 +347,7 @@ export default function ProductDetailPage() {
                         <ZoomIn className="h-5 w-5 text-gray-700" />
                       </button>
                       <ProductImage
-                        src={image?.image_url || "/placeholder.svg"}
+                        src={toStorageUrl(image?.image_url) || "/placeholder.svg"}
                         alt={`${listing?.title} - Image ${index + 1}`}
                         priority={index === 0}
                         className="w-full object-contain rounded-none"
@@ -388,7 +388,7 @@ export default function ProductDetailPage() {
                   }`}
               >
                 <ThumbnailImage
-                  src={image.image_url || "/placeholder.svg"}
+                  src={toStorageUrl(image.image_url) || "/placeholder.svg"}
                   alt={`${listing?.title} thumbnail ${index + 1}`}
                   className="w-full h-full"
                 />
@@ -597,7 +597,7 @@ export default function ProductDetailPage() {
                         }`}
                       >
                         <img
-                          src={variant.image_url}
+                          src={toStorageUrl(variant.image_url) ?? undefined}
                           alt={variant.color_name}
                           className="w-full h-full object-cover"
                         />
@@ -979,7 +979,7 @@ export default function ProductDetailPage() {
                   <CarouselItem key={image.id} className=" h-full">
                     <div className="w-full h-full flex items-center justify-center">
                       <img
-                        src={image?.image_url || "/placeholder.svg"}
+                        src={toStorageUrl(image?.image_url) || "/placeholder.svg"}
                         alt={`${listing?.title} - Zoomed ${index + 1}`}
                         className="h-full w-full object-contain"
                       />

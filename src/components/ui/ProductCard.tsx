@@ -6,6 +6,7 @@ import { ProductImage, CardImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_HELPERS } from "@/constants/enums";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { toStorageUrl } from "@/lib/supabase";
 
 interface ProductCardProps {
   product: {
@@ -58,7 +59,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
             <CardContent className="p-0 flex flex-col h-full">
               <div className="relative">
                 <CardImage
-                  src={product.image_url || "/placeholder.svg"}
+                  src={toStorageUrl(product.image_url) || "/placeholder.svg"}
                   alt={product.title}
                   aspectRatio="aspect-[4/3]"
                   className="w-full sm:h-48 h-36"
@@ -130,7 +131,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
             <div className="flex p-4 gap-2">
               <div className="relative w-28 h-28 flex-shrink-0">
                 <ProductImage
-                  src={product.image_url || "/placeholder.svg"}
+                  src={toStorageUrl(product.image_url) || "/placeholder.svg"}
                   alt={product.title}
                   className="w-full h-full"
                 />
