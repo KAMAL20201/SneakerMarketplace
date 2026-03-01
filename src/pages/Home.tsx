@@ -11,6 +11,7 @@ import BrandSpotlight from "@/components/BrandSpotlight";
 import InstagramBanner from "@/components/InstagramBanner";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 import HotDeals from "@/components/HotDeals";
+import InstantShipping from "@/components/InstantShipping";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -197,6 +198,9 @@ const Home = () => {
       <WishlistSection />
       {/* Hot Deals Section */}
       <HotDeals />
+
+      {/* Instant Shipping Section */}
+      <InstantShipping />
 
       {/* Sneakers Section */}
       <CategorySection

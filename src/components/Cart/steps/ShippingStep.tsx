@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ShippingAddressForm } from "@/components/checkout/ShippingAddressForm";
 import { AddressCard } from "@/components/checkout/AddressCard";
@@ -30,6 +30,15 @@ export const ShippingStep: React.FC<ShippingStepProps> = ({
     defaultAddress,
     loading,
   } = useAddressStorage();
+
+  // Auto-select default address (or first address) when addresses load
+  useEffect(() => {
+    if (!loading && addresses.length > 0 && shippingAddress === null) {
+      const defaultAddr =
+        addresses.find((addr) => addr.id === defaultAddress) ?? addresses[0];
+      setShippingAddress(defaultAddr);
+    }
+  }, [loading, addresses, defaultAddress, shippingAddress]);
 
   const handleSubmit = async (address: ShippingAddress) => {
     try {

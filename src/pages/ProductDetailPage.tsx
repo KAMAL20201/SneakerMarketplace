@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShoppingCart, ZoomIn, X, Heart, Ruler, Truck } from "lucide-react";
+import { ShoppingCart, ZoomIn, X, Heart, Ruler, Truck, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -23,6 +23,12 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import type { EmblaCarouselType } from "embla-carousel";
+
+function parseMinDeliveryDays(deliveryDays: string | null | undefined): number {
+  if (!deliveryDays) return Infinity;
+  const min = parseInt(deliveryDays.split("-")[0]);
+  return isNaN(min) ? Infinity : min;
+}
 
 export default function ProductDetailPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -481,6 +487,12 @@ export default function ProductDetailPage() {
             )}
 
             {/* Delivery Timeline */}
+            {listing?.delivery_days && parseMinDeliveryDays(listing.delivery_days) < 10 && (
+              <div className="mt-3 inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-semibold">
+                <Zap className="h-3 w-3" />
+                Instant Ship
+              </div>
+            )}
             {listing?.delivery_days && (
               <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
                 <Truck className="h-4 w-4 text-purple-400 flex-shrink-0" />
