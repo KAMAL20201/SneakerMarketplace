@@ -49,7 +49,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   const { initiatePayment, isLoading, error } = usePayment();
   const handlePayment = async () => {
     try {
-      await initiatePayment(currency, metadata, items, shippingAddress);
+      await initiatePayment(currency, metadata, items, shippingAddress, amount);
     } catch (err) {
       console.error("Order failed:", err);
     }
