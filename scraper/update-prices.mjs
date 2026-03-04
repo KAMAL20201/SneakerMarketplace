@@ -230,24 +230,19 @@ async function processListing(page, listing, idx, total) {
     return { status: "noChange" };
   }
 
-  // Min price across all sizes
-  const minPriceUsd  = Math.min(...sizePrices.map(s => s.priceUsd));
-  const newPriceInr  = usdToInr(minPriceUsd);
-  const newRetailInr = match.retailPriceCents ? usdToInr(match.retailPriceCents / 100) : null;
-
-  const priceChanged  = newPriceInr  !== null && newPriceInr  !== listing.price;
-  const retailChanged = newRetailInr !== null && newRetailInr !== listing.retail_price;
-
-  // Build size map
+  // Build GOAT size map (US size → INR price)
   const goatSizeMap = new Map();
   for (const sp of sizePrices) {
     goatSizeMap.set(parseFloat(sp.size), usdToInr(sp.priceUsd));
   }
 
   // Match DB sizes → GOAT sizes (brand-aware UK→US conversion)
+  // Collect matched INR prices so the listing-level min reflects only sizes we actually stock
   const offset  = brandSizeOffset(listing.brand);
   const dbSizes = listing.product_listing_sizes || [];
   const sizeUpdatePromises = [];
+  const matchedPricesInr   = [];
+
   for (const dbSize of dbSizes) {
     const usMatch = dbSize.size_value.match(/us\s*([0-9.]+)/i);
     const ukMatch = dbSize.size_value.match(/uk\s*([0-9.]+)/i);
@@ -260,8 +255,11 @@ async function processListing(page, listing, idx, total) {
       continue;
     }
     const newSizeInr = goatSizeMap.get(usSize);
-    if (!newSizeInr || newSizeInr === dbSize.price) continue;
+    if (!newSizeInr) continue;
 
+    matchedPricesInr.push(newSizeInr);
+
+    if (newSizeInr === dbSize.price) continue;
     sizeUpdatePromises.push(
       supabase
         .from("product_listing_sizes")
@@ -275,6 +273,13 @@ async function processListing(page, listing, idx, total) {
   sizeResults.filter(r => r.error).forEach(r => {
     console.log(`${pg} ⚠️  size DB update error: ${r.error.message}`);
   });
+
+  // Min price derived only from DB sizes that matched GOAT — not all GOAT sizes
+  const newPriceInr  = matchedPricesInr.length > 0 ? Math.min(...matchedPricesInr) : null;
+  const newRetailInr = match.retailPriceCents ? usdToInr(match.retailPriceCents / 100) : null;
+
+  const priceChanged  = newPriceInr  !== null && newPriceInr  !== listing.price;
+  const retailChanged = newRetailInr !== null && newRetailInr !== listing.retail_price;
 
   // Update listing-level price
   let listingUpdated = false;
