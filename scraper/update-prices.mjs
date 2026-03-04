@@ -311,10 +311,12 @@ async function main() {
   const { data: listings, error: fetchErr } = await supabase
     .from("product_listings")
     .select("id, title, brand, price, retail_price, product_listing_sizes(id, size_value, price)")
-    .eq("status", "active");
+    .eq("status", "active")
+    .eq("category", "sneakers")
+    .is("reviewed_at", null);  // only scraped catalog listings; seller listings have reviewed_at set
 
   if (fetchErr) { console.error("❌ DB fetch failed:", fetchErr.message); process.exit(1); }
-  console.log(`📡 ${listings.length} active listings fetched\n`);
+  console.log(`📡 ${listings.length} active sneaker catalog listings fetched\n`);
 
   const browser = await stealthChromium.launch({
     headless: true,
