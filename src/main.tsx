@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
+import { HelmetProvider } from "react-helmet-async";
 import Router from "./Router";
 import Layout from "./layout";
 import "./index.css";
@@ -11,15 +12,17 @@ import Analytics from "./components/Analytics";
 const root = document.getElementById("root")!;
 
 ReactDOM.createRoot(root).render(
-  <BrowserRouter>
-    <ScrollToTop />
-    <Analytics />
-    <AuthProvider>
-      <Provider>
-        <Layout>
-          <Router />
-        </Layout>
-      </Provider>
-    </AuthProvider>
-  </BrowserRouter>
+  <HelmetProvider>
+    <BrowserRouter>
+      <ScrollToTop />
+      <Analytics />
+      <AuthProvider>
+        <Provider>
+          <Layout>
+            <Router />
+          </Layout>
+        </Provider>
+      </AuthProvider>
+    </BrowserRouter>
+  </HelmetProvider>
 );

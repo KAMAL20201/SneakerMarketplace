@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router";
@@ -87,6 +88,37 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>The Plug Market - Authentic Sneakers & Streetwear Marketplace</title>
+        <meta name="description" content="Buy and sell authentic sneakers and streetwear. India's trusted marketplace for verified sneakers, limited edition drops, and premium streetwear." />
+        <link rel="canonical" href="https://theplugmarket.in/" />
+        <meta property="og:url" content="https://theplugmarket.in/" />
+        <meta property="og:title" content="The Plug Market - Authentic Sneakers & Streetwear Marketplace" />
+        <meta property="og:description" content="Buy and sell authentic sneakers and streetwear. India's trusted marketplace for verified sneakers, limited edition drops, and premium streetwear." />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "The Plug Market",
+          "alternateName": "Plug Market",
+          "url": "https://theplugmarket.in/",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://theplugmarket.in/browse?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "The Plug Market",
+          "url": "https://theplugmarket.in/",
+          "logo": "https://theplugmarket.in/logo.svg",
+          "sameAs": []
+        })}</script>
+      </Helmet>
       {/* Hero Section */}
       <section className="px-4 py-6">
         <div className="text-center mb-8 float-animation">

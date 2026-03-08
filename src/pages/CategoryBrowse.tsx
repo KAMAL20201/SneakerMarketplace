@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { useSearchParams, useLocation } from "react-router";
 import {
   Search,
@@ -392,8 +393,44 @@ const CategoryBrowse = ({ categoryId }: Props) => {
     return n;
   };
 
+  const categoryMeta: Record<string, { title: string; description: string; path: string }> = {
+    sneakers: {
+      title: "Buy Authentic Sneakers | The Plug Market",
+      description: "Shop authentic and verified sneakers in India. Find Nike, Jordan, Adidas, New Balance and more on The Plug Market.",
+      path: "/sneakers",
+    },
+    clothing: {
+      title: "Buy Streetwear & Apparel | The Plug Market",
+      description: "Shop authentic streetwear and apparel — Supreme, Off-White, Fear of God, Essentials and more on The Plug Market.",
+      path: "/apparels",
+    },
+    electronics: {
+      title: "Buy Electronics | The Plug Market",
+      description: "Shop authentic electronics — Apple, Sony, PlayStation, Nintendo and more on The Plug Market.",
+      path: "/electronics",
+    },
+    collectibles: {
+      title: "Buy Collectibles | The Plug Market",
+      description: "Shop authentic collectibles — KAWS, Bearbrick, Funko, Pokémon and more on The Plug Market.",
+      path: "/collectibles",
+    },
+  };
+  const meta = categoryMeta[categoryId] ?? {
+    title: `${toTitleCase(categoryId)} | The Plug Market`,
+    description: `Browse ${categoryId} on The Plug Market.`,
+    path: `/${categoryId}`,
+  };
+
   return (
     <div className="min-h-screen px-4 py-6">
+      <Helmet>
+        <title>{meta.title}</title>
+        <meta name="description" content={meta.description} />
+        <link rel="canonical" href={`https://theplugmarket.in${meta.path}`} />
+        <meta property="og:url" content={`https://theplugmarket.in${meta.path}`} />
+        <meta property="og:title" content={meta.title} />
+        <meta property="og:description" content={meta.description} />
+      </Helmet>
       <div className="container mx-auto max-w-7xl">
 
         {/* Header */}

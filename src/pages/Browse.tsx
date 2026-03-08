@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { useSearchParams, useLocation } from "react-router";
 import {
   Search,
@@ -409,6 +410,14 @@ const Browse = () => {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen px-4 py-6">
+      <Helmet>
+        <title>Browse All Products | The Plug Market</title>
+        <meta name="description" content="Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market. Find the best deals on verified items." />
+        <link rel="canonical" href="https://theplugmarket.in/browse" />
+        <meta property="og:url" content="https://theplugmarket.in/browse" />
+        <meta property="og:title" content="Browse All Products | The Plug Market" />
+        <meta property="og:description" content="Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market." />
+      </Helmet>
       <div className="container mx-auto max-w-7xl">
 
         {/* Header */}

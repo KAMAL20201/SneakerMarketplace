@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { ShoppingCart, ZoomIn, X, Heart, Ruler, Truck, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -322,8 +323,31 @@ export default function ProductDetailPage() {
     retailInr && retailInr > currentPrice
       ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
       : null;
+  const pageTitle = listing
+    ? `${listing.brand ? listing.brand + " " : ""}${listing.title} | The Plug Market`
+    : "The Plug Market";
+  const pageDescription = listing
+    ? `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop authentic sneakers and streetwear on The Plug Market.`
+    : "Shop authentic sneakers and streetwear on The Plug Market.";
+  const posterImage = images?.[0]?.image_url ?? "https://theplugmarket.in/og-image.jpg";
+  const canonicalUrl = `https://theplugmarket.in/product/${productId}`;
+
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="product" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={posterImage} />
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:title" content={pageTitle} />
+        <meta property="twitter:description" content={pageDescription} />
+        <meta property="twitter:image" content={posterImage} />
+      </Helmet>
       <div className="lg:flex lg:gap-8 lg:p-8">
         {/* Image Gallery - Left side on desktop, full width on mobile */}
         <div className={`lg:w-[60%] lg:max-w-2xl px-4 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5 ${images.length <= 1 ? "pt-6 pb-2" : "py-6"}`}>
