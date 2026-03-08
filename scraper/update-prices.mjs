@@ -40,7 +40,7 @@ await loadEnv(path.join(ROOT_DIR, ".env"));
 
 const SUPABASE_URL      = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const USD_TO_INR        = parseFloat(process.env.USD_TO_INR || "91");
+let USD_TO_INR          = parseFloat(process.env.USD_TO_INR || "91"); // overwritten at runtime with live rate
 const DELAY_MS          = 400;
 const SEARCH_LIMIT      = 3;
 const CONCURRENCY       = 5;
@@ -74,7 +74,7 @@ function delay(ms) {
   return new Promise(r => setTimeout(r, ms + Math.floor(Math.random() * 100)));
 }
 
-const MARGIN_INR = 2000;
+const MARGIN_INR = 2300;
 
 function usdToInr(usd) {
   if (usd == null || isNaN(usd)) return null;
@@ -307,10 +307,37 @@ async function processListing(page, listing, idx, total) {
   return { status: listingUpdated ? "updated" : "noChange", sizeUpdateCount };
 }
 
+// ─── Live exchange rate ────────────────────────────────────────────────────
+
+/**
+ * Fetch live USD→INR rate from frankfurter.app (free, no API key).
+ * Falls back to the env/default value if the request fails.
+ */
+async function fetchLiveUsdToInr() {
+  try {
+    const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=INR");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const rate = data?.rates?.INR;
+    if (!rate || isNaN(rate)) throw new Error("INR rate missing in response");
+    return parseFloat(rate);
+  } catch (e) {
+    console.warn(`⚠️  Could not fetch live USD→INR rate (${e.message}) — using fallback: ₹${USD_TO_INR}`);
+    return null;
+  }
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 async function main() {
   console.log("🏃 SneakInMarket — DB-First Price Updater");
+
+  const liveRate = await fetchLiveUsdToInr();
+  if (liveRate) {
+    console.log(`💱 Live USD→INR: ₹${liveRate} (was fallback ₹${USD_TO_INR})`);
+    USD_TO_INR = liveRate;
+  }
+
   console.log(`   ${new Date().toLocaleString()} | USD→INR: ${USD_TO_INR} | Margin: ₹${MARGIN_INR} | Workers: ${CONCURRENCY}`);
 
   const { data: listings, error: fetchErr } = await supabase

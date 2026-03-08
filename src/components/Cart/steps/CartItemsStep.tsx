@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
-import { Trash2, ShoppingBag, RefreshCw } from "lucide-react";
+import { Trash2, ShoppingBag, RefreshCw, TrendingUp, X } from "lucide-react";
 import { useCartValidation } from "@/hooks/useCartValidation";
 import { Badge } from "@/components/ui/badge";
 
@@ -13,7 +13,7 @@ interface CartItemsStepProps {
 }
 
 export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
-  const { items, removeItem, totalPrice } = useCart();
+  const { items, removeItem, totalPrice, pricesUpdated, dismissPriceUpdate } = useCart();
 
   // Cart validation to check stock availability
   const { validation, isValidating, validateCart, unavailableProductIds } =
@@ -54,6 +54,22 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
     <div className="flex flex-col h-[calc(100dvh-100px)]">
       {/* Cart Items */}
       <div className="flex-1 overflow-y-auto  p-4 bg-gradient-to-b from-white/90 to-white/95 backdrop-blur-sm">
+        {/* Price update notice */}
+        {pricesUpdated && (
+          <div className="flex items-start gap-2 mb-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+            <TrendingUp className="h-4 w-4 mt-0.5 flex-shrink-0 text-amber-600" />
+            <p className="flex-1 text-xs text-amber-800 font-medium">
+              Prices have been updated to reflect current market rates.
+            </p>
+            <button
+              onClick={dismissPriceUpdate}
+              className="flex-shrink-0 text-amber-500 hover:text-amber-700"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         {/* Validation Loading Indicator */}
         {isValidating && (
           <div className="flex items-center justify-center gap-2 mb-4 text-sm text-gray-600">

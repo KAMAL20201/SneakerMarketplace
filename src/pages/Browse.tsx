@@ -37,7 +37,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
-import { ROUTE_HELPERS, PRODUCT_CONDITIONS } from "@/constants/enums";
+import { ROUTE_HELPERS, PRODUCT_CONDITIONS, SNEAKER_SIZES, CLOTHING_SIZES } from "@/constants/enums";
 import { categories } from "@/constants/sellConstants";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 
@@ -64,6 +64,7 @@ interface FilterState {
   condition: string[];
   brand: string[];
   category: string[];
+  size: string[];
   priceRange: [number, number];
   sortBy: string;
   deals: boolean;
@@ -71,21 +72,6 @@ interface FilterState {
 
 const PAGE_SIZE = 12;
 const BROWSE_STATE_KEY = "browse_page_state";
-
-function buildMultiWordSearchFilter(rawQuery: string, columns: string[]): string | null {
-  const trimmed = rawQuery.trim();
-  if (!trimmed) return null;
-  const tokens = trimmed.split(/\s+/).filter(Boolean).map((t) => t.replace(/[%_]/g, ""));
-  if (tokens.length === 0) return null;
-  if (tokens.length === 1) {
-    const pat = `%${tokens[0]}%`;
-    return columns.map((col) => `${col}.ilike.${pat}`).join(",");
-  }
-  return columns.map((col) => {
-    const andParts = tokens.map((t) => `${col}.ilike.%${t}%`).join(",");
-    return `and(${andParts})`;
-  }).join(",");
-}
 
 // ── URL helpers ───────────────────────────────────────────────────────────────
 
@@ -95,6 +81,7 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   if (filters.condition.length > 0) params.set("condition", filters.condition.join(","));
   if (filters.brand.length > 0) params.set("brand", filters.brand.join(","));
   if (filters.category.length > 0) params.set("category", filters.category.join(","));
+  if (filters.size.length > 0) params.set("size", filters.size.join(","));
   if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
     params.set("priceMin", filters.priceRange[0].toString());
     params.set("priceMax", filters.priceRange[1].toString());
@@ -114,6 +101,8 @@ const parseFiltersFromURL = (searchParams: URLSearchParams): Partial<FilterState
   if (brand) filters.brand = brand.split(",").filter(Boolean);
   const category = searchParams.get("category");
   if (category) filters.category = category.split(",").filter(Boolean);
+  const size = searchParams.get("size");
+  if (size) filters.size = size.split(",").filter(Boolean);
   const priceMin = searchParams.get("priceMin");
   const priceMax = searchParams.get("priceMax");
   if (priceMin || priceMax) {
@@ -139,6 +128,7 @@ const Browse = () => {
     condition: [],
     brand: [],
     category: [],
+    size: [],
     priceRange: [0, 100000],
     sortBy: "newest",
     deals: false,
@@ -156,6 +146,7 @@ const Browse = () => {
     condition: false,
     brand: false,
     category: false,
+    size: false,
   });
 
   // ── Infinite scroll state ─────────────────────────────────────────────────
@@ -196,6 +187,8 @@ const Browse = () => {
     "Nike", "Adidas", "Jordan", "Yeezy", "Converse",
     "Vans", "Puma", "Reebok", "New Balance", "Asics",
   ];
+  const sneakerSizes = Object.values(SNEAKER_SIZES);
+  const clothingSizes = Object.values(CLOTHING_SIZES);
   const sortOptions = [
     { value: "newest", label: "Newest First" },
     { value: "price-low", label: "Price: Low to High" },
@@ -210,56 +203,25 @@ const Browse = () => {
     else setLoadingMore(true);
 
     try {
-      let query = supabase
-        .from(currentFilters.deals ? "hot_deals_with_images" : "listings_with_images")
-        .select("*", { count: replace ? "exact" : undefined });
-
-      // Non-deals mode needs active filter (hot_deals_with_images view already filters it)
-      if (!currentFilters.deals) {
-        query = query.eq("status", "active");
-      }
-
-      // Search
-      if (currentFilters.search?.trim()) {
-        const filterStr = buildMultiWordSearchFilter(
-          currentFilters.search,
-          ["title", "brand", "description"]
-        );
-        if (filterStr) query = query.or(filterStr);
-      }
-      // Brand
-      if (currentFilters.brand.length > 0) {
-        query = query.in("brand", currentFilters.brand.map((b) => b.toLowerCase()));
-      }
-      // Category
-      if (currentFilters.category.length > 0) {
-        query = query.in("category", currentFilters.category);
-      }
-      // Condition
-      if (currentFilters.condition.length > 0) {
-        query = query.in("condition", currentFilters.condition);
-      }
-      // Price
-      query = query
-        .gte("price", currentFilters.priceRange[0])
-        .lte("price", currentFilters.priceRange[1]);
-      // Sort
-      switch (currentFilters.sortBy) {
-        case "price-low": query = query.order("min_price", { ascending: true, nullsFirst: false }); break;
-        case "price-high": query = query.order("min_price", { ascending: false, nullsFirst: false }); break;
-        case "discount-high": query = query.order("discount_pct", { ascending: false, nullsFirst: false }); break;
-        default: query = query.order("created_at", { ascending: false });
-      }
-
-      // Pagination slice
-      const { data, error, count } = await query
-        .range(fromOffset, fromOffset + PAGE_SIZE - 1);
+      const { data, error } = await supabase.rpc("browse_all_listings", {
+        p_categories:  currentFilters.category.length > 0 ? currentFilters.category : null,
+        p_sizes:       currentFilters.size.length > 0 ? currentFilters.size : null,
+        p_brands:      currentFilters.brand.length > 0 ? currentFilters.brand.map((b) => b.toLowerCase()) : null,
+        p_conditions:  currentFilters.condition.length > 0 ? currentFilters.condition : null,
+        p_price_min:   currentFilters.priceRange[0],
+        p_price_max:   currentFilters.priceRange[1],
+        p_search:      currentFilters.search?.trim() || null,
+        p_sort:        currentFilters.sortBy,
+        p_limit:       PAGE_SIZE,
+        p_offset:      fromOffset,
+        p_deals:       currentFilters.deals,
+      });
 
       if (error) throw error;
 
       const rows = data ?? [];
 
-      if (replace && count !== null && count !== undefined) setTotalCount(count);
+      if (replace) setTotalCount(rows[0]?.total_count ?? 0);
 
       setListings((prev) => replace ? rows : [...prev, ...rows]);
       setOffset(fromOffset + rows.length);
@@ -402,6 +364,20 @@ const Browse = () => {
     setTempFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleTempSizeChange = (size: string, checked: boolean, sizeType: "shoe" | "apparel") => {
+    const newSizes = checked
+      ? [...tempFilters.size, size]
+      : tempFilters.size.filter((s) => s !== size);
+    let newCategory = [...tempFilters.category];
+    if (checked) {
+      const categoryToAdd = sizeType === "shoe" ? "sneakers" : "clothing";
+      if (!newCategory.includes(categoryToAdd)) {
+        newCategory = [...newCategory, categoryToAdd];
+      }
+    }
+    setTempFilters((prev) => ({ ...prev, size: newSizes, category: newCategory }));
+  };
+
   const toggleSection = (section: keyof typeof collapsedSections) => {
     setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
@@ -415,6 +391,7 @@ const Browse = () => {
     if (filters.condition.length > 0) n++;
     if (filters.brand.length > 0) n++;
     if (filters.category.length > 0) n++;
+    if (filters.size.length > 0) n++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) n++;
     return n;
   };
@@ -424,6 +401,7 @@ const Browse = () => {
     if (tempFilters.condition.length > 0) n++;
     if (tempFilters.brand.length > 0) n++;
     if (tempFilters.category.length > 0) n++;
+    if (tempFilters.size.length > 0) n++;
     if (tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000) n++;
     return n;
   };
@@ -659,6 +637,65 @@ const Browse = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Size */}
+                  <div>
+                    <button onClick={() => toggleSection("size")} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                      <Label className="text-sm font-medium text-gray-700 cursor-pointer">
+                        Size
+                        {tempFilters.size.length > 0 && <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 rounded-full">{tempFilters.size.length}</span>}
+                      </Label>
+                      {collapsedSections.size ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronUp className="h-4 w-4 text-gray-500" />}
+                    </button>
+                    {!collapsedSections.size && (
+                      <div className="px-3 pb-3 space-y-4">
+                        {/* Shoe Sizes */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Shoe Size (UK)</p>
+                          <div className="flex flex-wrap gap-2">
+                            {sneakerSizes.map((size) => {
+                              const isSelected = tempFilters.size.includes(size);
+                              return (
+                                <button
+                                  key={size}
+                                  onClick={() => handleTempSizeChange(size, !isSelected, "shoe")}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                                    isSelected
+                                      ? "bg-blue-500 text-white border-blue-500"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-blue-300"
+                                  }`}
+                                >
+                                  {size.replace("uk ", "UK ")}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {/* Apparel Sizes */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Apparel Size</p>
+                          <div className="flex flex-wrap gap-2">
+                            {clothingSizes.map((size) => {
+                              const isSelected = tempFilters.size.includes(size);
+                              return (
+                                <button
+                                  key={size}
+                                  onClick={() => handleTempSizeChange(size, !isSelected, "apparel")}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+                                    isSelected
+                                      ? "bg-purple-500 text-white border-purple-500"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-purple-300"
+                                  }`}
+                                >
+                                  {size.toUpperCase()}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <SheetFooter className="px-6 py-4 border-t border-gray-200">
@@ -677,7 +714,7 @@ const Browse = () => {
         </div>
 
         {/* Active Filter Chips */}
-        {(filters.condition.length > 0 || filters.brand.length > 0 || filters.category.length > 0 || filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
+        {(filters.condition.length > 0 || filters.brand.length > 0 || filters.category.length > 0 || filters.size.length > 0 || filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
           <div className="flex flex-wrap items-center gap-2 mb-4 py-4 bg-gray-50/50">
             {filters.category.map((categoryId) => (
               <Badge key={categoryId} className="bg-indigo-100 text-indigo-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
@@ -694,6 +731,12 @@ const Browse = () => {
               <Badge key={brand} className="bg-blue-100 text-blue-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
                 {brand}
                 <button onClick={() => { const u = { ...filters, brand: filters.brand.filter((b) => b !== brand) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+              </Badge>
+            ))}
+            {filters.size.map((size) => (
+              <Badge key={size} className="bg-purple-100 text-purple-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1 uppercase">
+                {size}
+                <button onClick={() => { const u = { ...filters, size: filters.size.filter((s) => s !== size) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
               </Badge>
             ))}
             {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (

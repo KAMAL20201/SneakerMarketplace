@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useMemo, useEffect } from "react";
+import { createContext, useContext, useState, useMemo, useEffect, useCallback } from "react";
 import { useCartStorage } from "@/hooks/useCartStorage";
 import type { CartItem } from "@/lib/orderService";
+import { supabase } from "../lib/supabase";
 
 interface CartContextType {
   items: CartItem[];
@@ -12,6 +13,8 @@ interface CartContextType {
   toggleCart: () => void;
   clearCart: () => void;
   totalPrice: number;
+  pricesUpdated: boolean;
+  dismissPriceUpdate: () => void;
 }
 
 export const CartContext = createContext<CartContextType>({
@@ -24,12 +27,15 @@ export const CartContext = createContext<CartContextType>({
   toggleCart: () => {},
   clearCart: () => {},
   totalPrice: 0,
+  pricesUpdated: false,
+  dismissPriceUpdate: () => {},
 });
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [pricesUpdated, setPricesUpdated] = useState(false);
 
   const { debouncedSave, immediateSave, load, clear } = useCartStorage();
 
@@ -64,6 +70,73 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       document.body.classList.remove("cart-open");
     };
   }, []);
+
+  // Re-fetch prices from the DB so stale localStorage prices are corrected
+  // after the daily price update script runs.
+  const refreshPrices = useCallback(async (currentItems: CartItem[]) => {
+    if (currentItems.length === 0) return;
+
+    try {
+      const variantItems = currentItems.filter((i) => i.variantId);
+      const legacyItems = currentItems.filter((i) => !i.variantId);
+
+      // key → fresh price
+      const priceMap = new Map<string, number>();
+
+      if (variantItems.length > 0) {
+        const variantIds = [...new Set(variantItems.map((i) => i.variantId!))];
+        const { data } = await supabase
+          .from("product_variant_sizes")
+          .select("variant_id, size_value, price")
+          .in("variant_id", variantIds);
+
+        data?.forEach((row) => {
+          priceMap.set(`v:${row.variant_id}:${row.size_value}`, row.price);
+        });
+      }
+
+      if (legacyItems.length > 0) {
+        const listingIds = [...new Set(legacyItems.map((i) => i.productId))];
+        const { data } = await supabase
+          .from("product_listing_sizes")
+          .select("listing_id, size_value, price")
+          .in("listing_id", listingIds);
+
+        data?.forEach((row) => {
+          priceMap.set(`l:${row.listing_id}:${row.size_value}`, row.price);
+        });
+      }
+
+      let anyChanged = false;
+      const updatedItems = currentItems.map((item) => {
+        const key = item.variantId
+          ? `v:${item.variantId}:${item.size}`
+          : `l:${item.productId}:${item.size}`;
+        const freshPrice = priceMap.get(key);
+        if (freshPrice !== undefined && freshPrice !== item.price) {
+          anyChanged = true;
+          return { ...item, price: freshPrice };
+        }
+        return item;
+      });
+
+      if (anyChanged) {
+        setItems(updatedItems);
+        setPricesUpdated(true);
+      }
+    } catch (err) {
+      console.error("Failed to refresh cart prices:", err);
+    }
+  }, []);
+
+  // Refresh prices once on page load, after cart is restored from localStorage
+  useEffect(() => {
+    if (isLoaded) {
+      refreshPrices(items);
+    }
+    // intentionally only runs once after initial load, not on every items update
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded]);
 
   const addToCart = (item: any) => {
     // Check if item already exists in cart (by productId, sellerId, and size)
@@ -116,6 +189,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     clear();
   };
 
+  const dismissPriceUpdate = useCallback(() => setPricesUpdated(false), []);
+
   const totalPrice = useMemo(() => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [items]);
@@ -132,6 +207,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         toggleCart,
         clearCart,
         totalPrice,
+        pricesUpdated,
+        dismissPriceUpdate,
       }}
     >
       {children}
