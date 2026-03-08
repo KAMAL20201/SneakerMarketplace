@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Helmet } from "react-helmet-async";
 import { Upload, FileText, AlertCircle, CheckCircle2, XCircle, Loader2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -378,6 +379,7 @@ export default function AdminImport() {
 
   return (
     <div className="min-h-screen">
+      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="px-4 py-6 max-w-6xl mx-auto space-y-6">
 
         {/* Header */}

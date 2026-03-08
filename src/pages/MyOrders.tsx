@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
 import { ROUTE_HELPERS } from "@/constants/enums";
 import {
@@ -186,6 +187,7 @@ const MyOrders = () => {
 
   return (
     <div className="min-h-screen ">
+      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">

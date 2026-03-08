@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
 import { Sparkles, Package, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,6 +55,14 @@ const NewArrivals = () => {
 
   return (
     <div className="min-h-screen px-4 py-6">
+      <Helmet>
+        <title>New Arrivals | The Plug Market</title>
+        <meta name="description" content="Shop the latest arrivals — freshly listed sneakers, streetwear, electronics and collectibles on The Plug Market." />
+        <link rel="canonical" href="https://theplugmarket.in/new-arrivals" />
+        <meta property="og:url" content="https://theplugmarket.in/new-arrivals" />
+        <meta property="og:title" content="New Arrivals | The Plug Market" />
+        <meta property="og:description" content="Shop the latest arrivals — freshly listed sneakers, streetwear, electronics and collectibles on The Plug Market." />
+      </Helmet>
       <div className="container mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-2 mb-2">

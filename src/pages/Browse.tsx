@@ -157,6 +157,7 @@ const Browse = () => {
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [sizePriceMap, setSizePriceMap] = useState<Map<string, number> | null>(null);
 
   // ── Scroll-to-top visibility ──────────────────────────────────────────────
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -175,6 +176,7 @@ const Browse = () => {
   const hasMoreRef = useRef(true);
   const totalCountRef = useRef(0);
   const scrollYRef = useRef(0);
+  const sizePriceMapRef = useRef<Map<string, number> | null>(null);
 
   // ── Filter options ────────────────────────────────────────────────────────
   const conditions = [
@@ -220,13 +222,37 @@ const Browse = () => {
 
       if (error) throw error;
 
-      const rows = data ?? [];
+      type RpcRow = Listing & { matched_size_price: number | null; total_count: number };
+      const rows = (data ?? []) as RpcRow[];
 
-      if (replace) setTotalCount(rows[0]?.total_count ?? 0);
+      // Strip RPC-only fields before storing in listings state
+      const newListings: Listing[] = rows.map((row) => {
+        const { matched_size_price, total_count, ...rest } = row;
+        void matched_size_price;
+        void total_count;
+        return rest as Listing;
+      });
 
-      setListings((prev) => replace ? rows : [...prev, ...rows]);
-      setOffset(fromOffset + rows.length);
-      setHasMore(rows.length === PAGE_SIZE);
+      if (replace) setTotalCount(rows.length > 0 ? rows[0].total_count : 0);
+
+      setListings((prev) => replace ? newListings : [...prev, ...newListings]);
+      setOffset(fromOffset + newListings.length);
+      setHasMore(newListings.length === PAGE_SIZE);
+
+      // Build sizePriceMap from matched_size_price returned per row
+      if (currentFilters.size.length > 0) {
+        setSizePriceMap((prev) => {
+          const next = new Map<string, number>(replace ? [] : (prev ?? []));
+          for (const row of rows) {
+            if (row.matched_size_price !== null && row.matched_size_price !== undefined) {
+              next.set(row.id, row.matched_size_price);
+            }
+          }
+          return next.size > 0 ? next : null;
+        });
+      } else if (replace) {
+        setSizePriceMap(null);
+      }
     } catch (err) {
       console.error("Error fetching listings:", err);
       toast.error("Failed to load listings");
@@ -248,6 +274,9 @@ const Browse = () => {
           setOffset(state.offset);
           setHasMore(state.hasMore);
           setTotalCount(state.totalCount);
+          if (state.sizePriceMap) {
+            setSizePriceMap(new Map(state.sizePriceMap));
+          }
           setLoadingInitial(false);
           // Wait for the restored listings to render before scrolling
           requestAnimationFrame(() => {
@@ -311,6 +340,7 @@ const Browse = () => {
   useEffect(() => { offsetRef.current = offset; }, [offset]);
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { totalCountRef.current = totalCount; }, [totalCount]);
+  useEffect(() => { sizePriceMapRef.current = sizePriceMap; }, [sizePriceMap]);
 
   // ── Save state to sessionStorage when leaving the browse page ─────────────
   useEffect(() => {
@@ -324,6 +354,9 @@ const Browse = () => {
           totalCount: totalCountRef.current,
           scrollY: scrollYRef.current,
           locationKey: location.key,
+          sizePriceMap: sizePriceMapRef.current
+            ? Array.from(sizePriceMapRef.current.entries())
+            : null,
         })
       );
     };
@@ -785,7 +818,14 @@ const Browse = () => {
         ) : (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">              {listings.map((listing) => (
-              <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)} key={listing.id}>
+              <Link
+                to={
+                  filters.size.length > 0
+                    ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}?size=${encodeURIComponent(filters.size[0])}`
+                    : ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)
+                }
+                key={listing.id}
+              >
                 <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
                   <CardContent className="p-0">
                     <div className="relative h-40 sm:h-48 overflow-hidden">
@@ -795,8 +835,10 @@ const Browse = () => {
                         aspectRatio="aspect-[4/3]"
                         className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                       />
-                      {listing.retail_price && listing.retail_price > listing.price && (() => {
-                        const pct = Math.round(((listing.retail_price - listing.price) / listing.retail_price) * 100);
+                      {listing.retail_price && (() => {
+                        const displayPrice = sizePriceMap?.get(listing.id) ?? listing.min_price ?? listing.price;
+                        if (listing.retail_price <= displayPrice) return null;
+                        const pct = Math.round(((listing.retail_price - displayPrice) / listing.retail_price) * 100);
                         return pct >= 10 ? (
                           <span className="absolute top-2 left-2 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg z-10">
                             {pct}% off
@@ -812,7 +854,9 @@ const Browse = () => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mb-2 md:mb-3">
-                        <span className="font-bold text-gray-800 text-base md:text-lg">₹{(listing.min_price ?? listing.price).toLocaleString()}</span>
+                        <span className="font-bold text-gray-800 text-base md:text-lg">
+                          ₹{(sizePriceMap?.get(listing.id) ?? listing.min_price ?? listing.price).toLocaleString()}
+                        </span>
                         <ConditionBadge condition={listing.condition} className="text-xs" />
                       </div>
                       <div className="flex items-center justify-between">

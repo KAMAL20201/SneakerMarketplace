@@ -347,6 +347,38 @@ export default function ProductDetailPage() {
         <meta property="twitter:title" content={pageTitle} />
         <meta property="twitter:description" content={pageDescription} />
         <meta property="twitter:image" content={posterImage} />
+        {listing && (
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": listing.title,
+            "description": listing.description ?? pageDescription,
+            "brand": listing.brand ? { "@type": "Brand", "name": listing.brand } : undefined,
+            "image": images.map((img: any) => img.image_url).filter(Boolean),
+            "offers": {
+              "@type": "Offer",
+              "url": canonicalUrl,
+              "priceCurrency": "INR",
+              "price": listing.price,
+              "availability": "https://schema.org/InStock",
+              "itemCondition": listing.condition === "new"
+                ? "https://schema.org/NewCondition"
+                : "https://schema.org/UsedCondition",
+              "seller": {
+                "@type": "Organization",
+                "name": "The Plug Market"
+              }
+            },
+            "breadcrumb": {
+              "@type": "BreadcrumbList",
+              "itemListElement": [
+                { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://theplugmarket.in/" },
+                { "@type": "ListItem", "position": 2, "name": listing.category_id ?? "Products", "item": `https://theplugmarket.in/${listing.category_id ?? "browse"}` },
+                { "@type": "ListItem", "position": 3, "name": listing.title, "item": canonicalUrl }
+              ]
+            }
+          })}</script>
+        )}
       </Helmet>
       <div className="lg:flex lg:gap-8 lg:p-8">
         {/* Image Gallery - Left side on desktop, full width on mobile */}
