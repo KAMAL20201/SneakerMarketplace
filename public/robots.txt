@@ -11,4 +11,4 @@ Disallow: /api/
 # Static sitemap (category + info pages)
 Sitemap: https://theplugmarket.in/sitemap.xml
 # Dynamic sitemap (all active product listings)
-Sitemap: https://vojwfupyoathhvujwaqh.supabase.co/functions/v1/sitemap
+Sitemap: https://theplugmarket.in/sitemap-products.xml
