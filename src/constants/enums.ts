@@ -119,7 +119,9 @@ export const SNEAKER_SIZES = {
   UK_10: "uk 10",
   UK_10_5: "uk 10.5",
   UK_11: "uk 11",
+  UK_11_5: "uk 11.5",
   UK_12: "uk 12",
+  UK_12_5: "uk 12.5",
   UK_13: "uk 13",
   UK_14: "uk 14",
 } as const;
