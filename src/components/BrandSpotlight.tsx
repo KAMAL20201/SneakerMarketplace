@@ -5,15 +5,9 @@ const SPOTLIGHT_BRANDS = [
   { label: "Nike", value: "nike" },
   { label: "Jordan", value: "jordan" },
   { label: "Adidas", value: "adidas" },
-  { label: "Supreme", value: "supreme" },
-  { label: "Off-White", value: "off-white" },
+  { label: "Asics", value: "asics" },
   { label: "New Balance", value: "new balance" },
-  { label: "Converse", value: "converse" },
   { label: "Puma", value: "puma" },
-  { label: "Kith", value: "kith" },
-  { label: "Fear of God", value: "fear of god" },
-  { label: "Stone Island", value: "stone island" },
-  { label: "Essentials", value: "essentials" },
 ];
 
 const BrandSpotlight = () => {

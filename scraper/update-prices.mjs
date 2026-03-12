@@ -76,10 +76,16 @@ function delay(ms) {
 
 const MARGIN_INR = 2300;
 
+/** Round price up to the nearest X99 (e.g. 8125 → 8199, 13200 → 13199) */
+function roundToNearest99(price) {
+  return Math.ceil(price / 100) * 100 - 1;
+}
+
 function usdToInr(usd) {
   if (usd == null || isNaN(usd)) return null;
-  // Formula: ((usd + 10) × USD_TO_INR) + ₹2000 margin
-  return ((usd + 10) * USD_TO_INR) + MARGIN_INR;
+  // Formula: ((usd + 10) × USD_TO_INR) + ₹2000 margin, rounded to nearest X99
+  const raw = ((usd + 10) * USD_TO_INR) + MARGIN_INR;
+  return roundToNearest99(raw);
 }
 
 /**

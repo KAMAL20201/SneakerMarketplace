@@ -621,7 +621,7 @@ const Browse = () => {
                   </div>
 
                   {/* Condition */}
-                  <div>
+                  {/* <div>
                     <button onClick={() => toggleSection("condition")} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors">
                       <Label className="text-sm font-medium text-gray-700 cursor-pointer">
                         Condition
@@ -648,7 +648,7 @@ const Browse = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </div> */}
 
                   {/* Brand */}
                   <div>
