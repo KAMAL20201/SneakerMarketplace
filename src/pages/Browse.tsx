@@ -38,7 +38,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
-import { ROUTE_HELPERS, PRODUCT_CONDITIONS, SNEAKER_SIZES, CLOTHING_SIZES } from "@/constants/enums";
+import { ROUTE_HELPERS, SNEAKER_SIZES, CLOTHING_SIZES } from "@/constants/enums";
 import { categories } from "@/constants/sellConstants";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 
