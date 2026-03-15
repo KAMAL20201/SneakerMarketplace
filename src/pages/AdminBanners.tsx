@@ -182,7 +182,7 @@ export default function AdminBanners() {
                       <>
                         <Upload className="h-6 w-6 text-gray-400 mb-2" />
                         <p className="text-sm text-gray-500">Click to upload image</p>
-                        <p className="text-xs text-gray-400 mt-1">Recommended: 1200×600px (2:1 ratio)</p>
+                        <p className="text-xs text-gray-400 mt-1">Recommended: 2912×1440px (2:1 ratio)</p>
                       </>
                     )}
                   </div>

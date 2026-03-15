@@ -64,7 +64,6 @@ const HomeBannerCarousel = () => {
     resetTimer(banners.length);
   };
 
-  // Touch swipe support
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -78,38 +77,39 @@ const HomeBannerCarousel = () => {
 
   return (
     <section className="px-4 pb-4">
+      {/* Each slide is absolutely positioned — avoids iOS Safari flex/min-w-full bug */}
       <div
-        className="relative rounded-3xl overflow-hidden aspect-[2/1] bg-gray-100 select-none"
+        className="relative rounded-3xl overflow-hidden bg-gray-100 select-none w-full"
+        style={{ aspectRatio: "2 / 1" }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Sliding track — all banners laid out side by side */}
-        <div
-          className="flex h-full transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${current * 100}%)` }}
-        >
-          {banners.map((banner) => (
-            <div key={banner.id} className="min-w-full h-full flex-shrink-0">
+        {banners.map((banner, i) => {
+          const offset = i - current;
+          const img = (
+            <img
+              src={banner.image_url}
+              alt="Promotional banner"
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
+          );
+          return (
+            <div
+              key={banner.id}
+              className="absolute inset-0 transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(${offset * 100}%)` }}
+            >
               {banner.cta_url ? (
                 <Link to={banner.cta_url} className="block w-full h-full">
-                  <img
-                    src={banner.image_url}
-                    alt="Promotional banner"
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                  />
+                  {img}
                 </Link>
               ) : (
-                <img
-                  src={banner.image_url}
-                  alt="Promotional banner"
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
+                img
               )}
             </div>
-          ))}
-        </div>
+          );
+        })}
 
         {/* Arrows */}
         {banners.length > 1 && (
