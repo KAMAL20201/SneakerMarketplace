@@ -74,7 +74,7 @@ function delay(ms) {
   return new Promise(r => setTimeout(r, ms + Math.floor(Math.random() * 100)));
 }
 
-const MARGIN_INR = 2300;
+const MARGIN_INR = 2500;
 
 /** Round price up to the nearest X99 (e.g. 8125 → 8199, 13200 → 13199) */
 function roundToNearest99(price) {
