@@ -10,6 +10,7 @@ import {
   Shirt,
   Headphones,
   Book,
+  ImagePlay,
 } from "lucide-react";
 
 import {
@@ -107,6 +108,12 @@ const getNavData = (isAdmin: boolean) => ({
                 url: ROUTE_NAMES.MY_ORDERS,
                 icon: Package,
                 preloadKey: "myOrders" as keyof typeof preloadRoutes,
+              },
+              {
+                title: "Banners",
+                url: ROUTE_NAMES.ADMIN_BANNERS,
+                icon: ImagePlay,
+                preloadKey: "adminBanners" as keyof typeof preloadRoutes,
               },
             ]
           : []),

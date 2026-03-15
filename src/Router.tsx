@@ -26,6 +26,7 @@ const Browse = lazy(() => import("./pages/Browse"));
 const CategoryBrowse = lazy(() => import("./pages/CategoryBrowse"));
 const AdminReview = lazy(() => import("./pages/AdminReview"));
 const AdminImport = lazy(() => import("./pages/AdminImport"));
+const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 // [PAYMENT METHODS HIDDEN] Page disabled — seller payout methods not in use
 // const PaymentMethods = lazy(() => import("./pages/PaymentMethods"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -60,6 +61,7 @@ export const preloadRoutes = {
   editListing: () => import("./pages/EditListing"),
   adminReview: () => import("./pages/AdminReview"),
   adminImport: () => import("./pages/AdminImport"),
+  adminBanners: () => import("./pages/AdminBanners"),
   // [PAYMENT METHODS HIDDEN] paymentMethods: () => import("./pages/PaymentMethods"),
   notFound: () => import("./pages/NotFound"),
   privacyPolicy: () => import("./pages/PrivacyPolicy"),
@@ -238,6 +240,16 @@ const Router = () => {
           <Suspense fallback={<PageSkeleton />}>
             <AdminRoute>
               <AdminImport />
+            </AdminRoute>
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.ADMIN_BANNERS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <AdminRoute>
+              <AdminBanners />
             </AdminRoute>
           </Suspense>
         }

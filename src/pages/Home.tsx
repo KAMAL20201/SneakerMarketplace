@@ -16,6 +16,7 @@ import InstantShipping from "@/components/InstantShipping";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -187,8 +188,8 @@ const Home = () => {
         */}
       </section>
 
-      {/* Deal Subscription Banner */}
-      {/* <DealSubscriptionBanner /> */}
+      {/* Homepage Banners */}
+      <HomeBannerCarousel />
 
       {/* Brand Spotlight */}
       <BrandSpotlight />

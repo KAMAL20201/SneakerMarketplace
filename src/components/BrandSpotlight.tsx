@@ -8,6 +8,7 @@ const SPOTLIGHT_BRANDS = [
   { label: "Asics", value: "asics" },
   { label: "New Balance", value: "new balance" },
   { label: "Puma", value: "puma" },
+  { label: "Onitsuka Tiger", value: "onitsuka tiger" },
 ];
 
 const BrandSpotlight = () => {

@@ -179,13 +179,13 @@ const Browse = () => {
   const sizePriceMapRef = useRef<Map<string, number> | null>(null);
 
   // ── Filter options ────────────────────────────────────────────────────────
-  const conditions = [
-    PRODUCT_CONDITIONS.NEW,
-    PRODUCT_CONDITIONS.LIKE_NEW,
-    PRODUCT_CONDITIONS.GOOD,
-    PRODUCT_CONDITIONS.FAIR,
-    PRODUCT_CONDITIONS.POOR,
-  ];
+  // const conditions = [
+  //   PRODUCT_CONDITIONS.NEW,
+  //   PRODUCT_CONDITIONS.LIKE_NEW,
+  //   PRODUCT_CONDITIONS.GOOD,
+  //   PRODUCT_CONDITIONS.FAIR,
+  //   PRODUCT_CONDITIONS.POOR,
+  // ];
   const brands = [
     "Nike", "Adidas", "Jordan", "Yeezy", "Converse",
     "Vans", "Puma", "Reebok", "New Balance", "Asics",
