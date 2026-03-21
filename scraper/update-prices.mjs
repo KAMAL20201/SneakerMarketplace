@@ -70,7 +70,7 @@ async function sendTelegramMessage(message) {
       "⚠️  Telegram credentials not set — skipping notification:\n",
       message,
     );
-  return;
+    return;
   }
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -372,8 +372,9 @@ async function processListing(page, listing, idx, total) {
     );
   }
 
-  console.log("kamalfinalNotificationsArray", notifications.length);
   if (notifications.length > 0) {
+    console.log("kamalfinalNotificationsArray", notifications.length);
+
     for (const msg of notifications) {
       await sendTelegramMessage(msg);
     }
