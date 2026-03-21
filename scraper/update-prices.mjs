@@ -345,6 +345,7 @@ async function processListing(page, listing, idx, total) {
         dropPercent,
         dbSizePrice: dbSize.price,
         newSizeInr,
+        pg,
       });
       if (dropPercent > 5) {
         notifications.push(
