@@ -341,6 +341,11 @@ async function processListing(page, listing, idx, total) {
 
     if (dbSize.price && newSizeInr < dbSize.price) {
       const dropPercent = ((dbSize.price - newSizeInr) / dbSize.price) * 100;
+      console.log("kamaldropped", {
+        dropPercent,
+        dbSizePrice: dbSize.price,
+        newSizeInr,
+      });
       if (dropPercent > 5) {
         notifications.push(
           `📉 <b>Price Drop (${dropPercent.toFixed(1)}%)</b>\n` +
@@ -403,11 +408,11 @@ async function processListing(page, listing, idx, total) {
     listingUpdated = true;
   }
 
-  if (listingUpdated || sizeUpdateCount > 0) {
-    console.log(
-      `${pg} ✅ ₹${listing.price} → ₹${newPriceInr}${sizeUpdateCount > 0 ? ` | ${sizeUpdateCount} sizes updated` : ""}`,
-    );
-  }
+  // if (listingUpdated || sizeUpdateCount > 0) {
+  //   console.log(
+  //     `${pg} ✅ ₹${listing.price} → ₹${newPriceInr}${sizeUpdateCount > 0 ? ` | ${sizeUpdateCount} sizes updated` : ""}`,
+  //   );
+  // }
 
   return { status: listingUpdated ? "updated" : "noChange", sizeUpdateCount };
 }
