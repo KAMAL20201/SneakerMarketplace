@@ -65,7 +65,13 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 // ─── Telegram ──────────────────────────────────────────────────────────────
 
 async function sendTelegramMessage(message) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    console.log(
+      "⚠️  Telegram credentials not set — skipping notification:\n",
+      message,
+    );
+  return;
+  }
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     const response = await fetch(url, {
@@ -348,6 +354,7 @@ async function processListing(page, listing, idx, total) {
         pg,
       });
       if (dropPercent > 5) {
+        console.log("kamaldroppedInNotification Array", pg);
         notifications.push(
           `📉 <b>Price Drop (${dropPercent.toFixed(1)}%)</b>\n` +
             `👟 ${listing.title}\n` +
@@ -365,6 +372,7 @@ async function processListing(page, listing, idx, total) {
     );
   }
 
+  console.log("kamalfinalNotificationsArray", notifications.length);
   if (notifications.length > 0) {
     for (const msg of notifications) {
       await sendTelegramMessage(msg);
