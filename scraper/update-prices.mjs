@@ -281,27 +281,42 @@ async function fetchSizePrices(page, templateId, p) {
 async function processListing(page, listing, idx, total) {
   const p = `[${idx + 1}/${total}][db=${listing.id}]`;
 
-  // Search GOAT
-  const results = await searchGoat(page, listing.title, p);
-  await delay(DELAY_MS);
+  let matchId = listing.goat_template_id;
+  let matchRetailPriceCents = null;
 
-  if (!results.length) {
-    console.log(`${p} ❌ not found on GOAT — "${listing.title.slice(0, 60)}"`);
-    return { status: "notFound", title: listing.title };
-  }
+  if (matchId) {
+    console.log(`${p} 🔗 Using stored GOAT ID: ${matchId}`);
+  } else {
+    // Search GOAT fallback by title
+    const results = await searchGoat(page, listing.title, p);
+    await delay(DELAY_MS);
 
-  const match = pickBestMatch(listing.title, results);
-  if (!match) {
+    if (!results.length) {
+      console.log(
+        `${p} ❌ not found on GOAT — "${listing.title.slice(0, 60)}"`,
+      );
+      return { status: "notFound", title: listing.title };
+    }
+
+    const match = pickBestMatch(listing.title, results);
+    if (!match) {
+      console.log(
+        `${p} ❌ no match after pickBestMatch — "${listing.title.slice(0, 60)}"`,
+      );
+      return { status: "notFound", title: listing.title };
+    }
+
     console.log(
-      `${p} ❌ no match after pickBestMatch — "${listing.title.slice(0, 60)}"`,
+      `${p} 🔗 Searched & Matched GOAT: "${match.title}" (ID: ${match.id})`,
     );
-    return { status: "notFound", title: listing.title };
+    matchId = match.id;
+    matchRetailPriceCents = match.retailPriceCents;
   }
 
-  const pg = `[${idx + 1}/${total}][db=${listing.id}|goat=${match.id}]`;
+  const pg = `[${idx + 1}/${total}][db=${listing.id}|goat=${matchId}]`;
 
   // Fetch per-size prices
-  const sizePrices = await fetchSizePrices(page, match.id, pg);
+  const sizePrices = await fetchSizePrices(page, matchId, pg);
   await delay(DELAY_MS);
 
   if (!sizePrices.length) {
@@ -391,8 +406,8 @@ async function processListing(page, listing, idx, total) {
   // Min price derived only from DB sizes that matched GOAT — not all GOAT sizes
   const newPriceInr =
     matchedPricesInr.length > 0 ? Math.min(...matchedPricesInr) : null;
-  const newRetailInr = match.retailPriceCents
-    ? usdToInr(match.retailPriceCents / 100)
+  const newRetailInr = matchRetailPriceCents
+    ? usdToInr(matchRetailPriceCents / 100)
     : null;
 
   const priceChanged = newPriceInr !== null && newPriceInr !== listing.price;
@@ -469,7 +484,7 @@ async function main() {
   const { data: listings, error: fetchErr } = await supabase
     .from("product_listings")
     .select(
-      "id, title, brand, price, retail_price, product_listing_sizes(id, size_value, price)",
+      "id, title, brand, price, retail_price, goat_template_id, product_listing_sizes(id, size_value, price)",
     )
     .eq("status", "active")
     .eq("category", "sneakers")
