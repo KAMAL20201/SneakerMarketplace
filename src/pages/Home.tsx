@@ -1,11 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { SearchDropdown } from "@/components/ui/SearchDropdown";
-import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate } from "react-router";
-import { categories } from "@/constants/sellConstants";
 import { ROUTE_NAMES } from "@/constants/enums";
-import { supabaseUrl } from "@/lib/supabase";
 import CategorySection from "@/components/CategorySection";
 import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
@@ -13,26 +9,12 @@ import InstagramBanner from "@/components/InstagramBanner";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 import HotDeals from "@/components/HotDeals";
 import InstantShipping from "@/components/InstantShipping";
-import { CardImage } from "@/components/ui/OptimizedImage";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import NewDropsSection from "@/components/NewDropsSection";
 
 const Home = () => {
-  const navigate = useNavigate();
-
-  const categoryRoutes: Record<string, string> = {
-    sneakers: ROUTE_NAMES.SNEAKERS,
-    clothing: ROUTE_NAMES.APPARELS,
-    electronics: ROUTE_NAMES.ELECTRONICS,
-    collectibles: ROUTE_NAMES.COLLECTIBLES,
-  };
-
-  const handleCategoryClick = (categoryId: string) => {
-    navigate(categoryRoutes[categoryId] ?? ROUTE_NAMES.SNEAKERS);
-  };
-
   useEffect(() => {
     // Only run the auth callback flow when opened as a popup (e.g. Google OAuth redirect).
     // window.opener is null for regular page navigation, so skip entirely in that case.
