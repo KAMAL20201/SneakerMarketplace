@@ -17,6 +17,7 @@ import { CardImage } from "@/components/ui/OptimizedImage";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
+import NewDropsSection from "@/components/NewDropsSection";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -194,7 +195,11 @@ const Home = () => {
       {/* Brand Spotlight */}
       <BrandSpotlight />
 
-      {/* Categories */}
+      {/* New Drops Section */}
+      <NewDropsSection />
+
+      {/* Categories - temporarily hidden */}
+      {/*
       <section className="px-4 py-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Explore Categories
@@ -226,6 +231,7 @@ const Home = () => {
           ))}
         </div>
       </section>
+      */}
 
       {/* Wishlist Section - only rendered when user has saved items */}
       <WishlistSection />

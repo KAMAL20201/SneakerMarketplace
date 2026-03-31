@@ -11,6 +11,7 @@ import {
   Headphones,
   Book,
   ImagePlay,
+  Zap,
 } from "lucide-react";
 
 import {
@@ -48,6 +49,12 @@ const getNavData = (isAdmin: boolean) => ({
           url: ROUTE_NAMES.NEW_ARRIVALS,
           icon: Sparkles,
           preloadKey: "newArrivals" as keyof typeof preloadRoutes,
+        },
+        {
+          title: "New Drops",
+          url: ROUTE_NAMES.NEW_DROPS,
+          icon: Zap,
+          preloadKey: "newDrops" as keyof typeof preloadRoutes,
         },
         {
           title: "Wishlist",

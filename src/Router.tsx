@@ -41,6 +41,7 @@ const AboutUs = lazy(() => import("./pages/AboutUs"));
 const ContactUs = lazy(() => import("./pages/ContactUs"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const NewArrivals = lazy(() => import("./pages/NewArrivals"));
+const NewDrops = lazy(() => import("./pages/NewDrops"));
 
 // Preload functions for critical routes
 export const preloadRoutes = {
@@ -75,6 +76,7 @@ export const preloadRoutes = {
   shippingPolicy: () => import("./pages/ShippingPolicy"),
   wishlist: () => import("./pages/Wishlist"),
   newArrivals: () => import("./pages/NewArrivals"),
+  newDrops: () => import("./pages/NewDrops"),
   // cancellationsRefunds: () => import("./pages/Cancellations"),
 };
 
@@ -338,6 +340,14 @@ const Router = () => {
         element={
           <Suspense fallback={<PageSkeleton />}>
             <NewArrivals />
+          </Suspense>
+        }
+      />
+      <Route
+        path={ROUTE_NAMES.NEW_DROPS}
+        element={
+          <Suspense fallback={<PageSkeleton />}>
+            <NewDrops />
           </Suspense>
         }
       />

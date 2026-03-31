@@ -73,7 +73,8 @@ const MyListings = () => {
       const { count } = await supabase
         .from("listings_with_images")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user?.id);
+        .eq("user_id", user?.id)
+        .not("review_comment", "is", null);
 
       setTotalPages(Math.ceil((count || 0) / itemsPerPage));
 
@@ -82,9 +83,10 @@ const MyListings = () => {
         .from("listings_with_images")
         .select("*")
         .eq("user_id", user?.id)
+        .not("review_comment", "is", null)
         .range(
           (currentPage - 1) * itemsPerPage,
-          currentPage * itemsPerPage - 1
+          currentPage * itemsPerPage - 1,
         );
 
       if (error) throw error;
@@ -182,7 +184,9 @@ const MyListings = () => {
 
   return (
     <div className="min-h-screen px-4 py-6">
-      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="container mx-auto max-w-6xl">
         {/* Header Section */}
         <div className="mb-8">
@@ -472,7 +476,7 @@ const MyListings = () => {
                       >
                         {page}
                       </Button>
-                    )
+                    ),
                   )}
                 </div>
 
