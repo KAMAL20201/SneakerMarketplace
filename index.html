@@ -14,6 +14,7 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="The Plug Market" />
     <meta property="og:url" content="https://theplugmarket.in/" />
     <meta property="og:title" content="The Plug Market - Authentic Sneakers & Streetwear Marketplace" />
     <meta property="og:description" content="Buy and sell authentic sneakers and streetwear. India's trusted marketplace for verified sneakers, limited edition drops, and premium streetwear." />
@@ -48,6 +49,37 @@
     </noscript>
 
     <title>The Plug Market - Authentic Sneakers & Streetwear Marketplace</title>
+
+    <!-- Site name for Google Search + social (static so crawlers see it without JS) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "The Plug Market",
+        "alternateName": ["Plug Market", "theplugmarket.in"],
+        "url": "https://theplugmarket.in/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://theplugmarket.in/browse?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "The Plug Market",
+        "url": "https://theplugmarket.in/",
+        "logo": "https://theplugmarket.in/logo.svg",
+        "sameAs": [
+        "https://www.instagram.com/the.plugmarket/"
+         ]
+      }
+    </script>
 
     <!-- Google Analytics 4 — Measurement ID: G-M950V9PN8Y -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-M950V9PN8Y"></script>
