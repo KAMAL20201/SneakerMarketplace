@@ -101,13 +101,20 @@ export default async function middleware(req: Request): Promise<Response> {
   STRIP_PARAMS.forEach((p) => canonicalUrl.searchParams.delete(p));
   const prerenderUrl = `https://service.prerender.io/${canonicalUrl.toString()}`;
 
+  // Hard 8-second timeout — Vercel Edge has a 25s limit but we want fast fallback.
+  // If Prerender doesn't respond in time, serve the SPA shell instead of a 504.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
   try {
     const prerendered = await fetch(prerenderUrl, {
+      signal: controller.signal,
       headers: {
         "X-Prerender-Token": prerenderToken,
         "User-Agent": userAgent,
       },
     });
+    clearTimeout(timeoutId);
 
     const html = await prerendered.text();
 
@@ -124,8 +131,9 @@ export default async function middleware(req: Request): Promise<Response> {
       },
     });
   } catch (err) {
-    // Never break the live site — fall through to normal SPA on any error
-    console.error("[prerender] fetch failed:", err);
+    clearTimeout(timeoutId);
+    // Never break the live site — fall through to normal SPA on any error or timeout
+    console.error("[prerender] fetch failed or timed out:", err);
     return fetch(req);
   }
 }
