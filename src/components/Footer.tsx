@@ -27,9 +27,9 @@ export function Footer() {
             </div>
           </div>
           <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-            Your one-stop shop for hyped sneakers, streetwear,
-            collectibles & more. Discover and buy authentic products
-            with quality you can trust.
+            Your one-stop shop for hyped sneakers, streetwear, collectibles &
+            more. Discover and buy authentic products with quality you can
+            trust.
           </p>
           <div className="flex space-x-3 md:space-x-4">
             <a
@@ -93,7 +93,6 @@ export function Footer() {
                   Contact Us
                 </Link>
               </li>
-              {/* [MARKETPLACE REMOVED] Returns & Cancellations links - marketplace dispute pages
               <li>
                 <Link
                   to={ROUTE_NAMES.RETURNS}
@@ -102,15 +101,14 @@ export function Footer() {
                   Returns & Exchanges
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   to={ROUTE_NAMES.CANCELLATIONS_REFUNDS}
                   className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
                 >
                   Cancellations & Refunds
                 </Link>
-              </li>
-              */}
+              </li> */}
             </ul>
           </div>
 

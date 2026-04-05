@@ -51,7 +51,7 @@ export default function ReturnsPolicy() {
               <li>Item not as described or incorrect variant sent</li>
               <li>Damaged or defective on arrival (provide photos)</li>
               <li>Wrong item received</li>
-              <li>Item not delivered within the maximum delivery window</li>
+              {/* <li>Item not delivered within the maximum delivery window</li> */}
             </ul>
             <p className="text-sm text-gray-600">
               Note: Items listed as final sale or explicitly marked non-returnable are not eligible unless damaged or not as described.

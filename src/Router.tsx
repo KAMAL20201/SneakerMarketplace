@@ -7,6 +7,7 @@ import { PublicRoute } from "./components/PublicRoute";
 import { ROUTE_NAMES } from "./constants/enums";
 import ProductDetailSkeleton from "./components/ui/ProductDetailSkeleton";
 import ShippingPolicy from "./pages/ShippingPolicy";
+import ReturnsPolicy from "./pages/Returns";
 // [MARKETPLACE REMOVED] Cancellations page - not needed for ecommerce model
 // import Cancellations from "./pages/Cancellations";
 
@@ -369,6 +370,8 @@ const Router = () => {
           </Suspense>
         }
       />
+    
+      */}
       <Route
         path={ROUTE_NAMES.RETURNS}
         element={
@@ -377,8 +380,8 @@ const Router = () => {
           </Suspense>
         }
       />
-      */}
       {/* Catch-all route for 404 pages */}
+
       <Route
         path="*"
         element={
