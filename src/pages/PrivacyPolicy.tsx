@@ -1,10 +1,25 @@
 import { Shield, Lock, Eye, Database, Users, Globe } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Helmet } from "react-helmet-async";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <Helmet>
+        <title>Privacy Policy | The Plug Market</title>
+        <meta
+          name="description"
+          content="Read The Plug Market's Privacy Policy. Learn how we collect, use, and protect your personal data when you shop for authentic sneakers and streetwear."
+        />
+        <link rel="canonical" href="https://theplugmarket.in/privacy" />
+        <meta property="og:url" content="https://theplugmarket.in/privacy" />
+        <meta property="og:title" content="Privacy Policy | The Plug Market" />
+        <meta
+          property="og:description"
+          content="Learn how The Plug Market collects, uses, and protects your personal data."
+        />
+      </Helmet>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">

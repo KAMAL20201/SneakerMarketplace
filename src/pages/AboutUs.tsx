@@ -9,10 +9,30 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Helmet } from "react-helmet-async";
 
 export default function AboutUs() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <Helmet>
+        <title>
+          About Us | The Plug Market — India's Authentic Sneakers Marketplace
+        </title>
+        <meta
+          name="description"
+          content="Learn about The Plug Market — India's trusted marketplace for 100% authentic sneakers and streetwear. Our mission, story, and commitment to quality."
+        />
+        <link rel="canonical" href="https://theplugmarket.in/about" />
+        <meta property="og:url" content="https://theplugmarket.in/about" />
+        <meta
+          property="og:title"
+          content="About The Plug Market — Authentic Sneakers Marketplace India"
+        />
+        <meta
+          property="og:description"
+          content="India's premier destination for authentic sneakers, streetwear, and collectibles. Learn about our story and commitment to quality."
+        />
+      </Helmet>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Hero Section */}
         <div className="text-center mb-12">
@@ -23,8 +43,8 @@ export default function AboutUs() {
             About The Plug Market
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            India's premier destination for authentic sneakers, streetwear,
-            and collectibles. Where passion meets quality.
+            India's premier destination for authentic sneakers, streetwear, and
+            collectibles. Where passion meets quality.
           </p>
           <Badge variant="secondary" className="mt-4 text-lg px-6 py-2">
             Est. 2025
@@ -43,8 +63,8 @@ export default function AboutUs() {
             <CardContent className="space-y-4 text-gray-700">
               <p className="text-lg leading-relaxed">
                 To be the most trusted destination for sneaker and streetwear
-                enthusiasts across India, ensuring authenticity, quality,
-                and an exceptional shopping experience.
+                enthusiasts across India, ensuring authenticity, quality, and an
+                exceptional shopping experience.
               </p>
               <p>
                 We believe everyone deserves access to authentic, high-quality
@@ -63,8 +83,8 @@ export default function AboutUs() {
             <CardContent className="space-y-4 text-gray-700">
               <p className="text-lg leading-relaxed">
                 To become India's leading destination for authentic streetwear
-                culture, building a community where enthusiasts can discover
-                and celebrate their passion.
+                culture, building a community where enthusiasts can discover and
+                celebrate their passion.
               </p>
               <p>
                 We envision a future where The Plug Market is synonymous with
@@ -100,8 +120,8 @@ export default function AboutUs() {
                 </div>
                 <h3 className="font-semibold text-gray-900">Building Trust</h3>
                 <p className="text-sm">
-                  Developed a rigorous quality verification process to
-                  ensure every product we sell is authentic and as described.
+                  Developed a rigorous quality verification process to ensure
+                  every product we sell is authentic and as described.
                 </p>
               </div>
 
@@ -113,8 +133,8 @@ export default function AboutUs() {
                   Growing Community
                 </h3>
                 <p className="text-sm">
-                  Today, we serve thousands of customers across India,
-                  building the largest streetwear community in the country.
+                  Today, we serve thousands of customers across India, building
+                  the largest streetwear community in the country.
                 </p>
               </div>
             </div>
@@ -345,8 +365,8 @@ export default function AboutUs() {
               Join Our Community
             </CardTitle>
             <p className="text-gray-300">
-              Ready to discover amazing items? Join thousands of happy
-              customers today!
+              Ready to discover amazing items? Join thousands of happy customers
+              today!
             </p>
           </CardHeader>
           <CardContent className="text-center">

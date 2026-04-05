@@ -1,10 +1,30 @@
 import { Truck, Package, Clock, Shield, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Helmet } from "react-helmet-async";
 
 export default function ShippingPolicy() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <Helmet>
+        <title>
+          Shipping Policy | The Plug Market — Authentic Sneakers India
+        </title>
+        <meta
+          name="description"
+          content="Read The Plug Market's Shipping Policy. Learn about delivery timelines, shipping charges, and how we ensure your authentic sneakers arrive safely."
+        />
+        <link rel="canonical" href="https://theplugmarket.in/shipping-policy" />
+        <meta
+          property="og:url"
+          content="https://theplugmarket.in/shipping-policy"
+        />
+        <meta property="og:title" content="Shipping Policy | The Plug Market" />
+        <meta
+          property="og:description"
+          content="Learn about shipping timelines, charges, and delivery details for The Plug Market orders."
+        />
+      </Helmet>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -56,8 +76,8 @@ export default function ShippingPolicy() {
                   Shipping Protection
                 </h3>
                 <p className="text-green-700 text-sm">
-                  All items are securely packaged and shipped with tracking
-                  so you can follow your order every step of the way.
+                  All items are securely packaged and shipped with tracking so
+                  you can follow your order every step of the way.
                 </p>
               </div>
             </div>
@@ -74,9 +94,9 @@ export default function ShippingPolicy() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-gray-700">
-              We ship all orders from our warehouse. Delivery times depend
-              on the shipping method chosen and your destination.
-              Here's how the process works:
+              We ship all orders from our warehouse. Delivery times depend on
+              the shipping method chosen and your destination. Here's how the
+              process works:
             </p>
             <div className="space-y-4">
               <div className="border-l-4 border-blue-500 pl-4">
@@ -126,10 +146,10 @@ export default function ShippingPolicy() {
                     • <strong>Maximum delivery time:</strong> 21-28 business
                     days
                   </li>
-                  <li>• Orders are typically shipped within 1-3 business days</li>
                   <li>
-                    • Delivery time depends on your location
+                    • Orders are typically shipped within 1-3 business days
                   </li>
+                  <li>• Delivery time depends on your location</li>
                   <li>• Shipping method impacts delivery speed</li>
                 </ul>
               </div>
@@ -147,8 +167,8 @@ export default function ShippingPolicy() {
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h3 className="font-semibold text-blue-800 mb-2">Pro Tip</h3>
               <p className="text-blue-700 text-sm">
-                Check the shipping notes in each listing for estimated
-                delivery times specific to your location.
+                Check the shipping notes in each listing for estimated delivery
+                times specific to your location.
               </p>
             </div>
           </CardContent>
@@ -169,15 +189,22 @@ export default function ShippingPolicy() {
                   Our Shipping Standards
                 </h3>
                 <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 ml-4">
-                  <li>Items are packaged securely with appropriate materials</li>
+                  <li>
+                    Items are packaged securely with appropriate materials
+                  </li>
                   <li>
                     Tracking information provided within 24 hours of shipping
                   </li>
-                  <li>Orders shipped within 1-3 business days of payment confirmation</li>
+                  <li>
+                    Orders shipped within 1-3 business days of payment
+                    confirmation
+                  </li>
                   <li>
                     We use reliable shipping carriers (Blue Dart, DTDC, etc.)
                   </li>
-                  <li>Every item is verified to match its listing description</li>
+                  <li>
+                    Every item is verified to match its listing description
+                  </li>
                   <li>We communicate any shipping delays proactively</li>
                 </ul>
               </div>

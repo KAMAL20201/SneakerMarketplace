@@ -33,7 +33,7 @@ const Home = () => {
               type: "GOOGLE_AUTH_ERROR",
               error: error.message,
             },
-            window.location.origin
+            window.location.origin,
           );
         } else if (session?.user) {
           window.opener.postMessage(
@@ -42,7 +42,7 @@ const Home = () => {
               user: session.user,
               session: session,
             },
-            window.location.origin
+            window.location.origin,
           );
         } else {
           window.opener.postMessage(
@@ -50,7 +50,7 @@ const Home = () => {
               type: "GOOGLE_AUTH_ERROR",
               error: "No session found",
             },
-            window.location.origin
+            window.location.origin,
           );
         }
       } catch (err: any) {
@@ -59,7 +59,7 @@ const Home = () => {
             type: "GOOGLE_AUTH_ERROR",
             error: err.message,
           },
-          window.location.origin
+          window.location.origin,
         );
       }
 
@@ -73,12 +73,23 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       <Helmet>
-        <title>The Plug Market - Authentic Sneakers & Streetwear Marketplace</title>
-        <meta name="description" content="Buy and sell authentic sneakers and streetwear. India's trusted marketplace for verified sneakers, limited edition drops, and premium streetwear." />
+        <title>
+          The Plug Market - Authentic Sneakers & Streetwear Marketplace
+        </title>
+        <meta
+          name="description"
+          content="The Plug Market — India's trusted sneakers marketplace. Shop 100% authentic sneakers, limited edition drops & premium streetwear. Every product quality verified."
+        />
         <link rel="canonical" href="https://theplugmarket.in/" />
         <meta property="og:url" content="https://theplugmarket.in/" />
-        <meta property="og:title" content="The Plug Market - Authentic Sneakers & Streetwear Marketplace" />
-        <meta property="og:description" content="Buy and sell authentic sneakers and streetwear. India's trusted marketplace for verified sneakers, limited edition drops, and premium streetwear." />
+        <meta
+          property="og:title"
+          content="The Plug Market — Authentic Sneakers & Streetwear Marketplace India"
+        />
+        <meta
+          property="og:description"
+          content="Buy 100% authentic sneakers & streetwear in India. Shop verified Nike, Adidas, Jordan & more on The Plug Market."
+        />
       </Helmet>
       {/* Hero Section */}
       <section className="px-4 py-6">
@@ -87,14 +98,14 @@ const Home = () => {
             <Sparkles className="h-6 w-6 text-orange-500" />
           </div>
           <h1 className="text-4xl font-bold mb-3">
-            Discover the Hottest
+            India's Trusted Marketplace for
             <span className="gradient-text block mt-2">
-              Drops & Collectibles
+              Authentic Sneakers & Streetwear
             </span>
           </h1>
           <p className="text-gray-700 text-lg mb-2">
-            Shop hyped sneakers, streetwear, collectibles & more —
-            authentic products, quality guaranteed
+            Shop 100% authentic sneakers, streetwear, collectibles & more —
+            every product quality verified
           </p>
 
           {/* Trust badges - ecommerce focused */}
