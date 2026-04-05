@@ -55,6 +55,11 @@ const SKIP_PATHS = [
   "/my-addresses",
 ];
 
+// URL query parameters that should be IGNORED when building the prerender cache key.
+// This prevents the same product page being cached separately for every ?size= or ?color= variant.
+// Must match what you configure in Prerender dashboard → Caching Rules → URL Parameters.
+const STRIP_PARAMS = ["size", "color", "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref", "fbclid", "gclid"];
+
 function isBot(userAgent: string): boolean {
   const ua = userAgent.toLowerCase();
   return BOT_AGENTS.some((bot) => ua.includes(bot));
@@ -90,7 +95,11 @@ export default async function middleware(req: Request): Promise<Response> {
     return fetch(req);
   }
 
-  const prerenderUrl = `https://service.prerender.io/${req.url}`;
+  // Build a canonical URL for Prerender by stripping noise params (UTM, size, color, etc.)
+  // so Prerender caches one copy per page, not one per query string combination.
+  const canonicalUrl = new URL(req.url);
+  STRIP_PARAMS.forEach((p) => canonicalUrl.searchParams.delete(p));
+  const prerenderUrl = `https://service.prerender.io/${canonicalUrl.toString()}`;
 
   try {
     const prerendered = await fetch(prerenderUrl, {
