@@ -199,7 +199,6 @@ async function searchGoat(page, title, p) {
           products: products.map((prod) => ({
             id: prod.id,
             title: prod.title || "",
-            slug: prod.slug || "",
             lowestPriceCents:
               prod.variantsList?.[0]?.localizedLowestPriceCents?.amountCents ??
               null,
