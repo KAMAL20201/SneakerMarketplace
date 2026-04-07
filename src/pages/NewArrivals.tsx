@@ -1,4 +1,4 @@
-import { Link, useLoaderData } from "react-router";
+import { Link, useLoaderData, data } from "react-router";
 import type { Route } from "./+types/NewArrivals";
 import { Sparkles, Package, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +26,7 @@ export async function loader(_: Route.LoaderArgs) {
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
   );
-  const { data } = await supabase
+  const { data: rows } = await supabase
     .from("listings_with_images")
     .select(
       "id, title, price, brand, size_value, condition, image_url, created_at",
@@ -34,7 +34,10 @@ export async function loader(_: Route.LoaderArgs) {
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(24);
-  return { listings: (data ?? []) as Listing[] };
+  return data(
+    { listings: (rows ?? []) as Listing[] },
+    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } },
+  );
 }
 
 export function meta(_: Route.MetaArgs) {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams, useLocation, useLoaderData } from "react-router";
+import { useSearchParams, useLocation, useLoaderData, data } from "react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/CategoryBrowse";
 import {
@@ -181,7 +181,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     import.meta.env.VITE_SUPABASE_ANON_KEY,
   );
 
-  const { data } = await ssrSupabase.rpc("browse_category_listings", {
+  const { data: rpcData } = await ssrSupabase.rpc("browse_category_listings", {
     p_category: categoryId,
     p_sizes: null,
     p_brands: null,
@@ -198,13 +198,16 @@ export async function loader({ request }: Route.LoaderArgs) {
     matched_size_price: number | null;
     total_count: number;
   };
-  const rows = (data ?? []) as RpcRow[];
+  const rows = (rpcData ?? []) as RpcRow[];
   const listings: Listing[] = rows.map(
     ({ matched_size_price: _m, total_count: _t, ...rest }) => rest as Listing,
   );
   const totalCount = rows.length > 0 ? rows[0].total_count : 0;
 
-  return { listings, totalCount };
+  return data(
+    { listings, totalCount },
+    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } },
+  );
 }
 
 const CategoryBrowse = () => {

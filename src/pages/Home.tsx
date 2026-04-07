@@ -12,7 +12,7 @@ import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import NewDropsSection from "@/components/NewDropsSection";
-import { useLoaderData } from "react-router";
+import { useLoaderData, data } from "react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/Home";
 
@@ -89,11 +89,20 @@ export async function loader(_: Route.LoaderArgs) {
       .limit(30),
   ]);
 
-  return {
-    banners: bannersResult.data ?? [],
-    hotDeals: hotDealsResult.data ?? [],
-    newDrops: newDropsResult.data ?? [],
-  };
+  return data(
+    {
+      banners: bannersResult.data ?? [],
+      hotDeals: hotDealsResult.data ?? [],
+      newDrops: newDropsResult.data ?? [],
+    },
+    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } },
+  );
+}
+
+// Don't re-fetch home data on every client-side navigation —
+// the loader result is cached for the lifetime of the SPA session.
+export function shouldRevalidate() {
+  return false;
 }
 
 const Home = () => {

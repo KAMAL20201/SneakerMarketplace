@@ -59,6 +59,14 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     onError?.();
   }, [currentSrc, fallbackSrc, onError]);
 
+  // If the image was already in the browser cache it won't fire onLoad after
+  // hydration, leaving it invisible. Check .complete once after mount.
+  React.useEffect(() => {
+    if (imgRef.current?.complete && imgRef.current.naturalWidth > 0) {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Preload critical images
   React.useEffect(() => {
     if (priority && src) {

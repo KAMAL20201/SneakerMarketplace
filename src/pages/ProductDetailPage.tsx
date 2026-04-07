@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
-import { useParams, useSearchParams, useLoaderData } from "react-router";
+import { useParams, useSearchParams, useLoaderData, data } from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase, toStorageUrl } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
@@ -117,13 +117,16 @@ export async function loader({ params }: Route.LoaderArgs) {
     legacySizes = data ?? [];
   }
 
-  return {
-    listing,
-    images: imagesData ?? [],
-    variants,
-    variantSizesData,
-    legacySizes,
-  };
+  return data(
+    {
+      listing,
+      images: imagesData ?? [],
+      variants,
+      variantSizesData,
+      legacySizes,
+    },
+    { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
+  );
 }
 
 // ─── Meta export ──────────────────────────────────────────────────────────────
