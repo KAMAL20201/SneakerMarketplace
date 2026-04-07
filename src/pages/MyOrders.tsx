@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
 import { ROUTE_HELPERS } from "@/constants/enums";
 import {
@@ -107,11 +106,10 @@ const EmptyOrdersState = () => (
       <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
         <ShoppingBag className="h-12 w-12 text-purple-600" />
       </div>
-      <h3 className="text-xl font-bold text-gray-800 mb-3">
-        No Orders Yet
-      </h3>
+      <h3 className="text-xl font-bold text-gray-800 mb-3">No Orders Yet</h3>
       <p className="text-gray-600 mb-6 leading-relaxed">
-        No orders have been placed yet. Orders will appear here when customers make purchases.
+        No orders have been placed yet. Orders will appear here when customers
+        make purchases.
       </p>
     </div>
   </div>
@@ -187,7 +185,6 @@ const MyOrders = () => {
 
   return (
     <div className="min-h-screen ">
-      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -215,7 +212,7 @@ const MyOrders = () => {
                           <div className="flex items-center gap-3">
                             <div
                               className={`p-2 rounded-2xl ${getStatusColor(
-                                order.status
+                                order.status,
                               )}`}
                             >
                               {getStatusIcon(order.status)}
@@ -231,7 +228,7 @@ const MyOrders = () => {
                           </div>
                           <Badge
                             className={`${getStatusColor(
-                              order.status
+                              order.status,
                             )} border rounded-xl capitalize`}
                           >
                             {getStatusLabel(order.status)}
@@ -247,15 +244,13 @@ const MyOrders = () => {
                               <ThumbnailImage
                                 src={
                                   order.product_listings?.product_images?.find(
-                                    (img) => img.is_poster_image
+                                    (img) => img.is_poster_image,
                                   )?.image_url ||
                                   order.product_listings?.product_images?.[0]
                                     ?.image_url ||
                                   "/placeholder.svg"
                                 }
-                                alt={
-                                  order.product_listings?.title || "Product"
-                                }
+                                alt={order.product_listings?.title || "Product"}
                                 className="w-full h-full"
                               />
                             </div>
@@ -268,8 +263,7 @@ const MyOrders = () => {
                                     {order.product_listings?.brand || "Brand"}
                                   </p>
                                   <h3 className="font-bold text-gray-800 mb-1">
-                                    {order.product_listings?.title ||
-                                      "Product"}
+                                    {order.product_listings?.title || "Product"}
                                   </h3>
                                   <div className="flex flex-wrap gap-1.5 mt-1">
                                     {order.variant_name && (
@@ -310,9 +304,13 @@ const MyOrders = () => {
                           </div>
 
                           {/* [GUEST CHECKOUT] Buyer Contact Info */}
-                          {(order.buyer_name || order.buyer_email || order.buyer_phone) && (
+                          {(order.buyer_name ||
+                            order.buyer_email ||
+                            order.buyer_phone) && (
                             <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-                              <p className="text-xs font-semibold text-blue-700 mb-2">Buyer Info</p>
+                              <p className="text-xs font-semibold text-blue-700 mb-2">
+                                Buyer Info
+                              </p>
                               <div className="flex flex-wrap gap-4 text-sm text-gray-700">
                                 {order.buyer_name && (
                                   <div className="flex items-center gap-1">
@@ -345,7 +343,9 @@ const MyOrders = () => {
                               </p>
                               <div className="text-sm text-gray-700 space-y-0.5">
                                 {order.shipping_address.full_name && (
-                                  <p className="font-medium">{order.shipping_address.full_name}</p>
+                                  <p className="font-medium">
+                                    {order.shipping_address.full_name}
+                                  </p>
                                 )}
                                 {order.shipping_address.address_line1 && (
                                   <p>{order.shipping_address.address_line1}</p>
@@ -353,14 +353,25 @@ const MyOrders = () => {
                                 {order.shipping_address.address_line2 && (
                                   <p>{order.shipping_address.address_line2}</p>
                                 )}
-                                {(order.shipping_address.city || order.shipping_address.state || order.shipping_address.pincode) && (
+                                {(order.shipping_address.city ||
+                                  order.shipping_address.state ||
+                                  order.shipping_address.pincode) && (
                                   <p>
-                                    {[order.shipping_address.city, order.shipping_address.state].filter(Boolean).join(", ")}
-                                    {order.shipping_address.pincode ? ` – ${order.shipping_address.pincode}` : ""}
+                                    {[
+                                      order.shipping_address.city,
+                                      order.shipping_address.state,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(", ")}
+                                    {order.shipping_address.pincode
+                                      ? ` – ${order.shipping_address.pincode}`
+                                      : ""}
                                   </p>
                                 )}
                                 {order.shipping_address.landmark && (
-                                  <p className="text-gray-500 text-xs">Landmark: {order.shipping_address.landmark}</p>
+                                  <p className="text-gray-500 text-xs">
+                                    Landmark: {order.shipping_address.landmark}
+                                  </p>
                                 )}
                               </div>
                             </div>
@@ -370,7 +381,7 @@ const MyOrders = () => {
                           <div className="flex gap-3 items-center">
                             <Link
                               to={ROUTE_HELPERS.PRODUCT_DETAIL(
-                                order.product_id
+                                order.product_id,
                               )}
                             >
                               <Button
@@ -390,19 +401,36 @@ const MyOrders = () => {
                                 onClick={async () => {
                                   try {
                                     // Mark the ordered size (or whole product for single-size) as sold
-                                    await StockValidationService.markSizeAsSold(order.product_id, order.ordered_size || "", order.variant_id);
-                                    await OrderService.updateOrderStatus(order.id, "confirmed");
+                                    await StockValidationService.markSizeAsSold(
+                                      order.product_id,
+                                      order.ordered_size || "",
+                                      order.variant_id,
+                                    );
+                                    await OrderService.updateOrderStatus(
+                                      order.id,
+                                      "confirmed",
+                                    );
                                     setSellOrders((prev) =>
                                       prev.map((o) =>
-                                        o.id === order.id ? { ...o, status: "confirmed" as const } : o
-                                      )
+                                        o.id === order.id
+                                          ? {
+                                              ...o,
+                                              status: "confirmed" as const,
+                                            }
+                                          : o,
+                                      ),
                                     );
 
                                     // Send order confirmation emails now that payment is confirmed
-                                    const productTitle = order.product_listings?.title || "Product";
+                                    const productTitle =
+                                      order.product_listings?.title ||
+                                      "Product";
                                     const productImage =
-                                      order.product_listings?.product_images?.find((img) => img.is_poster_image)?.image_url ||
-                                      order.product_listings?.product_images?.[0]?.image_url;
+                                      order.product_listings?.product_images?.find(
+                                        (img) => img.is_poster_image,
+                                      )?.image_url ||
+                                      order.product_listings
+                                        ?.product_images?.[0]?.image_url;
                                     const orderEmailData: OrderEmailData = {
                                       order_id: order.id,
                                       product_title: productTitle,
@@ -411,7 +439,8 @@ const MyOrders = () => {
                                       currency: "INR",
                                       buyer_name: order.buyer_name,
                                       buyer_email: order.buyer_email,
-                                      seller_name: user?.user_metadata?.full_name,
+                                      seller_name:
+                                        user?.user_metadata?.full_name,
                                       seller_email: user?.email,
                                       order_status: "confirmed",
                                       shipping_address: order.shipping_address,
@@ -421,7 +450,7 @@ const MyOrders = () => {
                                         await EmailService.sendOrderConfirmationToBuyer(
                                           order.buyer_email,
                                           order.buyer_name || "",
-                                          orderEmailData
+                                          orderEmailData,
                                         );
                                       }
                                       // if (user?.email) {
@@ -435,7 +464,9 @@ const MyOrders = () => {
                                       // Email failure should not block the confirmation
                                     }
 
-                                    toast.success("Payment confirmed! Order is now ready to ship.");
+                                    toast.success(
+                                      "Payment confirmed! Order is now ready to ship.",
+                                    );
                                   } catch {
                                     toast.error("Failed to confirm payment");
                                   }
@@ -460,7 +491,7 @@ const MyOrders = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  )
+                  ),
                 )}
               </div>
 
@@ -482,13 +513,11 @@ const MyOrders = () => {
                   <div className="flex gap-1">
                     {Array.from(
                       { length: sellTotalPages },
-                      (_, i) => i + 1
+                      (_, i) => i + 1,
                     ).map((page) => (
                       <Button
                         key={page}
-                        variant={
-                          sellCurrentPage === page ? "default" : "ghost"
-                        }
+                        variant={sellCurrentPage === page ? "default" : "ghost"}
                         onClick={() => setSellCurrentPage(page)}
                         className={`rounded-xl ${
                           sellCurrentPage === page
@@ -505,7 +534,7 @@ const MyOrders = () => {
                     variant="ghost"
                     onClick={() =>
                       setSellCurrentPage((prev) =>
-                        Math.min(prev + 1, sellTotalPages)
+                        Math.min(prev + 1, sellTotalPages),
                       )
                     }
                     disabled={sellCurrentPage === sellTotalPages}
@@ -532,22 +561,29 @@ const MyOrders = () => {
           if (!selectedOrder) return;
           try {
             // Update order status to shipped and store AWB as tracking number
-            await OrderService.updateOrderStatus(selectedOrder.id, "shipped", awb);
+            await OrderService.updateOrderStatus(
+              selectedOrder.id,
+              "shipped",
+              awb,
+            );
 
             // Update local state so the card reflects new status + tracking
             setSellOrders((prev) =>
               prev.map((o) =>
                 o.id === selectedOrder.id
                   ? { ...o, status: "shipped" as const, tracking_number: awb }
-                  : o
-              )
+                  : o,
+              ),
             );
 
             // Send shipping notification email to buyer
             if (selectedOrder.buyer_email) {
-              const productTitle = selectedOrder.product_listings?.title || "Product";
+              const productTitle =
+                selectedOrder.product_listings?.title || "Product";
               const productImage =
-                selectedOrder.product_listings?.product_images?.find((img) => img.is_poster_image)?.image_url ||
+                selectedOrder.product_listings?.product_images?.find(
+                  (img) => img.is_poster_image,
+                )?.image_url ||
                 selectedOrder.product_listings?.product_images?.[0]?.image_url;
               const orderEmailData: OrderEmailData = {
                 order_id: selectedOrder.id,
@@ -566,7 +602,7 @@ const MyOrders = () => {
                 await EmailService.sendShippingNotificationToBuyer(
                   selectedOrder.buyer_email,
                   selectedOrder.buyer_name || "",
-                  orderEmailData
+                  orderEmailData,
                 );
               } catch {
                 // Email failure should not block the status update
@@ -579,7 +615,6 @@ const MyOrders = () => {
           }
         }}
       />
-
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { MapPin, Edit, Trash2, Star, Plus, MapPinOff } from "lucide-react";
 import { useAddressStorage } from "../hooks/useAddressStorage";
 import { Button } from "../components/ui/button";
@@ -32,7 +31,7 @@ export default function MyAddresses() {
     updateAddress,
   } = useAddressStorage();
   const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(
-    null
+    null,
   );
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -101,7 +100,6 @@ export default function MyAddresses() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>

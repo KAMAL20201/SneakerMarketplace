@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Helmet } from "react-helmet-async";
-import { useSearchParams, useLocation } from "react-router";
+import { useSearchParams, useLocation, useLoaderData } from "react-router";
+import { createClient } from "@supabase/supabase-js";
+import type { Route } from "./+types/Browse";
 import {
   Search,
   Package,
@@ -38,7 +39,11 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
-import { ROUTE_HELPERS, SNEAKER_SIZES, CLOTHING_SIZES } from "@/constants/enums";
+import {
+  ROUTE_HELPERS,
+  SNEAKER_SIZES,
+  CLOTHING_SIZES,
+} from "@/constants/enums";
 import { categories } from "@/constants/sellConstants";
 
 import ConditionBadge from "@/components/ui/ConditionBadge";
@@ -80,9 +85,11 @@ const BROWSE_STATE_KEY = "browse_page_state";
 const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   const params = new URLSearchParams();
   if (filters.search?.trim()) params.set("search", filters.search.trim());
-  if (filters.condition.length > 0) params.set("condition", filters.condition.join(","));
+  if (filters.condition.length > 0)
+    params.set("condition", filters.condition.join(","));
   if (filters.brand.length > 0) params.set("brand", filters.brand.join(","));
-  if (filters.category.length > 0) params.set("category", filters.category.join(","));
+  if (filters.category.length > 0)
+    params.set("category", filters.category.join(","));
   if (filters.size.length > 0) params.set("size", filters.size.join(","));
   if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
     params.set("priceMin", filters.priceRange[0].toString());
@@ -93,7 +100,9 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   return params;
 };
 
-const parseFiltersFromURL = (searchParams: URLSearchParams): Partial<FilterState> => {
+const parseFiltersFromURL = (
+  searchParams: URLSearchParams,
+): Partial<FilterState> => {
   const filters: Partial<FilterState> = {};
   const search = searchParams.get("search");
   if (search) filters.search = search;
@@ -121,7 +130,69 @@ const parseFiltersFromURL = (searchParams: URLSearchParams): Partial<FilterState
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+export function meta() {
+  return [
+    { title: "Browse All Products | The Plug Market" },
+    {
+      name: "description",
+      content:
+        "Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market. Find the best deals on verified items.",
+    },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: "https://theplugmarket.in/browse",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/browse" },
+    { property: "og:title", content: "Browse All Products | The Plug Market" },
+    {
+      property: "og:description",
+      content:
+        "Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market.",
+    },
+  ];
+}
+
+// ── Server Loader ─────────────────────────────────────────────────────────────
+// Fetches the first page with default filters so bots and first paint
+// get real product HTML immediately. The component takes over for all
+// subsequent pages and filtered queries via client-side fetchPage().
+export async function loader(_: Route.LoaderArgs) {
+  const ssrSupabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY,
+  );
+
+  const { data } = await ssrSupabase.rpc("browse_all_listings", {
+    p_categories: null,
+    p_sizes: null,
+    p_brands: null,
+    p_conditions: null,
+    p_price_min: 0,
+    p_price_max: 100000,
+    p_search: null,
+    p_sort: "newest",
+    p_limit: PAGE_SIZE,
+    p_offset: 0,
+    p_deals: false,
+  });
+
+  type RpcRow = Listing & {
+    matched_size_price: number | null;
+    total_count: number;
+  };
+  const rows = (data ?? []) as RpcRow[];
+  const listings: Listing[] = rows.map(
+    ({ matched_size_price: _m, total_count: _t, ...rest }) => rest as Listing,
+  );
+  const totalCount = rows.length > 0 ? rows[0].total_count : 0;
+
+  return { listings, totalCount };
+}
+
 const Browse = () => {
+  // Seed initial listings from SSR loader — bots see real product HTML on first response
+  const loaderData = useLoaderData<typeof loader>();
   // const { toggleWishlist, isInWishlist } = useWishlist();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -152,13 +223,34 @@ const Browse = () => {
   });
 
   // ── Infinite scroll state ─────────────────────────────────────────────────
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingInitial, setLoadingInitial] = useState(true);
+  // Seed from SSR loader — bots see real product HTML; client hydrates from this
+  const hasUrlFilters = Array.from(searchParams.keys()).some((k) =>
+    [
+      "search",
+      "condition",
+      "brand",
+      "category",
+      "size",
+      "priceMin",
+      "priceMax",
+      "sortBy",
+      "deals",
+    ].includes(k),
+  );
+  const ssrListings = !hasUrlFilters ? (loaderData?.listings ?? []) : [];
+  const ssrTotal = !hasUrlFilters ? (loaderData?.totalCount ?? 0) : 0;
+
+  const [listings, setListings] = useState<Listing[]>(ssrListings);
+  const [offset, setOffset] = useState(ssrListings.length);
+  const [hasMore, setHasMore] = useState(ssrListings.length === PAGE_SIZE);
+  const [loadingInitial, setLoadingInitial] = useState(
+    ssrListings.length === 0,
+  );
   const [loadingMore, setLoadingMore] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [sizePriceMap, setSizePriceMap] = useState<Map<string, number> | null>(null);
+  const [totalCount, setTotalCount] = useState(ssrTotal);
+  const [sizePriceMap, setSizePriceMap] = useState<Map<string, number> | null>(
+    null,
+  );
 
   // ── Scroll-to-top visibility ──────────────────────────────────────────────
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -188,8 +280,16 @@ const Browse = () => {
   //   PRODUCT_CONDITIONS.POOR,
   // ];
   const brands = [
-    "Nike", "Adidas", "Jordan", "Yeezy", "Converse",
-    "Vans", "Puma", "Reebok", "New Balance", "Asics",
+    "Nike",
+    "Adidas",
+    "Jordan",
+    "Yeezy",
+    "Converse",
+    "Vans",
+    "Puma",
+    "Reebok",
+    "New Balance",
+    "Asics",
   ];
   const sneakerSizes = Object.values(SNEAKER_SIZES);
   const clothingSizes = Object.values(CLOTHING_SIZES);
@@ -202,66 +302,88 @@ const Browse = () => {
 
   // ── Core fetch function ───────────────────────────────────────────────────
   // `fromOffset` = where to start; `replace` = reset list (new filter/search)
-  const fetchPage = useCallback(async (fromOffset: number, currentFilters: FilterState, replace: boolean) => {
-    if (replace) setLoadingInitial(true);
-    else setLoadingMore(true);
+  const fetchPage = useCallback(
+    async (
+      fromOffset: number,
+      currentFilters: FilterState,
+      replace: boolean,
+    ) => {
+      if (replace) setLoadingInitial(true);
+      else setLoadingMore(true);
 
-    try {
-      const { data, error } = await supabase.rpc("browse_all_listings", {
-        p_categories:  currentFilters.category.length > 0 ? currentFilters.category : null,
-        p_sizes:       currentFilters.size.length > 0 ? currentFilters.size : null,
-        p_brands:      currentFilters.brand.length > 0 ? currentFilters.brand.map((b) => b.toLowerCase()) : null,
-        p_conditions:  currentFilters.condition.length > 0 ? currentFilters.condition : null,
-        p_price_min:   currentFilters.priceRange[0],
-        p_price_max:   currentFilters.priceRange[1],
-        p_search:      currentFilters.search?.trim() || null,
-        p_sort:        currentFilters.sortBy,
-        p_limit:       PAGE_SIZE,
-        p_offset:      fromOffset,
-        p_deals:       currentFilters.deals,
-      });
-
-      if (error) throw error;
-
-      type RpcRow = Listing & { matched_size_price: number | null; total_count: number };
-      const rows = (data ?? []) as RpcRow[];
-
-      // Strip RPC-only fields before storing in listings state
-      const newListings: Listing[] = rows.map((row) => {
-        const { matched_size_price, total_count, ...rest } = row;
-        void matched_size_price;
-        void total_count;
-        return rest as Listing;
-      });
-
-      if (replace) setTotalCount(rows.length > 0 ? rows[0].total_count : 0);
-
-      setListings((prev) => replace ? newListings : [...prev, ...newListings]);
-      setOffset(fromOffset + newListings.length);
-      setHasMore(newListings.length === PAGE_SIZE);
-
-      // Build sizePriceMap from matched_size_price returned per row
-      if (currentFilters.size.length > 0) {
-        setSizePriceMap((prev) => {
-          const next = new Map<string, number>(replace ? [] : (prev ?? []));
-          for (const row of rows) {
-            if (row.matched_size_price !== null && row.matched_size_price !== undefined) {
-              next.set(row.id, row.matched_size_price);
-            }
-          }
-          return next.size > 0 ? next : null;
+      try {
+        const { data, error } = await supabase.rpc("browse_all_listings", {
+          p_categories:
+            currentFilters.category.length > 0 ? currentFilters.category : null,
+          p_sizes: currentFilters.size.length > 0 ? currentFilters.size : null,
+          p_brands:
+            currentFilters.brand.length > 0
+              ? currentFilters.brand.map((b) => b.toLowerCase())
+              : null,
+          p_conditions:
+            currentFilters.condition.length > 0
+              ? currentFilters.condition
+              : null,
+          p_price_min: currentFilters.priceRange[0],
+          p_price_max: currentFilters.priceRange[1],
+          p_search: currentFilters.search?.trim() || null,
+          p_sort: currentFilters.sortBy,
+          p_limit: PAGE_SIZE,
+          p_offset: fromOffset,
+          p_deals: currentFilters.deals,
         });
-      } else if (replace) {
-        setSizePriceMap(null);
+
+        if (error) throw error;
+
+        type RpcRow = Listing & {
+          matched_size_price: number | null;
+          total_count: number;
+        };
+        const rows = (data ?? []) as RpcRow[];
+
+        // Strip RPC-only fields before storing in listings state
+        const newListings: Listing[] = rows.map((row) => {
+          const { matched_size_price, total_count, ...rest } = row;
+          void matched_size_price;
+          void total_count;
+          return rest as Listing;
+        });
+
+        if (replace) setTotalCount(rows.length > 0 ? rows[0].total_count : 0);
+
+        setListings((prev) =>
+          replace ? newListings : [...prev, ...newListings],
+        );
+        setOffset(fromOffset + newListings.length);
+        setHasMore(newListings.length === PAGE_SIZE);
+
+        // Build sizePriceMap from matched_size_price returned per row
+        if (currentFilters.size.length > 0) {
+          setSizePriceMap((prev) => {
+            const next = new Map<string, number>(replace ? [] : (prev ?? []));
+            for (const row of rows) {
+              if (
+                row.matched_size_price !== null &&
+                row.matched_size_price !== undefined
+              ) {
+                next.set(row.id, row.matched_size_price);
+              }
+            }
+            return next.size > 0 ? next : null;
+          });
+        } else if (replace) {
+          setSizePriceMap(null);
+        }
+      } catch (err) {
+        console.error("Error fetching listings:", err);
+        toast.error("Failed to load listings");
+      } finally {
+        setLoadingInitial(false);
+        setLoadingMore(false);
       }
-    } catch (err) {
-      console.error("Error fetching listings:", err);
-      toast.error("Failed to load listings");
-    } finally {
-      setLoadingInitial(false);
-      setLoadingMore(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // ── Restore scroll position when navigating back from a product page ───────
   useEffect(() => {
@@ -315,11 +437,16 @@ const Browse = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loadingInitial) {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !loadingMore &&
+          !loadingInitial
+        ) {
           fetchPage(offset, filtersRef.current, false);
         }
       },
-      { rootMargin: "200px" } // trigger 200px before the bottom
+      { rootMargin: "200px" }, // trigger 200px before the bottom
     );
 
     observer.observe(sentinel);
@@ -337,11 +464,21 @@ const Browse = () => {
   }, []);
 
   // ── Keep refs in sync so the unmount snapshot has latest values ───────────
-  useEffect(() => { listingsRef.current = listings; }, [listings]);
-  useEffect(() => { offsetRef.current = offset; }, [offset]);
-  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
-  useEffect(() => { totalCountRef.current = totalCount; }, [totalCount]);
-  useEffect(() => { sizePriceMapRef.current = sizePriceMap; }, [sizePriceMap]);
+  useEffect(() => {
+    listingsRef.current = listings;
+  }, [listings]);
+  useEffect(() => {
+    offsetRef.current = offset;
+  }, [offset]);
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+  useEffect(() => {
+    totalCountRef.current = totalCount;
+  }, [totalCount]);
+  useEffect(() => {
+    sizePriceMapRef.current = sizePriceMap;
+  }, [sizePriceMap]);
 
   // ── Save state to sessionStorage when leaving the browse page ─────────────
   useEffect(() => {
@@ -358,7 +495,7 @@ const Browse = () => {
           sizePriceMap: sizePriceMapRef.current
             ? Array.from(sizePriceMapRef.current.entries())
             : null,
-        })
+        }),
       );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -381,7 +518,10 @@ const Browse = () => {
     setSearchParams(serializeFiltersToURL(cleared), { replace: true });
   };
 
-  const handleImmediateFilterChange = (key: keyof FilterState, value: unknown) => {
+  const handleImmediateFilterChange = (
+    key: keyof FilterState,
+    value: unknown,
+  ) => {
     const updated = { ...filters, [key]: value };
     setFilters(updated);
     setSearchParams(serializeFiltersToURL(updated), { replace: true });
@@ -399,7 +539,11 @@ const Browse = () => {
     setTempFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleTempSizeChange = (size: string, checked: boolean, sizeType: "shoe" | "apparel") => {
+  const handleTempSizeChange = (
+    size: string,
+    checked: boolean,
+    sizeType: "shoe" | "apparel",
+  ) => {
     const newSizes = checked
       ? [...tempFilters.size, size]
       : tempFilters.size.filter((s) => s !== size);
@@ -410,7 +554,11 @@ const Browse = () => {
         newCategory = [...newCategory, categoryToAdd];
       }
     }
-    setTempFilters((prev) => ({ ...prev, size: newSizes, category: newCategory }));
+    setTempFilters((prev) => ({
+      ...prev,
+      size: newSizes,
+      category: newCategory,
+    }));
   };
 
   const toggleSection = (section: keyof typeof collapsedSections) => {
@@ -437,23 +585,15 @@ const Browse = () => {
     if (tempFilters.brand.length > 0) n++;
     if (tempFilters.category.length > 0) n++;
     if (tempFilters.size.length > 0) n++;
-    if (tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000) n++;
+    if (tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000)
+      n++;
     return n;
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen px-4 py-6">
-      <Helmet>
-        <title>Browse All Products | The Plug Market</title>
-        <meta name="description" content="Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market. Find the best deals on verified items." />
-        <link rel="canonical" href="https://theplugmarket.in/browse" />
-        <meta property="og:url" content="https://theplugmarket.in/browse" />
-        <meta property="og:title" content="Browse All Products | The Plug Market" />
-        <meta property="og:description" content="Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market." />
-      </Helmet>
       <div className="container mx-auto max-w-7xl">
-
         {/* Header */}
         <div className="mb-6 flex flex-col items-center text-center">
           <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">
@@ -467,15 +607,21 @@ const Browse = () => {
           <div className="flex flex-wrap gap-3 justify-center">
             <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-full border border-green-200">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              <span className="text-green-700 text-xs font-medium">Quality Verified</span>
+              <span className="text-green-700 text-xs font-medium">
+                Quality Verified
+              </span>
             </div>
             <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
               <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-              <span className="text-blue-700 text-xs font-medium">Verified Sellers</span>
+              <span className="text-blue-700 text-xs font-medium">
+                Verified Sellers
+              </span>
             </div>
             <div className="flex items-center gap-2 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
               <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-              <span className="text-orange-700 text-xs font-medium">Quality Approved</span>
+              <span className="text-orange-700 text-xs font-medium">
+                Quality Approved
+              </span>
             </div>
           </div>
         </div>
@@ -486,7 +632,9 @@ const Browse = () => {
           <Input
             value={filters.search}
             onChange={(e) => handleSearchInputChange(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSearchExecute(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearchExecute();
+            }}
             placeholder="Search items, brands, categories..."
             className="h-12 text-gray-700 placeholder:text-gray-500 !border-none !outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
@@ -494,7 +642,10 @@ const Browse = () => {
             <button
               onClick={() => {
                 handleSearchInputChange("");
-                setSearchParams(serializeFiltersToURL({ ...filters, search: "" }), { replace: true });
+                setSearchParams(
+                  serializeFiltersToURL({ ...filters, search: "" }),
+                  { replace: true },
+                );
               }}
               className="absolute right-3 p-1 hover:bg-gray-100 rounded-full transition-colors"
             >
@@ -507,8 +658,11 @@ const Browse = () => {
         {searchParams.get("search") && (
           <div className="mb-6 text-center">
             <p className="text-gray-600">
-              <span className="font-medium text-gray-900">{totalCount}</span> results for{" "}
-              <span className="font-medium text-blue-600">"{searchParams.get("search")}"</span>
+              <span className="font-medium text-gray-900">{totalCount}</span>{" "}
+              results for{" "}
+              <span className="font-medium text-blue-600">
+                "{searchParams.get("search")}"
+              </span>
             </p>
           </div>
         )}
@@ -519,24 +673,36 @@ const Browse = () => {
             {/* Sort */}
             <Popover open={sortPopoverOpen} onOpenChange={setSortPopoverOpen}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30">
+                <Button
+                  variant="ghost"
+                  className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30"
+                >
                   <SortAsc className="h-4 w-4 mr-2" />
                   Sort
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-56 border-0 rounded-2xl p-4" align="end">
+              <PopoverContent
+                className="w-56 border-0 rounded-2xl p-4"
+                align="end"
+              >
                 <div className="space-y-2">
                   <h4 className="font-medium text-gray-800 mb-3">Sort By</h4>
                   {sortOptions.map((option) => (
                     <Button
                       key={option.value}
-                      variant={filters.sortBy === option.value ? "default" : "ghost"}
-                      onClick={() => { handleImmediateFilterChange("sortBy", option.value); setSortPopoverOpen(false); }}
-                      className={`w-full justify-start rounded-xl ${filters.sortBy === option.value
+                      variant={
+                        filters.sortBy === option.value ? "default" : "ghost"
+                      }
+                      onClick={() => {
+                        handleImmediateFilterChange("sortBy", option.value);
+                        setSortPopoverOpen(false);
+                      }}
+                      className={`w-full justify-start rounded-xl ${
+                        filters.sortBy === option.value
                           ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0"
                           : "glass-button border-0 text-gray-700 hover:bg-white/30"
-                        }`}
+                      }`}
                     >
                       {option.label}
                     </Button>
@@ -548,7 +714,10 @@ const Browse = () => {
             {/* Filter Sheet */}
             <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 relative">
+                <Button
+                  variant="ghost"
+                  className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 relative"
+                >
                   <SlidersHorizontal className="h-4 w-4 mr-2" />
                   Filters
                   {getActiveFiltersCount() > 0 && (
@@ -558,35 +727,65 @@ const Browse = () => {
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:w-96 md:w-[400px] p-0">
+              <SheetContent
+                side="right"
+                className="w-full sm:w-96 md:w-[400px] p-0"
+              >
                 <SheetHeader className="px-6 py-4 border-b border-gray-200">
-                  <SheetTitle className="text-lg font-semibold text-gray-800">Filter Products</SheetTitle>
+                  <SheetTitle className="text-lg font-semibold text-gray-800">
+                    Filter Products
+                  </SheetTitle>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-
                   {/* Category */}
                   <div>
-                    <button onClick={() => toggleSection("category")} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => toggleSection("category")}
+                      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
                       <Label className="text-sm font-medium text-gray-700 cursor-pointer">
                         Category
-                        {tempFilters.category.length > 0 && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 rounded-full">{tempFilters.category.length}</span>}
+                        {tempFilters.category.length > 0 && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 rounded-full">
+                            {tempFilters.category.length}
+                          </span>
+                        )}
                       </Label>
-                      {collapsedSections.category ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronUp className="h-4 w-4 text-gray-500" />}
+                      {collapsedSections.category ? (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4 text-gray-500" />
+                      )}
                     </button>
                     {!collapsedSections.category && (
                       <div className="px-3 pb-3">
                         <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
                           {categories.map((category) => (
-                            <div key={category.id} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                            <div
+                              key={category.id}
+                              className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                            >
                               <Checkbox
                                 id={category.id}
-                                checked={tempFilters.category.includes(category.id)}
-                                onCheckedChange={(checked) => handleTempFilterChange("category",
-                                  checked ? [...tempFilters.category, category.id] : tempFilters.category.filter((c) => c !== category.id)
+                                checked={tempFilters.category.includes(
+                                  category.id,
                                 )}
+                                onCheckedChange={(checked) =>
+                                  handleTempFilterChange(
+                                    "category",
+                                    checked
+                                      ? [...tempFilters.category, category.id]
+                                      : tempFilters.category.filter(
+                                          (c) => c !== category.id,
+                                        ),
+                                  )
+                                }
                                 className="rounded-md"
                               />
-                              <Label htmlFor={category.id} className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2">
+                              <Label
+                                htmlFor={category.id}
+                                className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-2"
+                              >
                                 <category.icon className="h-4 w-4" />
                                 {category.name}
                               </Label>
@@ -599,23 +798,55 @@ const Browse = () => {
 
                   {/* Price Range */}
                   <div>
-                    <button onClick={() => toggleSection("priceRange")} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => toggleSection("priceRange")}
+                      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
                       <Label className="text-sm font-medium text-gray-700 cursor-pointer">
                         Price Range
-                        {(tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000) && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Active</span>}
+                        {(tempFilters.priceRange[0] > 0 ||
+                          tempFilters.priceRange[1] < 100000) && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                            Active
+                          </span>
+                        )}
                       </Label>
-                      {collapsedSections.priceRange ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronUp className="h-4 w-4 text-gray-500" />}
+                      {collapsedSections.priceRange ? (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4 text-gray-500" />
+                      )}
                     </button>
                     {!collapsedSections.priceRange && (
                       <div className="px-3 pb-3">
                         <div className="flex gap-3">
-                          <Input type="number" placeholder="Min Price" value={tempFilters.priceRange[0]}
-                            onChange={(e) => handleTempFilterChange("priceRange", [parseInt(e.target.value) || 0, tempFilters.priceRange[1]])}
-                            className="glass-input border-0 rounded-xl text-sm h-11" />
-                          <div className="flex items-center px-2 text-gray-400">to</div>
-                          <Input type="number" placeholder="Max Price" value={tempFilters.priceRange[1]}
-                            onChange={(e) => handleTempFilterChange("priceRange", [tempFilters.priceRange[0], parseInt(e.target.value) || 100000])}
-                            className="glass-input border-0 rounded-xl text-sm h-11" />
+                          <Input
+                            type="number"
+                            placeholder="Min Price"
+                            value={tempFilters.priceRange[0]}
+                            onChange={(e) =>
+                              handleTempFilterChange("priceRange", [
+                                parseInt(e.target.value) || 0,
+                                tempFilters.priceRange[1],
+                              ])
+                            }
+                            className="glass-input border-0 rounded-xl text-sm h-11"
+                          />
+                          <div className="flex items-center px-2 text-gray-400">
+                            to
+                          </div>
+                          <Input
+                            type="number"
+                            placeholder="Max Price"
+                            value={tempFilters.priceRange[1]}
+                            onChange={(e) =>
+                              handleTempFilterChange("priceRange", [
+                                tempFilters.priceRange[0],
+                                parseInt(e.target.value) || 100000,
+                              ])
+                            }
+                            className="glass-input border-0 rounded-xl text-sm h-11"
+                          />
                         </div>
                       </div>
                     )}
@@ -653,27 +884,53 @@ const Browse = () => {
 
                   {/* Brand */}
                   <div>
-                    <button onClick={() => toggleSection("brand")} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => toggleSection("brand")}
+                      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
                       <Label className="text-sm font-medium text-gray-700 cursor-pointer">
                         Brand
-                        {tempFilters.brand.length > 0 && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 rounded-full">{tempFilters.brand.length}</span>}
+                        {tempFilters.brand.length > 0 && (
+                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 rounded-full">
+                            {tempFilters.brand.length}
+                          </span>
+                        )}
                       </Label>
-                      {collapsedSections.brand ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronUp className="h-4 w-4 text-gray-500" />}
+                      {collapsedSections.brand ? (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4 text-gray-500" />
+                      )}
                     </button>
                     {!collapsedSections.brand && (
                       <div className="px-3 pb-3">
                         <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
                           {brands.map((brand) => (
-                            <div key={brand} className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                            <div
+                              key={brand}
+                              className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                            >
                               <Checkbox
                                 id={brand}
                                 checked={tempFilters.brand.includes(brand)}
-                                onCheckedChange={(checked) => handleTempFilterChange("brand",
-                                  checked ? [...tempFilters.brand, brand] : tempFilters.brand.filter((b) => b !== brand)
-                                )}
+                                onCheckedChange={(checked) =>
+                                  handleTempFilterChange(
+                                    "brand",
+                                    checked
+                                      ? [...tempFilters.brand, brand]
+                                      : tempFilters.brand.filter(
+                                          (b) => b !== brand,
+                                        ),
+                                  )
+                                }
                                 className="rounded-md"
                               />
-                              <Label htmlFor={brand} className="text-sm font-medium text-gray-700 cursor-pointer">{brand}</Label>
+                              <Label
+                                htmlFor={brand}
+                                className="text-sm font-medium text-gray-700 cursor-pointer"
+                              >
+                                {brand}
+                              </Label>
                             </div>
                           ))}
                         </div>
@@ -683,25 +940,45 @@ const Browse = () => {
 
                   {/* Size */}
                   <div>
-                    <button onClick={() => toggleSection("size")} className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => toggleSection("size")}
+                      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
                       <Label className="text-sm font-medium text-gray-700 cursor-pointer">
                         Size
-                        {tempFilters.size.length > 0 && <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 rounded-full">{tempFilters.size.length}</span>}
+                        {tempFilters.size.length > 0 && (
+                          <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 rounded-full">
+                            {tempFilters.size.length}
+                          </span>
+                        )}
                       </Label>
-                      {collapsedSections.size ? <ChevronDown className="h-4 w-4 text-gray-500" /> : <ChevronUp className="h-4 w-4 text-gray-500" />}
+                      {collapsedSections.size ? (
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      ) : (
+                        <ChevronUp className="h-4 w-4 text-gray-500" />
+                      )}
                     </button>
                     {!collapsedSections.size && (
                       <div className="px-3 pb-3 space-y-4">
                         {/* Shoe Sizes */}
                         <div>
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Shoe Size (UK)</p>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            Shoe Size (UK)
+                          </p>
                           <div className="flex flex-wrap gap-2">
                             {sneakerSizes.map((size) => {
-                              const isSelected = tempFilters.size.includes(size);
+                              const isSelected =
+                                tempFilters.size.includes(size);
                               return (
                                 <button
                                   key={size}
-                                  onClick={() => handleTempSizeChange(size, !isSelected, "shoe")}
+                                  onClick={() =>
+                                    handleTempSizeChange(
+                                      size,
+                                      !isSelected,
+                                      "shoe",
+                                    )
+                                  }
                                   className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
                                     isSelected
                                       ? "bg-blue-500 text-white border-blue-500"
@@ -716,14 +993,23 @@ const Browse = () => {
                         </div>
                         {/* Apparel Sizes */}
                         <div>
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Apparel Size</p>
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                            Apparel Size
+                          </p>
                           <div className="flex flex-wrap gap-2">
                             {clothingSizes.map((size) => {
-                              const isSelected = tempFilters.size.includes(size);
+                              const isSelected =
+                                tempFilters.size.includes(size);
                               return (
                                 <button
                                   key={size}
-                                  onClick={() => handleTempSizeChange(size, !isSelected, "apparel")}
+                                  onClick={() =>
+                                    handleTempSizeChange(
+                                      size,
+                                      !isSelected,
+                                      "apparel",
+                                    )
+                                  }
                                   className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
                                     isSelected
                                       ? "bg-purple-500 text-white border-purple-500"
@@ -743,10 +1029,17 @@ const Browse = () => {
 
                 <SheetFooter className="px-6 py-4 border-t border-gray-200">
                   <div className="flex gap-3 w-full">
-                    <Button variant="ghost" onClick={clearFilters} className="flex-1 glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 h-11">
+                    <Button
+                      variant="ghost"
+                      onClick={clearFilters}
+                      className="flex-1 glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 h-11"
+                    >
                       Reset
                     </Button>
-                    <Button onClick={applyFilters} className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl h-11">
+                    <Button
+                      onClick={applyFilters}
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 rounded-xl h-11"
+                    >
                       Apply Filters ({getTempFiltersCount()})
                     </Button>
                   </div>
@@ -757,38 +1050,142 @@ const Browse = () => {
         </div>
 
         {/* Active Filter Chips */}
-        {(filters.condition.length > 0 || filters.brand.length > 0 || filters.category.length > 0 || filters.size.length > 0 || filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
+        {(filters.condition.length > 0 ||
+          filters.brand.length > 0 ||
+          filters.category.length > 0 ||
+          filters.size.length > 0 ||
+          filters.priceRange[0] > 0 ||
+          filters.priceRange[1] < 100000) && (
           <div className="flex flex-wrap items-center gap-2 mb-4 py-4 bg-gray-50/50">
             {filters.category.map((categoryId) => (
-              <Badge key={categoryId} className="bg-indigo-100 text-indigo-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
+              <Badge
+                key={categoryId}
+                className="bg-indigo-100 text-indigo-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1"
+              >
                 {getCategoryName(categoryId)}
-                <button onClick={() => { const u = { ...filters, category: filters.category.filter((c) => c !== categoryId) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+                <button
+                  onClick={() => {
+                    const u = {
+                      ...filters,
+                      category: filters.category.filter(
+                        (c) => c !== categoryId,
+                      ),
+                    };
+                    setFilters(u);
+                    setTempFilters(u);
+                    setSearchParams(serializeFiltersToURL(u), {
+                      replace: true,
+                    });
+                  }}
+                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             ))}
             {filters.condition.map((condition) => (
-              <ConditionBadge key={condition} condition={condition} variant="glass" className="text-xs font-medium flex items-center gap-1 pr-1">
-                <button onClick={() => { const u = { ...filters, condition: filters.condition.filter((c) => c !== condition) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+              <ConditionBadge
+                key={condition}
+                condition={condition}
+                variant="glass"
+                className="text-xs font-medium flex items-center gap-1 pr-1"
+              >
+                <button
+                  onClick={() => {
+                    const u = {
+                      ...filters,
+                      condition: filters.condition.filter(
+                        (c) => c !== condition,
+                      ),
+                    };
+                    setFilters(u);
+                    setTempFilters(u);
+                    setSearchParams(serializeFiltersToURL(u), {
+                      replace: true,
+                    });
+                  }}
+                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </ConditionBadge>
             ))}
             {filters.brand.map((brand) => (
-              <Badge key={brand} className="bg-blue-100 text-blue-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
+              <Badge
+                key={brand}
+                className="bg-blue-100 text-blue-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1"
+              >
                 {brand}
-                <button onClick={() => { const u = { ...filters, brand: filters.brand.filter((b) => b !== brand) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+                <button
+                  onClick={() => {
+                    const u = {
+                      ...filters,
+                      brand: filters.brand.filter((b) => b !== brand),
+                    };
+                    setFilters(u);
+                    setTempFilters(u);
+                    setSearchParams(serializeFiltersToURL(u), {
+                      replace: true,
+                    });
+                  }}
+                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             ))}
             {filters.size.map((size) => (
-              <Badge key={size} className="bg-purple-100 text-purple-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1 uppercase">
+              <Badge
+                key={size}
+                className="bg-purple-100 text-purple-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1 uppercase"
+              >
                 {size}
-                <button onClick={() => { const u = { ...filters, size: filters.size.filter((s) => s !== size) }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+                <button
+                  onClick={() => {
+                    const u = {
+                      ...filters,
+                      size: filters.size.filter((s) => s !== size),
+                    };
+                    setFilters(u);
+                    setTempFilters(u);
+                    setSearchParams(serializeFiltersToURL(u), {
+                      replace: true,
+                    });
+                  }}
+                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             ))}
             {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
               <Badge className="bg-green-100 text-green-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
-                ₹{filters.priceRange[0].toLocaleString()} - ₹{filters.priceRange[1].toLocaleString()}
-                <button onClick={() => { const u = { ...filters, priceRange: [0, 100000] as [number, number] }; setFilters(u); setTempFilters(u); setSearchParams(serializeFiltersToURL(u), { replace: true }); }} className="hover:bg-black/10 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+                ₹{filters.priceRange[0].toLocaleString()} - ₹
+                {filters.priceRange[1].toLocaleString()}
+                <button
+                  onClick={() => {
+                    const u = {
+                      ...filters,
+                      priceRange: [0, 100000] as [number, number],
+                    };
+                    setFilters(u);
+                    setTempFilters(u);
+                    setSearchParams(serializeFiltersToURL(u), {
+                      replace: true,
+                    });
+                  }}
+                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             )}
-            <button onClick={clearFilters} className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors">Clear all</button>
+            <button
+              onClick={clearFilters}
+              className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+            >
+              Clear all
+            </button>
           </div>
         )}
 
@@ -796,8 +1193,20 @@ const Browse = () => {
         {!loadingInitial && (
           <div className="mb-4">
             <p className="text-gray-600 text-sm">
-              Showing <span className="font-medium text-gray-900">{listings.length}</span>
-              {totalCount > 0 && <> of <span className="font-medium text-gray-900">{totalCount}</span></>} listings
+              Showing{" "}
+              <span className="font-medium text-gray-900">
+                {listings.length}
+              </span>
+              {totalCount > 0 && (
+                <>
+                  {" "}
+                  of{" "}
+                  <span className="font-medium text-gray-900">
+                    {totalCount}
+                  </span>
+                </>
+              )}{" "}
+              listings
             </p>
           </div>
         )}
@@ -811,65 +1220,97 @@ const Browse = () => {
               <div className="p-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 flex items-center justify-center">
                 <Package className="h-8 w-8 md:h-10 md:w-10 text-gray-500" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No Listings Found</h3>
-              <p className="text-gray-600 mb-6 text-sm md:text-base">Try adjusting your filters or search terms</p>
-              <Button onClick={clearFilters} className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30">Clear Filters</Button>
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">
+                No Listings Found
+              </h3>
+              <p className="text-gray-600 mb-6 text-sm md:text-base">
+                Try adjusting your filters or search terms
+              </p>
+              <Button
+                onClick={clearFilters}
+                className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
+              >
+                Clear Filters
+              </Button>
             </CardContent>
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">              {listings.map((listing) => (
-              <Link
-                to={
-                  filters.size.length > 0
-                    ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}?size=${encodeURIComponent(filters.size[0])}`
-                    : ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)
-                }
-                key={listing.id}
-              >
-                <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
-                  <CardContent className="p-0">
-                    <div className="relative h-40 sm:h-48 overflow-hidden">
-                      <CardImage
-                        src={listing.image_url || "/placeholder.svg"}
-                        alt={listing.title}
-                        aspectRatio="aspect-[4/3]"
-                        className="w-full h-full group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {listing.retail_price && (() => {
-                        const displayPrice = sizePriceMap?.get(listing.id) ?? listing.min_price ?? listing.price;
-                        if (listing.retail_price <= displayPrice) return null;
-                        const pct = Math.round(((listing.retail_price - displayPrice) / listing.retail_price) * 100);
-                        return pct >= 10 ? (
-                          <span className="absolute top-2 left-2 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg z-10">
-                            {pct}% off
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+              {" "}
+              {listings.map((listing) => (
+                <Link
+                  to={
+                    filters.size.length > 0
+                      ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}?size=${encodeURIComponent(filters.size[0])}`
+                      : ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)
+                  }
+                  key={listing.id}
+                >
+                  <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
+                    <CardContent className="p-0">
+                      <div className="relative h-40 sm:h-48 overflow-hidden">
+                        <CardImage
+                          src={listing.image_url || "/placeholder.svg"}
+                          alt={listing.title}
+                          aspectRatio="aspect-[4/3]"
+                          className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {listing.retail_price &&
+                          (() => {
+                            const displayPrice =
+                              sizePriceMap?.get(listing.id) ??
+                              listing.min_price ??
+                              listing.price;
+                            if (listing.retail_price <= displayPrice)
+                              return null;
+                            const pct = Math.round(
+                              ((listing.retail_price - displayPrice) /
+                                listing.retail_price) *
+                                100,
+                            );
+                            return pct >= 10 ? (
+                              <span className="absolute top-2 left-2 text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg z-10">
+                                {pct}% off
+                              </span>
+                            ) : null;
+                          })()}
+                      </div>
+                      <div className="p-3 md:p-4">
+                        <div className="flex items-start justify-between mb-2 md:mb-3">
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-600 font-semibold capitalize mb-1">
+                              {listing.brand}
+                            </p>
+                            <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
+                              {listing.title}
+                            </h3>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mb-2 md:mb-3">
+                          <span className="font-bold text-gray-800 text-base md:text-lg">
+                            ₹
+                            {(
+                              sizePriceMap?.get(listing.id) ??
+                              listing.min_price ??
+                              listing.price
+                            ).toLocaleString()}
                           </span>
-                        ) : null;
-                      })()}
-                    </div>
-                    <div className="p-3 md:p-4">
-                      <div className="flex items-start justify-between mb-2 md:mb-3">
-                        <div className="flex-1">
-                          <p className="text-xs text-gray-600 font-semibold capitalize mb-1">{listing.brand}</p>
-                          <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">{listing.title}</h3>
+                          <ConditionBadge
+                            condition={listing.condition}
+                            className="text-xs"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
+                            {listing.size_value || "Multiple sizes"}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between mb-2 md:mb-3">
-                        <span className="font-bold text-gray-800 text-base md:text-lg">
-                          ₹{(sizePriceMap?.get(listing.id) ?? listing.min_price ?? listing.price).toLocaleString()}
-                        </span>
-                        <ConditionBadge condition={listing.condition} className="text-xs" />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
-                          {listing.size_value || "Multiple sizes"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
             </div>
 
             {/* Sentinel + load-more spinner */}
@@ -881,7 +1322,9 @@ const Browse = () => {
                 </div>
               )}
               {!loadingMore && !hasMore && listings.length > 0 && (
-                <p className="text-gray-400 text-sm">You've seen all {listings.length} listings</p>
+                <p className="text-gray-400 text-sm">
+                  You've seen all {listings.length} listings
+                </p>
               )}
             </div>
           </>

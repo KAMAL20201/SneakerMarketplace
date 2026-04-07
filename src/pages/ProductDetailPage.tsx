@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import {
   ShoppingCart,
   ZoomIn,
@@ -13,11 +12,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
-import { useParams, useSearchParams } from "react-router";
+import { useParams, useSearchParams, useLoaderData } from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase, toStorageUrl } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
-import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -32,10 +31,129 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import type { EmblaCarouselType } from "embla-carousel";
+import type { Route } from "./+types/ProductDetailPage";
+
 declare global {
   interface Window {
     prerenderReady: boolean;
   }
+}
+
+// ─── Server Loader ────────────────────────────────────────────────────────────
+// Runs on the server for every request — gives bots fully-rendered HTML with
+// product data already in the page. No more blank <div id="root"></div>.
+export async function loader({ params }: Route.LoaderArgs) {
+  const ssrSupabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY,
+  );
+
+  const [{ data: listingData }, { data: imagesData }, { data: variantsData }] =
+    await Promise.all([
+      ssrSupabase
+        .from("product_listings")
+        .select(
+          `*, sellers (
+          id, display_name, phone, bio, profile_image_url,
+          rating, total_reviews, location, is_verified, created_at, email
+        )`,
+        )
+        .eq("id", params.id)
+        .eq("status", "active")
+        .single(),
+      ssrSupabase
+        .from("product_images")
+        .select("id, image_url, is_poster_image")
+        .eq("product_id", params.id)
+        .order("is_poster_image", { ascending: false })
+        .order("id", { ascending: true }),
+      ssrSupabase
+        .from("product_variants")
+        .select("id, color_name, color_hex, price, display_order, image_url")
+        .eq("listing_id", params.id)
+        .order("display_order", { ascending: true }),
+    ]);
+
+  if (!listingData) {
+    throw new Response("Not Found", { status: 404 });
+  }
+
+  // Flatten sellers join into seller_details
+  const listing = {
+    ...listingData,
+    seller_details: listingData.sellers ?? null,
+    sellers: undefined,
+  };
+
+  // Fetch variant sizes if variants exist
+  let variantSizesData: {
+    variant_id: string;
+    size_value: string;
+    price: number;
+    is_sold: boolean;
+  }[] = [];
+  const variants = variantsData ?? [];
+  if (variants.length > 0) {
+    const { data } = await ssrSupabase
+      .from("product_variant_sizes")
+      .select("variant_id, size_value, price, is_sold")
+      .in(
+        "variant_id",
+        variants.map((v) => v.id),
+      )
+      .order("price", { ascending: true });
+    variantSizesData = data ?? [];
+  }
+
+  // Fetch legacy sizes if no variants
+  let legacySizes: { size_value: string; price: number; is_sold: boolean }[] =
+    [];
+  if (variants.length === 0) {
+    const { data } = await ssrSupabase
+      .from("product_listing_sizes")
+      .select("size_value, price, is_sold")
+      .eq("listing_id", params.id)
+      .order("price", { ascending: true });
+    legacySizes = data ?? [];
+  }
+
+  return {
+    listing,
+    images: imagesData ?? [],
+    variants,
+    variantSizesData,
+    legacySizes,
+  };
+}
+
+// ─── Meta export ──────────────────────────────────────────────────────────────
+// Replaces react-helmet-async <Helmet> for SSR — Google sees these in the
+// initial HTML response, no JS execution needed.
+export function meta({ data }: Route.MetaArgs) {
+  if (!data?.listing) {
+    return [{ title: "Product Not Found | The Plug Market" }];
+  }
+  const { listing, images } = data;
+  const pageTitle = `${listing.brand ? listing.brand + " " : ""}${listing.title} | The Plug Market`;
+  const pageDescription = `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop authentic sneakers and streetwear on The Plug Market.`;
+  const posterImage =
+    images?.[0]?.image_url ?? "https://theplugmarket.in/og-image.jpg";
+  const canonicalUrl = `https://theplugmarket.in/product/${listing.id}`;
+
+  return [
+    { title: pageTitle },
+    { name: "description", content: pageDescription },
+    { tagName: "link", rel: "canonical", href: canonicalUrl },
+    { property: "og:type", content: "product" },
+    { property: "og:url", content: canonicalUrl },
+    { property: "og:title", content: pageTitle },
+    { property: "og:description", content: pageDescription },
+    { property: "og:image", content: posterImage },
+    { property: "twitter:card", content: "summary_large_image" },
+    { property: "twitter:title", content: pageTitle },
+    { property: "twitter:description", content: pageDescription },
+    { property: "twitter:image", content: posterImage },
+  ];
 }
 function parseMinDeliveryDays(deliveryDays: string | null | undefined): number {
   if (!deliveryDays) return Infinity;
@@ -44,40 +162,139 @@ function parseMinDeliveryDays(deliveryDays: string | null | undefined): number {
 }
 
 export default function ProductDetailPage() {
+  // ── Server data (from loader) ─────────────────────────────────────────────
+  const {
+    listing: initialListing,
+    images: initialImages,
+    variants: initialVariants,
+    variantSizesData,
+    legacySizes,
+  } = useLoaderData<typeof loader>();
+
+  // ── URL params ────────────────────────────────────────────────────────────
   const { id: productId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const preSelectedSize = searchParams.get("size");
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
+
+  // ── Derived initial state from loader data ────────────────────────────────
+  const buildVariantSizesMap = () => {
+    const map: Record<
+      string,
+      { size_value: string; price: number; is_sold: boolean }[]
+    > = {};
+    for (const vs of variantSizesData) {
+      if (!map[vs.variant_id]) map[vs.variant_id] = [];
+      map[vs.variant_id].push({
+        size_value: vs.size_value,
+        price: vs.price,
+        is_sold: vs.is_sold,
+      });
+    }
+    return map;
+  };
+
+  const getInitialSizeAndPrice = () => {
+    if (initialVariants.length > 0) {
+      const map = buildVariantSizesMap();
+      const firstVariant = initialVariants[0];
+      const sizes = map[firstVariant.id] ?? [];
+      if (sizes.length > 0) {
+        const target = preSelectedSize
+          ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
+          : null;
+        const pick = target ?? sizes.find((s) => !s.is_sold) ?? sizes[0];
+        return { size: pick.size_value, price: pick.price };
+      }
+      return {
+        size: null,
+        price: firstVariant.price ?? initialListing?.price ?? null,
+      };
+    }
+    if (legacySizes.length > 0) {
+      const target = preSelectedSize
+        ? legacySizes.find(
+            (s) => s.size_value === preSelectedSize && !s.is_sold,
+          )
+        : null;
+      const pick =
+        target ?? legacySizes.find((s) => !s.is_sold) ?? legacySizes[0];
+      return { size: pick.size_value, price: pick.price };
+    }
+    if (initialListing?.size_value) {
+      return {
+        size: initialListing.size_value,
+        price: initialListing.price ?? null,
+      };
+    }
+    return { size: null, price: initialListing?.price ?? null };
+  };
+
+  const { size: initSize, price: initPrice } = getInitialSizeAndPrice();
+
+  // ── UI state ──────────────────────────────────────────────────────────────
+  const [selectedSize, setSelectedSize] = useState<string | null>(initSize);
+  const [selectedPrice, setSelectedPrice] = useState<number | null>(initPrice);
+  // ── State initialised from loader — no useEffect fetch needed ───────────
+  const [listing, setListing] = useState(initialListing);
+  const [images, setImages] = useState(initialImages);
+  const [variants, setVariants] = useState(initialVariants);
+  const [variantSizesMap, setVariantSizesMap] = useState(() =>
+    buildVariantSizesMap(),
+  );
   const [availableSizes, setAvailableSizes] = useState<
     { size_value: string; price: number; is_sold: boolean }[]
-  >([]);
-  // Variant state (for new listings with product_variants)
-  const [variants, setVariants] = useState<
-    {
-      id: string;
-      color_name: string;
-      color_hex: string | null;
-      price: number | null;
-      display_order: number;
-      image_url: string | null;
-    }[]
-  >([]);
+  >(() => {
+    if (initialVariants.length > 0) {
+      const map = buildVariantSizesMap();
+      return map[initialVariants[0]?.id] ?? [];
+    }
+    return legacySizes;
+  });
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    null,
+    initialVariants.length > 0 ? initialVariants[0].id : null,
   );
-  const [variantSizesMap, setVariantSizesMap] = useState<
-    Record<string, { size_value: string; price: number; is_sold: boolean }[]>
-  >({});
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // ── Reset all loader-derived state when product ID changes ───────────────
+  // useState ignores updated initialValues after first mount, so we must
+  // manually sync whenever the loader provides fresh data for a new product.
+  useEffect(() => {
+    const newMap = buildVariantSizesMap();
+    const { size, price } = getInitialSizeAndPrice();
+    setListing(initialListing);
+    setImages(initialImages);
+    setVariants(initialVariants);
+    setVariantSizesMap(newMap);
+    setAvailableSizes(
+      initialVariants.length > 0
+        ? (newMap[initialVariants[0]?.id] ?? [])
+        : legacySizes,
+    );
+    setSelectedVariantId(
+      initialVariants.length > 0 ? initialVariants[0].id : null,
+    );
+    setSelectedSize(size);
+    setSelectedPrice(price);
+    setSelectedImageIndex(0);
+    setSimilarProducts([]);
+    setDescExpanded(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
   const { addToCart, items } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const [listing, setListing] = useState<any>(null);
-  const [images, setImages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [buyNowOpen, setBuyNowOpen] = useState(false);
-  const [similarProducts, setSimilarProducts] = useState<any[]>([]);
+  const [similarProducts, setSimilarProducts] = useState<
+    {
+      id: string;
+      title: string;
+      brand: string;
+      price: number;
+      retail_price?: number | null;
+      condition: string;
+      size_value: string;
+      image_url: string;
+    }[]
+  >([]);
   const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -127,10 +344,27 @@ export default function ProductDetailPage() {
     };
   }, [zoomEmblaApi]);
 
-  const handleAddToCart = (seller: any) => {
+  // Load similar products client-side (not SEO-critical)
+  useEffect(() => {
+    if (!listing?.brand) return;
+    supabase
+      .from("listings_with_images")
+      .select("*")
+      .eq("status", "active")
+      .eq("brand", listing.brand)
+      .neq("id", productId)
+      .order("created_at", { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        setSimilarProducts(data ?? []);
+      });
+  }, [listing?.brand, productId]);
+
+  const handleAddToCart = (
+    seller: { id: number | string; display_name: string; email: string } | null,
+  ) => {
     const selectedVariant = variants.find((v) => v.id === selectedVariantId);
     const cartItem = {
-      // Include variantId in id so Blue/M and Red/M are distinct cart entries
       id: `${listing?.id}-${selectedVariantId ?? "no-variant"}-${selectedSize}`,
       productId: listing?.id,
       productName: listing?.title,
@@ -138,7 +372,6 @@ export default function ProductDetailPage() {
       size: selectedSize,
       condition: listing?.condition,
       price: selectedPrice ?? listing?.price,
-      // Prefer the variant's bound image, fall back to first listing image
       image: selectedVariant?.image_url ?? images?.[0]?.image_url,
       sellerId: seller?.id?.toString(),
       sellerName: seller?.display_name,
@@ -169,185 +402,6 @@ export default function ProductDetailPage() {
     );
   };
 
-  const fetchProductDetails = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Query 1: Get listing details with seller information using join
-      const { data: listingData, error: listingError } = await supabase
-        .from("product_listings")
-        .select(
-          `
-        *,
-        sellers (
-          id,
-          display_name,
-          phone,
-          bio,
-          profile_image_url,
-          rating,
-          total_reviews,
-          location,
-          is_verified,
-          created_at,
-          email
-        )
-      `,
-        )
-        .eq("id", productId)
-        .eq("status", "active")
-        .single();
-
-      if (listingError) throw listingError;
-
-      // Query 2: Get all images for the listing (same as before)
-      const { data: imagesData, error: imagesError } = await supabase
-        .from("product_images")
-        .select(
-          `
-        id,
-        image_url,
-        is_poster_image
-      `,
-        )
-        .eq("product_id", productId)
-        .order("is_poster_image", { ascending: false })
-        .order("id", { ascending: true });
-
-      if (imagesError) throw imagesError;
-
-      // Transform data structure
-      const transformedListing = {
-        ...listingData,
-        seller_details: listingData.sellers || null,
-      };
-      delete transformedListing.sellers;
-
-      // Query 3: Check product_variants first (new listings)
-      const { data: variantsData } = await supabase
-        .from("product_variants")
-        .select("id, color_name, color_hex, price, display_order, image_url")
-        .eq("listing_id", productId)
-        .order("display_order", { ascending: true });
-
-      setListing(transformedListing);
-      setImages(imagesData || []);
-
-      if (variantsData && variantsData.length > 0) {
-        // ── New variant-based listing ──
-        const variantIds = variantsData.map((v) => v.id);
-        const { data: variantSizesData } = await supabase
-          .from("product_variant_sizes")
-          .select("variant_id, size_value, price, is_sold")
-          .in("variant_id", variantIds)
-          .order("price", { ascending: true });
-
-        const sizesMap: Record<
-          string,
-          { size_value: string; price: number; is_sold: boolean }[]
-        > = {};
-        for (const vs of variantSizesData ?? []) {
-          if (!sizesMap[vs.variant_id]) sizesMap[vs.variant_id] = [];
-          sizesMap[vs.variant_id].push({
-            size_value: vs.size_value,
-            price: vs.price,
-            is_sold: vs.is_sold,
-          });
-        }
-
-        setVariants(variantsData);
-        setVariantSizesMap(sizesMap);
-
-        const firstVariant = variantsData[0];
-        setSelectedVariantId(firstVariant.id);
-        const firstSizes = sizesMap[firstVariant.id] ?? [];
-        setAvailableSizes(firstSizes);
-
-        if (firstSizes.length > 0) {
-          const target = preSelectedSize
-            ? firstSizes.find(
-                (s) => s.size_value === preSelectedSize && !s.is_sold,
-              )
-            : null;
-          const pick =
-            target ?? firstSizes.find((s) => !s.is_sold) ?? firstSizes[0];
-          setSelectedSize(pick.size_value);
-          setSelectedPrice(pick.price);
-        } else {
-          // No sizes (electronics/collectibles) — price is at variant level
-          setSelectedPrice(
-            firstVariant.price ?? transformedListing.price ?? null,
-          );
-        }
-      } else {
-        // ── Legacy: product_listing_sizes or single-size ──
-        const { data: sizesData } = await supabase
-          .from("product_listing_sizes")
-          .select("size_value, price, is_sold")
-          .eq("listing_id", productId)
-          .order("price", { ascending: true });
-
-        const sizes = sizesData ?? [];
-        setAvailableSizes(sizes);
-
-        if (sizes.length > 0) {
-          let target = preSelectedSize
-            ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
-            : null;
-          if (!target) target = sizes.find((s) => !s.is_sold) ?? sizes[0];
-          setSelectedSize(target.size_value);
-          setSelectedPrice(target.price);
-        } else if (transformedListing.size_value) {
-          setSelectedSize(transformedListing.size_value);
-          setSelectedPrice(transformedListing.price ?? null);
-        }
-      }
-
-      // Set the first image (poster or first available) as selected
-      setSelectedImageIndex(0);
-    } catch (err: any) {
-      setError(err.message);
-      setTimeout(() => {
-        window.prerenderReady = true;
-      }, 500); // ← add timeout
-
-      // window.prerenderReady = true; // Don't let Prerender hang on errors
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (productId) {
-      fetchProductDetails();
-    }
-  }, [productId]);
-
-  useEffect(() => {
-    if (!listing) return;
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from("listings_with_images")
-          .select("*")
-          .eq("status", "active")
-          .eq("brand", listing.brand)
-          .neq("id", productId)
-          .order("created_at", { ascending: false })
-          .limit(10);
-        setSimilarProducts(data ?? []);
-      } catch (err) {
-        console.error("Error fetching similar products:", err);
-        // Handle error silently
-      } finally {
-        setTimeout(() => {
-          window.prerenderReady = true;
-        }, 500);
-      }
-    })();
-  }, [listing]);
-
   const handleVariantSelect = (variantId: string) => {
     const variant = variants.find((v) => v.id === variantId);
     if (!variant) return;
@@ -372,42 +426,27 @@ export default function ProductDetailPage() {
     }
   };
 
-  if (loading) return <ProductDetailSkeleton />;
-  if (error) return <div>Error: {error}</div>;
+  // Data is always present — provided by the server loader
   const currentPrice = selectedPrice ?? listing?.price ?? 0;
   const retailInr: number | null = listing?.retail_price ?? null;
   const pctOff =
     retailInr && retailInr > currentPrice
       ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
       : null;
-  const pageTitle = listing
-    ? `${listing.brand ? listing.brand + " " : ""}${listing.title} | The Plug Market`
-    : "The Plug Market";
+  // pageDescription is used in the JSON-LD structured data below
   const pageDescription = listing
     ? `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop authentic sneakers and streetwear on The Plug Market.`
     : "Shop authentic sneakers and streetwear on The Plug Market.";
-  const posterImage =
-    images?.[0]?.image_url ?? "https://theplugmarket.in/og-image.jpg";
   const canonicalUrl = `https://theplugmarket.in/product/${productId}`;
 
   return (
     <div className="min-h-screen">
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:type" content="product" />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta property="og:image" content={posterImage} />
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:title" content={pageTitle} />
-        <meta property="twitter:description" content={pageDescription} />
-        <meta property="twitter:image" content={posterImage} />
-        {listing && (
-          <script type="application/ld+json">
-            {JSON.stringify({
+      {/* JSON-LD Product structured data — title/og/twitter handled by meta() export */}
+      {listing && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Product",
               name: listing.title,
@@ -415,7 +454,9 @@ export default function ProductDetailPage() {
               brand: listing.brand
                 ? { "@type": "Brand", name: listing.brand }
                 : undefined,
-              image: images.map((img: any) => img.image_url).filter(Boolean),
+              image: images
+                .map((img: { image_url: string }) => img.image_url)
+                .filter(Boolean),
               offers: {
                 "@type": "Offer",
                 url: canonicalUrl,
@@ -454,10 +495,10 @@ export default function ProductDetailPage() {
                   },
                 ],
               },
-            })}
-          </script>
-        )}
-      </Helmet>
+            }),
+          }}
+        />
+      )}
       <div className="lg:flex lg:gap-8 lg:p-8">
         {/* Image Gallery - Left side on desktop, full width on mobile */}
         <div

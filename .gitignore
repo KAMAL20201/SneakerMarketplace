@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+build
 *.local
 build
 .react-router
@@ -26,6 +27,7 @@ build
 *.sln
 *.sw?
 .vercel
+.react-router
 .env
 .env*.local
 

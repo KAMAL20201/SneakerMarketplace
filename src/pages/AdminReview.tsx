@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Helmet } from "react-helmet-async";
 import {
   Check,
   X,
@@ -71,7 +70,7 @@ export default function AdminReview() {
             display_name,
             phone
           )
-        `
+        `,
         )
         .eq("status", "under_review")
         .order("created_at", { ascending: true });
@@ -169,7 +168,6 @@ export default function AdminReview() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">

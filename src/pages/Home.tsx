@@ -1,5 +1,4 @@
 import { Sparkles } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { ROUTE_NAMES } from "@/constants/enums";
 import CategorySection from "@/components/CategorySection";
@@ -13,8 +12,92 @@ import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import NewDropsSection from "@/components/NewDropsSection";
+import { useLoaderData } from "react-router";
+import { createClient } from "@supabase/supabase-js";
+import type { Route } from "./+types/Home";
+
+export function links(args?: { data?: { banners?: { image_url: string }[] } }) {
+  const firstBanner = args?.data?.banners?.[0]?.image_url;
+  if (!firstBanner) return [];
+  return [
+    {
+      rel: "preload",
+      as: "image",
+      href: firstBanner,
+      fetchpriority: "high",
+    },
+  ];
+}
+
+export function meta() {
+  return [
+    {
+      title:
+        "The Plug Market — Authentic Sneakers & Streetwear Marketplace India",
+    },
+    {
+      name: "description",
+      content:
+        "The Plug Market — India's trusted sneakers marketplace. Shop 100% authentic sneakers, limited edition drops & premium streetwear. Every product quality verified.",
+    },
+    { tagName: "link", rel: "canonical", href: "https://theplugmarket.in/" },
+    { property: "og:url", content: "https://theplugmarket.in/" },
+    {
+      property: "og:title",
+      content:
+        "The Plug Market — Authentic Sneakers & Streetwear Marketplace India",
+    },
+    {
+      property: "og:description",
+      content:
+        "Buy 100% authentic sneakers & streetwear in India. Shop verified Nike, Adidas, Jordan & more on The Plug Market.",
+    },
+  ];
+}
+
+// ── Server Loader ─────────────────────────────────────────────────────────────
+// Fetches banners, hot deals, and new drops in parallel so the
+// homepage arrives with real data in the HTML — visible to bots immediately.
+export async function loader(_: Route.LoaderArgs) {
+  const ssrSupabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY,
+  );
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const [bannersResult, hotDealsResult, newDropsResult] = await Promise.all([
+    ssrSupabase
+      .from("banners")
+      .select("id, image_url, cta_url")
+      .eq("is_active", true)
+      .or(`start_date.is.null,start_date.lte.${today}`)
+      .or(`end_date.is.null,end_date.gte.${today}`)
+      .order("sort_order", { ascending: true }),
+    ssrSupabase
+      .from("hot_deals_with_images")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(10),
+    ssrSupabase
+      .from("listings_with_images")
+      .select(
+        "id, title, brand, price, retail_price, condition, size_value, image_url",
+      )
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+
+  return {
+    banners: bannersResult.data ?? [],
+    hotDeals: hotDealsResult.data ?? [],
+    newDrops: newDropsResult.data ?? [],
+  };
+}
 
 const Home = () => {
+  const { banners, hotDeals, newDrops } = useLoaderData<typeof loader>();
   useEffect(() => {
     // Only run the auth callback flow when opened as a popup (e.g. Google OAuth redirect).
     // window.opener is null for regular page navigation, so skip entirely in that case.
@@ -53,11 +136,11 @@ const Home = () => {
             window.location.origin,
           );
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         window.opener.postMessage(
           {
             type: "GOOGLE_AUTH_ERROR",
-            error: err.message,
+            error: err instanceof Error ? err.message : "Unknown error",
           },
           window.location.origin,
         );
@@ -72,7 +155,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      <Helmet>
+      {/* <Helmet>
         <title>
           The Plug Market - Authentic Sneakers & Streetwear Marketplace
         </title>
@@ -110,7 +193,7 @@ const Home = () => {
           property="twitter:image"
           content="https://theplugmarket.in/og-image.jpg"
         />
-      </Helmet>
+      </Helmet> */}
       {/* Hero Section */}
       <section className="px-4 py-6">
         <div className="text-center mb-8 float-animation">
@@ -180,13 +263,13 @@ const Home = () => {
       </section>
 
       {/* Homepage Banners */}
-      <HomeBannerCarousel />
+      <HomeBannerCarousel initialBanners={banners} />
 
       {/* Brand Spotlight */}
       <BrandSpotlight />
 
       {/* New Drops Section */}
-      <NewDropsSection />
+      <NewDropsSection initialListings={newDrops} />
 
       {/* Categories - temporarily hidden */}
       {/*
@@ -226,7 +309,7 @@ const Home = () => {
       {/* Wishlist Section - only rendered when user has saved items */}
       <WishlistSection />
       {/* Hot Deals Section */}
-      <HotDeals />
+      <HotDeals initialDeals={hotDeals} />
 
       {/* Instant Shipping Section */}
       <InstantShipping />

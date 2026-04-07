@@ -17,10 +17,17 @@ interface Listing {
   image_url: string;
 }
 
-const NewDropsSection = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
+const NewDropsSection = ({
+  initialListings,
+}: {
+  initialListings?: Listing[];
+}) => {
+  const [listings, setListings] = useState<Listing[]>(initialListings ?? []);
 
   useEffect(() => {
+    // Skip client fetch if we already have SSR-provided listings
+    if (initialListings && initialListings.length > 0) return;
+
     const fetchNewDrops = async () => {
       const { data, error } = await supabase
         .from("listings_with_images")
@@ -37,7 +44,7 @@ const NewDropsSection = () => {
     };
 
     fetchNewDrops();
-  }, []);
+  }, [initialListings]);
 
   if (listings.length === 0) return null;
 

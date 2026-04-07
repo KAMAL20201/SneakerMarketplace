@@ -2,6 +2,29 @@ import { Undo2, PackageX, CheckCircle, Clock, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+export function meta() {
+  return [
+    { title: "Return Policy | The Plug Market" },
+    {
+      name: "description",
+      content:
+        "Read The Plug Market's Return Policy. Understand how returns work, timelines, and conditions for returning authentic sneakers and streetwear.",
+    },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: "https://theplugmarket.in/returns",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/returns" },
+    { property: "og:title", content: "Return Policy | The Plug Market" },
+    {
+      property: "og:description",
+      content:
+        "Learn how returns work at The Plug Market — timelines, conditions, and Buyer Protection.",
+    },
+  ];
+}
+
 export default function ReturnsPolicy() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -14,10 +37,16 @@ export default function ReturnsPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Return Policy
           </h1>
-          <p className="text-gray-600 text-lg">How returns work at The Plug Market</p>
+          <p className="text-gray-600 text-lg">
+            How returns work at The Plug Market
+          </p>
           <Badge variant="secondary" className="mt-3">
             Last updated:{" "}
-            {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+            {new Date().toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
           </Badge>
         </div>
 
@@ -31,9 +60,10 @@ export default function ReturnsPolicy() {
           </CardHeader>
           <CardContent className="space-y-4 text-gray-700">
             <p>
-              We want you to shop with confidence. If there is an issue with your order, you can request a
-              return in line with the timelines and conditions below. Buyer Protection ensures your money is
-              safe until you approve delivery.
+              We want you to shop with confidence. If there is an issue with
+              your order, you can request a return in line with the timelines
+              and conditions below. Buyer Protection ensures your money is safe
+              until you approve delivery.
             </p>
           </CardContent>
         </Card>
@@ -54,7 +84,9 @@ export default function ReturnsPolicy() {
               {/* <li>Item not delivered within the maximum delivery window</li> */}
             </ul>
             <p className="text-sm text-gray-600">
-              Note: Items listed as final sale or explicitly marked non-returnable are not eligible unless damaged or not as described.
+              Note: Items listed as final sale or explicitly marked
+              non-returnable are not eligible unless damaged or not as
+              described.
             </p>
           </CardContent>
         </Card>
@@ -87,10 +119,17 @@ export default function ReturnsPolicy() {
           </CardHeader>
           <CardContent className="space-y-3 text-gray-700">
             <ol className="list-decimal list-inside space-y-2 ml-4 text-sm">
-              <li>Contact support at support@theplugmarket.in with your order ID and reason</li>
-              <li>Attach clear photos (damaged item/packaging or mismatch proof)</li>
+              <li>
+                Contact support at support@theplugmarket.in with your order ID
+                and reason
+              </li>
+              <li>
+                Attach clear photos (damaged item/packaging or mismatch proof)
+              </li>
               <li>Wait for return approval and label</li>
-              <li>Pack securely and ship within 7 days using the provided label</li>
+              <li>
+                Pack securely and ship within 7 days using the provided label
+              </li>
             </ol>
           </CardContent>
         </Card>
@@ -103,14 +142,17 @@ export default function ReturnsPolicy() {
           <CardContent className="space-y-3 text-gray-700">
             <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
               <li>Include all original accessories, tags, and packaging</li>
-              <li>Use protective materials; mark fragile items appropriately</li>
+              <li>
+                Use protective materials; mark fragile items appropriately
+              </li>
               <li>Items returned used or altered may be rejected</li>
             </ul>
-            <p className="text-sm text-gray-600">Questions? Email support@theplugmarket.in or call +91-78885-27970.</p>
+            <p className="text-sm text-gray-600">
+              Questions? Email support@theplugmarket.in or call +91-78885-27970.
+            </p>
           </CardContent>
         </Card>
       </div>
     </div>
   );
 }
-

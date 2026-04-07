@@ -13,7 +13,6 @@ import { Link, useNavigate } from "react-router";
 import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
-import { preloadRoutes } from "@/Router";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { ShieldCheck } from "lucide-react";
 
@@ -25,11 +24,6 @@ export function Navbar() {
     signOut();
     navigate(ROUTE_NAMES.HOME);
     toast.success("Logged out successfully");
-  };
-
-  // Preload route on hover for better performance
-  const handleRoutePreload = (routeKey: keyof typeof preloadRoutes) => {
-    preloadRoutes[routeKey]();
   };
 
   return (
@@ -44,7 +38,6 @@ export function Navbar() {
         <Link
           to={ROUTE_NAMES.HOME}
           className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2"
-          onMouseEnter={() => handleRoutePreload("home")}
         >
           <div className="relative">
             {/* Main logo container with glass effect */}
@@ -131,7 +124,6 @@ export function Navbar() {
                     <Link
                       to={ROUTE_NAMES.MY_LISTINGS}
                       className="text-gray-700"
-                      onMouseEnter={() => handleRoutePreload("myListings")}
                     >
                       My Listings
                     </Link>
@@ -145,7 +137,6 @@ export function Navbar() {
                     <Link
                       to={ROUTE_NAMES.ADMIN_REVIEW}
                       className="text-purple-700 font-medium"
-                      onMouseEnter={() => handleRoutePreload("adminReview")}
                     >
                       🔍 Admin Review
                     </Link>
@@ -159,7 +150,6 @@ export function Navbar() {
                     <Link
                       to={ROUTE_NAMES.ADMIN_IMPORT}
                       className="text-purple-700 font-medium"
-                      onMouseEnter={() => handleRoutePreload("adminImport")}
                     >
                       📥 Import Products
                     </Link>
@@ -191,10 +181,7 @@ export function Navbar() {
               className="glass-button border-0 rounded-xl h-10 w-10 text-gray-500 hover:text-purple-600"
               title="Admin Login"
             >
-              <Link
-                to={ROUTE_NAMES.LOGIN}
-                onMouseEnter={() => handleRoutePreload("login")}
-              >
+              <Link to={ROUTE_NAMES.LOGIN}>
                 <ShieldCheck className="h-5 w-5" />
               </Link>
             </Button>

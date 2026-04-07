@@ -8,11 +8,16 @@ import { Flame } from "lucide-react";
 
 const DISPLAY_LIMIT = 10;
 
-const HotDeals = () => {
-  const [deals, setDeals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const HotDeals = ({ initialDeals }: { initialDeals?: any[] }) => {
+  const [deals, setDeals] = useState<any[]>(initialDeals ?? []);
+  const [loading, setLoading] = useState(
+    !initialDeals || initialDeals.length === 0,
+  );
 
   useEffect(() => {
+    // Skip client fetch if we already have SSR-provided deals
+    if (initialDeals && initialDeals.length > 0) return;
+
     const fetchDeals = async () => {
       const { data, error } = await supabase
         .from("hot_deals_with_images")
@@ -27,7 +32,7 @@ const HotDeals = () => {
     };
 
     fetchDeals();
-  }, []);
+  }, [initialDeals]);
 
   if (loading || deals.length === 0) return null;
 
@@ -40,7 +45,9 @@ const HotDeals = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Hot Deals</h2>
-            <p className="text-xs text-orange-600 font-medium">30% off or more</p>
+            <p className="text-xs text-orange-600 font-medium">
+              30% off or more
+            </p>
           </div>
         </div>
         <Button

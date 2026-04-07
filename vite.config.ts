@@ -1,12 +1,12 @@
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    reactRouter(),
     tailwindcss(),
     // Security headers plugin
     {
@@ -25,7 +25,7 @@ export default defineConfig({
               "frame-src 'self' https://www.google.com; " +
               "object-src 'none'; " +
               "base-uri 'self'; " +
-              "form-action 'self';"
+              "form-action 'self';",
           );
 
           // Prevent MIME type sniffing
@@ -43,7 +43,7 @@ export default defineConfig({
           // Permissions Policy
           res.setHeader(
             "Permissions-Policy",
-            "camera=(), microphone=(), geolocation=(), payment=(self)"
+            "camera=(), microphone=(), geolocation=(), payment=(self)",
           );
 
           next();
@@ -60,12 +60,27 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // For production builds
+  // For production builds — React Router handles code splitting automatically
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom", "react-router"],
+        // Only applies to client build; SSR build externalises these anyway
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("/react/") ||
+              id.includes("/react-dom/") ||
+              id.includes("/react-router/")
+            ) {
+              return "vendor-react";
+            }
+            if (id.includes("/@supabase/")) {
+              return "vendor-supabase";
+            }
+            if (id.includes("/@radix-ui/")) {
+              return "vendor-ui";
+            }
+          }
         },
       },
     },

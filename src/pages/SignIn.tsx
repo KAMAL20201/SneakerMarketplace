@@ -1,7 +1,6 @@
 import type React from "react";
 
 import { useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +51,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[calc(100dvh-70px)] flex items-center justify-center p-4">
-      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="w-full max-w-md">
         <Card className="glass-card border-0 rounded-3xl shadow-2xl">
           <CardHeader className="text-center pb-4">

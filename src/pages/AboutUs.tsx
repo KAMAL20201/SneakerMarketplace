@@ -9,30 +9,39 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Helmet } from "react-helmet-async";
+
+export function meta() {
+  return [
+    {
+      title:
+        "About Us | The Plug Market — India's Authentic Sneakers Marketplace",
+    },
+    {
+      name: "description",
+      content:
+        "Learn about The Plug Market — India's trusted marketplace for 100% authentic sneakers and streetwear. Our mission, story, and commitment to quality.",
+    },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: "https://theplugmarket.in/about",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/about" },
+    {
+      property: "og:title",
+      content: "About The Plug Market — Authentic Sneakers Marketplace India",
+    },
+    {
+      property: "og:description",
+      content:
+        "India's premier destination for authentic sneakers, streetwear, and collectibles. Learn about our story and commitment to quality.",
+    },
+  ];
+}
 
 export default function AboutUs() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Helmet>
-        <title>
-          About Us | The Plug Market — India's Authentic Sneakers Marketplace
-        </title>
-        <meta
-          name="description"
-          content="Learn about The Plug Market — India's trusted marketplace for 100% authentic sneakers and streetwear. Our mission, story, and commitment to quality."
-        />
-        <link rel="canonical" href="https://theplugmarket.in/about" />
-        <meta property="og:url" content="https://theplugmarket.in/about" />
-        <meta
-          property="og:title"
-          content="About The Plug Market — Authentic Sneakers Marketplace India"
-        />
-        <meta
-          property="og:description"
-          content="India's premier destination for authentic sneakers, streetwear, and collectibles. Learn about our story and commitment to quality."
-        />
-      </Helmet>
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Hero Section */}
         <div className="text-center mb-12">

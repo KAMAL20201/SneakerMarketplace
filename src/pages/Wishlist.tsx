@@ -8,6 +8,13 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { ROUTE_HELPERS, ROUTE_NAMES } from "@/constants/enums";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 
+export function meta() {
+  return [
+    { title: "My Wishlist | The Plug Market" },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
+}
+
 const Wishlist = () => {
   const { items, removeFromWishlist, clearWishlist } = useWishlist();
 
@@ -35,9 +42,13 @@ const Wishlist = () => {
                 Your wishlist is empty
               </h3>
               <p className="text-gray-600 mb-6 text-sm md:text-base">
-                Browse our collection and tap the heart icon to save items you love
+                Browse our collection and tap the heart icon to save items you
+                love
               </p>
-              <Button asChild className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 rounded-2xl">
+              <Button
+                asChild
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 rounded-2xl"
+              >
                 <Link to={ROUTE_NAMES.BROWSE}>Start Browsing</Link>
               </Button>
             </CardContent>
@@ -82,7 +93,10 @@ const Wishlist = () => {
                           <span className="font-bold text-gray-800 text-base md:text-lg">
                             ₹{item.price.toLocaleString()}
                           </span>
-                          <ConditionBadge condition={item.condition} className="text-xs" />
+                          <ConditionBadge
+                            condition={item.condition}
+                            className="text-xs"
+                          />
                         </div>
                         <div className="flex items-center justify-between">
                           <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">

@@ -1,17 +1,14 @@
-import { useState, useEffect } from "react";
-import { Helmet } from "react-helmet-async";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import type { Route } from "./+types/NewDrops";
 import { Zap, Package, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardImage } from "@/components/ui/OptimizedImage";
-import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
 import { ROUTE_HELPERS, ROUTE_NAMES } from "@/constants/enums";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { createClient } from "@supabase/supabase-js";
 
 interface Listing {
   id: string;
@@ -24,52 +21,51 @@ interface Listing {
   created_at: string;
 }
 
+export async function loader(_: Route.LoaderArgs) {
+  const supabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY,
+  );
+  const { data } = await supabase
+    .from("listings_with_images")
+    .select(
+      "id, title, price, brand, size_value, condition, image_url, created_at",
+    )
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(30);
+  return { listings: (data ?? []) as Listing[] };
+}
+
+export function meta(_: Route.MetaArgs) {
+  return [
+    { title: "New Drops | The Plug Market" },
+    {
+      name: "description",
+      content:
+        "Shop the freshest drops — the latest sneakers, streetwear, electronics and collectibles just added to The Plug Market.",
+    },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: "https://theplugmarket.in/new-drops",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/new-drops" },
+    { property: "og:title", content: "New Drops | The Plug Market" },
+    {
+      property: "og:description",
+      content:
+        "Shop the freshest drops — the latest sneakers, streetwear, electronics and collectibles just added to The Plug Market.",
+    },
+  ];
+}
+
 const NewDrops = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { listings } = useLoaderData<typeof loader>();
   const { toggleWishlist, isInWishlist } = useWishlist();
-
-  useEffect(() => {
-    const fetchNewDrops = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from("listings_with_images")
-          .select("*")
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(30);
-
-        if (error) throw error;
-        setListings(data || []);
-      } catch (error) {
-        console.error("Error fetching new drops:", error);
-        toast.error("Failed to load new drops");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNewDrops();
-  }, []);
 
   return (
     <div className="min-h-screen px-4 py-6">
-      <Helmet>
-        <title>New Drops | The Plug Market</title>
-        <meta
-          name="description"
-          content="Shop the freshest drops — the latest sneakers, streetwear, electronics and collectibles just added to The Plug Market."
-        />
-        <link rel="canonical" href="https://theplugmarket.in/new-drops" />
-        <meta property="og:url" content="https://theplugmarket.in/new-drops" />
-        <meta property="og:title" content="New Drops | The Plug Market" />
-        <meta
-          property="og:description"
-          content="Shop the freshest drops — the latest sneakers, streetwear, electronics and collectibles just added to The Plug Market."
-        />
-      </Helmet>
-
       <div className="container mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-2 mb-2">
@@ -83,9 +79,7 @@ const NewDrops = () => {
           </p>
         </div>
 
-        {loading ? (
-          <ProductCardSkeletonGrid count={12} />
-        ) : listings.length === 0 ? (
+        {listings.length === 0 ? (
           <Card className="glass-card border-0 rounded-2xl">
             <CardContent className="p-8 md:p-12 text-center">
               <div className="p-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 flex items-center justify-center">

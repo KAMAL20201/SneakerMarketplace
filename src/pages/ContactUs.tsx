@@ -1,25 +1,33 @@
 import { Mail, Phone, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Helmet } from "react-helmet-async";
+
+export function meta() {
+  return [
+    { title: "Contact Us | The Plug Market — Authentic Sneakers India" },
+    {
+      name: "description",
+      content:
+        "Get in touch with The Plug Market support team. We're here to help with your orders, questions about authentic sneakers, and anything else.",
+    },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: "https://theplugmarket.in/contact-us",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/contact-us" },
+    { property: "og:title", content: "Contact The Plug Market" },
+    {
+      property: "og:description",
+      content:
+        "Get in touch with The Plug Market support team. We're here to help.",
+    },
+  ];
+}
 
 export default function ContactUs() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Helmet>
-        <title>Contact Us | The Plug Market — Authentic Sneakers India</title>
-        <meta
-          name="description"
-          content="Get in touch with The Plug Market support team. We're here to help with your orders, questions about authentic sneakers, and anything else."
-        />
-        <link rel="canonical" href="https://theplugmarket.in/contact-us" />
-        <meta property="og:url" content="https://theplugmarket.in/contact-us" />
-        <meta property="og:title" content="Contact The Plug Market" />
-        <meta
-          property="og:description"
-          content="Get in touch with The Plug Market support team. We're here to help."
-        />
-      </Helmet>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">

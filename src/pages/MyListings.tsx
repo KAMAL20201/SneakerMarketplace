@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
 import { ROUTE_NAMES, ROUTE_HELPERS } from "@/constants/enums";
 import {
@@ -184,9 +183,6 @@ const MyListings = () => {
 
   return (
     <div className="min-h-screen px-4 py-6">
-      <Helmet>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
       <div className="container mx-auto max-w-6xl">
         {/* Header Section */}
         <div className="mb-8">

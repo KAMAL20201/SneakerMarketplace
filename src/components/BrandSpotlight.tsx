@@ -3,7 +3,7 @@ import { ROUTE_NAMES } from "@/constants/enums";
 
 const SPOTLIGHT_BRANDS = [
   { label: "Nike", value: "nike" },
-  { label: "Jordan", value: "jordan" },
+  { label: "Jordan", value: "air jordan" },
   { label: "Adidas", value: "adidas" },
   { label: "Asics", value: "asics" },
   { label: "New Balance", value: "new balance" },

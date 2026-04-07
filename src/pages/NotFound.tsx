@@ -2,15 +2,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Home, ArrowLeft, Search } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import { Helmet } from "react-helmet-async";
 import { ROUTE_NAMES } from "@/constants/enums";
+
+export function meta() {
+  return [
+    { title: "Page Not Found | The Plug Market" },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
+}
 
 const NotFound = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
-      <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="max-w-md w-full">
         <Card className="border-0 shadow-lg">
           <CardContent className="p-8 text-center">

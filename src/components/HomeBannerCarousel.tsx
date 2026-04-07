@@ -9,13 +9,20 @@ interface Banner {
   cta_url: string | null;
 }
 
-const HomeBannerCarousel = () => {
-  const [banners, setBanners] = useState<Banner[]>([]);
+interface Props {
+  initialBanners?: Banner[];
+}
+
+const HomeBannerCarousel = ({ initialBanners }: Props) => {
+  const [banners, setBanners] = useState<Banner[]>(initialBanners ?? []);
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
+    // Skip client fetch if we already have SSR-provided banners
+    if (initialBanners && initialBanners.length > 0) return;
+
     const fetchBanners = async () => {
       const today = new Date().toISOString().split("T")[0];
       const { data, error } = await supabase
@@ -29,7 +36,7 @@ const HomeBannerCarousel = () => {
       if (!error && data) setBanners(data);
     };
     fetchBanners();
-  }, []);
+  }, [initialBanners]);
 
   const resetTimer = (length: number) => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -92,6 +99,11 @@ const HomeBannerCarousel = () => {
               alt="Promotional banner"
               className="w-full h-full object-cover"
               draggable={false}
+              loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={i === 0 ? "high" : "low"}
+              decoding={i === 0 ? "sync" : "async"}
+              width={1200}
+              height={600}
             />
           );
           return (

@@ -1,30 +1,33 @@
 import { Truck, Package, Clock, Shield, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Helmet } from "react-helmet-async";
+
+export function meta() {
+  return [
+    { title: "Shipping Policy | The Plug Market — Authentic Sneakers India" },
+    {
+      name: "description",
+      content:
+        "Read The Plug Market's Shipping Policy. Learn about delivery timelines, shipping charges, and how we ensure your authentic sneakers arrive safely.",
+    },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: "https://theplugmarket.in/shipping-policy",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/shipping-policy" },
+    { property: "og:title", content: "Shipping Policy | The Plug Market" },
+    {
+      property: "og:description",
+      content:
+        "Learn about shipping timelines, charges, and delivery details for The Plug Market orders.",
+    },
+  ];
+}
 
 export default function ShippingPolicy() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Helmet>
-        <title>
-          Shipping Policy | The Plug Market — Authentic Sneakers India
-        </title>
-        <meta
-          name="description"
-          content="Read The Plug Market's Shipping Policy. Learn about delivery timelines, shipping charges, and how we ensure your authentic sneakers arrive safely."
-        />
-        <link rel="canonical" href="https://theplugmarket.in/shipping-policy" />
-        <meta
-          property="og:url"
-          content="https://theplugmarket.in/shipping-policy"
-        />
-        <meta property="og:title" content="Shipping Policy | The Plug Market" />
-        <meta
-          property="og:description"
-          content="Learn about shipping timelines, charges, and delivery details for The Plug Market orders."
-        />
-      </Helmet>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">

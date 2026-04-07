@@ -10,28 +10,33 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Helmet } from "react-helmet-async";
+
+export function meta() {
+  return [
+    { title: "Terms of Service | The Plug Market" },
+    {
+      name: "description",
+      content:
+        "Read The Plug Market's Terms of Service. Understand the rules and guidelines for buying authentic sneakers and streetwear on our platform.",
+    },
+    {
+      tagName: "link",
+      rel: "canonical",
+      href: "https://theplugmarket.in/terms",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/terms" },
+    { property: "og:title", content: "Terms of Service | The Plug Market" },
+    {
+      property: "og:description",
+      content:
+        "Read the terms and conditions for using The Plug Market — India's authentic sneakers marketplace.",
+    },
+  ];
+}
 
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Helmet>
-        <title>Terms of Service | The Plug Market</title>
-        <meta
-          name="description"
-          content="Read The Plug Market's Terms of Service. Understand the rules and guidelines for buying authentic sneakers and streetwear on our platform."
-        />
-        <link rel="canonical" href="https://theplugmarket.in/terms" />
-        <meta property="og:url" content="https://theplugmarket.in/terms" />
-        <meta
-          property="og:title"
-          content="Terms of Service | The Plug Market"
-        />
-        <meta
-          property="og:description"
-          content="Read the terms and conditions for using The Plug Market — India's authentic sneakers marketplace."
-        />
-      </Helmet>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
