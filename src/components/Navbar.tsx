@@ -37,6 +37,7 @@ export function Navbar() {
         {/* Center - Logo */}
         <Link
           to={ROUTE_NAMES.HOME}
+          prefetch="intent"
           className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2"
         >
           <div className="relative">

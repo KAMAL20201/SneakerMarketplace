@@ -146,7 +146,7 @@ export function AppSidebar() {
               asChild
               className="glass-button rounded-2xl border-0 hover:bg-white/20"
             >
-              <Link to={ROUTE_NAMES.HOME}>
+              <Link to={ROUTE_NAMES.HOME} prefetch="intent">
                 <div className="flex aspect-square size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 text-white shadow-lg">
                   <span className="text-lg font-bold">⚡</span>
                 </div>
