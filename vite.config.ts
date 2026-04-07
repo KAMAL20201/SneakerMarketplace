@@ -4,7 +4,7 @@ import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [
     reactRouter(),
     tailwindcss(),
@@ -60,29 +60,35 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Bundle all deps into SSR build so the Vercel serverless function
+  // doesn't need node_modules at runtime
+  ssr: {
+    noExternal: true,
+  },
   // For production builds — React Router handles code splitting automatically
   build: {
-    rollupOptions: {
-      output: {
-        // Only applies to client build; SSR build externalises these anyway
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (
-              id.includes("/react/") ||
-              id.includes("/react-dom/") ||
-              id.includes("/react-router/")
-            ) {
-              return "vendor-react";
-            }
-            if (id.includes("/@supabase/")) {
-              return "vendor-supabase";
-            }
-            if (id.includes("/@radix-ui/")) {
-              return "vendor-ui";
-            }
-          }
+    rollupOptions: isSsrBuild
+      ? undefined
+      : {
+          output: {
+            manualChunks(id) {
+              if (id.includes("node_modules")) {
+                if (
+                  id.includes("/react/") ||
+                  id.includes("/react-dom/") ||
+                  id.includes("/react-router/")
+                ) {
+                  return "vendor-react";
+                }
+                if (id.includes("/@supabase/")) {
+                  return "vendor-supabase";
+                }
+                if (id.includes("/@radix-ui/")) {
+                  return "vendor-ui";
+                }
+              }
+            },
+          },
         },
-      },
-    },
   },
-});
+}));
