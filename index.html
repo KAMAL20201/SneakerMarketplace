@@ -1,32 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- SEO Meta Tags -->
-    <!-- <meta name="description" content="The Plug Market — India's trusted sneakers marketplace. Shop 100% authentic sneakers, limited edition drops & premium streetwear. Every product quality verified." />
-    <meta name="keywords" content="authentic sneakers, sneakers marketplace, 100% authentic sneakers, buy authentic sneakers india, sneakers india, streetwear india, verified sneakers" /> -->
     <meta name="author" content="The Plug Market" />
     <meta name="theme-color" content="#000000" />
-    <!-- <link rel="canonical" href="https://theplugmarket.in/" /> -->
     <meta property="og:site_name" content="The Plug Market" />
-
-    <!-- Open Graph / Facebook -->
-    <!-- <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="The Plug Market" />
-    <meta property="og:url" content="https://theplugmarket.in/" />
-    <meta property="og:title" content="The Plug Market — Authentic Sneakers & Streetwear Marketplace India" />
-    <meta property="og:description" content="Buy 100% authentic sneakers & streetwear in India. Shop verified Nike, Adidas, Jordan & more on The Plug Market." />
-    <meta property="og:image" content="https://theplugmarket.in/og-image.jpg" /> -->
-
-    <!-- Twitter -->
-    <!-- <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://theplugmarket.in/" />
-    <meta property="twitter:title" content="The Plug Market — Authentic Sneakers & Streetwear Marketplace India" />
-    <meta property="twitter:description" content="Buy 100% authentic sneakers & streetwear in India. Shop verified Nike, Adidas, Jordan & more on The Plug Market." />
-    <meta property="twitter:image" content="https://theplugmarket.in/og-image.jpg" /> -->
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
@@ -40,7 +20,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
       rel="stylesheet"
       media="print"
-      onload="this.media='all'"
+      onload="this.media = 'all'"
     />
     <noscript>
       <link
@@ -49,8 +29,7 @@
       />
     </noscript>
 
-    <title>The Plug Market - Authentic Sneakers & Streetwear Marketplace</title>
-
+    <title>The Plug Market</title>
     <!-- Site name for Google Search + social (static so crawlers see it without JS) -->
     <script type="application/ld+json">
       {
@@ -76,29 +55,39 @@
         "name": "The Plug Market",
         "url": "https://theplugmarket.in/",
         "logo": "https://theplugmarket.in/logo.svg",
-        "sameAs": [
-        "https://www.instagram.com/the.plugmarket/"
-         ]
+        "sameAs": ["https://www.instagram.com/the.plugmarket/"]
       }
     </script>
 
     <!-- Google Analytics 4 — Measurement ID: G-M950V9PN8Y -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M950V9PN8Y"></script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-M950V9PN8Y"
+    ></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
       // send_page_view: false — page views are fired by the Analytics React component
       // so that client-side route changes are tracked correctly.
-      gtag('config', 'G-M950V9PN8Y', { send_page_view: false });
+      gtag("config", "G-M950V9PN8Y", { send_page_view: false });
     </script>
 
     <!-- Microsoft Clarity — Project ID: vnqsd1wrtj -->
     <script type="text/javascript">
-      (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+      (function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            (c[a].q = c[a].q || []).push(arguments);
+          };
+        t = l.createElement(r);
+        t.async = 1;
+        t.src = "https://www.clarity.ms/tag/" + i;
+        y = l.getElementsByTagName(r)[0];
+        y.parentNode.insertBefore(t, y);
       })(window, document, "clarity", "script", "vnqsd1wrtj");
     </script>
   </head>
