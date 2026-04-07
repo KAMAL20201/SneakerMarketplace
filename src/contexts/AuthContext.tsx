@@ -39,9 +39,10 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null | undefined>(null);
-  const [loading, setLoading] = useState(
-    typeof window !== "undefined" // On server, skip auth loading entirely
-  );
+  // Start as false on both server and client to avoid hydration mismatch.
+  // Auth state loads asynchronously via useEffect — the app renders with
+  // user=null initially, which is the same on server and client.
+  const [loading, setLoading] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [operationAfterLogin, setOperationAfterLogin] = useState<() => void>(
     () => {}
