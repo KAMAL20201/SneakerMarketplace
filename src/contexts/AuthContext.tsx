@@ -39,7 +39,9 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null | undefined>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(
+    typeof window !== "undefined" // On server, skip auth loading entirely
+  );
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [operationAfterLogin, setOperationAfterLogin] = useState<() => void>(
     () => {}
@@ -55,6 +57,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -97,6 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const handleSocialLogin = async (provider: string) => {
+    if (typeof window === "undefined") return;
     setIsLoggingIn(true);
 
     try {

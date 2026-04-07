@@ -7,6 +7,8 @@ const ScrollToTop = () => {
   const { pathname, key } = useLocation();
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     // For the browse page, let it handle its own scroll restoration on back navigation
     if (pathname === "/browse") {
       try {
