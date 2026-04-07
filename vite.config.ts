@@ -4,7 +4,7 @@ import { reactRouter } from "@react-router/dev/vite";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
-export default defineConfig(({ isSsrBuild }) => ({
+export default defineConfig(({ isSsrBuild, command }) => ({
   plugins: [
     reactRouter(),
     tailwindcss(),
@@ -61,10 +61,13 @@ export default defineConfig(({ isSsrBuild }) => ({
     },
   },
   // Bundle all deps into SSR build so the Vercel serverless function
-  // doesn't need node_modules at runtime
-  ssr: {
-    noExternal: true,
-  },
+  // doesn't need node_modules at runtime.
+  // Only apply in production builds — in dev, Vite's SSR module runner
+  // can't handle CJS packages (like React) bundled as ESM.
+  ssr:
+    command === "build"
+      ? { noExternal: true }
+      : undefined,
   // For production builds — React Router handles code splitting automatically
   build: {
     rollupOptions: isSsrBuild
