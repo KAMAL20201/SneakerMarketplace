@@ -308,7 +308,11 @@ export default function ProductDetailPage() {
       setSelectedImageIndex(0);
     } catch (err: any) {
       setError(err.message);
-      window.prerenderReady = true; // Don't let Prerender hang on errors
+      setTimeout(() => {
+        window.prerenderReady = true;
+      }, 500); // ← add timeout
+
+      // window.prerenderReady = true; // Don't let Prerender hang on errors
     } finally {
       setLoading(false);
     }
@@ -322,19 +326,26 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!listing) return;
-    supabase
-      .from("listings_with_images")
-      .select("*")
-      .eq("status", "active")
-      .eq("brand", listing.brand)
-      .neq("id", productId)
-      .order("created_at", { ascending: false })
-      .limit(10)
-      .then(({ data }) => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("listings_with_images")
+          .select("*")
+          .eq("status", "active")
+          .eq("brand", listing.brand)
+          .neq("id", productId)
+          .order("created_at", { ascending: false })
+          .limit(10);
         setSimilarProducts(data ?? []);
-        // Tell Prerender the page is ready to snapshot
-        window.prerenderReady = true;
-      });
+      } catch (err) {
+        console.error("Error fetching similar products:", err);
+        // Handle error silently
+      } finally {
+        setTimeout(() => {
+          window.prerenderReady = true;
+        }, 500);
+      }
+    })();
   }, [listing]);
 
   const handleVariantSelect = (variantId: string) => {

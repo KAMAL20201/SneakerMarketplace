@@ -90,6 +90,26 @@ const Home = () => {
           property="og:description"
           content="Buy 100% authentic sneakers & streetwear in India. Shop verified Nike, Adidas, Jordan & more on The Plug Market."
         />
+
+        <meta
+          property="og:image"
+          content="https://theplugmarket.in/og-image.jpg"
+        />
+        <meta property="og:type" content="website" />
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://theplugmarket.in/" />
+        <meta
+          property="twitter:title"
+          content="The Plug Market — Authentic Sneakers & Streetwear Marketplace India"
+        />
+        <meta
+          property="twitter:description"
+          content="Buy 100% authentic sneakers & streetwear in India. Shop verified Nike, Adidas, Jordan & more on The Plug Market."
+        />
+        <meta
+          property="twitter:image"
+          content="https://theplugmarket.in/og-image.jpg"
+        />
       </Helmet>
       {/* Hero Section */}
       <section className="px-4 py-6">
