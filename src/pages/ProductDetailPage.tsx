@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
-import { useParams, useSearchParams, useLoaderData, data, redirect } from "react-router";
+import { useParams, useSearchParams, useLoaderData, useLocation, data, redirect } from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase, toStorageUrl } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
@@ -238,7 +238,12 @@ export default function ProductDetailPage() {
   // ── URL params ────────────────────────────────────────────────────────────
   const { id: productId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const preSelectedSize = searchParams.get("size");
+  const location = useLocation();
+  // Prefer state-based size (passed from Browse/Category pages, not visible to crawlers).
+  // Fall back to ?size= query param for any existing bookmarked/indexed links.
+  const preSelectedSize =
+    (location.state as { size?: string } | null)?.size ??
+    searchParams.get("size");
 
   // ── Derived initial state from loader data ────────────────────────────────
   const buildVariantSizesMap = () => {
