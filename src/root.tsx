@@ -24,6 +24,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/logo-192.png" />
 
+        {/* Preconnect for Supabase — eliminates ~600ms DNS+TLS cold-start
+            on the first client-side Supabase call (similar products, etc.) */}
+        <link rel="preconnect" href={import.meta.env.VITE_SUPABASE_URL} crossOrigin="" />
+        <link rel="dns-prefetch" href={import.meta.env.VITE_SUPABASE_URL} />
+
         {/* Preconnect for Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

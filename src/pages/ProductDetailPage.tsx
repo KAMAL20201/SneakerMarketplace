@@ -162,6 +162,25 @@ export async function loader({ params }: Route.LoaderArgs) {
   );
 }
 
+// ─── Headers export ───────────────────────────────────────────────────────────
+// React Router merges these into the final HTTP response for BOTH the full-page
+// HTML and the prefetch .data request.
+// `Vercel-CDN-Cache-Control` is the key: without it, @vercel/react-router
+// overrides our Cache-Control with `max-age=0, must-revalidate`, meaning the
+// Mumbai/Singapore edge nodes never cache and every request cold-hits the US
+// serverless function. With it, the edge caches the product page for 5 minutes
+// and serves repeat visitors / prefetches in <20ms instead of 1-2s.
+export function headers() {
+  const cacheValue = "public, s-maxage=300, stale-while-revalidate=600";
+  return {
+    "Cache-Control": cacheValue,
+    // Vercel-specific: overrides the adapter's default no-cache for SSR routes
+    "Vercel-CDN-Cache-Control": cacheValue,
+    // Cloudflare / other CDN layers
+    "CDN-Cache-Control": cacheValue,
+  };
+}
+
 // ─── Meta export ──────────────────────────────────────────────────────────────
 // Replaces react-helmet-async <Helmet> for SSR — Google sees these in the
 // initial HTML response, no JS execution needed.
