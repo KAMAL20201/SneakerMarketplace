@@ -50,6 +50,7 @@ import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface Listing {
   id: string;
+  slug: string;
   product_id: string;
   title: string;
   description: string;
@@ -1245,8 +1246,8 @@ const Browse = () => {
                 <Link
                   to={
                     filters.size.length > 0
-                      ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}?size=${encodeURIComponent(filters.size[0])}`
-                      : ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)
+                      ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}?size=${encodeURIComponent(filters.size[0])}`
+                      : ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)
                   }
                   key={listing.id}
                 >

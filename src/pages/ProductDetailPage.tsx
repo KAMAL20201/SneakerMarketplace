@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
-import { useParams, useSearchParams, useLoaderData, data } from "react-router";
+import { useParams, useSearchParams, useLoaderData, data, redirect } from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase, toStorageUrl } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
@@ -42,55 +42,76 @@ declare global {
 // ─── Server Loader ────────────────────────────────────────────────────────────
 // Runs on the server for every request — gives bots fully-rendered HTML with
 // product data already in the page. No more blank <div id="root"></div>.
+
+const isUUID = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s);
+
 export async function loader({ params }: Route.LoaderArgs) {
   const ssrSupabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
   );
 
-  // Fetch listing, images, variants (with nested sizes), and legacy sizes ALL
-  // in parallel. Previously variant sizes were fetched sequentially after
-  // variants — this saves ~200-400ms per product page load.
+  const param = params.id!;
+
+  // If the URL still uses a raw UUID (e.g. old Google-indexed links), look up
+  // the slug and issue a permanent redirect so search engines update their index.
+  if (isUUID(param)) {
+    const { data: slugRow } = await ssrSupabase
+      .from("product_listings")
+      .select("slug")
+      .eq("id", param)
+      .eq("status", "active")
+      .single();
+    if (!slugRow?.slug) {
+      throw new Response("Not Found", { status: 404 });
+    }
+    throw redirect(`/product/${slugRow.slug}`, 301);
+  }
+
+  // Normal slug-based lookup
+  const { data: listingData } = await ssrSupabase
+    .from("product_listings")
+    .select(
+      `*, sellers (
+      id, display_name, phone, bio, profile_image_url,
+      rating, total_reviews, location, is_verified, created_at, email
+    )`,
+    )
+    .eq("slug", param)
+    .eq("status", "active")
+    .single();
+
+  if (!listingData) {
+    throw new Response("Not Found", { status: 404 });
+  }
+
+  // Fetch images, variants (with nested sizes), and legacy sizes in parallel
+  // now that we have the listing id (UUID).
+  const listingId = listingData.id;
   const [
-    { data: listingData },
     { data: imagesData },
     { data: variantsWithSizes },
     { data: allLegacySizesData },
   ] = await Promise.all([
     ssrSupabase
-      .from("product_listings")
-      .select(
-        `*, sellers (
-        id, display_name, phone, bio, profile_image_url,
-        rating, total_reviews, location, is_verified, created_at, email
-      )`,
-      )
-      .eq("id", params.id)
-      .eq("status", "active")
-      .single(),
-    ssrSupabase
       .from("product_images")
       .select("id, image_url, is_poster_image")
-      .eq("product_id", params.id)
+      .eq("product_id", listingId)
       .order("is_poster_image", { ascending: false })
       .order("id", { ascending: true }),
     // Fetch variants with their sizes in a single query via join
     ssrSupabase
       .from("product_variants")
       .select("id, color_name, color_hex, price, display_order, image_url, product_variant_sizes(variant_id, size_value, price, is_sold)")
-      .eq("listing_id", params.id)
+      .eq("listing_id", listingId)
       .order("display_order", { ascending: true }),
     // Also fetch legacy sizes in parallel
     ssrSupabase
       .from("product_listing_sizes")
       .select("size_value, price, is_sold")
-      .eq("listing_id", params.id)
+      .eq("listing_id", listingId)
       .order("price", { ascending: true }),
   ]);
-
-  if (!listingData) {
-    throw new Response("Not Found", { status: 404 });
-  }
 
   // Flatten sellers join into seller_details
   const listing = {
@@ -131,7 +152,7 @@ export function meta({ data }: Route.MetaArgs) {
   const pageDescription = `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop authentic sneakers and streetwear on The Plug Market.`;
   const posterImage =
     images?.[0]?.image_url ?? "https://theplugmarket.in/og-image.jpg";
-  const canonicalUrl = `https://theplugmarket.in/product/${listing.id}`;
+  const canonicalUrl = `https://theplugmarket.in/product/${listing.slug}`;
 
   return [
     { title: pageTitle },
@@ -352,7 +373,7 @@ export default function ProductDetailPage() {
       .select("*")
       .eq("status", "active")
       .eq("brand", listing.brand)
-      .neq("id", productId)
+      .neq("id", initialListing.id)
       .order("created_at", { ascending: false })
       .limit(10)
       .then(({ data }) => {

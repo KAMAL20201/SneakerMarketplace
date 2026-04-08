@@ -13,6 +13,7 @@ interface SearchDropdownProps {
 
 interface SearchResult {
   id: string;
+  slug: string;
   title: string;
   brand: string;
   price: number;
@@ -74,7 +75,7 @@ export function SearchDropdown({
       const filterStr = buildMultiWordSearchFilter(query, ["title", "brand"]);
       let q = supabase
         .from("listings_with_images")
-        .select("id, title, brand, price, image_url")
+        .select("id, slug, title, brand, price, image_url")
         .eq("status", "active");
       if (filterStr) q = q.or(filterStr);
       const { data } = await q.limit(5);
@@ -116,10 +117,10 @@ export function SearchDropdown({
     navigate(`${ROUTE_NAMES.BROWSE}?search=${encodeURIComponent(query)}`);
   };
 
-  const handleResultClick = (id: string) => {
+  const handleResultClick = (result: SearchResult) => {
     setIsOpen(false);
     setSearchTerm("");
-    navigate(ROUTE_HELPERS.PRODUCT_DETAIL(id));
+    navigate(ROUTE_HELPERS.PRODUCT_DETAIL(result.slug ?? result.id));
   };
 
   const showDropdown = isOpen && searchTerm.trim().length > 0;
@@ -163,7 +164,7 @@ export function SearchDropdown({
               {results.map((result) => (
                 <button
                   key={result.id}
-                  onClick={() => handleResultClick(result.id)}
+                  onClick={() => handleResultClick(result)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">

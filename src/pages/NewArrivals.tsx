@@ -12,6 +12,7 @@ import { createClient } from "@supabase/supabase-js";
 
 interface Listing {
   id: string;
+  slug: string;
   title: string;
   price: number;
   brand: string;
@@ -29,7 +30,7 @@ export async function loader(_: Route.LoaderArgs) {
   const { data: rows } = await supabase
     .from("listings_with_images")
     .select(
-      "id, title, price, brand, size_value, condition, image_url, created_at",
+      "id, slug, title, price, brand, size_value, condition, image_url, created_at",
     )
     .eq("status", "active")
     .order("created_at", { ascending: false })
@@ -106,7 +107,7 @@ const NewArrivals = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {listings.map((listing) => (
               <div key={listing.id} className="relative">
-                <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.id)}>
+                <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}>
                   <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
                     <CardContent className="p-0">
                       <div className="relative h-40 sm:h-48 overflow-hidden">

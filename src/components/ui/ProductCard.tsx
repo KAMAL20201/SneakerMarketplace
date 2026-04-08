@@ -11,6 +11,7 @@ import { toStorageUrl } from "@/lib/supabase";
 interface ProductCardProps {
   product: {
     id: string;
+    slug?: string;
     title: string;
     brand: string;
     price: number;
@@ -52,7 +53,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
     return (
       <div className="h-full flex relative">
         <Link
-          to={ROUTE_HELPERS.PRODUCT_DETAIL(product.id)}
+          to={ROUTE_HELPERS.PRODUCT_DETAIL(product.slug ?? product.id)}
           prefetch="intent"
           className="h-full flex w-full"
         >
@@ -126,7 +127,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
   // Horizontal variant (default)
   return (
     <div className="relative">
-      <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.id)} prefetch="intent">
+      <Link to={ROUTE_HELPERS.PRODUCT_DETAIL(product.slug ?? product.id)} prefetch="intent">
         <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 cursor-pointer rounded-3xl overflow-hidden">
           <CardContent className="p-0">
             <div className="flex p-4 gap-2">
