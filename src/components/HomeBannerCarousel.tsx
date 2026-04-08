@@ -113,7 +113,7 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
               style={{ transform: `translateX(${offset * 100}%)` }}
             >
               {banner.cta_url ? (
-                <Link to={banner.cta_url} className="block w-full h-full">
+                <Link to={banner.cta_url} prefetch="intent" className="block w-full h-full">
                   {img}
                 </Link>
               ) : (

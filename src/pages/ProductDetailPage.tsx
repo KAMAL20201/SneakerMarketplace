@@ -69,14 +69,23 @@ export async function loader({ params }: Route.LoaderArgs) {
     throw redirect(`/product/${slugRow.slug}`, 301);
   }
 
-  // Normal slug-based lookup
+  // Single round-trip: fetch listing + all related data in one PostgREST query.
+  // Previously this was 2 sequential Supabase calls (~650ms each = ~1.3s).
+  // PostgREST compiles the nested select into a single SQL query with JOINs.
   const { data: listingData } = await ssrSupabase
     .from("product_listings")
     .select(
       `*, sellers (
-      id, display_name, phone, bio, profile_image_url,
-      rating, total_reviews, location, is_verified, created_at, email
-    )`,
+        id, display_name, phone, bio, profile_image_url,
+        rating, total_reviews, location, is_verified, created_at, email
+      ),
+      product_images (id, image_url, is_poster_image),
+      product_variants (
+        id, color_name, color_hex, price, display_order, image_url,
+        product_variant_sizes (variant_id, size_value, price, is_sold)
+      ),
+      product_listing_sizes (size_value, price, is_sold),
+      reviews (id, rating, comment, reviewer_name, verified_purchase, created_at, is_approved)`,
     )
     .eq("slug", param)
     .eq("status", "active")
@@ -86,74 +95,68 @@ export async function loader({ params }: Route.LoaderArgs) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  // Fetch images, variants (with nested sizes), and legacy sizes in parallel
-  // now that we have the listing id (UUID).
-  const listingId = listingData.id;
-  const [
-    { data: imagesData },
-    { data: variantsWithSizes },
-    { data: allLegacySizesData },
-    { data: reviewsData },
-    { data: ratingData },
-  ] = await Promise.all([
-    ssrSupabase
-      .from("product_images")
-      .select("id, image_url, is_poster_image")
-      .eq("product_id", listingId)
-      .order("is_poster_image", { ascending: false })
-      .order("id", { ascending: true }),
-    // Fetch variants with their sizes in a single query via join
-    ssrSupabase
-      .from("product_variants")
-      .select("id, color_name, color_hex, price, display_order, image_url, product_variant_sizes(variant_id, size_value, price, is_sold)")
-      .eq("listing_id", listingId)
-      .order("display_order", { ascending: true }),
-    // Also fetch legacy sizes in parallel
-    ssrSupabase
-      .from("product_listing_sizes")
-      .select("size_value, price, is_sold")
-      .eq("listing_id", listingId)
-      .order("price", { ascending: true }),
-    // Fetch verified buyer reviews (only approved ones)
-    ssrSupabase
-      .from("reviews")
-      .select("id, rating, comment, reviewer_name, verified_purchase, created_at")
-      .eq("product_id", listingId)
-      .eq("is_approved", true)
-      .order("created_at", { ascending: false })
-      .limit(20),
-    // Fetch aggregate rating from view
-    ssrSupabase
-      .from("listing_aggregate_ratings")
-      .select("average_rating, review_count")
-      .eq("listing_id", listingId)
-      .maybeSingle(),
-  ]);
+  // Sort/filter nested collections in JS (small sets, negligible cost).
+  const imagesData = (listingData.product_images ?? []).sort((a, b) => {
+    if (b.is_poster_image !== a.is_poster_image) return b.is_poster_image ? 1 : -1;
+    return a.id > b.id ? 1 : -1;
+  });
+
+  const rawVariants = (listingData.product_variants ?? []).sort(
+    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0),
+  );
+  const variants = rawVariants.map(({ product_variant_sizes, ...v }) => v);
+  const variantSizesData = rawVariants.flatMap(
+    (v) => (v.product_variant_sizes ?? []).map((s: Record<string, unknown>) => ({ ...s, variant_id: v.id })),
+  );
+
+  const allLegacySizesData = (listingData.product_listing_sizes ?? []).sort(
+    (a, b) => (a.price ?? 0) - (b.price ?? 0),
+  );
+  const legacySizes = rawVariants.length === 0 ? allLegacySizesData : [];
+
+  // Filter approved reviews, sort by recency, cap at 20.
+  const allReviews = (listingData.reviews ?? []) as Array<{
+    id: string; rating: number; comment: string | null;
+    reviewer_name: string | null; verified_purchase: boolean;
+    created_at: string; is_approved: boolean;
+  }>;
+  const reviewsData = allReviews
+    .filter((r) => r.is_approved)
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+    .slice(0, 20)
+    .map(({ is_approved: _, ...r }) => r);
+
+  // Compute aggregate rating from approved reviews (replaces listing_aggregate_ratings view query).
+  const approvedRatings = allReviews.filter((r) => r.is_approved).map((r) => r.rating);
+  const ratingData =
+    approvedRatings.length > 0
+      ? {
+          average_rating:
+            approvedRatings.reduce((s, r) => s + r, 0) / approvedRatings.length,
+          review_count: approvedRatings.length,
+        }
+      : null;
 
   // Flatten sellers join into seller_details
   const listing = {
     ...listingData,
     seller_details: listingData.sellers ?? null,
     sellers: undefined,
+    product_images: undefined,
+    product_variants: undefined,
+    product_listing_sizes: undefined,
+    reviews: undefined,
   };
-
-  // Separate variants from their nested sizes
-  const rawVariants = variantsWithSizes ?? [];
-  const variants = rawVariants.map(({ product_variant_sizes, ...v }) => v);
-  const variantSizesData = rawVariants.flatMap(
-    (v) => (v.product_variant_sizes ?? []).map((s: Record<string, unknown>) => ({ ...s, variant_id: v.id })),
-  );
-  const legacySizes = rawVariants.length === 0 ? (allLegacySizesData ?? []) : [];
 
   return data(
     {
       listing,
-      images: imagesData ?? [],
+      images: imagesData,
       variants,
       variantSizesData,
       legacySizes,
-      reviews: reviewsData ?? [],
-      aggregateRating: ratingData ?? null,
+      reviews: reviewsData,
+      aggregateRating: ratingData,
     },
     { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
   );
