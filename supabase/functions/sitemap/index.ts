@@ -29,7 +29,7 @@ function escapeXml(str: string): string {
 }
 
 function buildSitemap(
-  dynamicUrls: Array<{ id: string; updated_at: string | null }>
+  dynamicUrls: Array<{ slug: string; updated_at: string | null }>
 ): string {
   const staticEntries = STATIC_URLS.map(
     (u) => `  <url>
@@ -41,7 +41,7 @@ function buildSitemap(
 
   const dynamicEntries = dynamicUrls
     .map((row) => {
-      const loc = escapeXml(`${SITE_URL}/product/${row.id}`);
+      const loc = escapeXml(`${SITE_URL}/product/${row.slug}`);
       const lastmod = row.updated_at
         ? new Date(row.updated_at).toISOString().split("T")[0]
         : new Date().toISOString().split("T")[0];
@@ -75,7 +75,7 @@ Deno.serve(async (_req: Request) => {
     // Fetch all active listings — only id and updated_at needed
     const { data, error } = await supabase
       .from("product_listings")
-      .select("id, updated_at")
+      .select("slug, updated_at")
       .eq("status", "active")
       .order("updated_at", { ascending: false });
 

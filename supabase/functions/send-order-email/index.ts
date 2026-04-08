@@ -57,7 +57,8 @@ interface EmailRequest {
     | "order_delivered"
     | "order_cancelled"
     | "payment_received"
-    | "shipping_reminder";
+    | "shipping_reminder"
+    | "review_request";
   recipient_email: string;
   recipient_name: string;
   order_data: OrderEmailData;
@@ -252,6 +253,44 @@ function buildOrderShipped(
   `;
 }
 
+function buildReviewRequest(
+  name: string,
+  order: OrderEmailData,
+  reviewUrl: string
+): string {
+  return `
+    <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#111827;">How was your purchase?</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${name}, we hope you're loving your new pickup. Your review helps other sneaker heads make better decisions!</p>
+
+    ${order.product_image ? `
+    <div style="text-align:center;margin-bottom:24px;">
+      <img src="${order.product_image}" alt="${order.product_title}" style="max-width:180px;max-height:180px;object-fit:contain;border-radius:16px;background:#f9fafb;padding:12px;" />
+    </div>` : ""}
+
+    <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Your purchase</p>
+      <p style="margin:0;font-size:17px;font-weight:700;color:#111827;">${order.product_title}</p>
+    </div>
+
+    <div style="text-align:center;margin:8px 0 20px;">
+      <p style="margin:0 0 12px;color:#374151;font-size:15px;font-weight:600;">Tap a star to rate your experience:</p>
+      <div style="font-size:36px;letter-spacing:4px;">
+        <a href="${reviewUrl}&rating=1" style="text-decoration:none;">⭐</a>
+        <a href="${reviewUrl}&rating=2" style="text-decoration:none;">⭐</a>
+        <a href="${reviewUrl}&rating=3" style="text-decoration:none;">⭐</a>
+        <a href="${reviewUrl}&rating=4" style="text-decoration:none;">⭐</a>
+        <a href="${reviewUrl}&rating=5" style="text-decoration:none;">⭐</a>
+      </div>
+    </div>
+
+    ${ctaButton("Leave a Review", reviewUrl)}
+
+    <p style="margin:16px 0 0;color:#9ca3af;font-size:12px;text-align:center;">
+      This link is personal to you and expires in 30 days.
+    </p>
+  `;
+}
+
 function buildOrderDelivered(
   name: string,
   order: OrderEmailData,
@@ -354,6 +393,7 @@ const DEFAULT_ACTION_URLS: Record<EmailRequest["type"], string> = {
   order_delivered:   BASE_URL,
   order_cancelled:   `${BASE_URL}/contact-us`,
   shipping_reminder: `${BASE_URL}/my-orders`,
+  review_request:    `${BASE_URL}/review`,
 };
 
 function buildEmailContent(req: EmailRequest): { subject: string; html: string } {
@@ -382,6 +422,9 @@ function buildEmailContent(req: EmailRequest): { subject: string; html: string }
     case "shipping_reminder":
       body = buildShippingReminder(recipient_name, order_data, actionUrl);
       break;
+    case "review_request":
+      body = buildReviewRequest(recipient_name, order_data, actionUrl);
+      break;
     default:
       body = `<p>Notification for order #${order_data.order_id}</p>`;
   }
@@ -397,6 +440,7 @@ function getDefaultSubject(type: string, productTitle: string): string {
     case "order_delivered":   return `✅ Order Delivered — ${productTitle}`;
     case "order_cancelled":   return `❌ Order Cancelled — ${productTitle}`;
     case "shipping_reminder": return `⏰ Reminder: Ship your order within 24 hours`;
+    case "review_request":    return `How was your ${productTitle}? Leave a review`;
     default:                  return `Order Update — ${productTitle}`;
   }
 }

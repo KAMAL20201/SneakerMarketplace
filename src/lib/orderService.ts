@@ -456,11 +456,120 @@ export class OrderService {
 
       if (error) throw error;
 
-      // Send email notifications based on status change
-      // await this.sendStatusUpdateEmails(orderId, status, trackingNumber);
+      // When an order is delivered, send a review request email to the buyer
+      if (status === "delivered") {
+        await this.sendReviewRequestEmail(orderId);
+      }
     } catch (error) {
       console.error("Error updating order status:", error);
       throw error;
+    }
+  }
+
+  // Send a review-request email after delivery
+  private static async sendReviewRequestEmail(orderId: string): Promise<void> {
+    try {
+      // Fetch order with product details needed for the email
+      const { data: order, error } = await supabase
+        .from("orders")
+        .select(`
+          id,
+          product_id,
+          buyer_id,
+          buyer_email,
+          buyer_name,
+          product_listings (
+            id,
+            title,
+            slug,
+            product_images ( image_url, is_poster_image )
+          )
+        `)
+        .eq("id", orderId)
+        .single();
+
+      if (error || !order) {
+        logger.warn(`sendReviewRequestEmail: order ${orderId} not found`);
+        return;
+      }
+
+      // Resolve buyer email — guest orders store it directly, logged-in buyers may not
+      let buyerEmail = order.buyer_email ?? null;
+      let buyerName = order.buyer_name ?? "Customer";
+
+      if (!buyerEmail && order.buyer_id) {
+        const { data: profile } = await supabase
+          .from("sellers")
+          .select("email, display_name")
+          .eq("id", order.buyer_id)
+          .single();
+        buyerEmail = profile?.email ?? null;
+        buyerName = profile?.display_name ?? buyerName;
+      }
+
+      if (!buyerEmail) {
+        logger.warn(`sendReviewRequestEmail: no buyer email for order ${orderId}`);
+        return;
+      }
+
+      const listing = Array.isArray(order.product_listings)
+        ? order.product_listings[0]
+        : order.product_listings;
+
+      if (!listing) {
+        logger.warn(`sendReviewRequestEmail: no listing for order ${orderId}`);
+        return;
+      }
+
+      const listingImages = Array.isArray(listing.product_images) ? listing.product_images : [];
+      const posterImage =
+        listingImages.find((img: { is_poster_image: boolean }) => img.is_poster_image)?.image_url ??
+        listingImages[0]?.image_url ??
+        undefined;
+
+      // Create a single-use review token via SECURITY DEFINER RPC
+      const { data: token, error: tokenError } = await supabase.rpc(
+        "create_review_token",
+        {
+          p_order_id:   orderId,
+          p_listing_id: listing.id,
+          p_email:      buyerEmail,
+        }
+      );
+
+      if (tokenError || !token) {
+        logger.warn(`sendReviewRequestEmail: failed to create token — ${tokenError?.message}`);
+        return;
+      }
+
+      const reviewUrl = `${window.location.origin}/review?token=${token}`;
+
+      // Send email via the existing edge function
+      await supabase.functions.invoke("send-order-email", {
+        body: {
+          type:            "review_request",
+          recipient_email: buyerEmail,
+          recipient_name:  buyerName,
+          order_data: {
+            order_id:      orderId,
+            product_title: listing.title,
+            product_image: posterImage,
+            amount:        0,
+            currency:      "INR",
+            order_status:  "delivered",
+          },
+          template_data: {
+            action_url: reviewUrl,
+          },
+        },
+      });
+
+      logger.info(`Review request email sent to ${buyerEmail} for order ${orderId}`);
+    } catch (err) {
+      // Never let review email failure bubble up and break the status update
+      logger.warn(
+        `sendReviewRequestEmail failed (non-fatal): ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     }
   }
 

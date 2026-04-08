@@ -18,6 +18,7 @@ export default [
   route("wishlist", "./pages/Wishlist.tsx"),
 
   // Static public pages
+  route("review", "./pages/ReviewPage.tsx"),
   route("about", "./pages/AboutUs.tsx"),
   route("contact-us", "./pages/ContactUs.tsx"),
   route("privacy", "./pages/PrivacyPolicy.tsx"),

@@ -17,6 +17,7 @@ import {
   Phone,
   User,
   MapPin,
+  PackageCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -485,6 +486,36 @@ const MyOrders = () => {
                               >
                                 <Truck className="h-4 w-4 mr-2" />
                                 Ship now
+                              </Button>
+                            )}
+                            {order.status === "shipped" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white border-gray-200 rounded-2xl"
+                                onClick={async () => {
+                                  try {
+                                    await OrderService.updateOrderStatus(
+                                      order.id,
+                                      "delivered",
+                                    );
+                                    setSellOrders((prev) =>
+                                      prev.map((o) =>
+                                        o.id === order.id
+                                          ? { ...o, status: "delivered" as const }
+                                          : o,
+                                      ),
+                                    );
+                                    toast.success(
+                                      "Order marked as delivered! Review request sent to buyer.",
+                                    );
+                                  } catch {
+                                    toast.error("Failed to mark order as delivered");
+                                  }
+                                }}
+                              >
+                                <PackageCheck className="h-4 w-4 mr-2" />
+                                Mark as Delivered
                               </Button>
                             )}
                           </div>

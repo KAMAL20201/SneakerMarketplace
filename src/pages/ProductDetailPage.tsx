@@ -7,6 +7,7 @@ import {
   Ruler,
   Truck,
   Zap,
+  Star,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -92,6 +93,8 @@ export async function loader({ params }: Route.LoaderArgs) {
     { data: imagesData },
     { data: variantsWithSizes },
     { data: allLegacySizesData },
+    { data: reviewsData },
+    { data: ratingData },
   ] = await Promise.all([
     ssrSupabase
       .from("product_images")
@@ -111,6 +114,20 @@ export async function loader({ params }: Route.LoaderArgs) {
       .select("size_value, price, is_sold")
       .eq("listing_id", listingId)
       .order("price", { ascending: true }),
+    // Fetch verified buyer reviews (only approved ones)
+    ssrSupabase
+      .from("reviews")
+      .select("id, rating, comment, reviewer_name, verified_purchase, created_at")
+      .eq("product_id", listingId)
+      .eq("is_approved", true)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    // Fetch aggregate rating from view
+    ssrSupabase
+      .from("listing_aggregate_ratings")
+      .select("average_rating, review_count")
+      .eq("listing_id", listingId)
+      .maybeSingle(),
   ]);
 
   // Flatten sellers join into seller_details
@@ -135,6 +152,8 @@ export async function loader({ params }: Route.LoaderArgs) {
       variants,
       variantSizesData,
       legacySizes,
+      reviews: reviewsData ?? [],
+      aggregateRating: ratingData ?? null,
     },
     { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
   );
@@ -190,6 +209,8 @@ export default function ProductDetailPage() {
     variants: initialVariants,
     variantSizesData,
     legacySizes,
+    reviews,
+    aggregateRating,
   } = useLoaderData<typeof loader>();
 
   // ── URL params ────────────────────────────────────────────────────────────
@@ -493,6 +514,17 @@ export default function ProductDetailPage() {
                   name: "The Plug Market",
                 },
               },
+              ...(aggregateRating && aggregateRating.review_count > 0
+                ? {
+                    aggregateRating: {
+                      "@type": "AggregateRating",
+                      ratingValue: aggregateRating.average_rating,
+                      reviewCount: aggregateRating.review_count,
+                      bestRating: 5,
+                      worstRating: 1,
+                    },
+                  }
+                : {}),
               breadcrumb: {
                 "@type": "BreadcrumbList",
                 itemListElement: [
@@ -1201,6 +1233,58 @@ export default function ProductDetailPage() {
           </Dialog>
         </div>
       </div>
+
+      {/* Buyer Reviews */}
+      <section className="px-4 py-6 lg:px-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Buyer Reviews</h2>
+          {aggregateRating && aggregateRating.review_count > 0 && (
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <span className="font-bold text-gray-900">{aggregateRating.average_rating}</span>
+              <span className="text-gray-400 text-sm">({aggregateRating.review_count})</span>
+            </div>
+          )}
+        </div>
+
+        {reviews.length === 0 ? (
+          <div className="bg-gray-50 rounded-3xl p-8 text-center">
+            <Star className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">No reviews yet — be the first verified buyer to review this item.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div key={review.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <Star
+                        key={n}
+                        className={`h-4 w-4 ${n <= review.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {new Date(review.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-gray-800 mb-1">
+                  {review.reviewer_name}
+                  {review.verified_purchase && (
+                    <span className="ml-2 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                      Verified Buyer
+                    </span>
+                  )}
+                </p>
+                {review.comment && (
+                  <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* You May Also Like */}
       {similarProducts.length > 0 && (
