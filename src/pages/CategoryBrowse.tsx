@@ -1152,11 +1152,8 @@ const CategoryBrowse = () => {
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
               {listings.map((listing) => (
                 <Link
-                  to={
-                    filters.size.length > 0
-                      ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}?size=${encodeURIComponent(filters.size[0])}`
-                      : ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)
-                  }
+                  to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}
+                  state={filters.size.length > 0 ? { size: filters.size[0] } : undefined}
                   key={listing.id}
                 >
                   <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
