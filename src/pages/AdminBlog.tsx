@@ -35,11 +35,11 @@ type BlockType = "paragraph" | "heading" | "image" | "quote" | "list";
 
 interface Block {
   type: BlockType;
-  content?: string;  // paragraph, heading, quote
-  url?: string;      // image
-  alt?: string;      // image
-  caption?: string;  // image
-  items?: string[];  // list (newline-separated in editor)
+  content?: string; // paragraph, heading, quote
+  url?: string; // image
+  alt?: string; // image
+  caption?: string; // image
+  items?: string[]; // list (newline-separated in editor)
   _listText?: string; // editor-only helper for list textarea
 }
 
@@ -171,7 +171,9 @@ function ImageBlock({
       {!block.url && (
         <Input
           placeholder="Or paste image URL…"
-          onBlur={(e) => { if (e.target.value) onUpdate({ url: e.target.value }); }}
+          onBlur={(e) => {
+            if (e.target.value) onUpdate({ url: e.target.value });
+          }}
           className="text-sm"
         />
       )}
@@ -329,18 +331,18 @@ function BlockEditor({
 
       {/* Add block buttons */}
       <div className="flex flex-wrap gap-2 pt-1">
-        {(["paragraph", "heading", "image", "quote", "list"] as BlockType[]).map(
-          (type) => (
-            <button
-              key={type}
-              onClick={() => addBlock(type)}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border border-dashed border-gray-300 text-gray-500 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
-            >
-              <Plus className="h-3 w-3" />
-              {BLOCK_LABELS[type]}
-            </button>
-          )
-        )}
+        {(
+          ["paragraph", "heading", "image", "quote", "list"] as BlockType[]
+        ).map((type) => (
+          <button
+            key={type}
+            onClick={() => addBlock(type)}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border border-dashed border-gray-300 text-gray-500 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            {BLOCK_LABELS[type]}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -348,7 +350,7 @@ function BlockEditor({
 
 // ---------- main component ----------
 
-export default function AdminBlog() {
+function AdminBlog() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "new" | "edit">("list");
@@ -365,7 +367,7 @@ export default function AdminBlog() {
     const { data, error } = await supabase
       .from("blog_posts")
       .select(
-        "id, title, slug, excerpt, cover_image_url, author, tags, is_published, published_at, read_time_minutes, meta_title, meta_description, content, created_at"
+        "id, title, slug, excerpt, cover_image_url, author, tags, is_published, published_at, read_time_minutes, meta_title, meta_description, content, created_at",
       )
       .order("created_at", { ascending: false });
     if (error) toast.error("Failed to load posts");
@@ -401,7 +403,7 @@ export default function AdminBlog() {
     });
     // Hydrate _listText for list blocks
     const hydratedBlocks = (post.content as Block[]).map((b) =>
-      b.type === "list" ? { ...b, _listText: (b.items ?? []).join("\n") } : b
+      b.type === "list" ? { ...b, _listText: (b.items ?? []).join("\n") } : b,
     );
     setBlocks(hydratedBlocks);
     setEditingPost(post);
@@ -429,9 +431,9 @@ export default function AdminBlog() {
       toast.error("Upload failed: " + error.message);
       return null;
     }
-    const { data: { publicUrl } } = supabase.storage
-      .from("blog-images")
-      .getPublicUrl(path);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("blog-images").getPublicUrl(path);
     toast.success("Image uploaded");
     return publicUrl;
   };
@@ -464,10 +466,9 @@ export default function AdminBlog() {
         .map((t) => t.trim())
         .filter(Boolean),
       is_published: form.is_published,
-      published_at:
-        form.is_published
-          ? editingPost?.published_at ?? new Date().toISOString()
-          : null,
+      published_at: form.is_published
+        ? (editingPost?.published_at ?? new Date().toISOString())
+        : null,
       read_time_minutes: form.read_time_minutes || 5,
       meta_title: form.meta_title.trim() || null,
       meta_description: form.meta_description.trim() || null,
@@ -504,7 +505,7 @@ export default function AdminBlog() {
       .update({
         is_published: nowPublished,
         published_at: nowPublished
-          ? post.published_at ?? new Date().toISOString()
+          ? (post.published_at ?? new Date().toISOString())
           : null,
       })
       .eq("id", post.id);
@@ -519,10 +520,7 @@ export default function AdminBlog() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this post? This cannot be undone.")) return;
-    const { error } = await supabase
-      .from("blog_posts")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("blog_posts").delete().eq("id", id);
     if (error) toast.error("Failed to delete");
     else {
       toast.success("Deleted");
@@ -547,7 +545,10 @@ export default function AdminBlog() {
               <ArrowLeft className="h-5 w-5" />
             </button>
           ) : (
-            <Link to={ROUTE_NAMES.HOME} className="text-gray-400 hover:text-gray-600">
+            <Link
+              to={ROUTE_NAMES.HOME}
+              className="text-gray-400 hover:text-gray-600"
+            >
               <ArrowLeft className="h-5 w-5" />
             </Link>
           )}
@@ -560,7 +561,9 @@ export default function AdminBlog() {
                 : "Blog Posts"}
             </h1>
             <p className="text-xs text-gray-500">
-              {isFormView ? "Fill in the content below" : "Manage your blog content"}
+              {isFormView
+                ? "Fill in the content below"
+                : "Manage your blog content"}
             </p>
           </div>
         </div>
@@ -578,7 +581,9 @@ export default function AdminBlog() {
             {/* Publish toggle */}
             <button
               type="button"
-              onClick={() => setForm((f) => ({ ...f, is_published: !f.is_published }))}
+              onClick={() =>
+                setForm((f) => ({ ...f, is_published: !f.is_published }))
+              }
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 form.is_published ? "bg-green-500" : "bg-gray-300"
               }`}
@@ -598,7 +603,9 @@ export default function AdminBlog() {
               disabled={saving}
               className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : null}
               {saving ? "Saving…" : "Save"}
             </Button>
           </div>
@@ -615,11 +622,16 @@ export default function AdminBlog() {
           ) : posts.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
               <p className="font-medium mb-1">No posts yet</p>
-              <p className="text-sm">Click "New Post" to write your first blog post.</p>
+              <p className="text-sm">
+                Click "New Post" to write your first blog post.
+              </p>
             </div>
           ) : (
             posts.map((post) => (
-              <Card key={post.id} className="rounded-2xl shadow-sm overflow-hidden">
+              <Card
+                key={post.id}
+                className="rounded-2xl shadow-sm overflow-hidden"
+              >
                 <CardContent className="p-0 flex gap-0">
                   {/* Thumbnail */}
                   {post.cover_image_url ? (
@@ -671,6 +683,15 @@ export default function AdminBlog() {
                         <Pencil className="h-3 w-3" />
                         Edit
                       </button>
+                      <Link
+                        to={`/blog/${post.slug}?preview=1`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                      >
+                        <Eye className="h-3 w-3" />
+                        Preview
+                      </Link>
                       <button
                         onClick={() => togglePublish(post)}
                         className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
@@ -704,7 +725,9 @@ export default function AdminBlog() {
           {/* Basic info */}
           <Card className="rounded-2xl shadow-sm">
             <CardContent className="pt-5 space-y-4">
-              <p className="font-semibold text-gray-800 text-sm">Post Details</p>
+              <p className="font-semibold text-gray-800 text-sm">
+                Post Details
+              </p>
 
               <div className="space-y-1">
                 <Label>Title *</Label>
@@ -734,7 +757,9 @@ export default function AdminBlog() {
                 <Label>Excerpt (shown on blog list)</Label>
                 <Textarea
                   value={form.excerpt}
-                  onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, excerpt: e.target.value }))
+                  }
                   placeholder="1–2 sentences summarising the post…"
                   rows={2}
                 />
@@ -791,7 +816,9 @@ export default function AdminBlog() {
                 <Label>Tags (comma-separated)</Label>
                 <Input
                   value={form.tags}
-                  onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, tags: e.target.value }))
+                  }
                   placeholder="Nike, Air Max, CLOT, Collab History"
                 />
               </div>
@@ -806,9 +833,14 @@ export default function AdminBlog() {
               </p>
               <p className="text-xs text-gray-400 mb-4">
                 Build the post by adding blocks — paragraphs, headings, images,
-                quotes, or lists. You can drop images anywhere between text blocks.
+                quotes, or lists. You can drop images anywhere between text
+                blocks.
               </p>
-              <BlockEditor blocks={blocks} onChange={setBlocks} onUploadImage={uploadImage} />
+              <BlockEditor
+                blocks={blocks}
+                onChange={setBlocks}
+                onUploadImage={uploadImage}
+              />
             </CardContent>
           </Card>
 
@@ -857,8 +889,14 @@ export default function AdminBlog() {
               disabled={saving}
               className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex-1"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {saving ? "Saving…" : view === "new" ? "Create Post" : "Update Post"}
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              {saving
+                ? "Saving…"
+                : view === "new"
+                  ? "Create Post"
+                  : "Update Post"}
             </Button>
             <Button
               variant="outline"
@@ -873,3 +911,5 @@ export default function AdminBlog() {
     </div>
   );
 }
+
+export default AdminBlog;
