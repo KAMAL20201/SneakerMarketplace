@@ -80,7 +80,7 @@ export function meta({ data: loaderData }: Route.MetaArgs) {
   const canonicalUrl = `https://theplugmarket.in/blog/${post.slug}`;
   const image = post.cover_image_url ?? "https://theplugmarket.in/og-image.jpg";
 
-  const jsonLd = JSON.stringify({
+  const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
@@ -102,7 +102,7 @@ export function meta({ data: loaderData }: Route.MetaArgs) {
     datePublished: post.published_at,
     dateModified: post.updated_at ?? post.published_at,
     mainEntityOfPage: canonicalUrl,
-  });
+  };
 
   return [
     { title: pageTitle },
