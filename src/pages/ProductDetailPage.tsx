@@ -13,7 +13,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
-import { useParams, useSearchParams, useLoaderData, data, redirect } from "react-router";
+import {
+  useParams,
+  useSearchParams,
+  useLoaderData,
+  data,
+  redirect,
+} from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase, toStorageUrl } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
@@ -22,6 +28,8 @@ import ConditionBadge from "@/components/ui/ConditionBadge";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ProductCard from "@/components/ui/ProductCard";
+import BlogTeaser from "@/components/BlogTeaser";
+import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart } from "@/constants/sizeCharts";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -97,7 +105,8 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   // Sort/filter nested collections in JS (small sets, negligible cost).
   const imagesData = (listingData.product_images ?? []).sort((a, b) => {
-    if (b.is_poster_image !== a.is_poster_image) return b.is_poster_image ? 1 : -1;
+    if (b.is_poster_image !== a.is_poster_image)
+      return b.is_poster_image ? 1 : -1;
     return a.id > b.id ? 1 : -1;
   });
 
@@ -105,8 +114,11 @@ export async function loader({ params }: Route.LoaderArgs) {
     (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0),
   );
   const variants = rawVariants.map(({ product_variant_sizes, ...v }) => v);
-  const variantSizesData = rawVariants.flatMap(
-    (v) => (v.product_variant_sizes ?? []).map((s: Record<string, unknown>) => ({ ...s, variant_id: v.id })),
+  const variantSizesData = rawVariants.flatMap((v) =>
+    (v.product_variant_sizes ?? []).map((s: Record<string, unknown>) => ({
+      ...s,
+      variant_id: v.id,
+    })),
   );
 
   const allLegacySizesData = (listingData.product_listing_sizes ?? []).sort(
@@ -116,9 +128,13 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   // Filter approved reviews, sort by recency, cap at 20.
   const allReviews = (listingData.reviews ?? []) as Array<{
-    id: string; rating: number; comment: string | null;
-    reviewer_name: string | null; verified_purchase: boolean;
-    created_at: string; is_approved: boolean;
+    id: string;
+    rating: number;
+    comment: string | null;
+    reviewer_name: string | null;
+    verified_purchase: boolean;
+    created_at: string;
+    is_approved: boolean;
   }>;
   const reviewsData = allReviews
     .filter((r) => r.is_approved)
@@ -127,7 +143,9 @@ export async function loader({ params }: Route.LoaderArgs) {
     .map(({ is_approved: _, ...r }) => r);
 
   // Compute aggregate rating from approved reviews (replaces listing_aggregate_ratings view query).
-  const approvedRatings = allReviews.filter((r) => r.is_approved).map((r) => r.rating);
+  const approvedRatings = allReviews
+    .filter((r) => r.is_approved)
+    .map((r) => r.rating);
   const ratingData =
     approvedRatings.length > 0
       ? {
@@ -158,7 +176,11 @@ export async function loader({ params }: Route.LoaderArgs) {
       reviews: reviewsData,
       aggregateRating: ratingData,
     },
-    { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    },
   );
 }
 
@@ -212,7 +234,13 @@ export function meta({ data }: Route.MetaArgs) {
 }
 // Don't re-fetch product data on client-side navigation back to the same
 // product — the loader result is cached for the lifetime of the SPA session.
-export function shouldRevalidate({ currentParams, nextParams }: { currentParams: Record<string, string>; nextParams: Record<string, string> }) {
+export function shouldRevalidate({
+  currentParams,
+  nextParams,
+}: {
+  currentParams: Record<string, string>;
+  nextParams: Record<string, string>;
+}) {
   // Only skip revalidation when navigating back to the same product
   return currentParams.id !== nextParams.id;
 }
@@ -359,6 +387,7 @@ export default function ProductDetailPage() {
       image_url: string;
     }[]
   >([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -423,6 +452,19 @@ export default function ProductDetailPage() {
         setSimilarProducts(data ?? []);
       });
   }, [listing?.brand, productId]);
+
+  // Load latest blog posts client-side for content richness
+  useEffect(() => {
+    supabase
+      .from("blog_posts")
+      .select(
+        "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
+      )
+      .eq("is_published", true)
+      .order("published_at", { ascending: false })
+      .limit(3)
+      .then(({ data }) => setBlogPosts(data ?? []));
+  }, []);
 
   const handleAddToCart = (
     seller: { id: number | string; display_name: string; email: string } | null,
@@ -1263,8 +1305,12 @@ export default function ProductDetailPage() {
           {aggregateRating && aggregateRating.review_count > 0 && (
             <div className="flex items-center gap-2">
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span className="font-bold text-gray-900">{aggregateRating.average_rating}</span>
-              <span className="text-gray-400 text-sm">({aggregateRating.review_count})</span>
+              <span className="font-bold text-gray-900">
+                {aggregateRating.average_rating}
+              </span>
+              <span className="text-gray-400 text-sm">
+                ({aggregateRating.review_count})
+              </span>
             </div>
           )}
         </div>
@@ -1272,12 +1318,17 @@ export default function ProductDetailPage() {
         {reviews.length === 0 ? (
           <div className="bg-gray-50 rounded-3xl p-8 text-center">
             <Star className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">No reviews yet — be the first verified buyer to review this item.</p>
+            <p className="text-gray-500 text-sm">
+              No reviews yet — be the first verified buyer to review this item.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             {reviews.map((review) => (
-              <div key={review.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div
+                key={review.id}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((n) => (
@@ -1288,7 +1339,11 @@ export default function ProductDetailPage() {
                     ))}
                   </div>
                   <span className="text-xs text-gray-400">
-                    {new Date(review.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    {new Date(review.created_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </span>
                 </div>
                 <p className="text-sm font-semibold text-gray-800 mb-1">
@@ -1300,7 +1355,9 @@ export default function ProductDetailPage() {
                   )}
                 </p>
                 {review.comment && (
-                  <p className="text-sm text-gray-600 leading-relaxed">{review.comment}</p>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {review.comment}
+                  </p>
                 )}
               </div>
             ))}
@@ -1323,6 +1380,9 @@ export default function ProductDetailPage() {
           </div>
         </section>
       )}
+
+      {/* Blog Teaser — internal linking for SEO */}
+      <BlogTeaser posts={blogPosts} heading="Read From The Plug Journal" />
 
       {/* Bottom spacing */}
       <div className="h-8"></div>

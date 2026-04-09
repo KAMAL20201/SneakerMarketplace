@@ -79,6 +79,39 @@ export function Footer() {
           </div>
           */}
 
+          {/* Explore */}
+          <div className="space-y-3 md:space-y-4">
+            <h4 className="text-base md:text-lg font-bold text-white">
+              Explore
+            </h4>
+            <ul className="space-y-2 md:space-y-3">
+              <li>
+                <Link
+                  to={ROUTE_NAMES.BLOG}
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to={ROUTE_NAMES.NEW_DROPS}
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  New Drops
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to={ROUTE_NAMES.NEW_ARRIVALS}
+                  className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                >
+                  New Arrivals
+                </Link>
+              </li>
+            </ul>
+          </div>
+
           {/* Support */}
           <div className="space-y-3 md:space-y-4">
             <h4 className="text-base md:text-lg font-bold text-white">
@@ -181,7 +214,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/20 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-300 text-sm mb-4 md:mb-0 text-center md:text-left">
-            © 2025 The Plug Market. All rights reserved.
+            © 2026 The Plug Market. All rights reserved.
           </p>
         </div>
       </div>

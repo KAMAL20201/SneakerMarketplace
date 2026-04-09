@@ -6,6 +6,7 @@ import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
 import InstagramBanner from "@/components/InstagramBanner";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
+import BlogTeaser from "@/components/BlogTeaser";
 import HotDeals from "@/components/HotDeals";
 import InstantShipping from "@/components/InstantShipping";
 import { useEffect } from "react";
@@ -66,36 +67,50 @@ export async function loader(_: Route.LoaderArgs) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [bannersResult, hotDealsResult, newDropsResult] = await Promise.all([
-    ssrSupabase
-      .from("banners")
-      .select("id, image_url, cta_url")
-      .eq("is_active", true)
-      .or(`start_date.is.null,start_date.lte.${today}`)
-      .or(`end_date.is.null,end_date.gte.${today}`)
-      .order("sort_order", { ascending: true }),
-    ssrSupabase
-      .from("hot_deals_with_images")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10),
-    ssrSupabase
-      .from("listings_with_images")
-      .select(
-        "id, title, brand, price, retail_price, condition, size_value, image_url",
-      )
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(30),
-  ]);
+  const [bannersResult, hotDealsResult, newDropsResult, blogResult] =
+    await Promise.all([
+      ssrSupabase
+        .from("banners")
+        .select("id, image_url, cta_url")
+        .eq("is_active", true)
+        .or(`start_date.is.null,start_date.lte.${today}`)
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .order("sort_order", { ascending: true }),
+      ssrSupabase
+        .from("hot_deals_with_images")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10),
+      ssrSupabase
+        .from("listings_with_images")
+        .select(
+          "id, title, brand, price, retail_price, condition, size_value, image_url",
+        )
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(30),
+      ssrSupabase
+        .from("blog_posts")
+        .select(
+          "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
+        )
+        .eq("is_published", true)
+        .order("published_at", { ascending: false })
+        .limit(3),
+    ]);
 
   return data(
     {
       banners: bannersResult.data ?? [],
       hotDeals: hotDealsResult.data ?? [],
       newDrops: newDropsResult.data ?? [],
+      blogPosts: blogResult.data ?? [],
     },
-    { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    },
   );
 }
 
@@ -106,7 +121,8 @@ export function shouldRevalidate() {
 }
 
 const Home = () => {
-  const { banners, hotDeals, newDrops } = useLoaderData<typeof loader>();
+  const { banners, hotDeals, newDrops, blogPosts } =
+    useLoaderData<typeof loader>();
   useEffect(() => {
     // Only run the auth callback flow when opened as a popup (e.g. Google OAuth redirect).
     // window.opener is null for regular page navigation, so skip entirely in that case.
@@ -424,6 +440,9 @@ const Home = () => {
 
       {/* Why Buy From Us */}
       <WhyBuyFromUs />
+
+      {/* Blog Teaser */}
+      <BlogTeaser posts={blogPosts} />
 
       {/* [MARKETPLACE REMOVED] How It Works Section - escrow system not used in ecommerce model */}
       {/* <HowItWorks /> */}

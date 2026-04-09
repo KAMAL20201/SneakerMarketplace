@@ -14,6 +14,8 @@ export const ROUTE_NAMES = {
   ADMIN_REVIEW: "/admin/review",
   ADMIN_IMPORT: "/admin/import",
   ADMIN_BANNERS: "/admin/banners",
+  ADMIN_BLOG: "/admin/blog",
+  BLOG: "/blog",
   PROFILE: "/profile",
   MY_ADDRESSES: "/my-addresses",
   SETTINGS: "/settings",
@@ -47,6 +49,7 @@ export const ROUTE_NAMES = {
 export const ROUTE_HELPERS = {
   PRODUCT_DETAIL: (id: string) => `/product/${id}`,
   EDIT_LISTING: (id: string) => `/edit-listing/${id}`,
+  BLOG_POST: (slug: string) => `/blog/${slug}`,
 } as const;
 
 // Product condition constants

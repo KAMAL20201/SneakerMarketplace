@@ -380,7 +380,7 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-purple-200">
           <p className="text-gray-500 text-sm">
-            © 2025 The Plug Market. All rights reserved.
+            © 2026 The Plug Market. All rights reserved.
           </p>
         </div>
       </div>

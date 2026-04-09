@@ -17,6 +17,10 @@ export default [
   route("new-drops", "./pages/NewDrops.tsx"),
   route("wishlist", "./pages/Wishlist.tsx"),
 
+  // Blog — SEO-critical (SSR)
+  route("blog", "./pages/Blog.tsx"),
+  route("blog/:slug", "./pages/BlogPost.tsx"),
+
   // Static public pages
   route("review", "./pages/ReviewPage.tsx"),
   route("about", "./pages/AboutUs.tsx"),
@@ -38,6 +42,7 @@ export default [
   route("admin/review", "./pages/AdminReview.tsx"),
   route("admin/import", "./pages/AdminImport.tsx"),
   route("admin/banners", "./pages/AdminBanners.tsx"),
+  route("admin/blog", "./pages/AdminBlog.tsx"),
 
   // 404 catch-all
   route("*", "./pages/NotFound.tsx"),
