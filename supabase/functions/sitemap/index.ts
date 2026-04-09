@@ -4,19 +4,28 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SITE_URL = "https://theplugmarket.in";
 
 // Static routes that are always in the sitemap
-const STATIC_URLS: Array<{ loc: string; changefreq: string; priority: string }> = [
-  { loc: `${SITE_URL}/`,               changefreq: "daily",   priority: "1.0" },
-  { loc: `${SITE_URL}/sneakers`,       changefreq: "daily",   priority: "0.9" },
-  { loc: `${SITE_URL}/apparels`,       changefreq: "daily",   priority: "0.9" },
-  { loc: `${SITE_URL}/electronics`,    changefreq: "daily",   priority: "0.9" },
-  { loc: `${SITE_URL}/collectibles`,   changefreq: "daily",   priority: "0.9" },
-  { loc: `${SITE_URL}/browse`,         changefreq: "daily",   priority: "0.8" },
-  { loc: `${SITE_URL}/new-arrivals`,   changefreq: "daily",   priority: "0.8" },
-  { loc: `${SITE_URL}/about`,          changefreq: "monthly", priority: "0.5" },
-  { loc: `${SITE_URL}/contact-us`,     changefreq: "monthly", priority: "0.5" },
-  { loc: `${SITE_URL}/privacy`,        changefreq: "yearly",  priority: "0.3" },
-  { loc: `${SITE_URL}/terms`,          changefreq: "yearly",  priority: "0.3" },
-  { loc: `${SITE_URL}/shipping-policy`,changefreq: "monthly", priority: "0.4" },
+const STATIC_URLS: Array<{
+  loc: string;
+  changefreq: string;
+  priority: string;
+}> = [
+  { loc: `${SITE_URL}/`, changefreq: "daily", priority: "1.0" },
+  { loc: `${SITE_URL}/sneakers`, changefreq: "daily", priority: "0.9" },
+  { loc: `${SITE_URL}/apparels`, changefreq: "daily", priority: "0.9" },
+  { loc: `${SITE_URL}/electronics`, changefreq: "daily", priority: "0.9" },
+  { loc: `${SITE_URL}/collectibles`, changefreq: "daily", priority: "0.9" },
+  { loc: `${SITE_URL}/browse`, changefreq: "daily", priority: "0.8" },
+  { loc: `${SITE_URL}/new-arrivals`, changefreq: "daily", priority: "0.8" },
+  { loc: `${SITE_URL}/blog`, changefreq: "weekly", priority: "0.8" },
+  { loc: `${SITE_URL}/about`, changefreq: "monthly", priority: "0.5" },
+  { loc: `${SITE_URL}/contact-us`, changefreq: "monthly", priority: "0.5" },
+  { loc: `${SITE_URL}/privacy`, changefreq: "yearly", priority: "0.3" },
+  { loc: `${SITE_URL}/terms`, changefreq: "yearly", priority: "0.3" },
+  {
+    loc: `${SITE_URL}/shipping-policy`,
+    changefreq: "monthly",
+    priority: "0.4",
+  },
 ];
 
 function escapeXml(str: string): string {
@@ -29,17 +38,41 @@ function escapeXml(str: string): string {
 }
 
 function buildSitemap(
-  dynamicUrls: Array<{ slug: string; updated_at: string | null }>
+  products: Array<{ slug: string; updated_at: string | null }>,
+  blogs: Array<{
+    slug: string;
+    published_at: string | null;
+    updated_at: string | null;
+  }>,
 ): string {
   const staticEntries = STATIC_URLS.map(
     (u) => `  <url>
     <loc>${escapeXml(u.loc)}</loc>
     <changefreq>${u.changefreq}</changefreq>
     <priority>${u.priority}</priority>
-  </url>`
+  </url>`,
   ).join("\n");
 
-  const dynamicEntries = dynamicUrls
+  const blogEntries = blogs
+    .map((row) => {
+      const loc = escapeXml(`${SITE_URL}/blog/${row.slug}`);
+      // Prefer published_at as the canonical date, fall back to updated_at
+      const lastmod =
+        (row.published_at ?? row.updated_at)
+          ? new Date((row.published_at ?? row.updated_at)!)
+              .toISOString()
+              .split("T")[0]
+          : new Date().toISOString().split("T")[0];
+      return `  <url>
+    <loc>${loc}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>`;
+    })
+    .join("\n");
+
+  const productEntries = products
     .map((row) => {
       const loc = escapeXml(`${SITE_URL}/product/${row.slug}`);
       const lastmod = row.updated_at
@@ -57,7 +90,8 @@ function buildSitemap(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticEntries}
-${dynamicEntries}
+${blogEntries}
+${productEntries}
 </urlset>`;
 }
 
@@ -72,16 +106,24 @@ Deno.serve(async (_req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch all active listings — only id and updated_at needed
-    const { data, error } = await supabase
-      .from("product_listings")
-      .select("slug, updated_at")
-      .eq("status", "active")
-      .order("updated_at", { ascending: false });
+    // Fetch products and published blog posts in parallel
+    const [productsRes, blogsRes] = await Promise.all([
+      supabase
+        .from("product_listings")
+        .select("slug, updated_at")
+        .eq("status", "active")
+        .order("updated_at", { ascending: false }),
+      supabase
+        .from("blog_posts")
+        .select("slug, published_at, updated_at")
+        .eq("is_published", true)
+        .order("published_at", { ascending: false }),
+    ]);
 
-    if (error) throw error;
+    if (productsRes.error) throw productsRes.error;
+    if (blogsRes.error) throw blogsRes.error;
 
-    const xml = buildSitemap(data ?? []);
+    const xml = buildSitemap(productsRes.data ?? [], blogsRes.data ?? []);
 
     return new Response(xml, {
       status: 200,
@@ -94,9 +136,12 @@ Deno.serve(async (_req: Request) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("sitemap error:", message);
-    return new Response(`<?xml version="1.0" encoding="UTF-8"?><error>${message}</error>`, {
-      status: 500,
-      headers: { "Content-Type": "application/xml" },
-    });
+    return new Response(
+      `<?xml version="1.0" encoding="UTF-8"?><error>${message}</error>`,
+      {
+        status: 500,
+        headers: { "Content-Type": "application/xml" },
+      },
+    );
   }
 });

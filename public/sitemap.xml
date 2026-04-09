@@ -48,6 +48,20 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- Blog -->
+  <url>
+    <loc>https://theplugmarket.in/blog</loc>
+    <lastmod>2026-04-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/blog/biggest-sneaker-releases-of-2026-the-drops-you-cant-miss</loc>
+    <lastmod>2026-04-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- Static info pages -->
   <url>
     <loc>https://theplugmarket.in/about</loc>
