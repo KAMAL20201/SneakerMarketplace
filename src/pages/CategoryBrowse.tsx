@@ -573,8 +573,30 @@ const CategoryBrowse = () => {
     return n;
   };
 
+  const categoryMeta = CATEGORY_META[categoryId];
+
   return (
     <div className="min-h-screen px-4 py-6">
+      {/* ItemList structured data — helps Google understand this is a product collection */}
+      {listings.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              name: categoryMeta?.title ?? `${categoryConfig?.name} | The Plug Market`,
+              url: `https://theplugmarket.in${categoryMeta?.path ?? `/${slug}`}`,
+              itemListElement: listings.map((listing, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                url: `https://theplugmarket.in${ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug)}`,
+                name: listing.title,
+              })),
+            }),
+          }}
+        />
+      )}
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-6 flex flex-col items-center text-center">

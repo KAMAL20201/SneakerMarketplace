@@ -80,30 +80,6 @@ export function meta({ data: loaderData }: Route.MetaArgs) {
   const canonicalUrl = `https://theplugmarket.in/blog/${post.slug}`;
   const image = post.cover_image_url ?? "https://theplugmarket.in/og-image.jpg";
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
-    description: pageDesc,
-    image: post.cover_image_url ?? undefined,
-    author: {
-      "@type": "Organization",
-      name: post.author,
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "The Plug Market",
-      url: "https://theplugmarket.in",
-      logo: {
-        "@type": "ImageObject",
-        url: "https://theplugmarket.in/logo-192.png",
-      },
-    },
-    datePublished: post.published_at,
-    dateModified: post.updated_at ?? post.published_at,
-    mainEntityOfPage: canonicalUrl,
-  };
-
   return [
     { title: pageTitle },
     { name: "description", content: pageDesc },
@@ -127,7 +103,6 @@ export function meta({ data: loaderData }: Route.MetaArgs) {
     { property: "twitter:title", content: pageTitle },
     { property: "twitter:description", content: pageDesc },
     { property: "twitter:image", content: image },
-    { "script:ld+json": jsonLd },
   ];
 }
 
@@ -261,8 +236,39 @@ function RenderBlock({ block }: { block: Block }) {
 export default function BlogPost() {
   const { post } = useLoaderData<typeof loader>() as { post: BlogPostFull };
 
+  const canonicalUrl = `https://theplugmarket.in/blog/${post.slug}`;
+  const pageDesc =
+    post.meta_description ??
+    post.excerpt ??
+    `Read "${post.title}" on The Plug Market blog.`;
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            headline: post.title,
+            description: pageDesc,
+            image: post.cover_image_url ?? undefined,
+            author: { "@type": "Organization", name: post.author },
+            publisher: {
+              "@type": "Organization",
+              name: "The Plug Market",
+              url: "https://theplugmarket.in",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://theplugmarket.in/logo-192.png",
+              },
+            },
+            datePublished: post.published_at,
+            dateModified: post.updated_at ?? post.published_at,
+            mainEntityOfPage: canonicalUrl,
+          }),
+        }}
+      />
       {/* Cover image
       {post.cover_image_url && (
         <div className="w-full aspect-[2.5/1] md:aspect-[3/1] overflow-hidden bg-gray-100">

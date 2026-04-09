@@ -20,6 +20,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#000000" />
+        {/* hreflang — tells Google this site targets English speakers in India */}
+        <link rel="alternate" hrefLang="en-in" href="https://theplugmarket.in/" />
+        <link rel="alternate" hrefLang="en" href="https://theplugmarket.in/" />
+
         <link rel="icon" type="image/svg+xml" href="/logo.svg" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/logo-192.png" />
