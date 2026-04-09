@@ -17,6 +17,8 @@ import {
   ChevronDown,
   X,
   Upload,
+  Link2,
+  Table,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,16 +33,22 @@ import { ROUTE_NAMES } from "@/constants/enums";
 
 // ---------- types ----------
 
-type BlockType = "paragraph" | "heading" | "image" | "quote" | "list";
+type BlockType = "paragraph" | "heading" | "image" | "quote" | "list" | "link" | "table";
 
 interface Block {
   type: BlockType;
   content?: string; // paragraph, heading, quote
-  url?: string; // image
+  url?: string; // image, link
   alt?: string; // image
   caption?: string; // image
   items?: string[]; // list (newline-separated in editor)
   _listText?: string; // editor-only helper for list textarea
+  text?: string; // link label
+  description?: string; // link description
+  headers?: string[]; // table column headers
+  rows?: string[][]; // table rows
+  _headersText?: string; // editor-only helper
+  _tableText?: string; // editor-only helper
 }
 
 interface BlogPost {
@@ -90,6 +98,8 @@ const BLOCK_ICONS: Record<BlockType, React.ReactNode> = {
   image: <Image className="h-4 w-4" />,
   quote: <Quote className="h-4 w-4" />,
   list: <List className="h-4 w-4" />,
+  link: <Link2 className="h-4 w-4" />,
+  table: <Table className="h-4 w-4" />,
 };
 
 const BLOCK_LABELS: Record<BlockType, string> = {
@@ -98,6 +108,8 @@ const BLOCK_LABELS: Record<BlockType, string> = {
   image: "Image",
   quote: "Quote",
   list: "Bullet List",
+  link: "Link / CTA",
+  table: "Table",
 };
 
 function ImageBlock({
@@ -225,10 +237,16 @@ function BlockEditor({
   };
 
   const addBlock = (type: BlockType) => {
-    const block: Block =
-      type === "list"
-        ? { type, items: [], _listText: "" }
-        : { type, content: "" };
+    let block: Block;
+    if (type === "list") {
+      block = { type, items: [], _listText: "" };
+    } else if (type === "link") {
+      block = { type, text: "", url: "", description: "" };
+    } else if (type === "table") {
+      block = { type, headers: [], rows: [], _headersText: "", _tableText: "" };
+    } else {
+      block = { type, content: "" };
+    }
     onChange([...blocks, block]);
   };
 
@@ -325,6 +343,103 @@ function BlockEditor({
                 onUploadImage={onUploadImage}
               />
             )}
+
+            {block.type === "link" && (
+              <div className="space-y-2">
+                <Input
+                  placeholder="Link label / button text…"
+                  value={block.text ?? ""}
+                  onChange={(e) => update(i, { text: e.target.value })}
+                  className="text-sm font-medium"
+                />
+                <Input
+                  placeholder="URL (e.g. /products/air-max-90 or https://…)"
+                  value={block.url ?? ""}
+                  onChange={(e) => update(i, { url: e.target.value })}
+                  className="text-sm font-mono"
+                />
+                <Textarea
+                  placeholder="Optional description shown above the link…"
+                  value={block.description ?? ""}
+                  onChange={(e) => update(i, { description: e.target.value })}
+                  rows={2}
+                  className="text-sm"
+                />
+              </div>
+            )}
+
+            {block.type === "table" && (
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">
+                    Headers — separate columns with a pipe <code className="bg-gray-100 px-1 rounded">|</code>
+                  </p>
+                  <Input
+                    placeholder="e.g. Sneaker | Size | Price | Condition"
+                    value={block._headersText ?? (block.headers ?? []).join(" | ")}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      update(i, {
+                        _headersText: raw,
+                        headers: raw.split("|").map((s) => s.trim()).filter(Boolean),
+                      });
+                    }}
+                    className="text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">
+                    Rows — one row per line, columns separated by <code className="bg-gray-100 px-1 rounded">|</code>
+                  </p>
+                  <Textarea
+                    placeholder={"Air Max 90 | 9 | ₹7,500 | DS\nJordan 1 | 10 | ₹12,000 | Used"}
+                    value={
+                      block._tableText ??
+                      (block.rows ?? []).map((r) => r.join(" | ")).join("\n")
+                    }
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      update(i, {
+                        _tableText: raw,
+                        rows: raw
+                          .split("\n")
+                          .filter((line) => line.trim())
+                          .map((line) => line.split("|").map((s) => s.trim())),
+                      });
+                    }}
+                    rows={5}
+                    className="text-sm font-mono"
+                  />
+                </div>
+                {/* Preview */}
+                {(block.headers ?? []).length > 0 && (
+                  <div className="overflow-x-auto rounded-lg border border-gray-200 text-xs">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          {(block.headers ?? []).map((h, hi) => (
+                            <th key={hi} className="px-3 py-2 text-left font-semibold text-gray-600 border-b border-gray-200">
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(block.rows ?? []).map((row, ri) => (
+                          <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                            {row.map((cell, ci) => (
+                              <td key={ci} className="px-3 py-1.5 text-gray-700 border-b border-gray-100">
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
@@ -332,7 +447,7 @@ function BlockEditor({
       {/* Add block buttons */}
       <div className="flex flex-wrap gap-2 pt-1">
         {(
-          ["paragraph", "heading", "image", "quote", "list"] as BlockType[]
+          ["paragraph", "heading", "image", "quote", "list", "link", "table"] as BlockType[]
         ).map((type) => (
           <button
             key={type}
@@ -401,10 +516,16 @@ function AdminBlog() {
       meta_title: post.meta_title ?? "",
       meta_description: post.meta_description ?? "",
     });
-    // Hydrate _listText for list blocks
-    const hydratedBlocks = (post.content as Block[]).map((b) =>
-      b.type === "list" ? { ...b, _listText: (b.items ?? []).join("\n") } : b,
-    );
+    // Hydrate editor-only helpers
+    const hydratedBlocks = (post.content as Block[]).map((b) => {
+      if (b.type === "list") return { ...b, _listText: (b.items ?? []).join("\n") };
+      if (b.type === "table") return {
+        ...b,
+        _headersText: (b.headers ?? []).join(" | "),
+        _tableText: (b.rows ?? []).map((r) => r.join(" | ")).join("\n"),
+      };
+      return b;
+    });
     setBlocks(hydratedBlocks);
     setEditingPost(post);
     setView("edit");
@@ -453,7 +574,7 @@ function AdminBlog() {
     setSaving(true);
 
     // Strip editor-only fields from blocks before saving
-    const cleanBlocks = blocks.map(({ _listText: _lt, ...rest }) => rest);
+    const cleanBlocks = blocks.map(({ _listText: _lt, _headersText: _ht, _tableText: _tt, ...rest }) => rest);
 
     const payload = {
       title: form.title.trim(),

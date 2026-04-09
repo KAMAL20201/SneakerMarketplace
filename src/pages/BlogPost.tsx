@@ -7,15 +7,19 @@ import type { Route } from "./+types/BlogPost";
 
 // ---------- types ----------
 
-type BlockType = "paragraph" | "heading" | "image" | "quote" | "list";
+type BlockType = "paragraph" | "heading" | "image" | "quote" | "list" | "link" | "table";
 
 interface Block {
   type: BlockType;
   content?: string; // paragraph, heading, quote
-  url?: string; // image
+  url?: string; // image, link
   alt?: string; // image
   caption?: string; // image
   items?: string[]; // list
+  text?: string; // link label
+  description?: string; // link description
+  headers?: string[]; // table
+  rows?: string[][]; // table
 }
 
 interface BlogPostFull {
@@ -188,6 +192,63 @@ function RenderBlock({ block }: { block: Block }) {
             <li key={i}>{item}</li>
           ))}
         </ul>
+      );
+
+    case "link": {
+      const isExternal = block.url?.startsWith("http");
+      const linkEl = isExternal ? (
+        <a
+          href={block.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+        >
+          {block.text || block.url}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      ) : (
+        <Link
+          to={block.url ?? "/"}
+          className="w-max inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+        >
+          {block.text || block.url}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </Link>
+      );
+      return (
+        <div className="my-5 p-4 bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 rounded-2xl flex items-center justify-center">
+          {linkEl}
+        </div>
+      );
+    }
+
+    case "table":
+      if (!block.headers?.length) return null;
+      return (
+        <div className="my-6 overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                {block.headers.map((h, i) => (
+                  <th key={i} className="px-4 py-3 text-left font-semibold whitespace-nowrap">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(block.rows ?? []).map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="px-4 py-2.5 text-gray-700 border-b border-gray-100">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       );
 
     default:
