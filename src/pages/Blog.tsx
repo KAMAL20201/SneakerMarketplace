@@ -1,10 +1,38 @@
 import { createClient } from "@supabase/supabase-js";
 import { data, Link } from "react-router";
 import { useLoaderData } from "react-router";
-import { Helmet } from "react-helmet-async";
 import { Calendar, Clock, Tag, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Route } from "./+types/Blog";
+
+export function meta(_: Route.MetaArgs) {
+  return [
+    {
+      title: "Blog — The Plug Market | Sneaker Culture, Guides & Drops",
+    },
+    {
+      name: "description",
+      content:
+        "Explore sneaker history, authentication guides, and the latest drop news on The Plug Market blog. Your source for authentic sneaker culture in India.",
+    },
+    { tagName: "link", rel: "canonical", href: "https://theplugmarket.in/blog" },
+    { property: "og:title", content: "Blog — The Plug Market | Sneaker Culture, Guides & Drops" },
+    {
+      property: "og:description",
+      content:
+        "Sneaker culture, authentication guides, and drop news from The Plug Market.",
+    },
+    { property: "og:url", content: "https://theplugmarket.in/blog" },
+    { property: "og:type", content: "website" },
+    { property: "og:image", content: "https://theplugmarket.in/og-image.jpg" },
+    { property: "twitter:card", content: "summary_large_image" },
+    { property: "twitter:title", content: "Blog — The Plug Market" },
+    {
+      property: "twitter:description",
+      content: "Sneaker culture, authentication guides, and drop news from The Plug Market.",
+    },
+  ];
+}
 
 export async function loader(_: Route.LoaderArgs) {
   const ssrSupabase = createClient(
@@ -58,24 +86,7 @@ export default function Blog() {
   const [featured, ...rest] = posts;
 
   return (
-    <>
-      <Helmet>
-        <title>Blog — The Plug Market | Sneaker Culture, Guides & Drops</title>
-        <meta
-          name="description"
-          content="Explore sneaker history, authentication guides, and the latest drop news on The Plug Market blog. Your source for authentic sneaker culture in India."
-        />
-        <link rel="canonical" href="https://theplugmarket.in/blog" />
-        <meta property="og:title" content="Blog — The Plug Market" />
-        <meta
-          property="og:description"
-          content="Sneaker culture, authentication guides, and drop news from The Plug Market."
-        />
-        <meta property="og:url" content="https://theplugmarket.in/blog" />
-        <meta property="og:type" content="website" />
-      </Helmet>
-
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         {/* Hero header */}
         <div className="bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900 text-white py-14 px-4">
           <div className="max-w-4xl mx-auto text-center">
@@ -206,8 +217,7 @@ export default function Blog() {
               )}
             </>
           )}
-        </div>
       </div>
-    </>
+    </div>
   );
 }

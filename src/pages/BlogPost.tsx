@@ -1,7 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { data, redirect, Link } from "react-router";
 import { useLoaderData } from "react-router";
-import { Helmet } from "react-helmet-async";
 import { Calendar, Clock, ArrowLeft, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Route } from "./+types/BlogPost";
@@ -29,6 +28,7 @@ interface BlogPostFull {
   author: string;
   tags: string[];
   published_at: string;
+  updated_at: string | null;
   read_time_minutes: number;
   meta_title: string | null;
   meta_description: string | null;
@@ -59,6 +59,69 @@ export async function loader({ params }: Route.LoaderArgs) {
       },
     }
   );
+}
+
+// ---------- meta (SSR — replaces Helmet) ----------
+
+export function meta({ data: loaderData }: Route.MetaArgs) {
+  if (!loaderData?.post) {
+    return [{ title: "Post Not Found | The Plug Market Blog" }];
+  }
+  const post = loaderData.post as BlogPostFull;
+  const pageTitle = (post.meta_title ?? post.title) + " — The Plug Market Blog";
+  const pageDesc =
+    post.meta_description ??
+    post.excerpt ??
+    `Read "${post.title}" on The Plug Market blog.`;
+  const canonicalUrl = `https://theplugmarket.in/blog/${post.slug}`;
+  const image = post.cover_image_url ?? "https://theplugmarket.in/og-image.jpg";
+
+  const jsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: pageDesc,
+    image: post.cover_image_url ?? undefined,
+    author: {
+      "@type": "Organization",
+      name: post.author,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "The Plug Market",
+      url: "https://theplugmarket.in",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://theplugmarket.in/logo-192.png",
+      },
+    },
+    datePublished: post.published_at,
+    dateModified: post.updated_at ?? post.published_at,
+    mainEntityOfPage: canonicalUrl,
+  });
+
+  return [
+    { title: pageTitle },
+    { name: "description", content: pageDesc },
+    { tagName: "link", rel: "canonical", href: canonicalUrl },
+    { property: "og:type", content: "article" },
+    { property: "og:url", content: canonicalUrl },
+    { property: "og:title", content: pageTitle },
+    { property: "og:description", content: pageDesc },
+    { property: "og:image", content: image },
+    { property: "article:published_time", content: post.published_at },
+    { property: "article:modified_time", content: post.updated_at ?? post.published_at },
+    { property: "article:author", content: post.author },
+    ...(post.tags?.map((tag: string) => ({
+      property: "article:tag",
+      content: tag,
+    })) ?? []),
+    { property: "twitter:card", content: "summary_large_image" },
+    { property: "twitter:title", content: pageTitle },
+    { property: "twitter:description", content: pageDesc },
+    { property: "twitter:image", content: image },
+    { "script:ld+json": jsonLd },
+  ];
 }
 
 // ---------- helpers ----------
@@ -134,62 +197,17 @@ function RenderBlock({ block }: { block: Block }) {
 export default function BlogPost() {
   const { post } = useLoaderData<typeof loader>() as { post: BlogPostFull };
 
-  const pageTitle = post.meta_title ?? post.title;
-  const pageDesc =
-    post.meta_description ??
-    post.excerpt ??
-    `Read "${post.title}" on The Plug Market blog.`;
-  const canonicalUrl = `https://theplugmarket.in/blog/${post.slug}`;
-
   return (
-    <>
-      <Helmet>
-        <title>{pageTitle} — The Plug Market Blog</title>
-        <meta name="description" content={pageDesc} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDesc} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="article" />
-        {post.cover_image_url && (
-          <meta property="og:image" content={post.cover_image_url} />
-        )}
-        <meta
-          property="article:published_time"
-          content={post.published_at}
-        />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            headline: post.title,
-            description: pageDesc,
-            image: post.cover_image_url ?? undefined,
-            author: {
-              "@type": "Organization",
-              name: post.author,
-            },
-            publisher: {
-              "@type": "Organization",
-              name: "The Plug Market",
-              url: "https://theplugmarket.in",
-            },
-            datePublished: post.published_at,
-            mainEntityOfPage: canonicalUrl,
-          })}
-        </script>
-      </Helmet>
-
-      <div className="min-h-screen bg-white">
-        {/* Cover image */}
-        {post.cover_image_url && (
-          <div className="w-full aspect-[2.5/1] md:aspect-[3/1] overflow-hidden bg-gray-100">
-            <img
-              src={post.cover_image_url}
-              alt={post.title}
-              className="w-full h-full object-cover"
-              fetchPriority="high"
-            />
+    <div className="min-h-screen bg-white">
+      {/* Cover image */}
+      {post.cover_image_url && (
+        <div className="w-full aspect-[2.5/1] md:aspect-[3/1] overflow-hidden bg-gray-100">
+          <img
+            src={post.cover_image_url}
+            alt={post.title}
+            className="w-full h-full object-cover"
+            fetchPriority="high"
+          />
           </div>
         )}
 
@@ -266,7 +284,6 @@ export default function BlogPost() {
             </Link>
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 }
