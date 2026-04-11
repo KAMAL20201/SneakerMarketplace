@@ -13,10 +13,13 @@ import {
   CheckCircle,
   Clock,
   FileSearch,
+  Search,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,37 +59,54 @@ const MyListings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const itemsPerPage = 6;
 
   useEffect(() => {
     if (user) {
       fetchListings();
     }
-  }, [user, currentPage]);
+  }, [user, currentPage, searchQuery]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const fetchListings = async () => {
     try {
       setLoading(true);
 
-      // Get total count for pagination
-      const { count } = await supabase
+      let countQuery = supabase
         .from("listings_with_images")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user?.id)
         .not("review_comment", "is", null);
 
-      setTotalPages(Math.ceil((count || 0) / itemsPerPage));
-
-      // Get paginated listings
-      const { data, error } = await supabase
+      let dataQuery = supabase
         .from("listings_with_images")
         .select("*")
         .eq("user_id", user?.id)
-        .not("review_comment", "is", null)
-        .range(
-          (currentPage - 1) * itemsPerPage,
-          currentPage * itemsPerPage - 1,
-        );
+        .not("review_comment", "is", null);
+
+      if (searchQuery.trim()) {
+        const term = `%${searchQuery.trim()}%`;
+        countQuery = countQuery.or(`title.ilike.${term},brand.ilike.${term}`);
+        dataQuery = dataQuery.or(`title.ilike.${term},brand.ilike.${term}`);
+      }
+
+      const { count } = await countQuery;
+      setTotalPages(Math.ceil((count || 0) / itemsPerPage));
+
+      const { data, error } = await dataQuery.range(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage - 1,
+      );
 
       if (error) throw error;
       setListings(data || []);
@@ -224,6 +244,25 @@ const MyListings = () => {
             </Button>
           </div>
 
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by title or brand..."
+              className="pl-9 pr-9 glass-button border-0 rounded-2xl text-gray-700 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-purple-400"
+            />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <Card className="glass-card border-0 rounded-2xl">
@@ -286,23 +325,47 @@ const MyListings = () => {
           <Card className="glass-card border-0 rounded-2xl">
             <CardContent className="p-12 text-center">
               <div className="p-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                <Package className="h-10 w-10 text-purple-500" />
+                {searchQuery ? (
+                  <Search className="h-10 w-10 text-purple-500" />
+                ) : (
+                  <Package className="h-10 w-10 text-purple-500" />
+                )}
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                No Listings Yet
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Start selling your items by creating your first listing
-              </p>
-              <Button
-                asChild
-                className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
-              >
-                <Link to={ROUTE_NAMES.SELL}>
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create Your First Listing
-                </Link>
-              </Button>
+              {searchQuery ? (
+                <>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    No Results Found
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    No listings match &ldquo;{searchQuery}&rdquo;. Try a different search.
+                  </p>
+                  <Button
+                    onClick={() => setSearchInput("")}
+                    className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear Search
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    No Listings Yet
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Start selling your items by creating your first listing
+                  </p>
+                  <Button
+                    asChild
+                    className="glass-button border-0 rounded-2xl text-gray-700 hover:bg-white/30"
+                  >
+                    <Link to={ROUTE_NAMES.SELL}>
+                      <Plus className="h-5 w-5 mr-2" />
+                      Create Your First Listing
+                    </Link>
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         ) : (
