@@ -1,5 +1,13 @@
 {
   "framework": "react-router",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.theplugmarket.in" }],
+      "destination": "https://theplugmarket.in/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/sitemap-products.xml",
