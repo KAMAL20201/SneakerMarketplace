@@ -1,3 +1,4 @@
+import { AdminRoute } from "@/components/AdminRoute";
 import { useState, useEffect, useRef } from "react";
 import {
   Plus,
@@ -1033,4 +1034,10 @@ function AdminBlog() {
   );
 }
 
-export default AdminBlog;
+export default function AdminBlogPage() {
+  return (
+    <AdminRoute>
+      <AdminBlog />
+    </AdminRoute>
+  );
+}

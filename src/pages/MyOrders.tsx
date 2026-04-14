@@ -1,3 +1,4 @@
+import { AdminRoute } from "@/components/AdminRoute";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { ROUTE_HELPERS } from "@/constants/enums";
@@ -18,7 +19,19 @@ import {
   User,
   MapPin,
   PackageCheck,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -379,7 +392,7 @@ const MyOrders = () => {
                           )}
 
                           {/* Action Buttons */}
-                          <div className="flex gap-3 items-center">
+                          <div className="flex gap-3 items-center flex-wrap">
                             <Link
                               to={ROUTE_HELPERS.PRODUCT_DETAIL(
                                 order.product_id,
@@ -518,6 +531,48 @@ const MyOrders = () => {
                                 Mark as Delivered
                               </Button>
                             )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 rounded-2xl ml-auto"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Order</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to permanently delete order #{order.id.slice(0, 8)}? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                    onClick={async () => {
+                                      try {
+                                        await OrderService.deleteOrder(order.id);
+                                        setSellOrders((prev) =>
+                                          prev.filter((o) => o.id !== order.id),
+                                        );
+                                        setSellTotalPages(
+                                          Math.ceil((sellOrders.length - 1) / itemsPerPage),
+                                        );
+                                        toast.success("Order deleted successfully.");
+                                      } catch {
+                                        toast.error("Failed to delete order.");
+                                      }
+                                    }}
+                                  >
+                                    Delete Order
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                       </CardContent>
@@ -650,4 +705,10 @@ const MyOrders = () => {
   );
 };
 
-export default MyOrders;
+export default function MyOrdersPage() {
+  return (
+    <AdminRoute>
+      <MyOrders />
+    </AdminRoute>
+  );
+}

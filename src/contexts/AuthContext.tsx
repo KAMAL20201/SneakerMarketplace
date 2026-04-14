@@ -9,6 +9,7 @@ import {
 import { supabase } from "../lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { clearAdminOtp } from "../lib/adminOtp";
 
 const AuthContext = createContext<{
   user: User | null | undefined;
@@ -98,6 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    clearAdminOtp();
     return await supabase.auth.signOut();
   };
 

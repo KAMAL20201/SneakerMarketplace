@@ -59,6 +59,7 @@ export default defineConfig(({ isSsrBuild, command }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom", "react-router"],
   },
   // Bundle all deps into SSR build so the Vercel serverless function
   // doesn't need node_modules at runtime.

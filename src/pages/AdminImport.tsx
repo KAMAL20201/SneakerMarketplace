@@ -1,3 +1,4 @@
+import { AdminRoute } from "@/components/AdminRoute";
 import { useState, useRef } from "react";
 import {
   Upload,
@@ -271,7 +272,7 @@ function parseCSV(text: string, usdToInr: number): ParsedRow[] {
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export default function AdminImport() {
+function AdminImport() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
@@ -830,5 +831,13 @@ export default function AdminImport() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminImportPage() {
+  return (
+    <AdminRoute>
+      <AdminImport />
+    </AdminRoute>
   );
 }

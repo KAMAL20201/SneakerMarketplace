@@ -668,6 +668,19 @@ export class OrderService {
   //   }
   // }
 
+  // Delete an order (admin only — enforced server-side via SECURITY DEFINER RPC)
+  static async deleteOrder(orderId: string): Promise<void> {
+    try {
+      const { error } = await supabase.rpc("delete_order", {
+        p_order_id: orderId,
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      throw error;
+    }
+  }
+
   // Get order by ID
   // private static async getOrderById(orderId: string): Promise<Order | null> {
   //   try {

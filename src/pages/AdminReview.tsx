@@ -1,3 +1,4 @@
+import { AdminRoute } from "@/components/AdminRoute";
 import { useState, useEffect } from "react";
 import {
   Check,
@@ -50,7 +51,7 @@ interface Listing {
   };
 }
 
-export default function AdminReview() {
+function AdminReview() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -396,5 +397,13 @@ export default function AdminReview() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminReviewPage() {
+  return (
+    <AdminRoute>
+      <AdminReview />
+    </AdminRoute>
   );
 }

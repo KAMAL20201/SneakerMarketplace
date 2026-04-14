@@ -1,3 +1,4 @@
+import { AdminRoute } from "@/components/AdminRoute";
 import { useState, useEffect, useRef } from "react";
 import {
   Plus,
@@ -29,7 +30,7 @@ interface Banner {
   created_at: string;
 }
 
-export default function AdminBanners() {
+function AdminBanners() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -449,5 +450,13 @@ export default function AdminBanners() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminBannersPage() {
+  return (
+    <AdminRoute>
+      <AdminBanners />
+    </AdminRoute>
   );
 }

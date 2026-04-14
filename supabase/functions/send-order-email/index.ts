@@ -58,7 +58,8 @@ interface EmailRequest {
     | "order_cancelled"
     | "payment_received"
     | "shipping_reminder"
-    | "review_request";
+    | "review_request"
+    | "admin_otp";
   recipient_email: string;
   recipient_name: string;
   order_data: OrderEmailData;
@@ -66,6 +67,7 @@ interface EmailRequest {
     subject?: string;
     action_text?: string;
     action_url?: string;
+    otp_code?: string;
   };
 }
 
@@ -382,6 +384,28 @@ function buildShippingReminder(
   `;
 }
 
+function buildAdminOtp(name: string, otpCode: string): string {
+  return `
+    <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#111827;">🔐 Admin Login OTP</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${name}, use the code below to complete your admin login.</p>
+
+    <div style="background:#f5f3ff;border:2px solid #7c3aed;border-radius:16px;padding:32px;margin-bottom:24px;text-align:center;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:1px;">Your one-time code</p>
+      <p style="margin:0;font-size:48px;font-weight:900;color:#111827;letter-spacing:0.3em;font-family:monospace;">${otpCode}</p>
+    </div>
+
+    <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:24px;">
+      <p style="margin:0;color:#92400e;font-size:13px;">
+        ⏰ This code expires in <strong>10 minutes</strong>. Do not share it with anyone.
+      </p>
+    </div>
+
+    <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
+      If you didn't request this code, your account may be at risk. Please change your password immediately.
+    </p>
+  `;
+}
+
 // ── Build email for a given type ───────────────────────────────────────────────
 
 const BASE_URL = "https://theplugmarket.in";
@@ -394,6 +418,7 @@ const DEFAULT_ACTION_URLS: Record<EmailRequest["type"], string> = {
   order_cancelled:   `${BASE_URL}/contact-us`,
   shipping_reminder: `${BASE_URL}/my-orders`,
   review_request:    `${BASE_URL}/review`,
+  admin_otp:         `${BASE_URL}/login`,
 };
 
 function buildEmailContent(req: EmailRequest): { subject: string; html: string } {
@@ -425,6 +450,9 @@ function buildEmailContent(req: EmailRequest): { subject: string; html: string }
     case "review_request":
       body = buildReviewRequest(recipient_name, order_data, actionUrl);
       break;
+    case "admin_otp":
+      body = buildAdminOtp(recipient_name, template_data?.otp_code ?? "------");
+      break;
     default:
       body = `<p>Notification for order #${order_data.order_id}</p>`;
   }
@@ -441,6 +469,7 @@ function getDefaultSubject(type: string, productTitle: string): string {
     case "order_cancelled":   return `❌ Order Cancelled — ${productTitle}`;
     case "shipping_reminder": return `⏰ Reminder: Ship your order within 24 hours`;
     case "review_request":    return `How was your ${productTitle}? Leave a review`;
+    case "admin_otp":         return `🔐 Your Admin Login OTP`;
     default:                  return `Order Update — ${productTitle}`;
   }
 }
