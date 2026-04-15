@@ -38,7 +38,12 @@ function escapeXml(str: string): string {
 }
 
 function buildSitemap(
-  products: Array<{ slug: string; updated_at: string | null }>,
+  products: Array<{
+    slug: string;
+    title: string;
+    image_url: string | null;
+    updated_at: string | null;
+  }>,
   blogs: Array<{
     slug: string;
     published_at: string | null;
@@ -78,17 +83,26 @@ function buildSitemap(
       const lastmod = row.updated_at
         ? new Date(row.updated_at).toISOString().split("T")[0]
         : new Date().toISOString().split("T")[0];
+      // Include image block only when an image URL is present
+      const imageBlock = row.image_url
+        ? `
+    <image:image>
+      <image:loc>${escapeXml(row.image_url)}</image:loc>
+      <image:title>${escapeXml(row.title)}</image:title>
+    </image:image>`
+        : "";
       return `  <url>
     <loc>${loc}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.7</priority>${imageBlock}
   </url>`;
     })
     .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${staticEntries}
 ${blogEntries}
 ${productEntries}
@@ -110,7 +124,7 @@ Deno.serve(async (_req: Request) => {
     const [productsRes, blogsRes] = await Promise.all([
       supabase
         .from("product_listings")
-        .select("slug, updated_at")
+        .select("slug, title, image_url, updated_at")
         .eq("status", "active")
         .order("updated_at", { ascending: false }),
       supabase
