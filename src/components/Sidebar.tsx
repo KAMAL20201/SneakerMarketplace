@@ -12,6 +12,7 @@ import {
   Book,
   ImagePlay,
   Zap,
+  FileText,
 } from "lucide-react";
 
 import {
@@ -108,6 +109,11 @@ const getNavData = (isAdmin: boolean) => ({
                 title: "Banners",
                 url: ROUTE_NAMES.ADMIN_BANNERS,
                 icon: ImagePlay,
+              },
+              {
+                title: "Descriptions",
+                url: ROUTE_NAMES.ADMIN_DESCRIPTIONS,
+                icon: FileText,
               },
             ]
           : []),

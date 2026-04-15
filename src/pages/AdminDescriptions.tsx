@@ -1,5 +1,5 @@
 import { AdminRoute } from "@/components/AdminRoute";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Wand2,
   RefreshCw,
@@ -84,12 +84,10 @@ function AdminDescriptions() {
     >
   >({});
 
-  // Batch generation state
-  const [batchRunning, setBatchRunning] = useState(false);
-  const [batchProgress, setBatchProgress] = useState(0);
-  const [batchTotal, setBatchTotal] = useState(0);
-  const [batchCurrent, setBatchCurrent] = useState("");
-  const stopRef = useRef(false);
+  // Server-side batch state
+  const [serverBatchRunning, setServerBatchRunning] = useState(false);
+  const [serverBatchResult, setServerBatchResult] = useState<string | null>(null);
+
 
   // ── Data loading ────────────────────────────────────────────────────────────
 
@@ -178,57 +176,30 @@ function AdminDescriptions() {
     }
   }
 
-  // ── Batch generation ────────────────────────────────────────────────────────
+  // ── Server-side batch generation ────────────────────────────────────────────
 
-  async function startBatch() {
-    const missing = products.filter((p) => !p.description);
-    if (missing.length === 0) {
+  async function startServerBatch() {
+    if (missing === 0) {
       toast.info("All products already have descriptions!");
       return;
     }
-
-    setBatchRunning(true);
-    setBatchProgress(0);
-    setBatchTotal(missing.length);
-    setBatchCurrent("");
-    stopRef.current = false;
-
-    let done = 0;
-    for (const product of missing) {
-      if (stopRef.current) break;
-
-      setBatchCurrent(product.title);
-      try {
-        const description = await callGenerateApi(product);
-        await saveDescription(product.id, description);
-        // Update in memory
-        setProducts((prev) =>
-          prev.map((p) => (p.id === product.id ? { ...p, description } : p)),
-        );
-        patchRow(product.id, { draft: description });
-        done++;
-        setBatchProgress(done);
-      } catch {
-        // Skip failures silently in batch, continue
-        done++;
-        setBatchProgress(done);
-      }
-
-      // Small delay to avoid hammering the API
-      await new Promise((r) => setTimeout(r, 150));
+    setServerBatchRunning(true);
+    setServerBatchResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-descriptions");
+      if (error) throw new Error(error.message);
+      const msg = `Done! Generated ${data.generated} descriptions${data.errors ? `, ${data.errors} errors` : ""}.`;
+      setServerBatchResult(msg);
+      toast.success(msg);
+      // Refresh the product list to show new descriptions
+      await load();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setServerBatchResult("Error: " + msg);
+      toast.error("Batch failed: " + msg);
+    } finally {
+      setServerBatchRunning(false);
     }
-
-    setBatchRunning(false);
-    setBatchCurrent("");
-    if (!stopRef.current) {
-      toast.success(`Batch complete! Generated ${done} descriptions.`);
-    } else {
-      toast.info(`Stopped after ${done} descriptions.`);
-    }
-  }
-
-  function stopBatch() {
-    stopRef.current = true;
   }
 
   // ── Derived stats ───────────────────────────────────────────────────────────
@@ -290,55 +261,42 @@ function AdminDescriptions() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-gray-600">
-              Automatically generate descriptions for all{" "}
-              <span className="font-semibold text-red-500">{missing}</span> products missing
-              one. Uses Claude AI — each description is unique to that product.
+              Runs on the server — <span className="font-semibold">you can close this tab</span> after clicking.
+              Processes <span className="font-semibold text-red-500">{missing}</span> missing products
+              in parallel batches of 20 using Claude AI.
             </p>
 
-            {/* Progress bar */}
-            {batchRunning && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>
-                    {batchProgress} / {batchTotal}
-                  </span>
-                  <span>{Math.round((batchProgress / batchTotal) * 100)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(batchProgress / batchTotal) * 100}%` }}
-                  />
-                </div>
-                {batchCurrent && (
-                  <p className="text-xs text-gray-400 truncate">
-                    Generating: {batchCurrent}
-                  </p>
-                )}
+            {serverBatchRunning && (
+              <div className="flex items-center gap-2 text-sm text-blue-600">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Running on server… this may take a minute for large batches.
               </div>
             )}
 
-            <div className="flex gap-2">
-              {!batchRunning ? (
-                <Button
-                  onClick={startBatch}
-                  disabled={missing === 0 || loading}
-                  className="gap-2"
-                >
-                  <Wand2 className="w-4 h-4" />
-                  Generate All Missing ({missing})
-                </Button>
+            {serverBatchResult && (
+              <p className="text-sm font-medium text-green-700 bg-green-50 px-3 py-2 rounded-md">
+                {serverBatchResult}
+              </p>
+            )}
+
+            <Button
+              onClick={startServerBatch}
+              disabled={serverBatchRunning || missing === 0 || loading}
+              className="gap-2"
+            >
+              {serverBatchRunning ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Button variant="destructive" onClick={stopBatch} className="gap-2">
-                  <StopCircle className="w-4 h-4" />
-                  Stop Batch
-                </Button>
+                <Wand2 className="w-4 h-4" />
               )}
-            </div>
+              {serverBatchRunning
+                ? "Running on server…"
+                : `Generate All Missing (${missing})`}
+            </Button>
 
             <p className="text-xs text-gray-400">
-              Requires <code>ANTHROPIC_API_KEY</code> environment variable set on the server.
-              Processes one product at a time. You can stop and resume at any time.
+              Requires <code>ANTHROPIC_API_KEY</code> added to your Supabase project secrets.
+              Safe to run multiple times — skips products that already have descriptions.
             </p>
           </CardContent>
         </Card>
