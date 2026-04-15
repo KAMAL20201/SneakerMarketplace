@@ -6,6 +6,7 @@ import {
   Save,
   ChevronDown,
   ChevronUp,
+  StopCircle,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -86,6 +87,7 @@ function AdminDescriptions() {
   // Server-side batch state
   const [serverBatchRunning, setServerBatchRunning] = useState(false);
   const [serverBatchResult, setServerBatchResult] = useState<string | null>(null);
+
 
   // ── Data loading ────────────────────────────────────────────────────────────
 
