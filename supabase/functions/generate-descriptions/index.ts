@@ -1,6 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "https://theplugmarket.in",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 const SYSTEM_PROMPT = `You write product descriptions for The Plug Market, India's authentic sneakers and streetwear marketplace.
 
 Your descriptions are:
@@ -79,16 +85,20 @@ async function generateDescription(
 }
 
 Deno.serve(async (req: Request) => {
-  // Only allow POST
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
   }
 
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!anthropicKey) {
     return Response.json(
       { error: "ANTHROPIC_API_KEY secret is not set in Supabase" },
-      { status: 500 },
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 
@@ -114,11 +124,14 @@ Deno.serve(async (req: Request) => {
     .limit(limit);
 
   if (fetchError) {
-    return Response.json({ error: fetchError.message }, { status: 500 });
+    return Response.json({ error: fetchError.message }, { status: 500, headers: CORS_HEADERS });
   }
 
   if (!products || products.length === 0) {
-    return Response.json({ generated: 0, errors: 0, message: "Nothing to generate — all products already have descriptions." });
+    return Response.json(
+      { generated: 0, errors: 0, message: "Nothing to generate — all products already have descriptions." },
+      { headers: CORS_HEADERS },
+    );
   }
 
   // Process in parallel batches of 20
@@ -154,10 +167,13 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  return Response.json({
-    generated,
-    errors,
-    total: products.length,
-    message: `Done. Generated ${generated} descriptions, ${errors} errors.`,
-  });
+  return Response.json(
+    {
+      generated,
+      errors,
+      total: products.length,
+      message: `Done. Generated ${generated} descriptions, ${errors} errors.`,
+    },
+    { headers: CORS_HEADERS },
+  );
 });
