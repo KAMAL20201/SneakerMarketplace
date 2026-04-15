@@ -43,6 +43,10 @@ export default [
   route("admin/import", "./pages/AdminImport.tsx"),
   route("admin/banners", "./pages/AdminBanners.tsx"),
   route("admin/blog", "./pages/AdminBlog.tsx"),
+  route("admin/descriptions", "./pages/AdminDescriptions.tsx"),
+
+  // API resource routes (server-side only, no UI component)
+  route("api/generate-description", "./api/generate-description.ts"),
 
   // 404 catch-all
   route("*", "./pages/NotFound.tsx"),
