@@ -541,8 +541,8 @@ export default function ProductDetailPage() {
       : null;
   // pageDescription is used in the JSON-LD structured data below
   const pageDescription = listing
-    ? `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop authentic sneakers and streetwear on The Plug Market.`
-    : "Shop authentic sneakers and streetwear on The Plug Market.";
+    ? `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop 100% authentic sneakers and streetwear on The Plug Market.`
+    : "Shop 100% authentic sneakers and streetwear on The Plug Market.";
   const canonicalUrl = `https://theplugmarket.in/product/${productId}`;
 
   return (
@@ -560,9 +560,9 @@ export default function ProductDetailPage() {
               brand: listing.brand
                 ? { "@type": "Brand", name: listing.brand }
                 : undefined,
-              image: images
-                .map((img: { image_url: string }) => img.image_url)
-                .filter(Boolean),
+              image: images[0]?.image_url
+                ? [images[0].image_url]
+                : undefined,
               offers: {
                 "@type": "Offer",
                 url: canonicalUrl,
