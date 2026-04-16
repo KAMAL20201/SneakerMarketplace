@@ -205,11 +205,11 @@ export const BRANDS_CONFIG: Record<string, BrandConfig> = {
           "Buy authentic Adidas Stan Smith in India. Verified listings, best prices, fast delivery at The Plug Market.",
       },
       {
-        name: "Yeezy 350 V2",
-        slug: "yeezy-350",
-        searchTerm: "yeezy 350",
+        name: "Yeezy's",
+        slug: "yeezy",
+        searchTerm: "yeezy",
         description:
-          "Buy authentic Adidas Yeezy 350 V2 in India. Verified listings, best prices, fast delivery at The Plug Market.",
+          "Buy authentic Adidas Yeezy's in India. Verified listings, best prices, fast delivery at The Plug Market.",
       },
     ],
   },

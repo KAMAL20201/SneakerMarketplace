@@ -548,6 +548,28 @@ const BrandPage = () => {
           </div>
         )}
 
+        {/* Other models — model page only */}
+        {model && brandConfig.models.length > 1 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+              Other {brandConfig.name} Models
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {brandConfig.models
+                .filter((m) => m.slug !== model.slug)
+                .map((m) => (
+                  <Link
+                    key={m.slug}
+                    to={`/brands/${brandConfig.slug}/${m.slug}`}
+                    className="px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
+                  >
+                    {m.name}
+                  </Link>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Search bar — brand page only (model pages have fixed search term) */}
         {!model && (
           <div className="relative flex items-center justify-center border rounded-2xl pl-2 mb-4">

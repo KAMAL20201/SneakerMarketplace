@@ -11,7 +11,6 @@ import {
   Headphones,
   Book,
   ImagePlay,
-  Zap,
   FileText,
 } from "lucide-react";
 
@@ -48,12 +47,7 @@ const getNavData = (isAdmin: boolean) => ({
           url: ROUTE_NAMES.NEW_ARRIVALS,
           icon: Sparkles,
         },
-        {
-          title: "New Drops",
-          url: ROUTE_NAMES.NEW_DROPS,
-          icon: Zap,
-        },
-        {
+{
           title: "Wishlist",
           url: ROUTE_NAMES.WISHLIST,
           icon: Heart,

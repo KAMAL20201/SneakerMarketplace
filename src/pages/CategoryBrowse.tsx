@@ -40,6 +40,12 @@ import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
 import { ROUTE_HELPERS, PRODUCT_CONDITIONS } from "@/constants/enums";
 import { categories } from "@/constants/sellConstants";
 import ConditionBadge from "@/components/ui/ConditionBadge";
+import { BRANDS_CONFIG } from "@/constants/brandsConfig";
+
+// Brand slugs to surface on each category page — only categories that have brand pages
+const CATEGORY_BRANDS: Record<string, string[]> = {
+  sneakers: ["nike", "air-jordan", "new-balance", "adidas", "onitsuka-tiger"],
+};
 
 interface Listing {
   id: string;
@@ -622,6 +628,31 @@ const CategoryBrowse = () => {
             </div>
           </div>
         </div>
+
+        {/* Shop by Brand — SSR links so Google can crawl brand pages from here */}
+        {CATEGORY_BRANDS[slug]?.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+              Shop by Brand
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORY_BRANDS[slug].map((brandSlug) => {
+                const brand = BRANDS_CONFIG[brandSlug];
+                if (!brand) return null;
+                return (
+                  <Link
+                    key={brand.slug}
+                    to={`/brands/${brand.slug}`}
+                    prefetch="intent"
+                    className="px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
+                  >
+                    {brand.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="relative flex items-center justify-center border rounded-2xl pl-2 mb-4">

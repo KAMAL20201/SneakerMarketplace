@@ -19,6 +19,7 @@ import {
   useLoaderData,
   data,
   redirect,
+  Link,
 } from "react-router";
 import { Button } from "@/components/ui/button";
 import { supabase, toStorageUrl } from "@/lib/supabase";
@@ -31,6 +32,7 @@ import ProductCard from "@/components/ui/ProductCard";
 import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart } from "@/constants/sizeCharts";
+import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Carousel,
@@ -166,6 +168,25 @@ export async function loader({ params }: Route.LoaderArgs) {
     reviews: undefined,
   };
 
+  // Resolve brand config + matching model for SSR internal links.
+  const brandConfig = Object.values(BRANDS_CONFIG).find(
+    (b) => b.dbValue.toLowerCase() === (listing.brand ?? "").toLowerCase(),
+  ) ?? null;
+  const titleLower = (listing.title ?? "").toLowerCase();
+  const matchedModel = brandConfig?.models.find((m) =>
+    titleLower.includes(m.searchTerm.toLowerCase()),
+  ) ?? null;
+
+  // Fetch similar products server-side so Google sees the links in initial HTML.
+  const { data: similarProductsData } = await ssrSupabase
+    .from("listings_with_images")
+    .select("id, slug, title, brand, price, retail_price, condition, size_value, image_url")
+    .eq("status", "active")
+    .eq("brand", listing.brand)
+    .neq("id", listing.id)
+    .order("created_at", { ascending: false })
+    .limit(6);
+
   return data(
     {
       listing,
@@ -175,6 +196,9 @@ export async function loader({ params }: Route.LoaderArgs) {
       legacySizes,
       reviews: reviewsData,
       aggregateRating: ratingData,
+      similarProducts: similarProductsData ?? [],
+      brandSlug: brandConfig?.slug ?? null,
+      matchedModel: matchedModel ? { name: matchedModel.name, slug: matchedModel.slug } : null,
     },
     {
       headers: {
@@ -261,6 +285,9 @@ export default function ProductDetailPage() {
     legacySizes,
     reviews,
     aggregateRating,
+    similarProducts: initialSimilarProducts,
+    brandSlug,
+    matchedModel,
   } = useLoaderData<typeof loader>();
 
   // ── URL params ────────────────────────────────────────────────────────────
@@ -368,25 +395,14 @@ export default function ProductDetailPage() {
     setSelectedSize(size);
     setSelectedPrice(price);
     setSelectedImageIndex(0);
-    setSimilarProducts([]);
+    setSimilarProducts(initialSimilarProducts);
     setDescExpanded(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
   const { addToCart, items } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [buyNowOpen, setBuyNowOpen] = useState(false);
-  const [similarProducts, setSimilarProducts] = useState<
-    {
-      id: string;
-      title: string;
-      brand: string;
-      price: number;
-      retail_price?: number | null;
-      condition: string;
-      size_value: string;
-      image_url: string;
-    }[]
-  >([]);
+  const [similarProducts, setSimilarProducts] = useState(initialSimilarProducts);
   const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
@@ -436,22 +452,6 @@ export default function ProductDetailPage() {
       zoomEmblaApi.off("reInit", onSelect);
     };
   }, [zoomEmblaApi]);
-
-  // Load similar products client-side (not SEO-critical)
-  useEffect(() => {
-    if (!listing?.brand) return;
-    supabase
-      .from("listings_with_images")
-      .select("*")
-      .eq("status", "active")
-      .eq("brand", listing.brand)
-      .neq("id", initialListing.id)
-      .order("created_at", { ascending: false })
-      .limit(10)
-      .then(({ data }) => {
-        setSimilarProducts(data ?? []);
-      });
-  }, [listing?.brand, productId]);
 
   // Load latest blog posts client-side for content richness
   useEffect(() => {
@@ -765,12 +765,31 @@ export default function ProductDetailPage() {
           )}
 
           <div className="mt-3 px-8 pb-5 lg:px-0 lg:pb-6">
-            <h1 className="text-2xl font-bold text-gray-600 capitalize">
-              {listing?.brand}
-            </h1>
+            {brandSlug ? (
+              <Link
+                to={`/brands/${brandSlug}`}
+                prefetch="intent"
+                className="text-2xl font-bold text-gray-600 capitalize hover:text-purple-600 transition-colors"
+              >
+                {listing?.brand}
+              </Link>
+            ) : (
+              <h1 className="text-2xl font-bold text-gray-600 capitalize">
+                {listing?.brand}
+              </h1>
+            )}
             <h2 className="text-md text-gray-800 capitalize">
               {listing?.title}
             </h2>
+            {brandSlug && matchedModel && (
+              <Link
+                to={`/brands/${brandSlug}/${matchedModel.slug}`}
+                prefetch="intent"
+                className="mt-2 inline-block text-xs font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-full px-3 py-0.5 hover:bg-purple-100 transition-colors"
+              >
+                Browse all {matchedModel.name} →
+              </Link>
+            )}
             {listing?.description && (
               <div className="mt-2">
                 <p
