@@ -123,9 +123,10 @@ Deno.serve(async (_req: Request) => {
     // Fetch products and published blog posts in parallel
     const [productsRes, blogsRes] = await Promise.all([
       supabase
-        .from("product_listings")
+        .from("listings_with_images")
         .select("slug, title, image_url, updated_at")
         .eq("status", "active")
+        .not("slug", "is", null)
         .order("updated_at", { ascending: false }),
       supabase
         .from("blog_posts")
@@ -148,7 +149,7 @@ Deno.serve(async (_req: Request) => {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = err instanceof Error ? err.message : JSON.stringify(err);
     console.error("sitemap error:", message);
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><error>${message}</error>`,
