@@ -267,7 +267,7 @@ const ON_CHART: BrandSizeChart = {
 // Any brand not listed here falls back to NIKE_CHART
 const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
   nike:        NIKE_CHART,
-  jordan:      NIKE_CHART, // Jordan runs on Nike sizing
+  "air jordan": NIKE_CHART, // Air Jordan runs on Nike sizing
   converse:    NIKE_CHART,
   vans:        NIKE_CHART,
   puma:        NIKE_CHART,

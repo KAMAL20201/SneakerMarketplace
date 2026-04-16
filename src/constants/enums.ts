@@ -44,6 +44,7 @@ export const ROUTE_NAMES = {
   APPARELS: "/apparels",
   ELECTRONICS: "/electronics",
   COLLECTIBLES: "/collectibles",
+  BRANDS: "/brands",
 } as const;
 
 // Helper functions for dynamic routes
@@ -51,6 +52,8 @@ export const ROUTE_HELPERS = {
   PRODUCT_DETAIL: (id: string) => `/product/${id}`,
   EDIT_LISTING: (id: string) => `/edit-listing/${id}`,
   BLOG_POST: (slug: string) => `/blog/${slug}`,
+  BRAND_PAGE: (brand: string) => `/brands/${brand}`,
+  BRAND_MODEL_PAGE: (brand: string, model: string) => `/brands/${brand}/${model}`,
 } as const;
 
 // Product condition constants

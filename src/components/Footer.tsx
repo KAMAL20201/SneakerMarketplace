@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { Mail, Instagram } from "lucide-react";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { ALL_BRANDS } from "@/constants/brandsConfig";
 
 export function Footer() {
   return (
@@ -78,6 +79,25 @@ export function Footer() {
             </ul>
           </div>
           */}
+
+          {/* Shop by Brand */}
+          <div className="space-y-3 md:space-y-4">
+            <h4 className="text-base md:text-lg font-bold text-white">
+              Shop by Brand
+            </h4>
+            <ul className="space-y-2 md:space-y-3">
+              {ALL_BRANDS.map((brand) => (
+                <li key={brand.slug}>
+                  <Link
+                    to={`/brands/${brand.slug}`}
+                    className="text-gray-300 hover:text-white transition-colors text-sm md:text-base"
+                  >
+                    {brand.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           {/* Explore */}
           <div className="space-y-3 md:space-y-4">
