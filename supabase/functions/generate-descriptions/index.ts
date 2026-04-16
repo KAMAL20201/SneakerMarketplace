@@ -1,6 +1,26 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+const ALLOWED_ORIGINS = [
+  "https://theplugmarket.in",
+  "https://www.theplugmarket.in",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") ?? "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+  };
+}
+
 const SYSTEM_PROMPT = `You write product descriptions for The Plug Market, India's authentic sneakers and streetwear marketplace.
 
 Your descriptions are:
@@ -79,16 +99,26 @@ async function generateDescription(
 }
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = getCorsHeaders(req);
+
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   // Only allow POST
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Method Not Allowed", {
+      status: 405,
+      headers: corsHeaders,
+    });
   }
 
   const anthropicKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!anthropicKey) {
     return Response.json(
       { error: "ANTHROPIC_API_KEY secret is not set in Supabase" },
-      { status: 500 },
+      { status: 500, headers: corsHeaders },
     );
   }
 
@@ -114,11 +144,17 @@ Deno.serve(async (req: Request) => {
     .limit(limit);
 
   if (fetchError) {
-    return Response.json({ error: fetchError.message }, { status: 500 });
+    return Response.json(
+      { error: fetchError.message },
+      { status: 500, headers: corsHeaders },
+    );
   }
 
   if (!products || products.length === 0) {
-    return Response.json({ generated: 0, errors: 0, message: "Nothing to generate — all products already have descriptions." });
+    return Response.json(
+      { generated: 0, errors: 0, message: "Nothing to generate — all products already have descriptions." },
+      { headers: corsHeaders },
+    );
   }
 
   // Process in parallel batches of 20
@@ -154,10 +190,13 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  return Response.json({
-    generated,
-    errors,
-    total: products.length,
-    message: `Done. Generated ${generated} descriptions, ${errors} errors.`,
-  });
+  return Response.json(
+    {
+      generated,
+      errors,
+      total: products.length,
+      message: `Done. Generated ${generated} descriptions, ${errors} errors.`,
+    },
+    { headers: corsHeaders },
+  );
 });

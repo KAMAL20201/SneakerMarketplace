@@ -1,0 +1,8 @@
+[functions.generate-descriptions]
+verify_jwt = false
+
+[functions.bulk-import-products]
+verify_jwt = false
+
+[functions.send-order-email]
+verify_jwt = false
