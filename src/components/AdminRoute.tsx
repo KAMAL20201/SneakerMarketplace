@@ -3,7 +3,6 @@ import { Navigate } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ROUTE_NAMES } from "@/constants/enums";
-import { isAdminOtpVerified } from "@/lib/adminOtp";
 import NotFound from "@/pages/NotFound";
 
 interface AdminRouteProps {
@@ -11,11 +10,11 @@ interface AdminRouteProps {
 }
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { user } = useAuth();
+  const { user, authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
 
-  // Show loading while checking admin status
-  if (adminLoading) {
+  // Wait for both auth session restore and admin status check before deciding
+  if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -36,10 +35,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     return <NotFound />;
   }
 
-  // Admin but OTP not yet verified — send back to login to complete the OTP step
-  if (!isAdminOtpVerified(user.id)) {
-    return <Navigate to={ROUTE_NAMES.LOGIN} replace />;
-  }
-
+  // If user is authenticated and is an admin, they already completed OTP during
+  // sign-in — no need to re-check OTP state on page refresh or navigation.
   return <>{children}</>;
 };

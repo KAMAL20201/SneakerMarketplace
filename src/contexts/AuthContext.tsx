@@ -13,6 +13,7 @@ import { clearAdminOtp } from "../lib/adminOtp";
 
 const AuthContext = createContext<{
   user: User | null | undefined;
+  authLoading: boolean;
   signUp: (
     email: string,
     password: string,
@@ -26,6 +27,7 @@ const AuthContext = createContext<{
   isLoggingIn: boolean;
 }>({
   user: null,
+  authLoading: true,
   signUp: async () => {},
   signIn: async () => {},
   signOut: async () => {},
@@ -40,10 +42,9 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null | undefined>(null);
-  // Start as false on both server and client to avoid hydration mismatch.
-  // Auth state loads asynchronously via useEffect — the app renders with
-  // user=null initially, which is the same on server and client.
-  const [loading, setLoading] = useState(false);
+  // Start as true so AdminRoute waits for the session to be restored before
+  // making any redirect decisions (avoids redirect to login on page refresh).
+  const [authLoading, setAuthLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [operationAfterLogin, setOperationAfterLogin] = useState<() => void>(
     () => {}
@@ -64,7 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setLoading(false);
+      setAuthLoading(false);
     });
 
     // Listen for auth changes
@@ -72,7 +73,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      setLoading(false);
+      setAuthLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -156,6 +157,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = {
     user,
+    authLoading,
     signUp,
     signIn,
     signOut,
@@ -166,7 +168,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
