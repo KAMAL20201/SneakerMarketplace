@@ -580,12 +580,12 @@ const BrandPage = () => {
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Shop by Model
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               {brandConfig.models.map((m) => (
                 <Link
                   key={m.slug}
                   to={`/brands/${brandConfig.slug}/${m.slug}`}
-                  className="px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
+                  className="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
                 >
                   {m.name}
                 </Link>
@@ -600,14 +600,14 @@ const BrandPage = () => {
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Other {brandConfig.name} Models
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               {brandConfig.models
                 .filter((m) => m.slug !== model.slug)
                 .map((m) => (
                   <Link
                     key={m.slug}
                     to={`/brands/${brandConfig.slug}/${m.slug}`}
-                    className="px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
+                    className="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
                   >
                     {m.name}
                   </Link>
