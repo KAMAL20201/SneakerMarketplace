@@ -423,8 +423,13 @@ async function main() {
     `)
     .eq("status", "active")
     .not("product_images", "is", null)
-    .limit(LIMIT * 3) // fetch more than needed so we can filter
-    .order("created_at", { ascending: false });
+    // Server-side: exclude product listings that already have an AI "on feet" image
+    // (filters on the related table column using dot-notation)
+    .not("product_images.image_url", "ilike", "%ai-on-feet%")
+    // Fetch a larger candidate window so client-side filtering will find enough
+    .limit(LIMIT * 10)
+    // Process oldest first so repeated runs won't repeatedly fetch recently-processed items
+    .order("created_at", { ascending: true });
 
   if (fetchError) {
     console.error("❌  Supabase fetch failed:", fetchError.message);

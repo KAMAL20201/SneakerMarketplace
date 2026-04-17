@@ -174,7 +174,6 @@ export async function loader({ request }: Route.LoaderArgs) {
     p_limit: PAGE_SIZE,
     p_offset: 0,
     p_deals: false,
-    p_exact_phrase: collection.exactPhrase,
   });
 
   type RpcRow = Omit<Listing, "matched_size_price"> & {
@@ -292,7 +291,6 @@ const CollectionPage = () => {
             p_limit: PAGE_SIZE,
             p_offset: fromOffset,
             p_deals: false,
-            p_exact_phrase: collection.exactPhrase,
           },
         );
 
