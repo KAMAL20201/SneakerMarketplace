@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useLoaderData, useParams, data } from "react-router";
+import { Link, useLoaderData, useParams, useSearchParams, data } from "react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/BrandPage";
 import {
@@ -52,6 +52,7 @@ interface Listing {
   brand: string;
   price: number;
   min_price: number;
+  matched_size_price: number | null;
   retail_price: number | null;
   size_value: string;
   condition: string;
@@ -71,10 +72,10 @@ interface FilterState {
 const PAGE_SIZE = 12;
 
 const sortOptions = [
-  { value: "newest", label: "Newest First" },
-  { value: "price-low", label: "Price: Low to High" },
-  { value: "price-high", label: "Price: High to Low" },
-  { value: "discount-high", label: "Discount: High to Low" },
+  { value: "newest", label: "Newest First", shortLabel: "Newest" },
+  { value: "price-low", label: "Price: Low to High", shortLabel: "Low to High" },
+  { value: "price-high", label: "Price: High to Low", shortLabel: "High to Low" },
+  { value: "discount-high", label: "Discount: High to Low", shortLabel: "Best Deals" },
 ];
 
 const conditions = [
@@ -86,6 +87,43 @@ const conditions = [
 ];
 
 const sneakerSizes = Object.values(SNEAKER_SIZES);
+
+const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
+  const params = new URLSearchParams();
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
+  if (filters.condition.length > 0)
+    params.set("condition", filters.condition.join(","));
+  if (filters.size.length > 0) params.set("size", filters.size.join(","));
+  if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
+    params.set("priceMin", filters.priceRange[0].toString());
+    params.set("priceMax", filters.priceRange[1].toString());
+  }
+  if (filters.sortBy !== "newest") params.set("sortBy", filters.sortBy);
+  return params;
+};
+
+const parseFiltersFromURL = (
+  searchParams: URLSearchParams,
+): Partial<FilterState> => {
+  const partial: Partial<FilterState> = {};
+  const search = searchParams.get("search");
+  if (search) partial.search = search;
+  const condition = searchParams.get("condition");
+  if (condition) partial.condition = condition.split(",").filter(Boolean);
+  const size = searchParams.get("size");
+  if (size) partial.size = size.split(",").filter(Boolean);
+  const priceMin = searchParams.get("priceMin");
+  const priceMax = searchParams.get("priceMax");
+  if (priceMin || priceMax) {
+    partial.priceRange = [
+      priceMin ? parseInt(priceMin) : 0,
+      priceMax ? parseInt(priceMax) : 100000,
+    ] as [number, number];
+  }
+  const sortBy = searchParams.get("sortBy");
+  if (sortBy) partial.sortBy = sortBy;
+  return partial;
+};
 
 // ── Meta ──────────────────────────────────────────────────────────────────────
 export function meta({
@@ -167,13 +205,13 @@ export async function loader({ request }: Route.LoaderArgs) {
     p_exact_phrase: model !== null ? (model.exactPhrase ?? false) : false,
   });
 
-  type RpcRow = Listing & {
+  type RpcRow = Omit<Listing, "matched_size_price"> & {
     matched_size_price: number | null;
     total_count: number;
   };
   const rows = (rpcData ?? []) as RpcRow[];
   const listings: Listing[] = rows.map(
-    ({ matched_size_price: _m, total_count: _t, ...rest }) => rest as Listing,
+    ({ total_count: _t, ...rest }) => ({ ...rest, matched_size_price: null }),
   );
   const totalCount = rows.length > 0 ? rows[0].total_count : 0;
 
@@ -187,10 +225,28 @@ export async function loader({ request }: Route.LoaderArgs) {
   );
 }
 
+// ── Revalidation ─────────────────────────────────────────────────────────────
+// Prevent the loader from re-running when only search params change (sort/filter).
+// The loader always returns "newest" data and client-side fetches handle filters,
+// so re-running it on URL param changes causes a double API call + flicker.
+export function shouldRevalidate({
+  currentUrl,
+  nextUrl,
+  defaultShouldRevalidate,
+}: {
+  currentUrl: URL;
+  nextUrl: URL;
+  defaultShouldRevalidate: boolean;
+}) {
+  if (currentUrl.pathname === nextUrl.pathname) return false;
+  return defaultShouldRevalidate;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 const BrandPage = () => {
   const loaderData = useLoaderData<typeof loader>();
   const params = useParams<{ brand: string; model?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const brandConfig: BrandConfig | undefined =
     BRANDS_CONFIG[params.brand ?? ""];
@@ -206,11 +262,14 @@ const BrandPage = () => {
     sortBy: "newest",
   };
 
+  const urlFilters = parseFiltersFromURL(searchParams);
+  const initialFilters: FilterState = { ...defaultFilters, ...urlFilters };
+
   const ssrListings = loaderData?.listings ?? [];
   const ssrTotal = loaderData?.totalCount ?? 0;
 
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
-  const [tempFilters, setTempFilters] = useState<FilterState>(defaultFilters);
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const [tempFilters, setTempFilters] = useState<FilterState>(initialFilters);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({
@@ -273,14 +332,13 @@ const BrandPage = () => {
 
         if (error) throw error;
 
-        type RpcRow = Listing & {
+        type RpcRow = Omit<Listing, "matched_size_price"> & {
           matched_size_price: number | null;
           total_count: number;
         };
         const rows = (rpcData ?? []) as RpcRow[];
         const newListings: Listing[] = rows.map(
-          ({ matched_size_price: _m, total_count: _t, ...rest }) =>
-            rest as Listing,
+          ({ total_count: _t, ...rest }) => ({ ...rest }),
         );
         const newTotal = rows.length > 0 ? rows[0].total_count : 0;
 
@@ -308,15 +366,17 @@ const BrandPage = () => {
   useEffect(() => {
     const newListings = loaderData?.listings ?? [];
     const newTotal = loaderData?.totalCount ?? 0;
+    const currentUrlFilters = parseFiltersFromURL(searchParams);
+    const filtersToUse: FilterState = { ...defaultFilters, ...currentUrlFilters };
     setListings(newListings);
     setOffset(newListings.length);
     setHasMore(newListings.length === PAGE_SIZE);
     setTotalCount(newTotal);
     setLoadingInitial(newListings.length === 0);
-    setFilters(defaultFilters);
-    setTempFilters(defaultFilters);
-    if (newListings.length === 0) {
-      fetchPage(0, defaultFilters, true);
+    setFilters(filtersToUse);
+    setTempFilters(filtersToUse);
+    if (newListings.length === 0 || filtersToUse.sortBy !== "newest") {
+      fetchPage(0, filtersToUse, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaderData]);
@@ -356,6 +416,7 @@ const BrandPage = () => {
   ) => {
     const updated = { ...filters, [key]: value };
     setFilters(updated);
+    setSearchParams(serializeFiltersToURL(updated), { replace: true });
     fetchPage(0, updated, true);
   };
 
@@ -366,6 +427,7 @@ const BrandPage = () => {
   const applyFilters = () => {
     setFilters(tempFilters);
     setFilterSheetOpen(false);
+    setSearchParams(serializeFiltersToURL(tempFilters), { replace: true });
     fetchPage(0, tempFilters, true);
   };
 
@@ -373,6 +435,7 @@ const BrandPage = () => {
     setFilters(defaultFilters);
     setTempFilters(defaultFilters);
     setFilterSheetOpen(false);
+    setSearchParams(serializeFiltersToURL(defaultFilters), { replace: true });
     fetchPage(0, defaultFilters, true);
   };
 
@@ -534,12 +597,12 @@ const BrandPage = () => {
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Shop by Model
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               {brandConfig.models.map((m) => (
                 <Link
                   key={m.slug}
                   to={`/brands/${brandConfig.slug}/${m.slug}`}
-                  className="px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
+                  className="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
                 >
                   {m.name}
                 </Link>
@@ -554,14 +617,14 @@ const BrandPage = () => {
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Other {brandConfig.name} Models
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
               {brandConfig.models
                 .filter((m) => m.slug !== model.slug)
                 .map((m) => (
                   <Link
                     key={m.slug}
                     to={`/brands/${brandConfig.slug}/${m.slug}`}
-                    className="px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
+                    className="shrink-0 px-4 py-1.5 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 shadow-sm"
                   >
                     {m.name}
                   </Link>
@@ -605,10 +668,14 @@ const BrandPage = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30"
+                  className={`border-0 rounded-xl ${
+                    filters.sortBy !== "newest"
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
+                      : "glass-button text-gray-700 hover:bg-white/30"
+                  }`}
                 >
                   <SortAsc className="h-4 w-4 mr-2" />
-                  Sort
+                  {sortOptions.find((o) => o.value === filters.sortBy)?.shortLabel ?? "Sort"}
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </PopoverTrigger>
@@ -990,7 +1057,11 @@ const BrandPage = () => {
               {listings.map((listing) => (
                 <Link
                   key={listing.id}
-                  to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}
+                  to={
+                    filters.size.length > 0
+                      ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}?size=${encodeURIComponent(filters.size[0])}`
+                      : ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)
+                  }
                 >
                   <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
                     <CardContent className="p-0">
@@ -1004,7 +1075,7 @@ const BrandPage = () => {
                         {listing.retail_price &&
                           (() => {
                             const displayPrice =
-                              listing.min_price ?? listing.price;
+                              listing.matched_size_price ?? listing.min_price ?? listing.price;
                             if (listing.retail_price <= displayPrice)
                               return null;
                             const pct = Math.round(
@@ -1034,7 +1105,7 @@ const BrandPage = () => {
                           <span className="font-bold text-gray-800 text-base md:text-lg">
                             ₹
                             {(
-                              listing.min_price ?? listing.price
+                              listing.matched_size_price ?? listing.min_price ?? listing.price
                             ).toLocaleString()}
                           </span>
                           <ConditionBadge

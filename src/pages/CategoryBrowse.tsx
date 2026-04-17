@@ -300,10 +300,10 @@ const CategoryBrowse = () => {
   ];
 
   const sortOptions = [
-    { value: "newest", label: "Newest First" },
-    { value: "price-low", label: "Price: Low to High" },
-    { value: "price-high", label: "Price: High to Low" },
-    { value: "discount-high", label: "Discount: High to Low" },
+    { value: "newest", label: "Newest First", shortLabel: "Newest" },
+    { value: "price-low", label: "Price: Low to High", shortLabel: "Low to High" },
+    { value: "price-high", label: "Price: High to Low", shortLabel: "High to Low" },
+    { value: "discount-high", label: "Discount: High to Low", shortLabel: "Best Deals" },
   ];
 
   const fetchPage = useCallback(
@@ -731,10 +731,14 @@ const CategoryBrowse = () => {
               <PopoverTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30"
+                  className={`border-0 rounded-xl ${
+                    filters.sortBy !== "price-low"
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
+                      : "glass-button text-gray-700 hover:bg-white/30"
+                  }`}
                 >
                   <SortAsc className="h-4 w-4 mr-2" />
-                  Sort
+                  {sortOptions.find((o) => o.value === filters.sortBy)?.shortLabel ?? "Sort"}
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </PopoverTrigger>
