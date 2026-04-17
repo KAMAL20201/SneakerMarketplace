@@ -55,6 +55,7 @@ interface Listing {
   brand: string;
   price: number;
   min_price: number;
+  matched_size_price: number | null;
   retail_price: number | null;
   size_value: string;
   condition: string;
@@ -176,13 +177,13 @@ export async function loader({ request }: Route.LoaderArgs) {
     p_exact_phrase: collection.exactPhrase,
   });
 
-  type RpcRow = Listing & {
+  type RpcRow = Omit<Listing, "matched_size_price"> & {
     matched_size_price: number | null;
     total_count: number;
   };
   const rows = (rpcData ?? []) as RpcRow[];
   const listings: Listing[] = rows.map(
-    ({ matched_size_price: _m, total_count: _t, ...rest }) => rest as Listing,
+    ({ total_count: _t, ...rest }) => ({ ...rest, matched_size_price: null }),
   );
   const totalCount = rows.length > 0 ? rows[0].total_count : 0;
 
@@ -280,14 +281,13 @@ const CollectionPage = () => {
 
         if (error) throw error;
 
-        type RpcRow = Listing & {
+        type RpcRow = Omit<Listing, "matched_size_price"> & {
           matched_size_price: number | null;
           total_count: number;
         };
         const rows = (rpcData ?? []) as RpcRow[];
         const newListings: Listing[] = rows.map(
-          ({ matched_size_price: _m, total_count: _t, ...rest }) =>
-            rest as Listing,
+          ({ total_count: _t, ...rest }) => ({ ...rest }),
         );
         const newTotal = rows.length > 0 ? rows[0].total_count : 0;
 
@@ -937,7 +937,7 @@ const CollectionPage = () => {
                         {listing.retail_price &&
                           (() => {
                             const displayPrice =
-                              listing.min_price ?? listing.price;
+                              listing.matched_size_price ?? listing.min_price ?? listing.price;
                             if (listing.retail_price <= displayPrice)
                               return null;
                             const pct = Math.round(
@@ -967,7 +967,7 @@ const CollectionPage = () => {
                           <span className="font-bold text-gray-800 text-base md:text-lg">
                             ₹
                             {(
-                              listing.min_price ?? listing.price
+                              listing.matched_size_price ?? listing.min_price ?? listing.price
                             ).toLocaleString()}
                           </span>
                           <ConditionBadge
