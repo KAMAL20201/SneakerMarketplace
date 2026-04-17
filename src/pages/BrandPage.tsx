@@ -225,6 +225,23 @@ export async function loader({ request }: Route.LoaderArgs) {
   );
 }
 
+// ── Revalidation ─────────────────────────────────────────────────────────────
+// Prevent the loader from re-running when only search params change (sort/filter).
+// The loader always returns "newest" data and client-side fetches handle filters,
+// so re-running it on URL param changes causes a double API call + flicker.
+export function shouldRevalidate({
+  currentUrl,
+  nextUrl,
+  defaultShouldRevalidate,
+}: {
+  currentUrl: URL;
+  nextUrl: URL;
+  defaultShouldRevalidate: boolean;
+}) {
+  if (currentUrl.pathname === nextUrl.pathname) return false;
+  return defaultShouldRevalidate;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 const BrandPage = () => {
   const loaderData = useLoaderData<typeof loader>();
