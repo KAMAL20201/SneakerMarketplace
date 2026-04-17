@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useLoaderData, useParams, data } from "react-router";
+import { Link, useLoaderData, useParams, useSearchParams, data } from "react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/CollectionPage";
 import {
@@ -89,6 +89,40 @@ const conditions = [
 
 const sneakerSizes = Object.values(SNEAKER_SIZES);
 
+const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
+  const params = new URLSearchParams();
+  if (filters.condition.length > 0)
+    params.set("condition", filters.condition.join(","));
+  if (filters.size.length > 0) params.set("size", filters.size.join(","));
+  if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
+    params.set("priceMin", filters.priceRange[0].toString());
+    params.set("priceMax", filters.priceRange[1].toString());
+  }
+  if (filters.sortBy !== "newest") params.set("sortBy", filters.sortBy);
+  return params;
+};
+
+const parseFiltersFromURL = (
+  searchParams: URLSearchParams,
+): Partial<FilterState> => {
+  const partial: Partial<FilterState> = {};
+  const condition = searchParams.get("condition");
+  if (condition) partial.condition = condition.split(",").filter(Boolean);
+  const size = searchParams.get("size");
+  if (size) partial.size = size.split(",").filter(Boolean);
+  const priceMin = searchParams.get("priceMin");
+  const priceMax = searchParams.get("priceMax");
+  if (priceMin || priceMax) {
+    partial.priceRange = [
+      priceMin ? parseInt(priceMin) : 0,
+      priceMax ? parseInt(priceMax) : 100000,
+    ] as [number, number];
+  }
+  const sortBy = searchParams.get("sortBy");
+  if (sortBy) partial.sortBy = sortBy;
+  return partial;
+};
+
 // ── Meta ──────────────────────────────────────────────────────────────────────
 export function meta({ params }: { params: { id?: string } }) {
   const collection = COLLECTIONS_CONFIG[params.id ?? ""];
@@ -166,6 +200,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 const CollectionPage = () => {
   const loaderData = useLoaderData<typeof loader>();
   const params = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const collection: CollectionConfig | undefined =
     COLLECTIONS_CONFIG[params.id ?? ""];
@@ -177,11 +212,14 @@ const CollectionPage = () => {
     sortBy: "newest",
   };
 
+  const urlFilters = parseFiltersFromURL(searchParams);
+  const initialFilters: FilterState = { ...defaultFilters, ...urlFilters };
+
   const ssrListings = loaderData?.listings ?? [];
   const ssrTotal = loaderData?.totalCount ?? 0;
 
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
-  const [tempFilters, setTempFilters] = useState<FilterState>(defaultFilters);
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const [tempFilters, setTempFilters] = useState<FilterState>(initialFilters);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [sortPopoverOpen, setSortPopoverOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({
@@ -270,19 +308,21 @@ const CollectionPage = () => {
     [collection],
   );
 
-  // Sync state when loaderData changes (client-side navigation)
+  // Sync state when loaderData changes (client-side navigation to a new collection)
   useEffect(() => {
     const newListings = loaderData?.listings ?? [];
     const newTotal = loaderData?.totalCount ?? 0;
+    const currentUrlFilters = parseFiltersFromURL(searchParams);
+    const filtersToUse: FilterState = { ...defaultFilters, ...currentUrlFilters };
     setListings(newListings);
     setOffset(newListings.length);
     setHasMore(newListings.length === PAGE_SIZE);
     setTotalCount(newTotal);
     setLoadingInitial(newListings.length === 0);
-    setFilters(defaultFilters);
-    setTempFilters(defaultFilters);
-    if (newListings.length === 0) {
-      fetchPage(0, defaultFilters, true);
+    setFilters(filtersToUse);
+    setTempFilters(filtersToUse);
+    if (newListings.length === 0 || filtersToUse.sortBy !== "newest") {
+      fetchPage(0, filtersToUse, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaderData]);
@@ -322,6 +362,7 @@ const CollectionPage = () => {
   ) => {
     const updated = { ...filters, [key]: value };
     setFilters(updated);
+    setSearchParams(serializeFiltersToURL(updated), { replace: true });
     fetchPage(0, updated, true);
   };
 
@@ -332,6 +373,7 @@ const CollectionPage = () => {
   const applyFilters = () => {
     setFilters(tempFilters);
     setFilterSheetOpen(false);
+    setSearchParams(serializeFiltersToURL(tempFilters), { replace: true });
     fetchPage(0, tempFilters, true);
   };
 
@@ -339,6 +381,7 @@ const CollectionPage = () => {
     setFilters(defaultFilters);
     setTempFilters(defaultFilters);
     setFilterSheetOpen(false);
+    setSearchParams(serializeFiltersToURL(defaultFilters), { replace: true });
     fetchPage(0, defaultFilters, true);
   };
 
