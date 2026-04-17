@@ -923,7 +923,11 @@ const CollectionPage = () => {
               {listings.map((listing) => (
                 <Link
                   key={listing.id}
-                  to={ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}
+                  to={
+                    filters.size.length > 0
+                      ? `${ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)}?size=${encodeURIComponent(filters.size[0])}`
+                      : ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug ?? listing.id)
+                  }
                 >
                   <Card className="glass-card border-0 hover:scale-[1.02] transition-all duration-300 rounded-2xl overflow-hidden group">
                     <CardContent className="p-0">
