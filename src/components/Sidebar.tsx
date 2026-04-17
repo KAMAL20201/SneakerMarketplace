@@ -12,6 +12,7 @@ import {
   Book,
   ImagePlay,
   FileText,
+  Layers,
 } from "lucide-react";
 
 import {
@@ -30,6 +31,7 @@ import {
 import { Link } from "react-router";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { useAdmin } from "@/hooks/useAdmin";
+import { ALL_COLLECTIONS } from "@/constants/collectionsConfig";
 
 // Navigation items - sell/listing items only shown to admin
 const getNavData = (isAdmin: boolean) => ({
@@ -78,6 +80,14 @@ const getNavData = (isAdmin: boolean) => ({
           icon: Book,
         },
       ],
+    },
+    {
+      title: "Collections",
+      items: ALL_COLLECTIONS.map((col) => ({
+        title: col.name,
+        url: `/collections/${col.slug}`,
+        icon: Layers,
+      })),
     },
     {
       title: "My Account",

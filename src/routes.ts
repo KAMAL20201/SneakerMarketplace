@@ -17,6 +17,10 @@ export default [
   route("new-drops", "./pages/NewDrops.tsx"),
   route("wishlist", "./pages/Wishlist.tsx"),
 
+  // Collection pages — SEO-critical (SSR)
+  route("collections", "./pages/CollectionsIndex.tsx"),
+  route("collections/:id", "./pages/CollectionPage.tsx"),
+
   // Brand pages — SEO-critical (SSR)
   route("brands", "./pages/BrandsIndex.tsx"),
   route("brands/:brand", "./pages/BrandPage.tsx", { id: "brand-page" }),

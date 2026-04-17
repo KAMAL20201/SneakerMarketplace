@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import NewDropsSection from "@/components/NewDropsSection";
+import CollectionsSection from "@/components/CollectionsSection";
 import { useLoaderData, data } from "react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/Home";
@@ -292,6 +293,9 @@ const Home = () => {
 
       {/* Brand Spotlight */}
       <BrandSpotlight />
+
+      {/* Collections Section */}
+      <CollectionsSection />
 
       {/* New Drops Section */}
       <NewDropsSection initialListings={newDrops} />
