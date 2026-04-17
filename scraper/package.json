@@ -6,7 +6,8 @@
   "scripts": {
     "scrape": "node dist/index.js",
     "update-prices": "node update-prices.mjs",
-    "enrich-images": "node enrich-images.mjs"
+    "enrich-images": "node enrich-images.mjs",
+    "generate-on-feet": "node generate-on-feet.mjs"
   },
   "dependencies": {
     "csv-writer": "^1.6.0",
