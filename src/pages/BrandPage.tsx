@@ -144,6 +144,8 @@ export function meta({
     ? brandConfig.models.find((m) => m.slug === params.model) ?? null
     : null;
 
+  const fallbackImage = "https://theplugmarket.in/og-image.jpg";
+
   if (model) {
     const title = `Buy ${brandConfig.name} ${model.name} in India | The Plug Market`;
     const url = `https://theplugmarket.in/brands/${brandConfig.slug}/${model.slug}`;
@@ -151,9 +153,15 @@ export function meta({
       { title },
       { name: "description", content: model.description },
       { tagName: "link", rel: "canonical", href: url },
+      { property: "og:type", content: "website" },
       { property: "og:title", content: title },
       { property: "og:description", content: model.description },
       { property: "og:url", content: url },
+      { property: "og:image", content: fallbackImage },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: model.description },
+      { name: "twitter:image", content: fallbackImage },
     ];
   }
 
@@ -163,9 +171,15 @@ export function meta({
     { title },
     { name: "description", content: brandConfig.description },
     { tagName: "link", rel: "canonical", href: url },
+    { property: "og:type", content: "website" },
     { property: "og:title", content: title },
     { property: "og:description", content: brandConfig.description },
     { property: "og:url", content: url },
+    { property: "og:image", content: fallbackImage },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: brandConfig.description },
+    { name: "twitter:image", content: fallbackImage },
   ];
 }
 
