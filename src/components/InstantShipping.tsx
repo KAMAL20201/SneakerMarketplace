@@ -48,7 +48,7 @@ const InstantShipping = () => {
           variant="ghost"
           className="text-purple-600 hover:text-purple-700 font-semibold"
         >
-          <Link to={ROUTE_NAMES.BROWSE}>View All</Link>
+          <Link to={`${ROUTE_NAMES.BROWSE}?instantShipping=true`}>View All</Link>
         </Button>
       </div>
 
