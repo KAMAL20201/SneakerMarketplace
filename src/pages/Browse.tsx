@@ -321,7 +321,7 @@ const Browse = () => {
       else setLoadingMore(true);
 
       try {
-        const { data, error } = await supabase.rpc("browse_all_listings", {
+        const rpcParams: Record<string, unknown> = {
           p_categories:
             currentFilters.category.length > 0 ? currentFilters.category : null,
           p_sizes: currentFilters.size.length > 0 ? currentFilters.size : null,
@@ -340,8 +340,16 @@ const Browse = () => {
           p_limit: PAGE_SIZE,
           p_offset: fromOffset,
           p_deals: currentFilters.deals,
-          p_instant_shipping: currentFilters.instantShipping,
-        });
+        };
+        // Only include p_instant_shipping when true — the DB function must
+        // have the updated signature (migration 20260418000001) for this to work.
+        if (currentFilters.instantShipping) {
+          rpcParams.p_instant_shipping = true;
+        }
+        const { data, error } = await supabase.rpc(
+          "browse_all_listings",
+          rpcParams,
+        );
 
         if (error) throw error;
 
