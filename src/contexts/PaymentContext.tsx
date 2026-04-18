@@ -45,18 +45,20 @@ interface UpiPaymentState {
   orderIds: string[];
   whatsappURL: string;
   amount: number;
+  couponCode?: string | null;
+  discountAmount?: number;
 }
 
 interface PaymentContextType {
   isLoading: boolean;
   error: string | null;
   initiatePayment: (
-    // amount: number,
     currency: string,
     metadata?: Record<string, string>,
     items?: CartItem[],
     shippingAddress?: ShippingAddress,
-    amount?: number
+    amount?: number,
+    couponCode?: string | null
   ) => Promise<void>;
   clearError: () => void;
 }
@@ -93,12 +95,12 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
 
   const initiatePayment = useCallback(
     async (
-      // amount: number,
       _currency: string,
       metadata: Record<string, string> = {},
       items: CartItem[] = [],
       shippingAddress?: ShippingAddress,
-      amount?: number
+      amount?: number,
+      couponCode?: string | null
     ) => {
       try {
         setIsLoading(true);
@@ -115,6 +117,13 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         // Process checkout - create orders with pending_payment status
         // Returns the created orders so we can use their real DB IDs in the WhatsApp message
         if (metadata.type === "cart_checkout" && items.length > 0) {
+          // Calculate the coupon discount amount from the difference between the
+          // undiscounted cart total (client prices) and the discounted amount the
+          // user is being charged. This is the pre-validated discount from validate_coupon.
+          const clientTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+          const couponDiscountAmount =
+            couponCode && amount != null ? Math.max(clientTotal - amount, 0) : 0;
+
           const createdOrders = await OrderService.processWhatsAppCheckout(
             items,
             user?.id || "",
@@ -126,15 +135,28 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
               email: shippingAddress.email || user?.email || "",
               phone: shippingAddress.phone || "",
             },
-            shippingAddress
+            shippingAddress,
+            couponCode ?? null,
+            couponDiscountAmount
           );
 
           // Build WhatsApp URL using the real DB order IDs so they match the dashboard
           const orderIds = createdOrders.map((o) => o.id);
-          const whatsappURL = WhatsAppService.generateWhatsAppURL(orderIds);
+          const discountAmount = couponDiscountAmount > 0 ? couponDiscountAmount : undefined;
+          const whatsappURL = WhatsAppService.generateWhatsAppURL(
+            orderIds,
+            couponCode ?? null,
+            discountAmount
+          );
 
           // Show UPI payment screen instead of immediately redirecting to WhatsApp
-          setUpiPaymentState({ orderIds, whatsappURL, amount: amount || 0 });
+          setUpiPaymentState({
+            orderIds,
+            whatsappURL,
+            amount: amount || 0,
+            couponCode,
+            discountAmount,
+          });
         }
       } catch (error) {
         console.error("Order error:", error);
@@ -211,6 +233,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
               ₹{upiPaymentState?.amount}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">Amount to pay</p>
+            {upiPaymentState?.couponCode && (
+              <p className="text-xs text-green-600 font-medium mt-1">
+                Coupon {upiPaymentState.couponCode} applied (−₹{upiPaymentState.discountAmount})
+              </p>
+            )}
           </div>
 
           {/* QR Code */}

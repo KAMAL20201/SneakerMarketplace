@@ -13,6 +13,7 @@ import {
   ImagePlay,
   FileText,
   Layers,
+  Tag,
 } from "lucide-react";
 
 import {
@@ -118,6 +119,11 @@ const getNavData = (isAdmin: boolean) => ({
                 title: "Descriptions",
                 url: ROUTE_NAMES.ADMIN_DESCRIPTIONS,
                 icon: FileText,
+              },
+              {
+                title: "Coupons",
+                url: ROUTE_NAMES.ADMIN_COUPONS,
+                icon: Tag,
               },
             ]
           : []),

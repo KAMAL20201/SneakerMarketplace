@@ -23,6 +23,7 @@ interface PaymentButtonProps {
   shippingAddress?: ShippingAddress;
   className?: string;
   buttonText?: string;
+  couponCode?: string | null;
   variant?:
     | "default"
     | "destructive"
@@ -40,6 +41,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   metadata = {},
   className = "",
   buttonText,
+  couponCode = null,
   variant = "default",
   size = "default",
   disabled = false,
@@ -49,7 +51,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   const { initiatePayment, isLoading, error } = usePayment();
   const handlePayment = async () => {
     try {
-      await initiatePayment(currency, metadata, items, shippingAddress, amount);
+      await initiatePayment(currency, metadata, items, shippingAddress, amount, couponCode);
     } catch (err) {
       console.error("Order failed:", err);
     }

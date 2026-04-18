@@ -25,6 +25,10 @@ export interface Order {
   variant_id?: string | null;
   /** Display name of the ordered variant e.g. "University Blue" */
   variant_name?: string | null;
+  coupon_id?: string | null;
+  coupon_code?: string | null;
+  discount_amount?: number;
+  original_amount?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -304,10 +308,11 @@ export class OrderService {
   // Process WhatsApp checkout - create orders with pending_payment status
   static async processWhatsAppCheckout(
     cartItems: CartItem[],
-    // orderRef: string,
     buyerId: string,
     buyerDetails: { full_name: string; email: string; phone?: string },
-    shippingAddress?: ShippingAddress
+    shippingAddress?: ShippingAddress,
+    couponCode?: string | null,
+    couponDiscountAmount?: number
   ): Promise<Order[]> {
     try {
       // Validate all cart items are still available before processing
@@ -370,6 +375,46 @@ export class OrderService {
         throw new Error(
           `Some items could not be processed: ${failedItems.join(", ")}. Please refresh your cart and try again.`
         );
+      }
+
+      // Store the coupon reference on the order WITHOUT redeeming it yet.
+      // Redemption (incrementing used_count + patching order amount) is deferred
+      // until the admin confirms payment via finalize_coupon_redemption.
+      if (couponCode && couponDiscountAmount && couponDiscountAmount > 0 && orders.length > 0) {
+        try {
+          const { data: couponRow } = await supabase
+            .from("coupons")
+            .select("id, applicable_product_ids")
+            .eq("code", couponCode.toUpperCase())
+            .single();
+
+          if (couponRow) {
+            // Find the first eligible order (the one whose item the coupon applies to).
+            // If the coupon has no product restriction, use the first order.
+            let targetOrder = orders[0];
+            if (couponRow.applicable_product_ids) {
+              const eligible = orders.find((o) =>
+                (couponRow.applicable_product_ids as string[]).includes(o.product_id)
+              );
+              if (eligible) targetOrder = eligible;
+            }
+
+            const { error: saveError } = await supabase.rpc("save_pending_coupon", {
+              p_order_id:        targetOrder.id,
+              p_coupon_id:       couponRow.id,
+              p_coupon_code:     couponCode.toUpperCase(),
+              p_discount_amount: couponDiscountAmount,
+            });
+
+            if (saveError) {
+              logger.warn(`Failed to save pending coupon (non-fatal): ${saveError.message}`);
+            }
+          }
+        } catch (couponErr) {
+          logger.warn(
+            `Coupon save error (non-fatal): ${couponErr instanceof Error ? couponErr.message : "Unknown error"}`
+          );
+        }
       }
 
       return orders;

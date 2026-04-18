@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { OrderService, type Order as OrderType } from "@/lib/orderService";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import ShipNowModal from "@/components/ShipNowModal";
 import { StockValidationService } from "@/lib/stockValidationService";
@@ -424,12 +425,32 @@ const MyOrders = () => {
                                       order.id,
                                       "confirmed",
                                     );
+
+                                    // Redeem the coupon now that payment is confirmed.
+                                    // finalize_coupon_redemption is a no-op if no coupon is
+                                    // attached or it was already redeemed.
+                                    let finalAmount = order.amount;
+                                    if (order.coupon_id && (order.discount_amount ?? 0) > 0 && order.original_amount == null) {
+                                      const { data: redeemResult, error: redeemErr } =
+                                        await supabase.rpc("finalize_coupon_redemption", {
+                                          p_order_id: order.id,
+                                          p_user_email: order.buyer_email || "",
+                                        });
+                                      if (redeemErr) {
+                                        toast.warning(`Coupon could not be redeemed: ${redeemErr.message}`);
+                                      } else if (redeemResult > 0) {
+                                        finalAmount = Math.max(order.amount - redeemResult, 0);
+                                      }
+                                    }
+
                                     setSellOrders((prev) =>
                                       prev.map((o) =>
                                         o.id === order.id
                                           ? {
                                               ...o,
                                               status: "confirmed" as const,
+                                              amount: finalAmount,
+                                              original_amount: order.coupon_id ? order.amount : null,
                                             }
                                           : o,
                                       ),

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useMemo, useEffect, useCallback } 
 import { useCartStorage } from "@/hooks/useCartStorage";
 import type { CartItem } from "@/lib/orderService";
 import { supabase } from "../lib/supabase";
+import type { AppliedCoupon } from "@/types/coupon";
 
 interface CartContextType {
   items: CartItem[];
@@ -15,6 +16,10 @@ interface CartContextType {
   totalPrice: number;
   pricesUpdated: boolean;
   dismissPriceUpdate: () => void;
+  appliedCoupon: AppliedCoupon | null;
+  applyDiscount: (coupon: AppliedCoupon) => void;
+  removeCoupon: () => void;
+  discountedTotal: number;
 }
 
 export const CartContext = createContext<CartContextType>({
@@ -29,6 +34,10 @@ export const CartContext = createContext<CartContextType>({
   totalPrice: 0,
   pricesUpdated: false,
   dismissPriceUpdate: () => {},
+  appliedCoupon: null,
+  applyDiscount: () => {},
+  removeCoupon: () => {},
+  discountedTotal: 0,
 });
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
@@ -37,6 +46,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [pricesUpdated, setPricesUpdated] = useState(false);
 
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const { debouncedSave, immediateSave, load, clear } = useCartStorage();
 
   // Load cart from localStorage on component mount
@@ -185,15 +195,38 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const clearCart = () => {
     setItems([]);
+    setAppliedCoupon(null);
     // Immediately clear from localStorage
     clear();
   };
+
+  const applyDiscount = useCallback((coupon: AppliedCoupon) => {
+    setAppliedCoupon(coupon);
+  }, []);
+
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+  }, []);
+
+  // Invalidate the applied coupon whenever cart items change (discount may no longer be valid)
+  useEffect(() => {
+    if (isLoaded) {
+      setAppliedCoupon(null);
+    }
+    // intentionally only reacts to item changes, not coupon changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
 
   const dismissPriceUpdate = useCallback(() => setPricesUpdated(false), []);
 
   const totalPrice = useMemo(() => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [items]);
+
+  const discountedTotal = useMemo(() => {
+    if (!appliedCoupon) return totalPrice;
+    return Math.max(totalPrice - appliedCoupon.discountAmount, 0);
+  }, [totalPrice, appliedCoupon]);
 
   return (
     <CartContext.Provider
@@ -209,6 +242,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         totalPrice,
         pricesUpdated,
         dismissPriceUpdate,
+        appliedCoupon,
+        applyDiscount,
+        removeCoupon,
+        discountedTotal,
       }}
     >
       {children}
