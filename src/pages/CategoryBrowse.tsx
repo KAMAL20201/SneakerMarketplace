@@ -562,7 +562,6 @@ const CategoryBrowse = () => {
 
   const getActiveFiltersCount = () => {
     let n = 0;
-    if (filters.condition.length > 0) n++;
     if (filters.brand.length > 0) n++;
     if (filters.size.length > 0) n++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) n++;
@@ -571,7 +570,6 @@ const CategoryBrowse = () => {
 
   const getTempFiltersCount = () => {
     let n = 0;
-    if (tempFilters.condition.length > 0) n++;
     if (tempFilters.brand.length > 0) n++;
     if (tempFilters.size.length > 0) n++;
     if (tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000)
@@ -853,62 +851,6 @@ const CategoryBrowse = () => {
                     )}
                   </div>
 
-                  {/* Condition */}
-                  <div>
-                    <button
-                      onClick={() => toggleSection("condition")}
-                      className="flex items-center justify-between w-full p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                    >
-                      <Label className="text-sm font-medium text-gray-700 cursor-pointer">
-                        Condition
-                        {tempFilters.condition.length > 0 && (
-                          <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 rounded-full">
-                            {tempFilters.condition.length}
-                          </span>
-                        )}
-                      </Label>
-                      {collapsedSections.condition ? (
-                        <ChevronDown className="h-4 w-4 text-gray-500" />
-                      ) : (
-                        <ChevronUp className="h-4 w-4 text-gray-500" />
-                      )}
-                    </button>
-                    {!collapsedSections.condition && (
-                      <div className="px-3 pb-3">
-                        <div className="grid grid-cols-1 gap-3">
-                          {conditions.map((condition) => (
-                            <div
-                              key={condition}
-                              className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                            >
-                              <Checkbox
-                                id={`condition-${condition}`}
-                                checked={tempFilters.condition.includes(
-                                  condition,
-                                )}
-                                onCheckedChange={(checked) =>
-                                  handleTempFilterChange(
-                                    "condition",
-                                    checked
-                                      ? [...tempFilters.condition, condition]
-                                      : tempFilters.condition.filter(
-                                          (c) => c !== condition,
-                                        ),
-                                  )
-                                }
-                                className="rounded-md"
-                              />
-                              <ConditionBadge
-                                condition={condition}
-                                className="text-xs"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
                   {/* Brand */}
                   <div>
                     <button
@@ -1047,39 +989,11 @@ const CategoryBrowse = () => {
         </div>
 
         {/* Active Filter Chips */}
-        {(filters.condition.length > 0 ||
-          filters.brand.length > 0 ||
+        {(filters.brand.length > 0 ||
           filters.size.length > 0 ||
           filters.priceRange[0] > 0 ||
           filters.priceRange[1] < 100000) && (
           <div className="flex flex-wrap items-center gap-2 mb-4 py-4 bg-gray-50/50">
-            {filters.condition.map((condition) => (
-              <ConditionBadge
-                key={condition}
-                condition={condition}
-                variant="glass"
-                className="text-xs font-medium flex items-center gap-1 pr-1"
-              >
-                <button
-                  onClick={() => {
-                    const u = {
-                      ...filters,
-                      condition: filters.condition.filter(
-                        (c) => c !== condition,
-                      ),
-                    };
-                    setFilters(u);
-                    setTempFilters(u);
-                    setSearchParams(serializeFiltersToURL(u), {
-                      replace: true,
-                    });
-                  }}
-                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </ConditionBadge>
-            ))}
             {filters.brand.map((brand) => (
               <Badge
                 key={brand}
