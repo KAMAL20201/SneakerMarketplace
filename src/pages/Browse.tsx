@@ -76,6 +76,7 @@ interface FilterState {
   priceRange: [number, number];
   sortBy: string;
   deals: boolean;
+  instantShipping: boolean;
 }
 
 const PAGE_SIZE = 12;
@@ -98,6 +99,7 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   }
   if (filters.sortBy !== "newest") params.set("sortBy", filters.sortBy);
   if (filters.deals) params.set("deals", "true");
+  if (filters.instantShipping) params.set("instantShipping", "true");
   return params;
 };
 
@@ -126,6 +128,7 @@ const parseFiltersFromURL = (
   const sortBy = searchParams.get("sortBy");
   if (sortBy) filters.sortBy = sortBy;
   if (searchParams.get("deals") === "true") filters.deals = true;
+  if (searchParams.get("instantShipping") === "true") filters.instantShipping = true;
   return filters;
 };
 
@@ -209,6 +212,7 @@ const Browse = () => {
     priceRange: [0, 100000],
     sortBy: "newest",
     deals: false,
+    instantShipping: false,
   };
 
   const urlFilters = parseFiltersFromURL(searchParams);
@@ -239,6 +243,7 @@ const Browse = () => {
       "priceMax",
       "sortBy",
       "deals",
+      "instantShipping",
     ].includes(k),
   );
   const ssrListings = !hasUrlFilters ? (loaderData?.listings ?? []) : [];
@@ -316,7 +321,7 @@ const Browse = () => {
       else setLoadingMore(true);
 
       try {
-        const { data, error } = await supabase.rpc("browse_all_listings", {
+        const rpcParams: Record<string, unknown> = {
           p_categories:
             currentFilters.category.length > 0 ? currentFilters.category : null,
           p_sizes: currentFilters.size.length > 0 ? currentFilters.size : null,
@@ -335,7 +340,16 @@ const Browse = () => {
           p_limit: PAGE_SIZE,
           p_offset: fromOffset,
           p_deals: currentFilters.deals,
-        });
+        };
+        // Only include p_instant_shipping when true — the DB function must
+        // have the updated signature (migration 20260418000001) for this to work.
+        if (currentFilters.instantShipping) {
+          rpcParams.p_instant_shipping = true;
+        }
+        const { data, error } = await supabase.rpc(
+          "browse_all_listings",
+          rpcParams,
+        );
 
         if (error) throw error;
 
@@ -619,11 +633,13 @@ const Browse = () => {
         {/* Header */}
         <div className="mb-6 flex flex-col items-center text-center">
           <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">
-            {filters.deals ? "🔥 Hot Deals" : "Browse Items"}
+            {filters.deals ? "🔥 Hot Deals" : filters.instantShipping ? "⚡ Instant Shipping" : "Browse Items"}
           </h1>
           <p className="text-gray-600 text-sm md:text-base mb-3">
             {filters.deals
               ? "Listings with huge discounts on retail price"
+              : filters.instantShipping
+              ? "Listings delivered in under 10 days"
               : "All listings are manually reviewed and approved"}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
