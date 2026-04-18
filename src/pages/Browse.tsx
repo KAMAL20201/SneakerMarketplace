@@ -76,6 +76,7 @@ interface FilterState {
   priceRange: [number, number];
   sortBy: string;
   deals: boolean;
+  instantShipping: boolean;
 }
 
 const PAGE_SIZE = 12;
@@ -98,6 +99,7 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   }
   if (filters.sortBy !== "newest") params.set("sortBy", filters.sortBy);
   if (filters.deals) params.set("deals", "true");
+  if (filters.instantShipping) params.set("instantShipping", "true");
   return params;
 };
 
@@ -126,6 +128,7 @@ const parseFiltersFromURL = (
   const sortBy = searchParams.get("sortBy");
   if (sortBy) filters.sortBy = sortBy;
   if (searchParams.get("deals") === "true") filters.deals = true;
+  if (searchParams.get("instantShipping") === "true") filters.instantShipping = true;
   return filters;
 };
 
@@ -209,6 +212,7 @@ const Browse = () => {
     priceRange: [0, 100000],
     sortBy: "newest",
     deals: false,
+    instantShipping: false,
   };
 
   const urlFilters = parseFiltersFromURL(searchParams);
@@ -239,6 +243,7 @@ const Browse = () => {
       "priceMax",
       "sortBy",
       "deals",
+      "instantShipping",
     ].includes(k),
   );
   const ssrListings = !hasUrlFilters ? (loaderData?.listings ?? []) : [];
@@ -335,6 +340,7 @@ const Browse = () => {
           p_limit: PAGE_SIZE,
           p_offset: fromOffset,
           p_deals: currentFilters.deals,
+          p_instant_shipping: currentFilters.instantShipping,
         });
 
         if (error) throw error;
@@ -621,11 +627,13 @@ const Browse = () => {
         {/* Header */}
         <div className="mb-6 flex flex-col items-center text-center">
           <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">
-            {filters.deals ? "🔥 Hot Deals" : "Browse Items"}
+            {filters.deals ? "🔥 Hot Deals" : filters.instantShipping ? "⚡ Instant Shipping" : "Browse Items"}
           </h1>
           <p className="text-gray-600 text-sm md:text-base mb-3">
             {filters.deals
               ? "Listings with huge discounts on retail price"
+              : filters.instantShipping
+              ? "Delivered in under 10 days"
               : "All listings are manually reviewed and approved"}
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
