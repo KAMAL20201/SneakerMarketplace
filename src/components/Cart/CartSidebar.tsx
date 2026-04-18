@@ -12,7 +12,7 @@ import type { ShippingAddress } from "@/types/shipping";
 // import { useNavigate } from "react-router";
 
 export function CartSidebar() {
-  const { isOpen, toggleCart } = useCart();
+  const { isOpen, toggleCart, removeCoupon } = useCart();
   // [GUEST CHECKOUT] Auth check removed - guests proceed directly
   // const { user, setOperationAfterLogin } = useAuth();
   const [currentStep, setCurrentStep] = useState<
@@ -40,9 +40,9 @@ export function CartSidebar() {
 
   const handleCloseCart = () => {
     toggleCart();
-    // Reset to initial state when closing
     setCurrentStep("cart");
     setShippingAddress(null);
+    removeCoupon();
   };
 
   const renderStep = () => {
