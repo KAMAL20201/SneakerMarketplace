@@ -160,6 +160,7 @@ export function meta({ location }: { location: { pathname: string } }) {
     description: `Browse ${categoryId} on The Plug Market.`,
     path: `/${slug}`,
   };
+  const image = "https://theplugmarket.in/og-image.jpg";
   return [
     { title: m.title },
     { name: "description", content: m.description },
@@ -168,9 +169,15 @@ export function meta({ location }: { location: { pathname: string } }) {
       rel: "canonical",
       href: `https://theplugmarket.in${m.path}`,
     },
+    { property: "og:type", content: "website" },
     { property: "og:url", content: `https://theplugmarket.in${m.path}` },
     { property: "og:title", content: m.title },
     { property: "og:description", content: m.description },
+    { property: "og:image", content: image },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: m.title },
+    { name: "twitter:description", content: m.description },
+    { name: "twitter:image", content: image },
   ];
 }
 
@@ -596,6 +603,7 @@ const CategoryBrowse = () => {
                 position: index + 1,
                 url: `https://theplugmarket.in${ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug)}`,
                 name: listing.title,
+                image: listing.image_url || undefined,
               })),
             }),
           }}

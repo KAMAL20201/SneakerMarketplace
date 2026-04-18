@@ -136,13 +136,21 @@ export function meta({ params }: { params: { id?: string } }) {
 
   const title = `Buy ${collection.name} in India | The Plug Market`;
   const url = `https://theplugmarket.in/collections/${collection.slug}`;
+  const image =
+    collection.imageUrl ?? "https://theplugmarket.in/og-image.jpg";
   return [
     { title },
     { name: "description", content: collection.description },
     { tagName: "link", rel: "canonical", href: url },
+    { property: "og:type", content: "website" },
     { property: "og:title", content: title },
     { property: "og:description", content: collection.description },
     { property: "og:url", content: url },
+    { property: "og:image", content: image },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: collection.description },
+    { name: "twitter:image", content: image },
   ];
 }
 
@@ -454,6 +462,7 @@ const CollectionPage = () => {
                 position: index + 1,
                 url: `https://theplugmarket.in${ROUTE_HELPERS.PRODUCT_DETAIL(listing.slug)}`,
                 name: listing.title,
+                image: listing.image_url || undefined,
               })),
             }),
           }}
