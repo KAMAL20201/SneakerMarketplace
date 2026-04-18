@@ -575,7 +575,6 @@ const Browse = () => {
 
   const getActiveFiltersCount = () => {
     let n = 0;
-    if (filters.condition.length > 0) n++;
     if (filters.brand.length > 0) n++;
     if (filters.category.length > 0) n++;
     if (filters.size.length > 0) n++;
@@ -585,7 +584,6 @@ const Browse = () => {
 
   const getTempFiltersCount = () => {
     let n = 0;
-    if (tempFilters.condition.length > 0) n++;
     if (tempFilters.brand.length > 0) n++;
     if (tempFilters.category.length > 0) n++;
     if (tempFilters.size.length > 0) n++;
@@ -1078,8 +1076,7 @@ const Browse = () => {
         </div>
 
         {/* Active Filter Chips */}
-        {(filters.condition.length > 0 ||
-          filters.brand.length > 0 ||
+        {(filters.brand.length > 0 ||
           filters.category.length > 0 ||
           filters.size.length > 0 ||
           filters.priceRange[0] > 0 ||
@@ -1110,33 +1107,6 @@ const Browse = () => {
                   <X className="h-3 w-3" />
                 </button>
               </Badge>
-            ))}
-            {filters.condition.map((condition) => (
-              <ConditionBadge
-                key={condition}
-                condition={condition}
-                variant="glass"
-                className="text-xs font-medium flex items-center gap-1 pr-1"
-              >
-                <button
-                  onClick={() => {
-                    const u = {
-                      ...filters,
-                      condition: filters.condition.filter(
-                        (c) => c !== condition,
-                      ),
-                    };
-                    setFilters(u);
-                    setTempFilters(u);
-                    setSearchParams(serializeFiltersToURL(u), {
-                      replace: true,
-                    });
-                  }}
-                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </ConditionBadge>
             ))}
             {filters.brand.map((brand) => (
               <Badge
