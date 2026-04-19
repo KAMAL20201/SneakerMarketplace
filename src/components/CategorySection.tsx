@@ -10,23 +10,43 @@ interface Props {
   viewAllUrl: string;
 }
 
+// Returns a number that changes once per day — same day always yields same products.
+const getDailySeed = () => Math.floor(Date.now() / 86_400_000);
+
+// Fisher-Yates shuffle driven by a simple LCG so results are deterministic per seed.
+const seededShuffle = <T,>(array: T[], seed: number): T[] => {
+  const arr = [...array];
+  let s = seed;
+  const next = () => {
+    s = Math.imul(s, 1664525) + 1013904223;
+    return (s >>> 0) / 0xffffffff;
+  };
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 const CategorySection = ({ categoryId, title, viewAllUrl }: Props) => {
   const [listings, setListings] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchListings = async () => {
+      // Fetch a larger pool so the daily shuffle surfaces different products.
       const { data, error } = await supabase
         .from("listings_with_images")
         .select("*")
         .eq("status", "active")
         .eq("category", categoryId)
-        .order("min_price", { ascending: true })
-        .limit(10);
+        .limit(60);
 
       if (error) {
         console.error("Error fetching listings:", error);
       } else {
-        setListings(data ?? []);
+        const pool = data ?? [];
+        const shuffled = seededShuffle(pool, getDailySeed());
+        setListings(shuffled.slice(0, 10));
       }
     };
 
