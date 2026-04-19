@@ -88,6 +88,7 @@ export async function loader(_: Route.LoaderArgs) {
           "id, title, brand, price, retail_price, condition, size_value, image_url",
         )
         .eq("status", "active")
+        .eq("is_new_drop", true)
         .order("created_at", { ascending: false })
         .limit(30),
       ssrSupabase

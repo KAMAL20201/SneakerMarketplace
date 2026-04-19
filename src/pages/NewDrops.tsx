@@ -33,6 +33,7 @@ export async function loader(_: Route.LoaderArgs) {
       "id, slug, title, price, brand, size_value, condition, image_url, created_at",
     )
     .eq("status", "active")
+    .eq("is_new_drop", true)
     .order("created_at", { ascending: false })
     .limit(30);
   return data(

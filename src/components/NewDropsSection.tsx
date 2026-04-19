@@ -33,6 +33,7 @@ const NewDropsSection = ({
         .from("listings_with_images")
         .select("*")
         .eq("status", "active")
+        .eq("is_new_drop", true)
         .order("created_at", { ascending: false })
         .limit(30);
 

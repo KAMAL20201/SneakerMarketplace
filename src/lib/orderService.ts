@@ -29,6 +29,7 @@ export interface Order {
   coupon_code?: string | null;
   discount_amount?: number;
   original_amount?: number | null;
+  is_deleted?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -443,6 +444,7 @@ export class OrderService {
         `
         )
         .eq("buyer_id", buyerId)
+        .eq("is_deleted", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -472,6 +474,7 @@ export class OrderService {
         `
         )
         .eq("seller_id", sellerId)
+        .eq("is_deleted", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
