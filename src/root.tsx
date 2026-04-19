@@ -1,11 +1,12 @@
 import React from "react";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse, useRouteError } from "react-router";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./contexts/AuthContext";
 import Provider from "./Provider";
 import AppLayout from "./layout";
 import Analytics from "./components/Analytics";
 import ScrollToTop from "./components/ScrollToTop";
+import NotFound from "./pages/NotFound";
 import "./index.css";
 
 // ─── Document shell ───────────────────────────────────────────────────────────
@@ -133,6 +134,40 @@ export default function Root() {
           <Analytics />
           <AppLayout>
             <Outlet />
+          </AppLayout>
+        </Provider>
+      </AuthProvider>
+    </HelmetProvider>
+  );
+}
+
+// ─── Error Boundary ───────────────────────────────────────────────────────────
+// Catches loader/action errors (e.g. thrown Response with status 404) and
+// renders the nice NotFound UI instead of a bare browser error screen.
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const is404 =
+    isRouteErrorResponse(error) && error.status === 404;
+
+  return (
+    <HelmetProvider>
+      <AuthProvider>
+        <Provider>
+          <AppLayout>
+            {is404 ? (
+              <NotFound />
+            ) : (
+              <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
+                <div className="text-center">
+                  <h1 className="text-4xl font-bold text-gray-900 mb-4">Something went wrong</h1>
+                  <p className="text-gray-600">
+                    {isRouteErrorResponse(error)
+                      ? `${error.status} – ${error.statusText}`
+                      : "An unexpected error occurred."}
+                  </p>
+                </div>
+              </div>
+            )}
           </AppLayout>
         </Provider>
       </AuthProvider>
