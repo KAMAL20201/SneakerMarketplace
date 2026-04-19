@@ -938,35 +938,30 @@ const CategoryBrowse = () => {
                       </button>
                       {!collapsedSections.size && (
                         <div className="px-3 pb-3">
-                          <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                            {categoryConfig.sizes.map((size) => (
-                              <div
-                                key={size}
-                                className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                              >
-                                <Checkbox
-                                  id={`size-${size}`}
-                                  checked={tempFilters.size.includes(size)}
-                                  onCheckedChange={(checked) =>
+                          <div className="flex flex-wrap gap-2">
+                            {categoryConfig.sizes.map((size) => {
+                              const isSelected = tempFilters.size.includes(size);
+                              return (
+                                <button
+                                  key={size}
+                                  onClick={() =>
                                     handleTempFilterChange(
                                       "size",
-                                      checked
-                                        ? [...tempFilters.size, size]
-                                        : tempFilters.size.filter(
-                                            (s) => s !== size,
-                                          ),
+                                      isSelected
+                                        ? tempFilters.size.filter((s) => s !== size)
+                                        : [...tempFilters.size, size],
                                     )
                                   }
-                                  className="rounded-md"
-                                />
-                                <Label
-                                  htmlFor={`size-${size}`}
-                                  className="text-sm font-medium text-gray-700 cursor-pointer uppercase"
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all uppercase ${
+                                    isSelected
+                                      ? "bg-blue-500 text-white border-blue-500"
+                                      : "bg-white text-gray-700 border-gray-200 hover:border-blue-300"
+                                  }`}
                                 >
                                   {size}
-                                </Label>
-                              </div>
-                            ))}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       )}

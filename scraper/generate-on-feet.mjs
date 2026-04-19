@@ -42,7 +42,10 @@ async function loadEnv(filePath) {
     const eqIdx = trimmed.indexOf("=");
     if (eqIdx === -1) continue;
     const key = trimmed.slice(0, eqIdx).trim();
-    const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+    const val = trimmed
+      .slice(eqIdx + 1)
+      .trim()
+      .replace(/^["']|["']$/g, "");
     if (key && !process.env[key]) process.env[key] = val;
   }
 }
@@ -53,21 +56,22 @@ await loadEnv(path.join(ROOT_DIR, ".env.local"));
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const SUPABASE_URL        = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const SERVICE_ROLE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
 
 // Parse CLI args
-const args     = process.argv.slice(2);
-const LIMIT    = parseInt(args[args.indexOf("--limit") + 1] || "10");
-const MODEL    = args.includes("--model") ? args[args.indexOf("--model") + 1] : "flux-dev";
-const DRY_RUN  = args.includes("--dry-run");
+const args = process.argv.slice(2);
+const LIMIT = parseInt(args[args.indexOf("--limit") + 1] || "10");
+const MODEL = args.includes("--model")
+  ? args[args.indexOf("--model") + 1]
+  : "flux-dev";
+const DRY_RUN = args.includes("--dry-run");
 const IMAGES_PER_PRODUCT = 1;
 
 // flux-2-dev ~5s/image, nano-banana ~10s/image, flux-dev needs 12s gap on free tier
-const DELAY_MS = MODEL === "flux-2-dev" ? 2000
-               : MODEL === "nano-banana" ? 3000
-               : 12000;
+const DELAY_MS =
+  MODEL === "flux-2-dev" ? 2000 : MODEL === "nano-banana" ? 3000 : 12000;
 
 // ── Validate ──────────────────────────────────────────────────────────────────
 
@@ -85,7 +89,9 @@ if (!REPLICATE_API_TOKEN) {
 }
 
 if (!["flux-dev", "nano-banana", "flux-2-dev"].includes(MODEL)) {
-  console.error(`❌  Unknown model "${MODEL}". Use: flux-dev | nano-banana | flux-2-dev`);
+  console.error(
+    `❌  Unknown model "${MODEL}". Use: flux-dev | nano-banana | flux-2-dev`,
+  );
   process.exit(1);
 }
 
@@ -109,10 +115,16 @@ function buildPrompt(product) {
   const color = product.color ? `, ${product.color}` : "";
 
   return (
-    `${brand} ${model}${color} sneakers on feet, person wearing them while standing, ` +
-    `low angle close-up shot of feet and ankles, jogger pants, white Nike socks, ` +
-    `light grey studio floor, soft natural light, photorealistic, sharp focus, 4K. ` +
-    `NOT a flat lay. NOT floating shoe. The shoe MUST be on a human foot.`
+    `ONE single person's lower legs and feet only, wearing ${brand} ${model}${color} sneakers. ` +
+    `The REFERENCE IMAGE shows the RIGHT shoe — place that exact shoe on the right foot, closest to the camera. ` +
+    `Mirror it accurately to generate the matching LEFT shoe on the left foot, slightly behind. ` +
+    `Both shoes must be identical in colorway, material, and design to the reference. ` +
+    `Camera angle: pure RIGHT SIDE PROFILE, camera positioned exactly 90 degrees to the right of the person, perfectly level at ankle height, ZERO tilt, ZERO Dutch angle, shoe soles parallel to the ground. ` +
+    `Person's body is perpendicular to the camera — right foot in front closer to the lens, left foot behind, both feet pointing forward. ` +
+    `Baggy cargo pants draping down and resting directly on top of the sneakers, fully covering the ankle, ` +
+    `NO socks visible whatsoever, fabric touching the shoe collar. ` +
+    `Clean light grey studio background and floor, soft natural light, photorealistic, sharp focus, 4K. ` +
+    `NOT a flat lay. NOT floating shoes. NOT two people. ONLY ONE PERSON. Both shoes MUST be on that one person's feet.`
   );
 }
 
@@ -137,8 +149,8 @@ async function generateWithFluxDev(prompt, imageUrl) {
         body: JSON.stringify({
           input: {
             prompt,
-            image: imageUrl,          // ← existing product photo as reference
-            prompt_strength: 0.88,    // ← higher = more transformation, lower = closer to input
+            image: imageUrl, // ← existing product photo as reference
+            prompt_strength: 0.88, // ← higher = more transformation, lower = closer to input
             num_outputs: 1,
             aspect_ratio: "1:1",
             output_format: "jpg",
@@ -146,7 +158,7 @@ async function generateWithFluxDev(prompt, imageUrl) {
             num_inference_steps: 28,
           },
         }),
-      }
+      },
     );
 
     if (createRes.status === 200 || createRes.status === 201) break;
@@ -155,10 +167,14 @@ async function generateWithFluxDev(prompt, imageUrl) {
 
     if (createRes.status === 429) {
       const waitSec = (body.retry_after || 10) + 2;
-      console.log(`    ⏱  Rate limited — waiting ${waitSec}s (attempt ${attempt}/5)...`);
+      console.log(
+        `    ⏱  Rate limited — waiting ${waitSec}s (attempt ${attempt}/5)...`,
+      );
       await delay(waitSec * 1000);
     } else if (createRes.status === 401) {
-      console.log(`    ⏱  Auth error (transient) — waiting 5s (attempt ${attempt}/5)...`);
+      console.log(
+        `    ⏱  Auth error (transient) — waiting 5s (attempt ${attempt}/5)...`,
+      );
       await delay(5000);
     } else {
       break; // non-retryable error
@@ -172,19 +188,19 @@ async function generateWithFluxDev(prompt, imageUrl) {
 
   let prediction = await createRes.json();
 
-
   // 2. Poll if not done yet (Prefer: wait sometimes times out on cold start)
   const maxWait = 120_000;
   const pollInterval = 2_000;
   const deadline = Date.now() + maxWait;
 
   while (prediction.status !== "succeeded" && prediction.status !== "failed") {
-    if (Date.now() > deadline) throw new Error("Replicate prediction timed out");
+    if (Date.now() > deadline)
+      throw new Error("Replicate prediction timed out");
     await delay(pollInterval);
 
     const pollRes = await fetch(
       `https://api.replicate.com/v1/predictions/${prediction.id}`,
-      { headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` } }
+      { headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` } },
     );
     prediction = await pollRes.json();
   }
@@ -225,7 +241,7 @@ async function generateWithNanoBanana(prompt, imageUrl) {
             output_format: "jpg",
           },
         }),
-      }
+      },
     );
 
     if (createRes.status === 200 || createRes.status === 201) break;
@@ -233,7 +249,9 @@ async function generateWithNanoBanana(prompt, imageUrl) {
     const body = await createRes.json().catch(() => ({}));
     if (createRes.status === 429) {
       const waitSec = (body.retry_after || 10) + 2;
-      console.log(`    ⏱  Rate limited — waiting ${waitSec}s (attempt ${attempt}/5)...`);
+      console.log(
+        `    ⏱  Rate limited — waiting ${waitSec}s (attempt ${attempt}/5)...`,
+      );
       await delay(waitSec * 1000);
     } else if (createRes.status === 401) {
       console.log(`    ⏱  Auth error — waiting 5s (attempt ${attempt}/5)...`);
@@ -253,11 +271,12 @@ async function generateWithNanoBanana(prompt, imageUrl) {
   // Poll if not done yet
   const deadline = Date.now() + 120_000;
   while (prediction.status !== "succeeded" && prediction.status !== "failed") {
-    if (Date.now() > deadline) throw new Error("Replicate prediction timed out");
+    if (Date.now() > deadline)
+      throw new Error("Replicate prediction timed out");
     await delay(2000);
     const pollRes = await fetch(
       `https://api.replicate.com/v1/predictions/${prediction.id}`,
-      { headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` } }
+      { headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` } },
     );
     prediction = await pollRes.json();
     console.log(`    status: ${prediction.status}...`);
@@ -295,14 +314,14 @@ async function generateWithFlux2Dev(prompt, imageUrl) {
         body: JSON.stringify({
           input: {
             prompt,
-            input_images: [imageUrl],   // ← confirmed param name from schema
+            input_images: [imageUrl], // ← confirmed param name from schema
             aspect_ratio: "1:1",
             go_fast: true,
             output_format: "jpg",
             output_quality: 90,
           },
         }),
-      }
+      },
     );
 
     if (createRes.status === 200 || createRes.status === 201) break;
@@ -310,7 +329,9 @@ async function generateWithFlux2Dev(prompt, imageUrl) {
     const body = await createRes.json().catch(() => ({}));
     if (createRes.status === 429) {
       const waitSec = (body.retry_after || 10) + 2;
-      console.log(`    ⏱  Rate limited — waiting ${waitSec}s (attempt ${attempt}/5)...`);
+      console.log(
+        `    ⏱  Rate limited — waiting ${waitSec}s (attempt ${attempt}/5)...`,
+      );
       await delay(waitSec * 1000);
     } else if (createRes.status === 401) {
       console.log(`    ⏱  Auth error — waiting 5s (attempt ${attempt}/5)...`);
@@ -329,11 +350,12 @@ async function generateWithFlux2Dev(prompt, imageUrl) {
 
   const deadline = Date.now() + 120_000;
   while (prediction.status !== "succeeded" && prediction.status !== "failed") {
-    if (Date.now() > deadline) throw new Error("Replicate prediction timed out");
+    if (Date.now() > deadline)
+      throw new Error("Replicate prediction timed out");
     await delay(2000);
     const pollRes = await fetch(
       `https://api.replicate.com/v1/predictions/${prediction.id}`,
-      { headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` } }
+      { headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` } },
     );
     prediction = await pollRes.json();
     console.log(`    status: ${prediction.status}...`);
@@ -401,7 +423,9 @@ async function saveImageRecord(listingId, imageUrl, storagePath) {
 
 async function main() {
   console.log(`\n🚀 generate-on-feet.mjs`);
-  console.log(`   Limit: ${LIMIT} products | Images/product: ${IMAGES_PER_PRODUCT}`);
+  console.log(
+    `   Limit: ${LIMIT} products | Images/product: ${IMAGES_PER_PRODUCT}`,
+  );
   console.log(`   Dry run: ${DRY_RUN}\n`);
 
   // 1. Fetch products that don't already have an AI on-feet image
@@ -409,7 +433,8 @@ async function main() {
 
   const { data: listings, error: fetchError } = await supabase
     .from("product_listings")
-    .select(`
+    .select(
+      `
       id,
       title,
       brand,
@@ -420,16 +445,19 @@ async function main() {
         image_url,
         is_poster_image
       )
-    `)
+    `,
+    )
     .eq("status", "active")
     .not("product_images", "is", null)
-    // Server-side: exclude product listings that already have an AI "on feet" image
-    // (filters on the related table column using dot-notation)
-    .not("product_images.image_url", "ilike", "%ai-on-feet%")
-    // Fetch a larger candidate window so client-side filtering will find enough
+    // Prioritise 9060 listings first
+    .ilike("title", "%9060%")
+    // NOTE: do NOT filter product_images.image_url here — PostgREST would strip the
+    // matching rows from the joined result instead of excluding the parent listing,
+    // making the client-side alreadyHasAI check always return false.
+    // Client-side filtering below handles the "already generated" check correctly.
     .limit(LIMIT * 10)
     // Process oldest first so repeated runs won't repeatedly fetch recently-processed items
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (fetchError) {
     console.error("❌  Supabase fetch failed:", fetchError.message);
@@ -442,7 +470,7 @@ async function main() {
       const imgs = l.product_images || [];
       const hasImage = imgs.length > 0;
       const alreadyHasAI = imgs.some((img) =>
-        img.image_url?.includes("ai-on-feet")
+        img.image_url?.includes("ai-on-feet"),
       );
       return hasImage && !alreadyHasAI;
     })
@@ -460,7 +488,8 @@ async function main() {
 
   for (let i = 0; i < eligible.length; i++) {
     const product = eligible[i];
-    const label = `[${i + 1}/${eligible.length}] ${product.brand || ""} ${product.model || product.title}`.trim();
+    const label =
+      `[${i + 1}/${eligible.length}] ${product.brand || ""} ${product.model || product.title}`.trim();
 
     console.log(`\n🔄  ${label}`);
     console.log(`    id: ${product.id}`);
@@ -468,8 +497,7 @@ async function main() {
     // Pick the poster image (or first image) as the reference
     const imgs = product.product_images || [];
     const referenceImage =
-      imgs.find((img) => img.is_poster_image)?.image_url ||
-      imgs[0]?.image_url;
+      imgs.find((img) => img.is_poster_image)?.image_url || imgs[0]?.image_url;
 
     if (!referenceImage) {
       console.log("    ⚠️  No reference image found, skipping");
@@ -488,13 +516,19 @@ async function main() {
 
       try {
         // Generate using the existing product image as reference
-        const modelLabel = MODEL === "nano-banana" ? "Nano Banana"
-                         : MODEL === "flux-2-dev"   ? "Flux 2 Dev"
-                         : "Flux Dev";
+        const modelLabel =
+          MODEL === "nano-banana"
+            ? "Nano Banana"
+            : MODEL === "flux-2-dev"
+              ? "Flux 2 Dev"
+              : "Flux Dev";
         console.log(`    ⏳ Calling ${modelLabel} (img2img)...`);
-        const outputUrl = MODEL === "nano-banana" ? await generateWithNanoBanana(prompt, referenceImage)
-                        : MODEL === "flux-2-dev"   ? await generateWithFlux2Dev(prompt, referenceImage)
-                        : await generateWithFluxDev(prompt, referenceImage);
+        const outputUrl =
+          MODEL === "nano-banana"
+            ? await generateWithNanoBanana(prompt, referenceImage)
+            : MODEL === "flux-2-dev"
+              ? await generateWithFlux2Dev(prompt, referenceImage)
+              : await generateWithFluxDev(prompt, referenceImage);
         console.log(`    🖼  Generated: ${outputUrl}`);
 
         // Download
@@ -504,7 +538,7 @@ async function main() {
         const { publicUrl, storagePath } = await uploadToSupabase(
           imageBuffer,
           product.id,
-          imgIdx + 1
+          imgIdx + 1,
         );
         console.log(`    ☁️  Uploaded: ${publicUrl}`);
 
@@ -529,9 +563,8 @@ async function main() {
   console.log("\n─────────────────────────────────────────────");
   console.log(`✅  Success: ${results.success}`);
   console.log(`❌  Failed:  ${results.failed}`);
-  const pricePerImage = MODEL === "nano-banana" ? 0.039
-                      : MODEL === "flux-2-dev"   ? 0.02
-                      : 0.03;
+  const pricePerImage =
+    MODEL === "nano-banana" ? 0.039 : MODEL === "flux-2-dev" ? 0.02 : 0.03;
   const estimatedCost = (results.success * pricePerImage).toFixed(3);
   console.log(`💰  Est. cost: ~$${estimatedCost} (${MODEL})`);
   console.log("─────────────────────────────────────────────\n");
