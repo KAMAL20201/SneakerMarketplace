@@ -122,15 +122,34 @@ const MyListings = () => {
     try {
       setDeletingId(listingId);
 
+      // Fetch images to clean up from storage
+      const { data: images } = await supabase
+        .from("product_images")
+        .select("storage_path")
+        .eq("product_id", listingId);
+
+      // Delete files from storage
+      if (images && images.length > 0) {
+        const paths = images.map((img: { storage_path: string }) => img.storage_path).filter(Boolean);
+        if (paths.length > 0) {
+          await supabase.storage.from("product-images").remove(paths);
+        }
+      }
+
+      // Delete image records
+      await supabase.from("product_images").delete().eq("product_id", listingId);
+
+      // Delete the listing (cascades variants/sizes)
       const { error } = await supabase
-        .from("listings")
+        .from("product_listings")
         .delete()
-        .eq("id", listingId);
+        .eq("id", listingId)
+        .eq("user_id", user?.id);
 
       if (error) throw error;
 
       toast.success("Listing deleted successfully");
-      fetchListings(); // Refresh the list
+      fetchListings();
     } catch (error) {
       console.error("Error deleting listing:", error);
       toast.error("Failed to delete listing");

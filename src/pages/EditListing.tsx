@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   ArrowLeft,
+  ImagePlus,
   Loader2,
   Save,
+  Star,
+  Trash2,
   ToggleLeft,
   ToggleRight,
 } from "lucide-react";
@@ -35,6 +38,13 @@ interface Variant {
   sizes: VariantSize[];
 }
 
+interface ListingImage {
+  id: string;
+  image_url: string;
+  storage_path: string;
+  is_poster_image: boolean;
+}
+
 const EditListing = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -47,6 +57,11 @@ const EditListing = () => {
   // Editable fields
   const [price, setPrice] = useState("");
   const [isInStock, setIsInStock] = useState(true);
+
+  // Images
+  const [images, setImages] = useState<ListingImage[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Size-level availability (sneakers / clothing)
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -82,6 +97,14 @@ const EditListing = () => {
       setListing(data);
       setPrice(String(data.price ?? ""));
       setIsInStock(data.status === "active");
+
+      // Fetch all images
+      const { data: imgData } = await supabase
+        .from("product_images")
+        .select("id, image_url, storage_path, is_poster_image")
+        .eq("product_id", data.id)
+        .order("is_poster_image", { ascending: false });
+      setImages(imgData || []);
 
       // Fetch size data only for size-based categories
       if (SIZE_CATEGORIES.includes(data.category)) {
@@ -152,6 +175,103 @@ const EditListing = () => {
     setLegacySizes((prev) =>
       prev.map((s) => (s.id === sizeId ? { ...s, is_sold: !s.is_sold } : s))
     );
+  };
+
+  const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!listing || !user) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const MAX_IMAGES = 8;
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) {
+      toast.error(`Maximum ${MAX_IMAGES} images allowed`);
+      return;
+    }
+    const toUpload = files.slice(0, remaining);
+
+    try {
+      setUploadingImage(true);
+      const isPosterEmpty = images.every((img) => !img.is_poster_image);
+
+      const uploaded: ListingImage[] = [];
+      for (let i = 0; i < toUpload.length; i++) {
+        const file = toUpload[i];
+        const isFirst = i === 0 && isPosterEmpty;
+        const fileExt = file.name.split(".").pop();
+        const filePath = `${user.id}/${listing.id}/${Date.now()}-${isFirst ? "main" : "other"}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, file);
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage.from("product-images").getPublicUrl(filePath);
+
+        const { data: imgRecord, error: dbError } = await supabase
+          .from("product_images")
+          .insert({
+            product_id: listing.id,
+            image_url: publicUrl,
+            storage_path: filePath,
+            is_poster_image: isFirst,
+            file_size: file.size,
+          })
+          .select()
+          .single();
+
+        if (dbError) throw dbError;
+        uploaded.push(imgRecord as ListingImage);
+      }
+
+      setImages((prev) => [...prev, ...uploaded]);
+      toast.success(`${uploaded.length} image${uploaded.length > 1 ? "s" : ""} added`);
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveImage = async (img: ListingImage) => {
+    try {
+      if (img.storage_path) {
+        await supabase.storage.from("product-images").remove([img.storage_path]);
+      }
+      await supabase.from("product_images").delete().eq("id", img.id);
+
+      setImages((prev) => {
+        const remaining = prev.filter((i) => i.id !== img.id);
+        // If we removed the poster and there are others, promote the first
+        if (img.is_poster_image && remaining.length > 0 && !remaining.some((i) => i.is_poster_image)) {
+          const newPoster = remaining[0];
+          supabase.from("product_images").update({ is_poster_image: true }).eq("id", newPoster.id);
+          return remaining.map((i, idx) => idx === 0 ? { ...i, is_poster_image: true } : i);
+        }
+        return remaining;
+      });
+      toast.success("Image removed");
+    } catch (err) {
+      console.error("Error removing image:", err);
+      toast.error("Failed to remove image");
+    }
+  };
+
+  const handleSetPoster = async (img: ListingImage) => {
+    if (img.is_poster_image) return;
+    try {
+      // Unset current poster
+      await supabase.from("product_images").update({ is_poster_image: false }).eq("product_id", listing.id);
+      // Set new poster
+      await supabase.from("product_images").update({ is_poster_image: true }).eq("id", img.id);
+      setImages((prev) => prev.map((i) => ({ ...i, is_poster_image: i.id === img.id })));
+      toast.success("Main image updated");
+    } catch (err) {
+      console.error("Error setting poster:", err);
+      toast.error("Failed to update main image");
+    }
   };
 
   const handleSave = async () => {
@@ -314,6 +434,86 @@ const EditListing = () => {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Images */}
+        <Card className="glass-card border-0 rounded-2xl mb-6">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-gray-800 text-lg">Photos</CardTitle>
+              <span className="text-xs text-gray-500">{images.length}/8</span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 pt-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleAddImages}
+            />
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {images.map((img) => (
+                <div key={img.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
+                  <img
+                    src={img.image_url}
+                    alt="Listing"
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Poster badge */}
+                  {img.is_poster_image && (
+                    <span className="absolute top-1 left-1 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <Star className="h-2.5 w-2.5 fill-current" />
+                      Main
+                    </span>
+                  )}
+                  {/* Overlay actions */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    {!img.is_poster_image && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetPoster(img)}
+                        className="bg-white/90 text-yellow-600 rounded-full p-1.5 hover:bg-white"
+                        title="Set as main photo"
+                      >
+                        <Star className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(img)}
+                      className="bg-white/90 text-red-500 rounded-full p-1.5 hover:bg-white"
+                      title="Remove photo"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {/* Add button */}
+              {images.length < 8 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-purple-400 hover:bg-purple-50/50 transition-colors flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <ImagePlus className="h-5 w-5" />
+                      <span className="text-xs font-medium">Add</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mt-3">
+              Hover over a photo to remove it or set it as the main photo. Max 8 photos.
+            </p>
           </CardContent>
         </Card>
 
