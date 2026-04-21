@@ -122,34 +122,17 @@ const MyListings = () => {
     try {
       setDeletingId(listingId);
 
-      // Fetch images to clean up from storage
-      const { data: images } = await supabase
-        .from("product_images")
-        .select("storage_path")
-        .eq("product_id", listingId);
-
-      // Delete files from storage
-      if (images && images.length > 0) {
-        const paths = images.map((img: { storage_path: string }) => img.storage_path).filter(Boolean);
-        if (paths.length > 0) {
-          await supabase.storage.from("product-images").remove(paths);
-        }
-      }
-
-      // Delete image records
-      await supabase.from("product_images").delete().eq("product_id", listingId);
-
-      // Delete the listing (cascades variants/sizes)
       const { error } = await supabase
         .from("product_listings")
-        .delete()
+        .update({ is_deleted: true })
         .eq("id", listingId)
         .eq("user_id", user?.id);
 
       if (error) throw error;
 
-      toast.success("Listing deleted successfully");
-      fetchListings();
+      // Remove from local state immediately so the UI updates without a refetch
+      setListings((prev) => prev.filter((l) => l.id !== listingId));
+      toast.success("Listing deleted");
     } catch (error) {
       console.error("Error deleting listing:", error);
       toast.error("Failed to delete listing");

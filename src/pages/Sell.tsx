@@ -392,7 +392,8 @@ export default function SellPage() {
     file: File,
     userId: string,
     listingId: string,
-    isMainImage = false
+    isMainImage = false,
+    displayOrder = 0
   ) => {
     try {
       // Generate file path
@@ -423,6 +424,7 @@ export default function SellPage() {
           storage_path: filePath,
           is_poster_image: isMainImage,
           file_size: file.size,
+          display_order: displayOrder,
         })
         .select()
         .single();
@@ -549,7 +551,7 @@ export default function SellPage() {
       const uploadedImageUrls: (string | null)[] = [];
       if (images && images.length > 0) {
         for (let i = 0; i < images.length; i++) {
-          const result = await uploadImage(files[i], user.id, listing.id, i === 0);
+          const result = await uploadImage(files[i], user.id, listing.id, i === 0, i);
           uploadedImageUrls.push(result.url);
         }
       }

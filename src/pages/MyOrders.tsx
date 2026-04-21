@@ -132,10 +132,21 @@ const EmptyOrdersState = () => (
 
 // [GUEST CHECKOUT] Orders page is admin-only — shows all sell orders with buyer info.
 // Guests receive order confirmations via email; there is no guest orders page.
+type TabStatus = "all" | "pending_payment" | "confirmed" | "shipped" | "delivered";
+
+const TABS: { key: TabStatus; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "pending_payment", label: "Pending Payment" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "shipped", label: "Shipped" },
+  { key: "delivered", label: "Delivered" },
+];
+
 const MyOrders = () => {
   const { user } = useAuth();
   const [sellOrders, setSellOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabStatus>("all");
 
   // Ship Now modal state
   const [shipModalOpen, setShipModalOpen] = useState(false);
@@ -176,6 +187,27 @@ const MyOrders = () => {
     }
   }, [user]);
 
+  const filteredOrders =
+    activeTab === "all"
+      ? sellOrders
+      : sellOrders.filter((o) => o.status === activeTab);
+
+  const tabCounts = {
+    all: sellOrders.length,
+    pending_payment: sellOrders.filter((o) => o.status === "pending_payment").length,
+    confirmed: sellOrders.filter((o) => o.status === "confirmed").length,
+    shipped: sellOrders.filter((o) => o.status === "shipped").length,
+    delivered: sellOrders.filter((o) => o.status === "delivered").length,
+  };
+
+  const handleTabChange = (tab: TabStatus) => {
+    setActiveTab(tab);
+    setSellCurrentPage(1);
+    setSellTotalPages(Math.ceil(
+      (tab === "all" ? sellOrders.length : sellOrders.filter((o) => o.status === tab).length) / itemsPerPage
+    ));
+  };
+
   // Get paginated orders for current tab
   const getPaginatedOrders = (orders: Order[], currentPage: number) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -202,21 +234,47 @@ const MyOrders = () => {
     <div className="min-h-screen ">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Orders</h1>
           <p className="text-gray-600">
             All customer orders ({sellOrders.length})
           </p>
         </div>
 
+        {/* Status Tabs */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                activeTab === tab.key
+                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md"
+                  : "glass-card border-0 text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+              <span
+                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-bold ${
+                  activeTab === tab.key
+                    ? "bg-white/25 text-white"
+                    : "bg-purple-100 text-purple-700"
+                }`}
+              >
+                {tabCounts[tab.key]}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* Sell Orders */}
         <div className="space-y-6">
-          {sellOrders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <EmptyOrdersState />
           ) : (
             <>
               <div className="space-y-6">
-                {getPaginatedOrders(sellOrders, sellCurrentPage).map(
+                {getPaginatedOrders(filteredOrders, sellCurrentPage).map(
                   (order) => (
                     <Card
                       key={order.id}
@@ -552,7 +610,7 @@ const MyOrders = () => {
                                 Mark as Delivered
                               </Button>
                             )}
-                            <AlertDialog>
+                            {!["confirmed", "shipped", "delivered"].includes(order.status) && <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
                                   variant="outline"
@@ -593,7 +651,7 @@ const MyOrders = () => {
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
-                            </AlertDialog>
+                            </AlertDialog>}
                           </div>
                         </div>
                       </CardContent>
@@ -603,7 +661,7 @@ const MyOrders = () => {
               </div>
 
               {/* Pagination */}
-              {sellTotalPages > 1 && (
+              {Math.ceil(filteredOrders.length / itemsPerPage) > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-8">
                   <Button
                     variant="ghost"
@@ -619,7 +677,7 @@ const MyOrders = () => {
 
                   <div className="flex gap-1">
                     {Array.from(
-                      { length: sellTotalPages },
+                      { length: Math.ceil(filteredOrders.length / itemsPerPage) },
                       (_, i) => i + 1,
                     ).map((page) => (
                       <Button
@@ -641,10 +699,10 @@ const MyOrders = () => {
                     variant="ghost"
                     onClick={() =>
                       setSellCurrentPage((prev) =>
-                        Math.min(prev + 1, sellTotalPages),
+                        Math.min(prev + 1, Math.ceil(filteredOrders.length / itemsPerPage)),
                       )
                     }
-                    disabled={sellCurrentPage === sellTotalPages}
+                    disabled={sellCurrentPage === Math.ceil(filteredOrders.length / itemsPerPage)}
                     className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
                   >
                     Next

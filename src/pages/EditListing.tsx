@@ -43,6 +43,7 @@ interface ListingImage {
   image_url: string;
   storage_path: string;
   is_poster_image: boolean;
+  display_order: number;
 }
 
 const EditListing = () => {
@@ -61,7 +62,9 @@ const EditListing = () => {
   // Images
   const [images, setImages] = useState<ListingImage[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dragIndexRef = useRef<number | null>(null);
 
   // Size-level availability (sneakers / clothing)
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -98,12 +101,12 @@ const EditListing = () => {
       setPrice(String(data.price ?? ""));
       setIsInStock(data.status === "active");
 
-      // Fetch all images
+      // Fetch all images ordered by display_order
       const { data: imgData } = await supabase
         .from("product_images")
-        .select("id, image_url, storage_path, is_poster_image")
+        .select("id, image_url, storage_path, is_poster_image, display_order")
         .eq("product_id", data.id)
-        .order("is_poster_image", { ascending: false });
+        .order("display_order", { ascending: true });
       setImages(imgData || []);
 
       // Fetch size data only for size-based categories
@@ -198,6 +201,7 @@ const EditListing = () => {
       for (let i = 0; i < toUpload.length; i++) {
         const file = toUpload[i];
         const isFirst = i === 0 && isPosterEmpty;
+        const nextOrder = images.length + i;
         const fileExt = file.name.split(".").pop();
         const filePath = `${user.id}/${listing.id}/${Date.now()}-${isFirst ? "main" : "other"}.${fileExt}`;
 
@@ -216,6 +220,7 @@ const EditListing = () => {
             storage_path: filePath,
             is_poster_image: isFirst,
             file_size: file.size,
+            display_order: nextOrder,
           })
           .select()
           .single();
@@ -271,6 +276,38 @@ const EditListing = () => {
     } catch (err) {
       console.error("Error setting poster:", err);
       toast.error("Failed to update main image");
+    }
+  };
+
+  const handleDragStart = (index: number) => {
+    dragIndexRef.current = index;
+  };
+
+  const handleDrop = async (dropIndex: number) => {
+    const dragIndex = dragIndexRef.current;
+    if (dragIndex === null || dragIndex === dropIndex) return;
+    dragIndexRef.current = null;
+
+    // Reorder locally
+    const reordered = [...images];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+    const withNewOrder = reordered.map((img, i) => ({ ...img, display_order: i }));
+    setImages(withNewOrder);
+
+    // Persist to DB
+    try {
+      setSavingOrder(true);
+      await Promise.all(
+        withNewOrder.map((img) =>
+          supabase.from("product_images").update({ display_order: img.display_order }).eq("id", img.id)
+        )
+      );
+    } catch (err) {
+      console.error("Error saving order:", err);
+      toast.error("Failed to save image order");
+    } finally {
+      setSavingOrder(false);
     }
   };
 
@@ -442,7 +479,10 @@ const EditListing = () => {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-gray-800 text-lg">Photos</CardTitle>
-              <span className="text-xs text-gray-500">{images.length}/8</span>
+              <div className="flex items-center gap-2">
+                {savingOrder && <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />}
+                <span className="text-xs text-gray-500">{images.length}/8</span>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-6 pt-2">
@@ -455,13 +495,24 @@ const EditListing = () => {
               onChange={handleAddImages}
             />
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {images.map((img) => (
-                <div key={img.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
+              {images.map((img, index) => (
+                <div
+                  key={img.id}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDrop(index)}
+                  className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-grab active:cursor-grabbing"
+                >
                   <img
                     src={img.image_url}
                     alt="Listing"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover pointer-events-none"
                   />
+                  {/* Order badge */}
+                  <span className="absolute top-1 right-1 bg-black/50 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    {index + 1}
+                  </span>
                   {/* Poster badge */}
                   {img.is_poster_image && (
                     <span className="absolute top-1 left-1 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
@@ -512,7 +563,7 @@ const EditListing = () => {
               )}
             </div>
             <p className="text-xs text-gray-400 mt-3">
-              Hover over a photo to remove it or set it as the main photo. Max 8 photos.
+              Drag photos to reorder. Hover to set main photo or remove. Max 8 photos.
             </p>
           </CardContent>
         </Card>

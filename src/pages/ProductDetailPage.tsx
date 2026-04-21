@@ -72,6 +72,7 @@ export async function loader({ params }: Route.LoaderArgs) {
       .select("slug")
       .eq("id", param)
       .eq("status", "active")
+      .eq("is_deleted", false)
       .single();
     if (!slugRow?.slug) {
       throw new Response("Not Found", { status: 404 });
@@ -89,7 +90,7 @@ export async function loader({ params }: Route.LoaderArgs) {
         id, display_name, phone, bio, profile_image_url,
         rating, total_reviews, location, is_verified, created_at, email
       ),
-      product_images (id, image_url, is_poster_image),
+      product_images (id, image_url, is_poster_image, display_order),
       product_variants (
         id, color_name, color_hex, price, display_order, image_url,
         product_variant_sizes (variant_id, size_value, price, is_sold)
@@ -99,6 +100,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     )
     .eq("slug", param)
     .eq("status", "active")
+    .eq("is_deleted", false)
     .single();
 
   if (!listingData) {
@@ -107,9 +109,10 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   // Sort/filter nested collections in JS (small sets, negligible cost).
   const imagesData = (listingData.product_images ?? []).sort((a, b) => {
+    // Primary: poster image first; secondary: explicit display_order
     if (b.is_poster_image !== a.is_poster_image)
       return b.is_poster_image ? 1 : -1;
-    return a.id > b.id ? 1 : -1;
+    return (a.display_order ?? 0) - (b.display_order ?? 0);
   });
 
   const rawVariants = (listingData.product_variants ?? []).sort(
@@ -525,8 +528,9 @@ export default function ProductDetailPage() {
     }
     // Jump carousel to this variant's image if it has one
     if (variant.image_url) {
+      const normalised = toStorageUrl(variant.image_url);
       const imgIdx = images.findIndex(
-        (img) => img.image_url === variant.image_url,
+        (img) => toStorageUrl(img.image_url) === normalised,
       );
       if (imgIdx !== -1) setSelectedImageIndex(imgIdx);
     }
