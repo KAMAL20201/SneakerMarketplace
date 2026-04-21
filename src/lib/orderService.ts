@@ -136,6 +136,39 @@ export class OrderService {
   }
 
   // Get product details for notification
+  private static async getSizePriceFromDB(
+    productId: string,
+    size: string | undefined,
+    variantId: string | null | undefined,
+    fallbackPrice: number
+  ): Promise<number> {
+    if (!size) return fallbackPrice;
+
+    try {
+      if (variantId) {
+        const { data } = await supabase
+          .from("product_variant_sizes")
+          .select("price")
+          .eq("variant_id", variantId)
+          .eq("size_value", size)
+          .single();
+        if (data?.price != null) return data.price;
+      } else {
+        const { data } = await supabase
+          .from("product_listing_sizes")
+          .select("price")
+          .eq("listing_id", productId)
+          .eq("size_value", size)
+          .single();
+        if (data?.price != null) return data.price;
+      }
+    } catch {
+      // fall through to fallback
+    }
+
+    return fallbackPrice;
+  }
+
   static async getProductDetails(productId: string) {
     try {
       const { data, error } = await supabase
@@ -145,6 +178,7 @@ export class OrderService {
           id,
           title,
           price,
+          brand,
           user_id,
           product_images (
             image_url,
@@ -223,8 +257,13 @@ export class OrderService {
           continue;
         }
 
-        // Use the server-side price from the DB, never trust the client-supplied price.
-        const verifiedPrice: number = productDetails.price;
+        // Use the server-side price for the specific ordered size from the DB.
+        const verifiedPrice: number = await this.getSizePriceFromDB(
+          item.productId,
+          item.size,
+          item.variantId,
+          productDetails.price
+        );
 
         // Create order
         const order = await this.createOrder({
@@ -261,6 +300,8 @@ export class OrderService {
           seller_email: item.sellerEmail,
           order_status: "confirmed",
           shipping_address: shippingAddress || undefined,
+          product_id: item.productId,
+          brand: productDetails.brand ?? undefined,
         };
 
         // Send email notifications
@@ -348,8 +389,13 @@ export class OrderService {
         //    would lock products if the buyer never pays.
         // Product will be marked as sold when admin clicks "Confirm Payment".
 
-        // Use the server-side price from the DB, never trust the client-supplied price.
-        const verifiedPrice: number = productDetails.price;
+        // Use the server-side price for the specific ordered size from the DB.
+        const verifiedPrice: number = await this.getSizePriceFromDB(
+          item.productId,
+          item.size,
+          item.variantId,
+          productDetails.price
+        );
 
         // Create order with pending_payment status
         const order = await this.createOrder({
@@ -530,6 +576,7 @@ export class OrderService {
             id,
             title,
             slug,
+            brand,
             product_images ( image_url, is_poster_image )
           )
         `)
@@ -592,6 +639,20 @@ export class OrderService {
 
       const reviewUrl = `${window.location.origin}/review?token=${token}`;
 
+      // Fetch similar products for the "You might also like" section
+      let similarProducts: { id: string; slug?: string; title: string; price: number; image_url?: string }[] = [];
+      if (listing.brand) {
+        const { data: similar } = await supabase
+          .from("listings_with_images")
+          .select("id, slug, title, price, image_url")
+          .eq("status", "active")
+          .eq("brand", listing.brand)
+          .neq("id", listing.id)
+          .order("created_at", { ascending: false })
+          .limit(4);
+        similarProducts = similar ?? [];
+      }
+
       // Send email via the existing edge function
       await supabase.functions.invoke("send-order-email", {
         body: {
@@ -599,12 +660,15 @@ export class OrderService {
           recipient_email: buyerEmail,
           recipient_name:  buyerName,
           order_data: {
-            order_id:      orderId,
-            product_title: listing.title,
-            product_image: posterImage,
-            amount:        0,
-            currency:      "INR",
-            order_status:  "delivered",
+            order_id:        orderId,
+            product_title:   listing.title,
+            product_image:   posterImage,
+            amount:          0,
+            currency:        "INR",
+            order_status:    "delivered",
+            product_id:      listing.id,
+            brand:           listing.brand ?? undefined,
+            similar_products: similarProducts,
           },
           template_data: {
             action_url: reviewUrl,

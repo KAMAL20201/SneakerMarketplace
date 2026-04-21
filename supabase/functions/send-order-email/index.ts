@@ -33,6 +33,14 @@ interface ShippingAddress {
   phone?: string;
 }
 
+interface SimilarProduct {
+  id: string;
+  slug?: string;
+  title: string;
+  price: number;
+  image_url?: string;
+}
+
 interface OrderEmailData {
   order_id: string;
   product_title: string;
@@ -48,6 +56,9 @@ interface OrderEmailData {
   courier_name?: string;
   order_status: string;
   estimated_delivery?: string;
+  product_id?: string;
+  brand?: string;
+  similar_products?: SimilarProduct[];
 }
 
 interface EmailRequest {
@@ -145,6 +156,8 @@ function orderSummaryRow(label: string, value: string): string {
   </tr>`;
 }
 
+const BASE_URL = "https://theplugmarket.in";
+
 function addressBlock(address: ShippingAddress): string {
   const parts = [
     address.full_name,
@@ -154,6 +167,38 @@ function addressBlock(address: ShippingAddress): string {
     address.phone ? `📞 ${address.phone}` : "",
   ].filter(Boolean);
   return parts.join("<br/>");
+}
+
+function buildSimilarProductsSection(products: SimilarProduct[]): string {
+  if (!products || products.length === 0) return "";
+
+  const cards = products.map((p) => {
+    const url = `${BASE_URL}/product/${p.slug || p.id}`;
+    const imageHtml = p.image_url
+      ? `<img src="${p.image_url}" alt="" width="120" style="width:120px;height:120px;object-fit:cover;border-radius:8px;display:block;margin:0 auto 10px;" />`
+      : `<div style="width:120px;height:120px;background:#f3f4f6;border-radius:8px;margin:0 auto 10px;"></div>`;
+    const title = p.title.length > 38 ? p.title.slice(0, 38) + "…" : p.title;
+    return `<td style="padding:8px;vertical-align:top;width:50%;">
+        <a href="${url}" style="text-decoration:none;display:block;text-align:center;">
+          ${imageHtml}
+          <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#111827;line-height:1.4;">${title}</p>
+          <p style="margin:0;font-size:14px;font-weight:700;color:#7c3aed;">${formatAmount(p.price, "INR")}</p>
+        </a>
+      </td>`;
+  });
+
+  const rows: string[] = [];
+  for (let i = 0; i < cards.length; i += 2) {
+    rows.push(`<tr>${cards[i]}${cards[i + 1] ?? "<td></td>"}</tr>`);
+  }
+
+  return `<div style="margin-top:32px;border-top:1px solid #e5e7eb;padding-top:24px;">
+    <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:#111827;">You might also like</h3>
+    <table width="100%" cellpadding="0" cellspacing="0">${rows.join("")}</table>
+    <div style="text-align:center;margin-top:16px;">
+      <a href="${BASE_URL}" style="color:#7c3aed;font-size:13px;font-weight:600;text-decoration:none;">Browse all products →</a>
+    </div>
+  </div>`;
 }
 
 // ── Email content builders ─────────────────────────────────────────────────────
@@ -252,6 +297,35 @@ function buildOrderShipped(
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
       Keep an eye on your tracking number for live updates.
     </p>
+
+    <div style="margin-top:28px;background:#fdf4ff;border:2px solid #e9d5ff;border-radius:14px;padding:20px 24px;">
+      <p style="margin:0 0 6px;font-size:15px;font-weight:800;color:#6d28d9;">📹 Record Your Unboxing Video</p>
+      <p style="margin:0 0 14px;color:#4b5563;font-size:14px;line-height:1.6;">
+        When your package arrives, <strong>please record a continuous unboxing video</strong> before and while opening the package. This protects you in case of:
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:5px 0;font-size:14px;color:#374151;">
+            <span style="color:#7c3aed;font-weight:700;margin-right:8px;">✦</span> Defective or damaged product
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0;font-size:14px;color:#374151;">
+            <span style="color:#7c3aed;font-weight:700;margin-right:8px;">✦</span> Wrong size or incorrect item received
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:5px 0;font-size:14px;color:#374151;">
+            <span style="color:#7c3aed;font-weight:700;margin-right:8px;">✦</span> Missing items or accessories
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top:14px;background:#f3e8ff;border-radius:8px;padding:12px 14px;">
+        <p style="margin:0;color:#5b21b6;font-size:13px;font-weight:600;">
+          ⚠️ Return or replacement requests without an unboxing video may not be accepted. Keep the video safe until you're fully satisfied with your order.
+        </p>
+      </div>
+    </div>
   `;
 }
 
@@ -408,8 +482,6 @@ function buildAdminOtp(name: string, otpCode: string): string {
 
 // ── Build email for a given type ───────────────────────────────────────────────
 
-const BASE_URL = "https://theplugmarket.in";
-
 const DEFAULT_ACTION_URLS: Record<EmailRequest["type"], string> = {
   order_confirmed:   BASE_URL,
   payment_received:  `${BASE_URL}/my-orders`,
@@ -426,6 +498,14 @@ function buildEmailContent(req: EmailRequest): { subject: string; html: string }
   const actionUrl = template_data?.action_url ?? DEFAULT_ACTION_URLS[type] ?? BASE_URL;
   const subject =
     template_data?.subject ?? getDefaultSubject(type, order_data.product_title);
+
+  const BUYER_EMAIL_TYPES = new Set([
+    "order_confirmed",
+    "order_shipped",
+    "order_delivered",
+    "order_cancelled",
+    "review_request",
+  ]);
 
   let body: string;
   switch (type) {
@@ -455,6 +535,10 @@ function buildEmailContent(req: EmailRequest): { subject: string; html: string }
       break;
     default:
       body = `<p>Notification for order #${order_data.order_id}</p>`;
+  }
+
+  if (BUYER_EMAIL_TYPES.has(type) && order_data.similar_products?.length) {
+    body += buildSimilarProductsSection(order_data.similar_products);
   }
 
   return { subject, html: baseTemplate(body, subject) };

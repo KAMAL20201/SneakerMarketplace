@@ -537,6 +537,8 @@ const MyOrders = () => {
                                       seller_email: user?.email,
                                       order_status: "confirmed",
                                       shipping_address: order.shipping_address,
+                                      product_id: order.product_id,
+                                      brand: order.product_listings?.brand ?? undefined,
                                     };
                                     try {
                                       if (order.buyer_email) {
@@ -762,6 +764,8 @@ const MyOrders = () => {
                 shipping_address: selectedOrder.shipping_address,
                 tracking_number: awb,
                 courier_name: deliveryCompany,
+                product_id: selectedOrder.product_id,
+                brand: selectedOrder.product_listings?.brand ?? undefined,
               };
               try {
                 await EmailService.sendShippingNotificationToBuyer(

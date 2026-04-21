@@ -2,6 +2,14 @@ import { supabase } from "./supabase";
 import { logger } from "@/components/ui/Logger";
 import type { ShippingAddress } from "@/types/shipping";
 
+export interface SimilarProduct {
+  id: string;
+  slug?: string;
+  title: string;
+  price: number;
+  image_url?: string;
+}
+
 export interface OrderEmailData {
   order_id: string;
   product_title: string;
@@ -17,6 +25,9 @@ export interface OrderEmailData {
   courier_name?: string;
   order_status: "pending" | "pending_payment" | "confirmed" | "shipped" | "delivered" | "cancelled";
   estimated_delivery?: string;
+  product_id?: string;
+  brand?: string;
+  similar_products?: SimilarProduct[];
 }
 
 export interface EmailNotificationRequest {
@@ -33,6 +44,36 @@ export interface EmailNotificationRequest {
 }
 
 export class EmailService {
+
+  private static async fetchSimilarProducts(
+    brand: string,
+    excludeProductId: string
+  ): Promise<SimilarProduct[]> {
+    try {
+      const { data } = await supabase
+        .from("listings_with_images")
+        .select("id, slug, title, price, image_url")
+        .eq("status", "active")
+        .eq("brand", brand)
+        .neq("id", excludeProductId)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      return (data as SimilarProduct[]) ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  private static async withSimilarProducts(
+    orderData: OrderEmailData
+  ): Promise<OrderEmailData> {
+    if (!orderData.brand || !orderData.product_id) return orderData;
+    const similar_products = await this.fetchSimilarProducts(
+      orderData.brand,
+      orderData.product_id
+    );
+    return { ...orderData, similar_products };
+  }
 
   /**
    * Send email via Supabase Edge Function (server-side SES)
@@ -101,11 +142,12 @@ export class EmailService {
     buyerName: string,
     orderData: OrderEmailData
   ): Promise<boolean> {
+    const enriched = await this.withSimilarProducts(orderData);
     return await this.sendEmail(
       "order_confirmed",
       buyerEmail,
       buyerName,
-      orderData,
+      enriched,
       {
         subject: "🎉 Order Confirmed! Your purchase is being processed",
         action_text: "Continue Shopping",
@@ -143,11 +185,12 @@ export class EmailService {
     buyerName: string,
     orderData: OrderEmailData
   ): Promise<boolean> {
+    const enriched = await this.withSimilarProducts(orderData);
     return await this.sendEmail(
       "order_shipped",
       buyerEmail,
       buyerName,
-      orderData,
+      enriched,
       {
         subject: "📦 Your order has been shipped!",
         action_text: "Contact Support",
@@ -164,11 +207,12 @@ export class EmailService {
     buyerName: string,
     orderData: OrderEmailData
   ): Promise<boolean> {
+    const enriched = await this.withSimilarProducts(orderData);
     return await this.sendEmail(
       "order_delivered",
       buyerEmail,
       buyerName,
-      orderData,
+      enriched,
       {
         subject: "✅ Your order has been delivered!",
         action_text: "Shop Again",
@@ -185,11 +229,12 @@ export class EmailService {
     buyerName: string,
     orderData: OrderEmailData
   ): Promise<boolean> {
+    const enriched = await this.withSimilarProducts(orderData);
     return await this.sendEmail(
       "order_cancelled",
       buyerEmail,
       buyerName,
-      orderData,
+      enriched,
       {
         subject: "❌ Order Cancelled",
         action_text: "Contact Support",
