@@ -4,7 +4,7 @@ import { ROUTE_NAMES } from "@/constants/enums";
 import CategorySection from "@/components/CategorySection";
 import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
-import InstagramBanner from "@/components/InstagramBanner";
+import InstagramFeed from "@/components/InstagramFeed";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 import BlogTeaser from "@/components/BlogTeaser";
 import HotDeals from "@/components/HotDeals";
@@ -440,8 +440,8 @@ const Home = () => {
       {/* Featured Listings Section */}
       {/* <FeaturedListings /> */}
 
-      {/* Instagram Banner */}
-      <InstagramBanner />
+      {/* Instagram Feed */}
+      <InstagramFeed />
 
       {/* Why Buy From Us */}
       <WhyBuyFromUs />

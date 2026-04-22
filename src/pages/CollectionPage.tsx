@@ -496,7 +496,7 @@ const CollectionPage = () => {
 
       {/* Hero banner */}
       {collection.imageUrl ? (
-        <div className="relative w-full h-52 sm:h-72 md:h-80 overflow-hidden">
+        <div className="relative w-full h-52 sm:h-72 md:h-104 overflow-hidden">
           <img
             src={collection.imageUrl}
             alt={collection.name}
