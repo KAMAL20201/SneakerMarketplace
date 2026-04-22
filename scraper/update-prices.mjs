@@ -369,11 +369,13 @@ async function processListing(page, listing, idx, total) {
       });
       if (dropPercent > 5) {
         console.log("kamaldroppedInNotification Array", pg);
+        const under13k = newSizeInr < 13000 ? "\n🔥 <b>Under ₹13,000!</b>" : "";
         notifications.push(
           `📉 <b>Price Drop (${dropPercent.toFixed(1)}%)</b>\n` +
             `👟 ${listing.title}\n` +
             `📏 Size: ${dbSize.size_value}\n` +
-            `💰 ₹${dbSize.price} ➡️ ₹${newSizeInr}`,
+            `💰 ₹${dbSize.price} ➡️ ₹${newSizeInr}` +
+            under13k,
         );
       }
     }
