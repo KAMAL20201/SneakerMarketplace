@@ -8,6 +8,8 @@ import {
   Truck,
   Zap,
   Star,
+  ChevronDown,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -409,6 +411,8 @@ export default function ProductDetailPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [returnsOpen, setReturnsOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [emblaApi, setEmblaApi] = useState<EmblaCarouselType | null>(null);
   const [zoomEmblaApi, setZoomEmblaApi] = useState<EmblaCarouselType | null>(
@@ -1116,6 +1120,118 @@ export default function ProductDetailPage() {
               })()}
             />
           )}
+
+          {/* Delivery Timeline Accordion */}
+          <div className="px-4 pb-3 lg:px-0">
+            <button
+              type="button"
+              onClick={() => setDeliveryOpen((o) => !o)}
+              className="w-full flex items-center justify-between py-3 px-4 bg-white rounded-2xl shadow-sm border border-gray-100 text-left"
+            >
+              <div className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+                <Truck className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                Delivery Timeline
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${deliveryOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {deliveryOpen && (
+              <div className="mt-1 px-4 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-sm text-gray-600 space-y-3">
+                {listing?.delivery_days &&
+                parseMinDeliveryDays(listing.delivery_days) < 10 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-teal-700">
+                      <Zap className="h-4 w-4 flex-shrink-0" />
+                      Instant Ship
+                    </div>
+                    <p>
+                      This item is ready to ship — it will be dispatched the{" "}
+                      <span className="font-medium text-gray-800">
+                        same day or the next business day
+                      </span>{" "}
+                      after your order is confirmed.
+                    </p>
+                    <p>
+                      Expected delivery:{" "}
+                      <span className="font-medium text-gray-800">
+                        within 10 days
+                      </span>{" "}
+                      from the date of purchase.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p>
+                      This product is{" "}
+                      <span className="font-medium text-gray-800">
+                        sourced from an international source
+                      </span>
+                      . It will be shipped after{" "}
+                      <span className="font-medium text-gray-800">
+                        3 weeks
+                      </span>{" "}
+                      from the date of your order.
+                    </p>
+                    <p>
+                      Once shipped, the product will be delivered within{" "}
+                      <span className="font-medium text-gray-800">
+                        1 week
+                      </span>
+                      .
+                    </p>
+                    <p>
+                      All order-related updates and tracking information will be
+                      shared with you{" "}
+                      <span className="font-medium text-gray-800">
+                        via email
+                      </span>
+                      .
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Returns Accordion */}
+          <div className="px-4 pb-4 lg:px-0">
+            <button
+              type="button"
+              onClick={() => setReturnsOpen((o) => !o)}
+              className="w-full flex items-center justify-between py-3 px-4 bg-white rounded-2xl shadow-sm border border-gray-100 text-left"
+            >
+              <div className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+                <RotateCcw className="h-4 w-4 text-purple-500 flex-shrink-0" />
+                Returns & Refund Policy
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${returnsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {returnsOpen && (
+              <div className="mt-1 px-4 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-sm text-gray-600 space-y-3">
+                <p>
+                  <span className="font-semibold text-gray-800">
+                    All sales are final.
+                  </span>{" "}
+                  We do not accept returns or issue refunds unless the item
+                  received is:
+                </p>
+                <ul className="list-disc list-inside space-y-1 pl-1">
+                  <li>Defective or damaged</li>
+                  <li>Wrong size</li>
+                  <li>Wrong product entirely</li>
+                </ul>
+                <p className="text-amber-700 bg-amber-50 rounded-xl px-3 py-2 font-medium">
+                  An unboxing video of the sealed parcel is{" "}
+                  <span className="font-semibold">mandatory</span> to raise any
+                  return or refund claim. Claims without an unboxing video
+                  cannot be processed.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Size Guide Modal */}
           <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
