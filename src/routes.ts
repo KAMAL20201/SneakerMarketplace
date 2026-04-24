@@ -57,6 +57,7 @@ export default [
   route("admin/descriptions", "./pages/AdminDescriptions.tsx"),
   route("admin/coupons", "./pages/AdminCoupons.tsx"),
   route("admin/new-drops", "./pages/AdminNewDrops.tsx"),
+  route("admin/messages", "./pages/AdminMessages.tsx"),
 
   // API resource routes (server-side only, no UI component)
   route("api/generate-description", "./api/generate-description.ts"),

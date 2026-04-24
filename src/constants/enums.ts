@@ -17,6 +17,7 @@ export const ROUTE_NAMES = {
   ADMIN_BLOG: "/admin/blog",
   ADMIN_DESCRIPTIONS: "/admin/descriptions",
   ADMIN_COUPONS: "/admin/coupons",
+  ADMIN_MESSAGES: "/admin/messages",
   BLOG: "/blog",
   PROFILE: "/profile",
   MY_ADDRESSES: "/my-addresses",

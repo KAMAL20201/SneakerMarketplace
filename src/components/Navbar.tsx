@@ -169,6 +169,19 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {isAdmin && (
+                  <DropdownMenuItem
+                    asChild
+                    className="rounded-xl mx-1 my-1 cursor-pointer"
+                  >
+                    <Link
+                      to={ROUTE_NAMES.ADMIN_MESSAGES}
+                      className="text-purple-700 font-medium"
+                    >
+                      💬 Messages
+                    </Link>
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuSeparator className="bg-white/30" />
                 {/* <DropdownMenuItem
