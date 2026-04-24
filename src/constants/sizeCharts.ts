@@ -263,6 +263,22 @@ const ON_CHART: BrandSizeChart = {
   ],
 };
 
+// ─── DYNAFISH ──────────────────────────────────────────────────────────────
+const DYNAFISH_CHART: BrandSizeChart = {
+  men: [
+    { uk: "5",    us: "5.5",  eu: "36", cm: "23.5" },
+    { uk: "5.5",  us: "6",    eu: "37", cm: "24"   },
+    { uk: "6",    us: "6.5",  eu: "38", cm: "24.5" },
+    { uk: "6.5",  us: "7",    eu: "39", cm: "25"   },
+    { uk: "7.5",  us: "8",    eu: "40", cm: "26"   },
+    { uk: "8",    us: "8.5",  eu: "41", cm: "26.5" },
+    { uk: "8.5",  us: "9",    eu: "42", cm: "27"   },
+    { uk: "9.5",  us: "10",   eu: "43", cm: "28"   },
+    { uk: "10",   us: "10.5", eu: "44", cm: "28.5" },
+    { uk: "10.5", us: "11",   eu: "45", cm: "29"   },
+  ],
+};
+
 // ─── BRAND → CHART LOOKUP ──────────────────────────────────────────────────
 // Any brand not listed here falls back to NIKE_CHART
 const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
@@ -275,6 +291,7 @@ const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
   adidas:      ADIDAS_CHART,
   "new balance": NEW_BALANCE_CHART,
   on:          ON_CHART,
+  dynafish:    DYNAFISH_CHART,
 };
 
 export function getSizeChart(brand: string): BrandSizeChart {
