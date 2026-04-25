@@ -22,6 +22,7 @@ import { ROUTE_NAMES } from "@/constants/enums";
 interface Banner {
   id: string;
   image_url: string;
+  mobile_image_url: string | null;
   cta_url: string | null;
   is_active: boolean;
   start_date: string | null;
@@ -35,17 +36,20 @@ function AdminBanners() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     image_url: "",
+    mobile_image_url: "",
     cta_url: "",
     is_active: true,
     start_date: "",
     end_date: "",
     sort_order: 0,
   });
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchBanners = async () => {
     setLoading(true);
@@ -89,6 +93,33 @@ function AdminBanners() {
     toast.success("Image uploaded");
   };
 
+  const handleMobileFileUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+    setUploadingMobile(true);
+    const ext = file.name.split(".").pop();
+    const path = `mobile_${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("banners")
+      .upload(path, file, { upsert: false });
+
+    if (uploadError) {
+      toast.error("Upload failed: " + uploadError.message);
+      setUploadingMobile(false);
+      return;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("banners").getPublicUrl(path);
+    setForm((f) => ({ ...f, mobile_image_url: publicUrl }));
+    setUploadingMobile(false);
+    toast.success("Mobile image uploaded");
+  };
+
   const handleSave = async () => {
     if (!form.image_url) {
       toast.error("Please upload or paste an image URL");
@@ -97,6 +128,7 @@ function AdminBanners() {
     setSaving(true);
     const { error } = await supabase.from("banners").insert({
       image_url: form.image_url,
+      mobile_image_url: form.mobile_image_url || null,
       cta_url: form.cta_url.trim() || null,
       is_active: form.is_active,
       start_date: form.start_date || null,
@@ -111,6 +143,7 @@ function AdminBanners() {
       setShowForm(false);
       setForm({
         image_url: "",
+        mobile_image_url: "",
         cta_url: "",
         is_active: true,
         start_date: "",
@@ -244,6 +277,73 @@ function AdminBanners() {
                 )}
               </div>
 
+              {/* Mobile image upload (9:16) */}
+              <div>
+                <Label className="mb-2 block">
+                  Mobile Banner Image{" "}
+                  <span className="text-gray-400 font-normal text-xs">
+                    (optional — 9:16 vertical, shown on phones)
+                  </span>
+                </Label>
+                {form.mobile_image_url ? (
+                  <div className="relative rounded-2xl overflow-hidden bg-gray-100 mx-auto" style={{ aspectRatio: "9/16", maxWidth: 160 }}>
+                    <img
+                      src={form.mobile_image_url}
+                      alt="Mobile Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      onClick={() => setForm((f) => ({ ...f, mobile_image_url: "" }))}
+                      className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-lg"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => mobileFileInputRef.current?.click()}
+                    className="border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-colors mx-auto"
+                    style={{ aspectRatio: "9/16", maxWidth: 160 }}
+                  >
+                    {uploadingMobile ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+                    ) : (
+                      <>
+                        <Upload className="h-6 w-6 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-500 text-center px-2">
+                          Click to upload
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 text-center px-2">
+                          1080×1920px (9:16)
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={mobileFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleMobileFileUpload(file);
+                  }}
+                />
+                {!form.mobile_image_url && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="Or paste mobile image URL…"
+                      onChange={(e) => {
+                        if (e.target.value)
+                          setForm((f) => ({ ...f, mobile_image_url: e.target.value }));
+                      }}
+                      className="text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2 space-y-1">
                   <Label>Link on tap (optional)</Label>
@@ -366,12 +466,23 @@ function AdminBanners() {
                 className="rounded-2xl overflow-hidden shadow-sm"
               >
                 <CardContent className="p-0">
-                  <div className="aspect-[2/1] bg-gray-100">
-                    <img
-                      src={banner.image_url}
-                      alt="Banner"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="flex gap-2 p-2 bg-gray-100">
+                    <div className="flex-1 aspect-[2/1] rounded-xl overflow-hidden">
+                      <img
+                        src={banner.image_url}
+                        alt="Desktop Banner"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {banner.mobile_image_url && (
+                      <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "9/16", width: 56 }}>
+                        <img
+                          src={banner.mobile_image_url}
+                          alt="Mobile Banner"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="px-4 py-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">

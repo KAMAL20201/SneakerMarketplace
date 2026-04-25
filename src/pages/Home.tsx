@@ -72,7 +72,7 @@ export async function loader(_: Route.LoaderArgs) {
     await Promise.all([
       ssrSupabase
         .from("banners")
-        .select("id, image_url, cta_url")
+        .select("id, image_url, mobile_image_url, cta_url")
         .eq("is_active", true)
         .or(`start_date.is.null,start_date.lte.${today}`)
         .or(`end_date.is.null,end_date.gte.${today}`)
@@ -222,7 +222,7 @@ const Home = () => {
         />
       </Helmet> */}
       {/* Hero Section */}
-      <section className="px-4 py-6">
+      <section className="hidden md:block px-4 py-6">
         <div className="text-center mb-8 float-animation">
           <div className="inline-flex items-center gap-2 mb-4">
             <Sparkles className="h-6 w-6 text-orange-500" />
@@ -291,6 +291,11 @@ const Home = () => {
 
       {/* Homepage Banners */}
       <HomeBannerCarousel initialBanners={banners} />
+
+      {/* Search bar — mobile only, shown below banner */}
+      <div className="md:hidden mt-6 px-4 pb-4">
+        <SearchDropdown />
+      </div>
 
       {/* Brand Spotlight */}
       <BrandSpotlight />

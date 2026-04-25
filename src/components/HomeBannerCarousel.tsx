@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 interface Banner {
   id: string;
   image_url: string;
+  mobile_image_url: string | null;
   cta_url: string | null;
 }
 
@@ -27,7 +28,7 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
       const today = new Date().toISOString().split("T")[0];
       const { data, error } = await supabase
         .from("banners")
-        .select("id, image_url, cta_url")
+        .select("id, image_url, mobile_image_url, cta_url")
         .eq("is_active", true)
         .or(`start_date.is.null,start_date.lte.${today}`)
         .or(`end_date.is.null,end_date.gte.${today}`)
@@ -83,34 +84,47 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
   };
 
   return (
-    <section className="px-4 pb-4">
+    <section className="md:px-4 md:pb-4">
       {/* Each slide is absolutely positioned — avoids iOS Safari flex/min-w-full bug */}
       <div
-        className="relative rounded-3xl overflow-hidden bg-gray-100 select-none w-full"
-        style={{ aspectRatio: "2 / 1" }}
+        className="relative md:rounded-3xl overflow-hidden bg-gray-100 select-none w-full aspect-[9/16] md:aspect-[2/1]"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
         {banners.map((banner, i) => {
           const offset = i - current;
+          const isActive = offset === 0;
           const img = (
-            <img
-              src={banner.image_url}
-              alt="Promotional banner"
-              className="w-full h-full object-cover"
-              draggable={false}
-              loading={i === 0 ? "eager" : "lazy"}
-              fetchPriority={i === 0 ? "high" : "low"}
-              decoding={i === 0 ? "sync" : "async"}
-              width={1200}
-              height={600}
-            />
+            <picture className="w-full h-full">
+              {banner.mobile_image_url && (
+                <source
+                  media="(max-width: 767px)"
+                  srcSet={banner.mobile_image_url}
+                />
+              )}
+              <img
+                src={banner.image_url}
+                alt="Promotional banner"
+                className="w-full h-full object-cover"
+                draggable={false}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "low"}
+                decoding={i === 0 ? "sync" : "async"}
+                width={1200}
+                height={600}
+              />
+            </picture>
           );
           return (
             <div
               key={banner.id}
-              className="absolute inset-0 transition-transform duration-500 ease-in-out"
-              style={{ transform: `translateX(${offset * 100}%)` }}
+              className="absolute inset-0"
+              style={{
+                transform: `translateX(${offset * 100}%) scale(${isActive ? 1 : 0.92})`,
+                opacity: isActive ? 1 : 0,
+                transition: "transform 500ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms ease",
+                zIndex: isActive ? 1 : 0,
+              }}
             >
               {banner.cta_url ? (
                 <Link to={banner.cta_url} prefetch="intent" className="block w-full h-full">
@@ -123,18 +137,18 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
           );
         })}
 
-        {/* Arrows */}
+        {/* Arrows — desktop only */}
         {banners.length > 1 && (
           <>
             <button
               onClick={() => go("prev")}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 hidden md:flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => go("next")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 hidden md:flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
