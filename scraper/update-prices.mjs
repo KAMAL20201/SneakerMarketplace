@@ -274,13 +274,13 @@ async function fetchSizePrices(page, templateId, p) {
 async function processListing(page, listing, idx, total) {
   const p = `[${idx + 1}/${total}][db=${listing.id}]`;
   const debug = isVomeroPremium(listing.title);
+  const vlog = (msg) => console.log(`[VOMERO DEBUG]["${listing.title}"] ${msg}`);
 
   if (debug) {
-    console.log(`\n[VOMERO DEBUG] ──────────────────────────────────────────`);
-    console.log(`[VOMERO DEBUG] ${p} Title: "${listing.title}"`);
-    console.log(`[VOMERO DEBUG] ${p} DB price: ₹${listing.price} | brand: ${listing.brand}`);
-    console.log(`[VOMERO DEBUG] ${p} DB sizes: ${(listing.product_listing_sizes || []).map(s => `${s.size_value}=₹${s.price}`).join(", ")}`);
-    console.log(`[VOMERO DEBUG] ${p} goat_template_id: ${listing.goat_template_id ?? "none (will search)"}`);
+    vlog(`──────────────────────────────────────────`);
+    vlog(`${p} DB price: ₹${listing.price} | brand: ${listing.brand}`);
+    vlog(`${p} DB sizes: ${(listing.product_listing_sizes || []).map(s => `${s.size_value}=₹${s.price}`).join(", ")}`);
+    vlog(`${p} goat_template_id: ${listing.goat_template_id ?? "none (will search)"}`);
   }
 
   let matchId = listing.goat_template_id;
@@ -307,9 +307,9 @@ async function processListing(page, listing, idx, total) {
     }
 
     if (debug) {
-      console.log(`[VOMERO DEBUG] ${p} GOAT search returned ${results.length} result(s):`);
-      results.forEach((r, i) => console.log(`[VOMERO DEBUG]   [${i}] id=${r.id} title="${r.title}" lowestCents=${r.lowestPriceCents}`));
-      console.log(`[VOMERO DEBUG] ${p} Matched: "${match.title}" (ID: ${match.id})`);
+      vlog(`${p} GOAT search returned ${results.length} result(s):`);
+      results.forEach((r, i) => vlog(`  [${i}] id=${r.id} title="${r.title}" lowestCents=${r.lowestPriceCents}`));
+      vlog(`${p} Matched: "${match.title}" (ID: ${match.id})`);
     }
 
     matchId = match.id;
@@ -324,15 +324,15 @@ async function processListing(page, listing, idx, total) {
 
   if (!sizePrices.length) {
     if (debug) {
-      console.log(`[VOMERO DEBUG] ${pg} ⚠️ fetchSizePrices returned empty — no new in-stock variants`);
+      vlog(`${pg} ⚠️ fetchSizePrices returned empty — no new in-stock variants`);
     }
     return { status: "noChange" };
   }
 
   if (debug) {
-    console.log(`[VOMERO DEBUG] ${pg} GOAT size prices (USD → INR):`);
+    vlog(`${pg} GOAT size prices (USD → INR):`);
     sizePrices.forEach((sp) =>
-      console.log(`[VOMERO DEBUG]   US ${sp.size} → $${sp.priceUsd} → ₹${usdToInr(sp.priceUsd)}`),
+      vlog(`  US ${sp.size} → $${sp.priceUsd} → ₹${usdToInr(sp.priceUsd)}`),
     );
   }
 
@@ -351,7 +351,7 @@ async function processListing(page, listing, idx, total) {
   const notifications = [];
 
   if (debug) {
-    console.log(`[VOMERO DEBUG] ${pg} UK→US offset for brand "${listing.brand}": +${offset}`);
+    vlog(`${pg} UK→US offset for brand "${listing.brand}": +${offset}`);
   }
 
   for (const dbSize of dbSizes) {
@@ -363,7 +363,7 @@ async function processListing(page, listing, idx, total) {
 
     if (usSize == null) {
       if (debug) {
-        console.log(`[VOMERO DEBUG] ${pg} size="${dbSize.size_value}" — could not parse US size, skipping`);
+        vlog(`${pg} size="${dbSize.size_value}" — could not parse US size, skipping`);
       }
       continue;
     }
@@ -371,9 +371,7 @@ async function processListing(page, listing, idx, total) {
     const newSizeInr = goatSizeMap.get(usSize);
 
     if (debug) {
-      console.log(
-        `[VOMERO DEBUG] ${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`,
-      );
+      vlog(`${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`);
     }
 
     if (!newSizeInr) continue;
@@ -428,8 +426,8 @@ async function processListing(page, listing, idx, total) {
     newRetailInr !== null && newRetailInr !== listing.retail_price;
 
   if (debug) {
-    console.log(`[VOMERO DEBUG] ${pg} matchedPricesInr: [${matchedPricesInr.join(", ")}]`);
-    console.log(`[VOMERO DEBUG] ${pg} newPriceInr=₹${newPriceInr} (DB was ₹${listing.price}) | priceChanged=${priceChanged}`);
+    vlog(`${pg} matchedPricesInr: [${matchedPricesInr.join(", ")}]`);
+    vlog(`${pg} newPriceInr=₹${newPriceInr} (DB was ₹${listing.price}) | priceChanged=${priceChanged}`);
   }
 
   // Update listing-level price
@@ -452,8 +450,8 @@ async function processListing(page, listing, idx, total) {
   }
 
   if (debug) {
-    console.log(`[VOMERO DEBUG] ${pg} result: ${listingUpdated ? `✅ updated to ₹${newPriceInr}` : "no change"} | sizeUpdateCount=${sizeUpdateCount}`);
-    console.log(`[VOMERO DEBUG] ──────────────────────────────────────────\n`);
+    vlog(`${pg} result: ${listingUpdated ? `✅ updated to ₹${newPriceInr}` : "no change"} | sizeUpdateCount=${sizeUpdateCount}`);
+    vlog(`──────────────────────────────────────────\n`);
   }
 
   return { status: listingUpdated ? "updated" : "noChange", sizeUpdateCount };
