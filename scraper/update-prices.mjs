@@ -65,13 +65,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 // ─── Telegram ──────────────────────────────────────────────────────────────
 
 async function sendTelegramMessage(message) {
-  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-    console.log(
-      "⚠️  Telegram credentials not set — skipping notification:\n",
-      message,
-    );
-    return;
-  }
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   try {
     const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
     const response = await fetch(url, {
@@ -175,6 +169,11 @@ function pickBestMatch(dbTitle, results) {
   return exact || results[0] || null;
 }
 
+/** Returns true if the listing title includes "nike vomero premium" (case-insensitive) */
+function isVomeroPremium(title) {
+  return title.toLowerCase().includes("nike vomero premium");
+}
+
 // ─── GOAT API calls ─────────────────────────────────────────────────────────
 
 /**
@@ -214,7 +213,7 @@ async function searchGoat(page, title, p) {
   );
 
   if (!raw.ok) {
-    console.log(
+    console.error(
       `${p} 🔍 [SEARCH] ❌ HTTP ${raw.status} | error: ${raw.error ?? "non-OK response"}`,
     );
     return [];
@@ -261,15 +260,10 @@ async function fetchSizePrices(page, templateId, p) {
   }, templateId);
 
   if (!raw.ok) {
-    console.log(
+    console.error(
       `${p} 💰 [BUY_BAR] ❌ HTTP ${raw.status} | error: ${raw.error ?? "non-OK response"}`,
     );
     return [];
-  }
-  if (raw.mapped.length === 0) {
-    console.log(
-      `${p} 💰 [BUY_BAR] ⚠️  no new in-stock variants (totalVariants=${raw.totalVariants ?? 0})`,
-    );
   }
 
   return raw.mapped;
@@ -279,19 +273,26 @@ async function fetchSizePrices(page, templateId, p) {
 
 async function processListing(page, listing, idx, total) {
   const p = `[${idx + 1}/${total}][db=${listing.id}]`;
+  const debug = isVomeroPremium(listing.title);
+
+  if (debug) {
+    console.log(`\n[VOMERO DEBUG] ──────────────────────────────────────────`);
+    console.log(`[VOMERO DEBUG] ${p} Title: "${listing.title}"`);
+    console.log(`[VOMERO DEBUG] ${p} DB price: ₹${listing.price} | brand: ${listing.brand}`);
+    console.log(`[VOMERO DEBUG] ${p} DB sizes: ${(listing.product_listing_sizes || []).map(s => `${s.size_value}=₹${s.price}`).join(", ")}`);
+    console.log(`[VOMERO DEBUG] ${p} goat_template_id: ${listing.goat_template_id ?? "none (will search)"}`);
+  }
 
   let matchId = listing.goat_template_id;
   let matchRetailPriceCents = null;
 
-  if (matchId) {
-    console.log(`${p} 🔗 Using stored GOAT ID: ${matchId}`);
-  } else {
+  if (!matchId) {
     // Search GOAT fallback by title
     const results = await searchGoat(page, listing.title, p);
     await delay(DELAY_MS);
 
     if (!results.length) {
-      console.log(
+      console.error(
         `${p} ❌ not found on GOAT — "${listing.title.slice(0, 60)}"`,
       );
       return { status: "notFound", title: listing.title };
@@ -299,15 +300,18 @@ async function processListing(page, listing, idx, total) {
 
     const match = pickBestMatch(listing.title, results);
     if (!match) {
-      console.log(
+      console.error(
         `${p} ❌ no match after pickBestMatch — "${listing.title.slice(0, 60)}"`,
       );
       return { status: "notFound", title: listing.title };
     }
 
-    console.log(
-      `${p} 🔗 Searched & Matched GOAT: "${match.title}" (ID: ${match.id})`,
-    );
+    if (debug) {
+      console.log(`[VOMERO DEBUG] ${p} GOAT search returned ${results.length} result(s):`);
+      results.forEach((r, i) => console.log(`[VOMERO DEBUG]   [${i}] id=${r.id} title="${r.title}" lowestCents=${r.lowestPriceCents}`));
+      console.log(`[VOMERO DEBUG] ${p} Matched: "${match.title}" (ID: ${match.id})`);
+    }
+
     matchId = match.id;
     matchRetailPriceCents = match.retailPriceCents;
   }
@@ -319,10 +323,17 @@ async function processListing(page, listing, idx, total) {
   await delay(DELAY_MS);
 
   if (!sizePrices.length) {
-    console.log(
-      `${pg} ⚠️  no size data — skipping "${listing.title.slice(0, 60)}"`,
-    );
+    if (debug) {
+      console.log(`[VOMERO DEBUG] ${pg} ⚠️ fetchSizePrices returned empty — no new in-stock variants`);
+    }
     return { status: "noChange" };
+  }
+
+  if (debug) {
+    console.log(`[VOMERO DEBUG] ${pg} GOAT size prices (USD → INR):`);
+    sizePrices.forEach((sp) =>
+      console.log(`[VOMERO DEBUG]   US ${sp.size} → $${sp.priceUsd} → ₹${usdToInr(sp.priceUsd)}`),
+    );
   }
 
   // Build GOAT size map (US size → INR price)
@@ -339,6 +350,10 @@ async function processListing(page, listing, idx, total) {
   const matchedPricesInr = [];
   const notifications = [];
 
+  if (debug) {
+    console.log(`[VOMERO DEBUG] ${pg} UK→US offset for brand "${listing.brand}": +${offset}`);
+  }
+
   for (const dbSize of dbSizes) {
     const usMatch = dbSize.size_value.match(/us\s*([0-9.]+)/i);
     const ukMatch = dbSize.size_value.match(/uk\s*([0-9.]+)/i);
@@ -347,12 +362,20 @@ async function processListing(page, listing, idx, total) {
     else if (ukMatch) usSize = parseFloat(ukMatch[1]) + offset;
 
     if (usSize == null) {
-      console.log(
-        `${pg} ⚠️  size="${dbSize.size_value}" — could not parse US size, skipping`,
-      );
+      if (debug) {
+        console.log(`[VOMERO DEBUG] ${pg} size="${dbSize.size_value}" — could not parse US size, skipping`);
+      }
       continue;
     }
+
     const newSizeInr = goatSizeMap.get(usSize);
+
+    if (debug) {
+      console.log(
+        `[VOMERO DEBUG] ${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`,
+      );
+    }
+
     if (!newSizeInr) continue;
 
     matchedPricesInr.push(newSizeInr);
@@ -361,14 +384,7 @@ async function processListing(page, listing, idx, total) {
 
     if (dbSize.price && newSizeInr < dbSize.price) {
       const dropPercent = ((dbSize.price - newSizeInr) / dbSize.price) * 100;
-      console.log("kamaldropped", {
-        dropPercent,
-        dbSizePrice: dbSize.price,
-        newSizeInr,
-        pg,
-      });
       if (dropPercent > 5) {
-        console.log("kamaldroppedInNotification Array", pg);
         const under13k = newSizeInr < 13000 ? "\n🔥 <b>Under ₹13,000!</b>" : "";
         notifications.push(
           `📉 <b>Price Drop (${dropPercent.toFixed(1)}%)</b>\n` +
@@ -388,12 +404,8 @@ async function processListing(page, listing, idx, total) {
     );
   }
 
-  if (notifications.length > 0) {
-    console.log("kamalfinalNotificationsArray", notifications.length);
-
-    for (const msg of notifications) {
-      await sendTelegramMessage(msg);
-    }
+  for (const msg of notifications) {
+    await sendTelegramMessage(msg);
   }
 
   const sizeResults = await Promise.all(sizeUpdatePromises);
@@ -401,7 +413,7 @@ async function processListing(page, listing, idx, total) {
   sizeResults
     .filter((r) => r.error)
     .forEach((r) => {
-      console.log(`${pg} ⚠️  size DB update error: ${r.error.message}`);
+      console.error(`${pg} ⚠️  size DB update error: ${r.error.message}`);
     });
 
   // Min price derived only from DB sizes that matched GOAT — not all GOAT sizes
@@ -414,6 +426,11 @@ async function processListing(page, listing, idx, total) {
   const priceChanged = newPriceInr !== null && newPriceInr !== listing.price;
   const retailChanged =
     newRetailInr !== null && newRetailInr !== listing.retail_price;
+
+  if (debug) {
+    console.log(`[VOMERO DEBUG] ${pg} matchedPricesInr: [${matchedPricesInr.join(", ")}]`);
+    console.log(`[VOMERO DEBUG] ${pg} newPriceInr=₹${newPriceInr} (DB was ₹${listing.price}) | priceChanged=${priceChanged}`);
+  }
 
   // Update listing-level price
   let listingUpdated = false;
@@ -428,17 +445,16 @@ async function processListing(page, listing, idx, total) {
       .eq("id", listing.id);
 
     if (listingErr) {
-      console.log(`${pg} ❌ listing DB update error: ${listingErr.message}`);
+      console.error(`${pg} ❌ listing DB update error: ${listingErr.message}`);
       return { status: "error" };
     }
     listingUpdated = true;
   }
 
-  // if (listingUpdated || sizeUpdateCount > 0) {
-  //   console.log(
-  //     `${pg} ✅ ₹${listing.price} → ₹${newPriceInr}${sizeUpdateCount > 0 ? ` | ${sizeUpdateCount} sizes updated` : ""}`,
-  //   );
-  // }
+  if (debug) {
+    console.log(`[VOMERO DEBUG] ${pg} result: ${listingUpdated ? `✅ updated to ₹${newPriceInr}` : "no change"} | sizeUpdateCount=${sizeUpdateCount}`);
+    console.log(`[VOMERO DEBUG] ──────────────────────────────────────────\n`);
+  }
 
   return { status: listingUpdated ? "updated" : "noChange", sizeUpdateCount };
 }
@@ -460,8 +476,8 @@ async function fetchLiveUsdToInr() {
     if (!rate || isNaN(rate)) throw new Error("INR rate missing in response");
     return parseFloat(rate);
   } catch (e) {
-    console.warn(
-      `⚠️  Could not fetch live USD→INR rate (${e.message}) — using fallback: ₹${USD_TO_INR}`,
+    console.error(
+      `❌ Could not fetch live USD→INR rate (${e.message}) — using fallback: ₹${USD_TO_INR}`,
     );
     return null;
   }
@@ -470,17 +486,10 @@ async function fetchLiveUsdToInr() {
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log("🏃 SneakInMarket — DB-First Price Updater");
-
   const liveRate = await fetchLiveUsdToInr();
   if (liveRate) {
-    console.log(`💱 Live USD→INR: ₹${liveRate} (was fallback ₹${USD_TO_INR})`);
     USD_TO_INR = liveRate;
   }
-
-  console.log(
-    `   ${new Date().toLocaleString()} | USD→INR: ${USD_TO_INR} | Margin: ₹${MARGIN_INR} | Workers: ${CONCURRENCY}`,
-  );
 
   const { data: listings, error: fetchErr } = await supabase
     .from("product_listings")
@@ -495,9 +504,6 @@ async function main() {
     console.error("❌ DB fetch failed:", fetchErr.message);
     process.exit(1);
   }
-  console.log(
-    `📡 ${listings.length} active sneaker catalog listings fetched\n`,
-  );
 
   const browser = await stealthChromium.launch({
     headless: true,
@@ -531,7 +537,6 @@ async function main() {
     ),
   );
   await delay(3000);
-  console.log(`🚀 ${CONCURRENCY} workers ready\n`);
 
   let cursor = 0;
   const stats = {
@@ -568,30 +573,6 @@ async function main() {
 
   await Promise.all(pages.map((page) => runWorker(page)));
   await browser.close();
-
-  console.log("\n" + "═".repeat(65));
-  console.log("📊 PRICE UPDATE SUMMARY");
-  console.log("═".repeat(65));
-  console.log(`  Total listings checked : ${listings.length}`);
-  console.log(`  Matched on GOAT        : ${stats.matched}`);
-  console.log(`  Listing prices updated : ${stats.updated}`);
-  console.log(`  Size prices updated    : ${stats.sizesUpdated}`);
-  console.log(`  No change              : ${stats.noChange}`);
-  console.log(`  Not found on GOAT      : ${stats.notFound}`);
-  console.log("═".repeat(65));
-
-  if (stats.notFoundTitles.length > 0 && stats.notFoundTitles.length <= 15) {
-    console.log("\n⚠️  Not found on GOAT:");
-    stats.notFoundTitles.forEach((t) => console.log(`   - ${t}`));
-  } else if (stats.notFoundTitles.length > 15) {
-    console.log(
-      `\n⚠️  ${stats.notFoundTitles.length} listings not found on GOAT`,
-    );
-  }
-
-  console.log(
-    `\n🎉 Done! ${stats.updated} listing price(s) + ${stats.sizesUpdated} size price(s) updated.`,
-  );
 }
 
 main().catch((err) => {
