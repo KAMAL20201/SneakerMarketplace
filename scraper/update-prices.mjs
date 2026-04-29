@@ -503,6 +503,10 @@ async function main() {
     process.exit(1);
   }
 
+  const vomeroInFetch = listings.filter((l) => isVomeroPremium(l.title));
+  console.log(`[VOMERO DEBUG] Total listings fetched: ${listings.length} | Vomero Premium in fetch: ${vomeroInFetch.length}`);
+  vomeroInFetch.forEach((l) => console.log(`[VOMERO DEBUG]   id=${l.id} title="${l.title}"`));
+
   const browser = await stealthChromium.launch({
     headless: true,
     executablePath: playwrightChromium.executablePath(),
