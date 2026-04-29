@@ -404,6 +404,7 @@ async function processListing(page, listing, idx, total) {
 
   for (const msg of notifications) {
     await sendTelegramMessage(msg);
+    await delay(1000); // avoid Telegram rate limit (30 msg/sec per chat)
   }
 
   const sizeResults = await Promise.all(sizeUpdatePromises);
