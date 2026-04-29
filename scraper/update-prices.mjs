@@ -489,19 +489,27 @@ async function main() {
     USD_TO_INR = liveRate;
   }
 
-  const { data: listings, error: fetchErr } = await supabase
-    .from("product_listings")
-    .select(
-      "id, title, brand, price, retail_price, goat_template_id, product_listing_sizes(id, size_value, price)",
-    )
-    .eq("status", "active")
-    .eq("category", "sneakers")
-    .is("reviewed_at", null) // only scraped catalog listings; seller listings have reviewed_at set
-    .limit(10000);
+  const listings = [];
+  const PAGE_SIZE = 1000;
+  let from = 0;
+  while (true) {
+    const { data, error: fetchErr } = await supabase
+      .from("product_listings")
+      .select(
+        "id, title, brand, price, retail_price, goat_template_id, product_listing_sizes(id, size_value, price)",
+      )
+      .eq("status", "active")
+      .eq("category", "sneakers")
+      .is("reviewed_at", null) // only scraped catalog listings; seller listings have reviewed_at set
+      .range(from, from + PAGE_SIZE - 1);
 
-  if (fetchErr) {
-    console.error("❌ DB fetch failed:", fetchErr.message);
-    process.exit(1);
+    if (fetchErr) {
+      console.error("❌ DB fetch failed:", fetchErr.message);
+      process.exit(1);
+    }
+    listings.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
   }
 
   const vomeroInFetch = listings.filter((l) => isVomeroPremium(l.title));
