@@ -14,6 +14,7 @@ import {
   FileText,
   Layers,
   Tag,
+  Star,
 } from "lucide-react";
 
 import {
@@ -124,6 +125,11 @@ const getNavData = (isAdmin: boolean) => ({
                 title: "Coupons",
                 url: ROUTE_NAMES.ADMIN_COUPONS,
                 icon: Tag,
+              },
+              {
+                title: "Review Emails",
+                url: ROUTE_NAMES.ADMIN_ORDERS,
+                icon: Star,
               },
             ]
           : []),

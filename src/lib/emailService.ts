@@ -302,6 +302,28 @@ export class EmailService {
   }
 
   /**
+   * Send review request email to buyer with a token-gated link
+   */
+  static async sendReviewRequestEmail(
+    buyerEmail: string,
+    buyerName: string,
+    orderData: OrderEmailData,
+    reviewToken: string
+  ): Promise<boolean> {
+    const reviewUrl = `${window.location.origin}/review?token=${reviewToken}`;
+    return await this.sendEmail(
+      "review_request",
+      buyerEmail,
+      buyerName,
+      orderData,
+      {
+        subject: `How was your ${orderData.product_title}? Leave a review`,
+        action_url: reviewUrl,
+      }
+    );
+  }
+
+  /**
    * Test email service configuration
    */
   static async testEmailService(): Promise<{
