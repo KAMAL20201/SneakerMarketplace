@@ -496,7 +496,8 @@ async function main() {
     )
     .eq("status", "active")
     .eq("category", "sneakers")
-    .is("reviewed_at", null); // only scraped catalog listings; seller listings have reviewed_at set
+    .is("reviewed_at", null) // only scraped catalog listings; seller listings have reviewed_at set
+    .limit(10000);
 
   if (fetchErr) {
     console.error("❌ DB fetch failed:", fetchErr.message);
