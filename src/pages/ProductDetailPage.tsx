@@ -62,6 +62,12 @@ export async function loader({ params }: Route.LoaderArgs) {
   const ssrSupabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
+    {
+      global: {
+        fetch: (url, options) =>
+          fetch(url, { ...options, signal: AbortSignal.timeout(8000) }),
+      },
+    },
   );
 
   const param = params.id!;
@@ -182,15 +188,15 @@ export async function loader({ params }: Route.LoaderArgs) {
     titleLower.includes(m.searchTerm.toLowerCase()),
   ) ?? null;
 
-  // Fetch similar products server-side so Google sees the links in initial HTML.
-  const { data: similarProductsData } = await ssrSupabase
+  const similarProducts = await ssrSupabase
     .from("listings_with_images")
     .select("id, slug, title, brand, price, retail_price, condition, size_value, image_url")
     .eq("status", "active")
     .eq("brand", listing.brand)
     .neq("id", listing.id)
     .order("created_at", { ascending: false })
-    .limit(6);
+    .limit(6)
+    .then(({ data }) => data ?? [], () => []);
 
   return data(
     {
@@ -201,7 +207,7 @@ export async function loader({ params }: Route.LoaderArgs) {
       legacySizes,
       reviews: reviewsData,
       aggregateRating: ratingData,
-      similarProducts: similarProductsData ?? [],
+      similarProducts,
       brandSlug: brandConfig?.slug ?? null,
       matchedModel: matchedModel ? { name: matchedModel.name, slug: matchedModel.slug } : null,
     },

@@ -64,56 +64,75 @@ export async function loader(_: Route.LoaderArgs) {
   const ssrSupabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
+    {
+      global: {
+        fetch: (url, options) =>
+          fetch(url, { ...options, signal: AbortSignal.timeout(7000) }),
+      },
+    },
   );
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [bannersResult, hotDealsResult, newDropsResult, blogResult] =
-    await Promise.all([
-      ssrSupabase
-        .from("banners")
-        .select("id, image_url, mobile_image_url, cta_url")
-        .eq("is_active", true)
-        .or(`start_date.is.null,start_date.lte.${today}`)
-        .or(`end_date.is.null,end_date.gte.${today}`)
-        .order("sort_order", { ascending: true }),
-      ssrSupabase
-        .from("hot_deals_with_images")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10),
-      ssrSupabase
-        .from("listings_with_images")
-        .select(
-          "id, title, brand, price, retail_price, condition, size_value, image_url",
-        )
-        .eq("status", "active")
-        .eq("is_new_drop", true)
-        .order("created_at", { ascending: false })
-        .limit(30),
-      ssrSupabase
-        .from("blog_posts")
-        .select(
-          "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
-        )
-        .eq("is_published", true)
-        .order("published_at", { ascending: false })
-        .limit(3),
-    ]);
+  try {
+    const [bannersResult, hotDealsResult, newDropsResult, blogResult] =
+      await Promise.all([
+        ssrSupabase
+          .from("banners")
+          .select("id, image_url, mobile_image_url, cta_url")
+          .eq("is_active", true)
+          .or(`start_date.is.null,start_date.lte.${today}`)
+          .or(`end_date.is.null,end_date.gte.${today}`)
+          .order("sort_order", { ascending: true }),
+        ssrSupabase
+          .from("hot_deals_with_images")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(10),
+        ssrSupabase
+          .from("listings_with_images")
+          .select(
+            "id, title, brand, price, retail_price, condition, size_value, image_url",
+          )
+          .eq("status", "active")
+          .eq("is_new_drop", true)
+          .order("created_at", { ascending: false })
+          .limit(30),
+        ssrSupabase
+          .from("blog_posts")
+          .select(
+            "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
+          )
+          .eq("is_published", true)
+          .order("published_at", { ascending: false })
+          .limit(3),
+      ]);
 
-  return data(
-    {
-      banners: bannersResult.data ?? [],
-      hotDeals: hotDealsResult.data ?? [],
-      newDrops: newDropsResult.data ?? [],
-      blogPosts: blogResult.data ?? [],
-    },
-    {
-      headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+    return data(
+      {
+        banners: bannersResult.data ?? [],
+        hotDeals: hotDealsResult.data ?? [],
+        newDrops: newDropsResult.data ?? [],
+        blogPosts: blogResult.data ?? [],
       },
-    },
-  );
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+        },
+      },
+    );
+  } catch {
+    // On timeout or network error, return empty data — client-side components
+    // have their own fetch fallback and will load data in the browser.
+    return data(
+      { banners: [], hotDeals: [], newDrops: [], blogPosts: [] },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=10, stale-while-revalidate=60",
+        },
+      },
+    );
+  }
 }
 
 // Don't re-fetch home data on every client-side navigation —
