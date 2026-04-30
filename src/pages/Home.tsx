@@ -1,22 +1,24 @@
+import { lazy, useEffect, Suspense } from "react";
 import { Sparkles } from "lucide-react";
 import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { ROUTE_NAMES } from "@/constants/enums";
 import CategorySection from "@/components/CategorySection";
 import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
-import InstagramFeed from "@/components/InstagramFeed";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 import BlogTeaser from "@/components/BlogTeaser";
 import HotDeals from "@/components/HotDeals";
 import InstantShipping from "@/components/InstantShipping";
-import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
 import NewDropsSection from "@/components/NewDropsSection";
 import CollectionsSection from "@/components/CollectionsSection";
-import { useLoaderData, data } from "react-router";
+import { useLoaderData, data, Await } from "react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/Home";
+
+// Lazy-loaded: JS chunk + 3MB video assets deferred until component mounts
+const InstagramFeed = lazy(() => import("@/components/InstagramFeed"));
 
 export function links(args?: { data?: { banners?: { image_url: string }[] } }) {
   const firstBanner = args?.data?.banners?.[0]?.image_url;
@@ -58,8 +60,10 @@ export function meta() {
 }
 
 // ── Server Loader ─────────────────────────────────────────────────────────────
-// Fetches banners, hot deals, and new drops in parallel so the
-// homepage arrives with real data in the HTML — visible to bots immediately.
+// Streaming strategy: banners are awaited (critical, above-the-fold LCP).
+// Everything else starts in parallel but is returned as unawaited promises —
+// React Router streams them to the client as they resolve, so the browser
+// paints the banner + hero immediately without waiting for all DB queries.
 export async function loader(_: Route.LoaderArgs) {
   const ssrSupabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -74,65 +78,68 @@ export async function loader(_: Route.LoaderArgs) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  try {
-    const [bannersResult, hotDealsResult, newDropsResult, blogResult] =
-      await Promise.all([
-        ssrSupabase
-          .from("banners")
-          .select("id, image_url, mobile_image_url, cta_url")
-          .eq("is_active", true)
-          .or(`start_date.is.null,start_date.lte.${today}`)
-          .or(`end_date.is.null,end_date.gte.${today}`)
-          .order("sort_order", { ascending: true }),
-        ssrSupabase
-          .from("hot_deals_with_images")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(10),
-        ssrSupabase
-          .from("listings_with_images")
-          .select(
-            "id, title, brand, price, retail_price, condition, size_value, image_url",
-          )
-          .eq("status", "active")
-          .eq("is_new_drop", true)
-          .order("created_at", { ascending: false })
-          .limit(30),
-        ssrSupabase
-          .from("blog_posts")
-          .select(
-            "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
-          )
-          .eq("is_published", true)
-          .order("published_at", { ascending: false })
-          .limit(3),
-      ]);
+  // Kick off all queries simultaneously so they run in parallel on the DB.
+  const bannersPromise = ssrSupabase
+    .from("banners")
+    .select("id, image_url, mobile_image_url, cta_url")
+    .eq("is_active", true)
+    .or(`start_date.is.null,start_date.lte.${today}`)
+    .or(`end_date.is.null,end_date.gte.${today}`)
+    .order("sort_order", { ascending: true })
+    .then((r) => r.data ?? []);
 
-    return data(
-      {
-        banners: bannersResult.data ?? [],
-        hotDeals: hotDealsResult.data ?? [],
-        newDrops: newDropsResult.data ?? [],
-        blogPosts: blogResult.data ?? [],
-      },
-      {
-        headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
-        },
-      },
-    );
+  const hotDealsPromise = ssrSupabase
+    .from("hot_deals_with_images")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(10)
+    .then((r) => r.data ?? []);
+
+  // Reduced from 30 → 8: only ~4-6 cards are visible in the initial viewport.
+  const newDropsPromise = ssrSupabase
+    .from("listings_with_images")
+    .select(
+      "id, title, brand, price, retail_price, condition, size_value, image_url",
+    )
+    .eq("status", "active")
+    .eq("is_new_drop", true)
+    .order("created_at", { ascending: false })
+    .limit(8)
+    .then((r) => r.data ?? []);
+
+  const blogPostsPromise = ssrSupabase
+    .from("blog_posts")
+    .select(
+      "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
+    )
+    .eq("is_published", true)
+    .order("published_at", { ascending: false })
+    .limit(3)
+    .then((r) => r.data ?? []);
+
+  // Await only the banner — it's the LCP element and must be in the first HTML flush.
+  // If it times out, the carousel renders empty and the rest still streams in.
+  let banners: Awaited<typeof bannersPromise> = [];
+  try {
+    banners = await bannersPromise;
   } catch {
-    // On timeout or network error, return empty data — client-side components
-    // have their own fetch fallback and will load data in the browser.
-    return data(
-      { banners: [], hotDeals: [], newDrops: [], blogPosts: [] },
-      {
-        headers: {
-          "Cache-Control": "public, s-maxage=10, stale-while-revalidate=60",
-        },
-      },
-    );
+    // Banner carousel handles empty gracefully; deferred sections stream independently.
   }
+
+  return data(
+    {
+      banners,
+      // Unawaited promises — React Router v7 streams these as they resolve.
+      hotDeals: hotDealsPromise,
+      newDrops: newDropsPromise,
+      blogPosts: blogPostsPromise,
+    },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+      },
+    },
+  );
 }
 
 // Don't re-fetch home data on every client-side navigation —
@@ -322,8 +329,30 @@ const Home = () => {
       {/* Collections Section */}
       <CollectionsSection />
 
-      {/* New Drops Section */}
-      <NewDropsSection initialListings={newDrops} />
+      {/* New Drops Section — streamed, shows skeleton while resolving */}
+      <Suspense
+        fallback={
+          <section className="px-4 py-6">
+            <div className="h-8 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-2xl overflow-hidden animate-pulse">
+                  <div className="h-40 sm:h-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
+                  <div className="p-3 space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-16" />
+                    <div className="h-4 bg-gray-200 rounded w-full" />
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        }
+      >
+        <Await resolve={newDrops} errorElement={null}>
+          {(drops) => <NewDropsSection initialListings={drops} />}
+        </Await>
+      </Suspense>
 
       {/* Categories - temporarily hidden */}
       {/*
@@ -362,8 +391,12 @@ const Home = () => {
 
       {/* Wishlist Section - only rendered when user has saved items */}
       <WishlistSection />
-      {/* Hot Deals Section */}
-      <HotDeals initialDeals={hotDeals} />
+      {/* Hot Deals Section — streamed */}
+      <Suspense fallback={null}>
+        <Await resolve={hotDeals} errorElement={null}>
+          {(deals) => <HotDeals initialDeals={deals} />}
+        </Await>
+      </Suspense>
 
       {/* Instant Shipping Section */}
       <InstantShipping />
@@ -464,14 +497,20 @@ const Home = () => {
       {/* Featured Listings Section */}
       {/* <FeaturedListings /> */}
 
-      {/* Instagram Feed */}
-      <InstagramFeed />
+      {/* Instagram Feed — lazy: JS chunk + 3MB video not loaded until near viewport */}
+      <Suspense fallback={null}>
+        <InstagramFeed />
+      </Suspense>
 
       {/* Why Buy From Us */}
       <WhyBuyFromUs />
 
-      {/* Blog Teaser */}
-      <BlogTeaser posts={blogPosts} />
+      {/* Blog Teaser — streamed, bottom of page */}
+      <Suspense fallback={null}>
+        <Await resolve={blogPosts} errorElement={null}>
+          {(posts) => <BlogTeaser posts={posts} />}
+        </Await>
+      </Suspense>
 
       {/* [MARKETPLACE REMOVED] How It Works Section - escrow system not used in ecommerce model */}
       {/* <HowItWorks /> */}

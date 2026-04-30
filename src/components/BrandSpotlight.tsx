@@ -80,6 +80,8 @@ const BrandChip = ({ brand }: { brand: SpotlightBrand }) => {
         src={brand.logoSrc}
         alt={`${brand.label} logo`}
         className="w-8 h-8 object-contain"
+        loading="lazy"
+        decoding="async"
       />
     </span>
   ) : (

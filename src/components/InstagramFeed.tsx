@@ -65,7 +65,7 @@ const VideoCard = ({
         muted
         playsInline
         loop
-        preload="auto"
+        preload="none"
         className="w-full h-full object-cover pointer-events-none"
       />
 
