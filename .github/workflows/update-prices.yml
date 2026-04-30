@@ -2,9 +2,8 @@ name: Daily Price Update
 
 on:
   schedule:
-    - cron: "30 2 * * *"  # 2:30 AM UTC = 8:00 AM IST every day
-    - cron: "30 14 * * *" # 2:30 PM UTC = 8:00 PM IST every day
-  workflow_dispatch:      # also allow manual trigger from GitHub UI
+    - cron: "30 21 * * *"  # 9:30 PM UTC = 3:00 AM IST every day
+  workflow_dispatch:        # also allow manual trigger from GitHub UI
 
 jobs:
   update-prices:
