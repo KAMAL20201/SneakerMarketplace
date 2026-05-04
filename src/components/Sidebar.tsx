@@ -10,11 +10,8 @@ import {
   Shirt,
   Headphones,
   Book,
-  ImagePlay,
-  FileText,
   Layers,
-  Tag,
-  Star,
+  LayoutDashboard,
 } from "lucide-react";
 
 import {
@@ -112,24 +109,9 @@ const getNavData = (isAdmin: boolean) => ({
                 icon: Package,
               },
               {
-                title: "Banners",
-                url: ROUTE_NAMES.ADMIN_BANNERS,
-                icon: ImagePlay,
-              },
-              {
-                title: "Descriptions",
-                url: ROUTE_NAMES.ADMIN_DESCRIPTIONS,
-                icon: FileText,
-              },
-              {
-                title: "Coupons",
-                url: ROUTE_NAMES.ADMIN_COUPONS,
-                icon: Tag,
-              },
-              {
-                title: "Review Emails",
-                url: ROUTE_NAMES.ADMIN_ORDERS,
-                icon: Star,
+                title: "Admin Dashboard",
+                url: ROUTE_NAMES.ADMIN_DASHBOARD,
+                icon: LayoutDashboard,
               },
             ]
           : []),

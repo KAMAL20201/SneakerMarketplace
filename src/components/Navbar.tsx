@@ -116,69 +116,17 @@ export function Navbar() {
                   </div>
                 </div>
                 <DropdownMenuSeparator className="bg-white/30" />
-                {/* [ECOMMERCE] My Listings - only visible to admin since only admin can sell */}
                 {isAdmin && (
                   <DropdownMenuItem
                     asChild
                     className="rounded-xl mx-1 my-1 cursor-pointer"
                   >
                     <Link
-                      to={ROUTE_NAMES.MY_LISTINGS}
-                      className="text-gray-700"
-                    >
-                      My Listings
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem
-                    asChild
-                    className="rounded-xl mx-1 my-1 cursor-pointer"
-                  >
-                    <Link
-                      to={ROUTE_NAMES.ADMIN_REVIEW}
+                      to={ROUTE_NAMES.ADMIN_DASHBOARD}
                       className="text-purple-700 font-medium"
                     >
-                      🔍 Admin Review
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem
-                    asChild
-                    className="rounded-xl mx-1 my-1 cursor-pointer"
-                  >
-                    <Link
-                      to={ROUTE_NAMES.ADMIN_IMPORT}
-                      className="text-purple-700 font-medium"
-                    >
-                      📥 Import Products
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem
-                    asChild
-                    className="rounded-xl mx-1 my-1 cursor-pointer"
-                  >
-                    <Link
-                      to={ROUTE_NAMES.ADMIN_COUPONS}
-                      className="text-purple-700 font-medium"
-                    >
-                      🏷️ Coupons
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem
-                    asChild
-                    className="rounded-xl mx-1 my-1 cursor-pointer"
-                  >
-                    <Link
-                      to={ROUTE_NAMES.ADMIN_MESSAGES}
-                      className="text-purple-700 font-medium"
-                    >
-                      💬 Messages
+                      <ShieldCheck className="h-4 w-4 mr-2" />
+                      Admin Dashboard
                     </Link>
                   </DropdownMenuItem>
                 )}
