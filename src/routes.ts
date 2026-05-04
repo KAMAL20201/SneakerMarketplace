@@ -50,6 +50,7 @@ export default [
   route("my-orders", "./pages/MyOrders.tsx"),
   route("my-addresses", "./pages/MyAddresses.tsx"),
   route("edit-listing/:id", "./pages/EditListing.tsx"),
+  route("admin", "./pages/AdminDashboard.tsx"),
   route("admin/review", "./pages/AdminReview.tsx"),
   route("admin/import", "./pages/AdminImport.tsx"),
   route("admin/banners", "./pages/AdminBanners.tsx"),
