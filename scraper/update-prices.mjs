@@ -274,13 +274,18 @@ async function fetchSizePrices(page, templateId, p) {
 async function processListing(page, listing, idx, total) {
   const p = `[${idx + 1}/${total}][db=${listing.id}]`;
   const debug = isVomeroPremium(listing.title);
-  const vlog = (msg) => console.log(`[VOMERO DEBUG]["${listing.title}"] ${msg}`);
+  const vlog = (msg) =>
+    console.log(`[VOMERO DEBUG]["${listing.title}"] ${msg}`);
 
   if (debug) {
     vlog(`──────────────────────────────────────────`);
     vlog(`${p} DB price: ₹${listing.price} | brand: ${listing.brand}`);
-    vlog(`${p} DB sizes: ${(listing.product_listing_sizes || []).map(s => `${s.size_value}=₹${s.price}`).join(", ")}`);
-    vlog(`${p} goat_template_id: ${listing.goat_template_id ?? "none (will search)"}`);
+    vlog(
+      `${p} DB sizes: ${(listing.product_listing_sizes || []).map((s) => `${s.size_value}=₹${s.price}`).join(", ")}`,
+    );
+    vlog(
+      `${p} goat_template_id: ${listing.goat_template_id ?? "none (will search)"}`,
+    );
   }
 
   let matchId = listing.goat_template_id;
@@ -308,7 +313,11 @@ async function processListing(page, listing, idx, total) {
 
     if (debug) {
       vlog(`${p} GOAT search returned ${results.length} result(s):`);
-      results.forEach((r, i) => vlog(`  [${i}] id=${r.id} title="${r.title}" lowestCents=${r.lowestPriceCents}`));
+      results.forEach((r, i) =>
+        vlog(
+          `  [${i}] id=${r.id} title="${r.title}" lowestCents=${r.lowestPriceCents}`,
+        ),
+      );
       vlog(`${p} Matched: "${match.title}" (ID: ${match.id})`);
     }
 
@@ -324,7 +333,9 @@ async function processListing(page, listing, idx, total) {
 
   if (!sizePrices.length) {
     if (debug) {
-      vlog(`${pg} ⚠️ fetchSizePrices returned empty — no new in-stock variants`);
+      vlog(
+        `${pg} ⚠️ fetchSizePrices returned empty — no new in-stock variants`,
+      );
     }
     return { status: "noChange" };
   }
@@ -363,7 +374,9 @@ async function processListing(page, listing, idx, total) {
 
     if (usSize == null) {
       if (debug) {
-        vlog(`${pg} size="${dbSize.size_value}" — could not parse US size, skipping`);
+        vlog(
+          `${pg} size="${dbSize.size_value}" — could not parse US size, skipping`,
+        );
       }
       continue;
     }
@@ -371,7 +384,9 @@ async function processListing(page, listing, idx, total) {
     const newSizeInr = goatSizeMap.get(usSize);
 
     if (debug) {
-      vlog(`${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`);
+      vlog(
+        `${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`,
+      );
     }
 
     if (!newSizeInr) continue;
@@ -384,13 +399,15 @@ async function processListing(page, listing, idx, total) {
       const dropPercent = ((dbSize.price - newSizeInr) / dbSize.price) * 100;
       if (dropPercent > 5) {
         const under13k = newSizeInr < 13000 ? "\n🔥 <b>Under ₹13,000!</b>" : "";
-        notifications.push(
-          `📉 <b>Price Drop (${dropPercent.toFixed(1)}%)</b>\n` +
-            `👟 ${listing.title}\n` +
-            `📏 Size: ${dbSize.size_value}\n` +
-            `💰 ₹${dbSize.price} ➡️ ₹${newSizeInr}` +
-            under13k,
-        );
+        if (newSizeInr < 25000) {
+          notifications.push(
+            `📉 <b>Price Drop (${dropPercent.toFixed(1)}%)</b>\n` +
+              `👟 ${listing.title}\n` +
+              `📏 Size: ${dbSize.size_value}\n` +
+              `💰 ₹${dbSize.price} ➡️ ₹${newSizeInr}` +
+              under13k,
+          );
+        }
       }
     }
 
@@ -428,7 +445,9 @@ async function processListing(page, listing, idx, total) {
 
   if (debug) {
     vlog(`${pg} matchedPricesInr: [${matchedPricesInr.join(", ")}]`);
-    vlog(`${pg} newPriceInr=₹${newPriceInr} (DB was ₹${listing.price}) | priceChanged=${priceChanged}`);
+    vlog(
+      `${pg} newPriceInr=₹${newPriceInr} (DB was ₹${listing.price}) | priceChanged=${priceChanged}`,
+    );
   }
 
   // Update listing-level price
@@ -451,7 +470,9 @@ async function processListing(page, listing, idx, total) {
   }
 
   if (debug) {
-    vlog(`${pg} result: ${listingUpdated ? `✅ updated to ₹${newPriceInr}` : "no change"} | sizeUpdateCount=${sizeUpdateCount}`);
+    vlog(
+      `${pg} result: ${listingUpdated ? `✅ updated to ₹${newPriceInr}` : "no change"} | sizeUpdateCount=${sizeUpdateCount}`,
+    );
     vlog(`──────────────────────────────────────────\n`);
   }
 
@@ -514,8 +535,12 @@ async function main() {
   }
 
   const vomeroInFetch = listings.filter((l) => isVomeroPremium(l.title));
-  console.log(`[VOMERO DEBUG] Total listings fetched: ${listings.length} | Vomero Premium in fetch: ${vomeroInFetch.length}`);
-  vomeroInFetch.forEach((l) => console.log(`[VOMERO DEBUG]   id=${l.id} title="${l.title}"`));
+  console.log(
+    `[VOMERO DEBUG] Total listings fetched: ${listings.length} | Vomero Premium in fetch: ${vomeroInFetch.length}`,
+  );
+  vomeroInFetch.forEach((l) =>
+    console.log(`[VOMERO DEBUG]   id=${l.id} title="${l.title}"`),
+  );
 
   const browser = await stealthChromium.launch({
     headless: true,
