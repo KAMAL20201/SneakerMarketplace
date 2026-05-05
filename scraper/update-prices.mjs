@@ -119,11 +119,11 @@ function roundToNearest99(price) {
 
 function usdToInr(usd) {
   if (usd == null || isNaN(usd)) return null;
-  // Formula: ((usd + 10) × USD_TO_INR) + ₹2000 margin, rounded to nearest X99
-  const raw = (usd + 10) * USD_TO_INR + MARGIN_INR;
+  const baseInr = (usd + 10) * USD_TO_INR;
+  const margin = baseInr >= 45000 ? 5000 : baseInr >= 25000 ? 4000 : 3000;
+  const raw = baseInr + margin;
   return roundToNearest99(raw);
 }
-
 /**
  * UK → US size offset per brand.
  *   US = UK + offset
