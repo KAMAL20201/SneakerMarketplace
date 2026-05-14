@@ -7,26 +7,28 @@
  *   1. Fetch ALL active listings from Supabase DB
  *   2. For each listing, search GOAT by title → get productTemplateId
  *   3. Call GOAT buy_bar_data API → get per-size prices in USD
- *   4. Convert USD → INR using formula: ((usd + 10) * USD_TO_INR) + ₹2000 margin
+ *   4. Convert USD → INR using formula: ((usd + 10) * USD_TO_INR) + tiered margin
  *      Update product_listings.price (min across sizes) + all product_listing_sizes
- *   5. Print summary
+ *   5. At the end, send one CSV of all price drops to Telegram
+ *      (or a "no drops today" message if none)
  *
  * Usage:
  *   node scraper/update-prices.mjs
  *
  * Grep tips (every line is prefixed with IDs):
- *   grep "db=<listing_id>"   → all logs for a specific DB listing
+ *   grep "db=<listing_id>"    → all logs for a specific DB listing
  *   grep "goat=<template_id>" → all logs for a specific GOAT product
  */
 
-import { existsSync } from "fs";
-import { readFile } from "fs/promises";
+import { existsSync, createWriteStream } from "fs";
+import { readFile, unlink } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { chromium as playwrightChromium } from "playwright";
 import { chromium as stealthChromium } from "playwright-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { createClient } from "@supabase/supabase-js";
+import { FormData, Blob } from "formdata-node"; // npm i formdata-node
 
 stealthChromium.use(StealthPlugin());
 
@@ -42,7 +44,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-let USD_TO_INR = parseFloat(process.env.USD_TO_INR || "91"); // overwritten at runtime with live rate
+let USD_TO_INR = parseFloat(process.env.USD_TO_INR || "91");
 const DELAY_MS = 400;
 const SEARCH_LIMIT = 3;
 const CONCURRENCY = 5;
@@ -62,27 +64,115 @@ if (!SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+// ─── Collected alerts (populated during run, sent once at the end) ─────────
+
+/**
+ * @type {Array<{
+ *   title: string,
+ *   size: string,
+ *   prevPrice: number,
+ *   newPrice: number,
+ *   dropPercent: string
+ * }>}
+ */
+const priceDropAlerts = [];
+
 // ─── Telegram ──────────────────────────────────────────────────────────────
 
+/** Send a plain text message to Telegram. */
 async function sendTelegramMessage(message) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
   try {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: TELEGRAM_CHAT_ID,
-        text: message,
-        parse_mode: "HTML",
-      }),
-    });
-    if (!response.ok) {
-      console.error(`❌ Telegram send failed: ${response.statusText}`);
+    const res = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: "HTML",
+        }),
+      },
+    );
+    if (!res.ok)
+      console.error(`❌ Telegram sendMessage failed: ${res.statusText}`);
+  } catch (e) {
+    console.error(`❌ Telegram sendMessage error: ${e.message}`);
+  }
+}
+
+/**
+ * Send a file (CSV) to Telegram via sendDocument.
+ * @param {Buffer} buffer   - file contents
+ * @param {string} filename - e.g. "price-drops-2025-06-01.csv"
+ * @param {string} caption  - short caption shown under the file
+ */
+async function sendTelegramDocument(buffer, filename, caption) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    const form = new FormData();
+    form.set("chat_id", TELEGRAM_CHAT_ID);
+    form.set("caption", caption);
+    form.set("document", new Blob([buffer], { type: "text/csv" }), filename);
+
+    const res = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`,
+      { method: "POST", body: form },
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(
+        `❌ Telegram sendDocument failed: ${res.statusText} — ${body}`,
+      );
+    } else {
+      console.log(
+        `✅ Telegram: sent CSV "${filename}" with ${priceDropAlerts.length} drop(s)`,
+      );
     }
   } catch (e) {
-    console.error(`❌ Telegram error: ${e.message}`);
+    console.error(`❌ Telegram sendDocument error: ${e.message}`);
   }
+}
+
+/**
+ * Build a CSV buffer from priceDropAlerts and send it to Telegram.
+ * Falls back to a plain text "no drops" message if the array is empty.
+ */
+async function sendDropsReport() {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    console.log("ℹ️  Telegram not configured — skipping report.");
+    return;
+  }
+
+  if (priceDropAlerts.length === 0) {
+    await sendTelegramMessage(
+      "📊 Price update complete — no significant drops today.",
+    );
+    return;
+  }
+
+  // Build CSV in-memory (no temp file needed)
+  const header = "Title,Size,Prev Price (₹),New Price (₹),Drop %";
+  const rows = priceDropAlerts.map((a) =>
+    [
+      `"${a.title.replace(/"/g, '""')}"`, // escape double-quotes in title
+      a.size,
+      a.prevPrice,
+      a.newPrice,
+      a.dropPercent,
+    ].join(","),
+  );
+  const csvContent = [header, ...rows].join("\n");
+  const csvBuffer = Buffer.from(csvContent, "utf-8");
+
+  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const filename = `price-drops-${date}.csv`;
+  const caption =
+    `📉 <b>Price Drops — ${date}</b>\n` +
+    `${priceDropAlerts.length} drop(s) found across ${new Set(priceDropAlerts.map((a) => a.title)).size} product(s)`;
+
+  await sendTelegramDocument(csvBuffer, filename, caption);
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -110,8 +200,6 @@ function delay(ms) {
   );
 }
 
-const MARGIN_INR = 3000;
-
 /** Round price up to the nearest X99 (e.g. 8125 → 8199, 13200 → 13199) */
 function roundToNearest99(price) {
   return Math.ceil(price / 100) * 100 - 1;
@@ -124,12 +212,12 @@ function usdToInr(usd) {
   const raw = baseInr + margin;
   return roundToNearest99(raw);
 }
+
 /**
  * UK → US size offset per brand.
- *   US = UK + offset
  *   +1   → Nike, Jordan, ASICS, Onitsuka Tiger
  *   +0.5 → Adidas, New Balance, On Cloud, Yeezy
- *    0   → Converse (same)
+ *    0   → Converse
  */
 const BRAND_SIZE_OFFSET = {
   nike: 1,
@@ -143,17 +231,15 @@ const BRAND_SIZE_OFFSET = {
   converse: 0,
 };
 
-/** Return UK→US offset for a brand string. Falls back to 1 (most common). */
 function brandSizeOffset(brand) {
   if (!brand) return 1;
   const b = brand.toLowerCase().trim();
   for (const [key, offset] of Object.entries(BRAND_SIZE_OFFSET)) {
     if (b === key || b.includes(key)) return offset;
   }
-  return 1; // default: +1 (Nike-style, most sneakers)
+  return 1;
 }
 
-/** Normalise title for fuzzy matching: lowercase, strip punctuation */
 function normalise(str) {
   return str
     .toLowerCase()
@@ -162,24 +248,14 @@ function normalise(str) {
     .trim();
 }
 
-/** Pick the best search result: exact normalised title match first, else first result */
 function pickBestMatch(dbTitle, results) {
   const normDb = normalise(dbTitle);
   const exact = results.find((r) => normalise(r.title) === normDb);
   return exact || results[0] || null;
 }
 
-/** Returns true if the listing title includes "nike vomero premium" (case-insensitive) */
-function isVomeroPremium(title) {
-  return title.toLowerCase().includes("nike vomero premium");
-}
-
 // ─── GOAT API calls ─────────────────────────────────────────────────────────
 
-/**
- * Search GOAT for a sneaker by title.
- * @param {string} p - log prefix, e.g. "[db=123|goat=?]"
- */
 async function searchGoat(page, title, p) {
   const raw = await page.evaluate(
     async ({ query, limit }) => {
@@ -221,10 +297,6 @@ async function searchGoat(page, title, p) {
   return raw.products;
 }
 
-/**
- * Fetch per-size prices for a productTemplateId.
- * @param {string} p - log prefix, e.g. "[db=123|goat=1072277]"
- */
 async function fetchSizePrices(page, templateId, p) {
   const raw = await page.evaluate(async (id) => {
     try {
@@ -273,26 +345,11 @@ async function fetchSizePrices(page, templateId, p) {
 
 async function processListing(page, listing, idx, total) {
   const p = `[${idx + 1}/${total}][db=${listing.id}]`;
-  const debug = isVomeroPremium(listing.title);
-  const vlog = (msg) =>
-    console.log(`[VOMERO DEBUG]["${listing.title}"] ${msg}`);
-
-  if (debug) {
-    vlog(`──────────────────────────────────────────`);
-    vlog(`${p} DB price: ₹${listing.price} | brand: ${listing.brand}`);
-    vlog(
-      `${p} DB sizes: ${(listing.product_listing_sizes || []).map((s) => `${s.size_value}=₹${s.price}`).join(", ")}`,
-    );
-    vlog(
-      `${p} goat_template_id: ${listing.goat_template_id ?? "none (will search)"}`,
-    );
-  }
 
   let matchId = listing.goat_template_id;
   let matchRetailPriceCents = null;
 
   if (!matchId) {
-    // Search GOAT fallback by title
     const results = await searchGoat(page, listing.title, p);
     await delay(DELAY_MS);
 
@@ -311,59 +368,33 @@ async function processListing(page, listing, idx, total) {
       return { status: "notFound", title: listing.title };
     }
 
-    if (debug) {
-      vlog(`${p} GOAT search returned ${results.length} result(s):`);
-      results.forEach((r, i) =>
-        vlog(
-          `  [${i}] id=${r.id} title="${r.title}" lowestCents=${r.lowestPriceCents}`,
-        ),
-      );
-      vlog(`${p} Matched: "${match.title}" (ID: ${match.id})`);
-    }
-
     matchId = match.id;
     matchRetailPriceCents = match.retailPriceCents;
   }
 
   const pg = `[${idx + 1}/${total}][db=${listing.id}|goat=${matchId}]`;
 
-  // Fetch per-size prices
   const sizePrices = await fetchSizePrices(page, matchId, pg);
   await delay(DELAY_MS);
 
   if (!sizePrices.length) {
-    if (debug) {
-      vlog(
-        `${pg} ⚠️ fetchSizePrices returned empty — no new in-stock variants`,
-      );
-    }
     return { status: "noChange" };
   }
 
-  if (debug) {
-    vlog(`${pg} GOAT size prices (USD → INR):`);
-    sizePrices.forEach((sp) =>
-      vlog(`  US ${sp.size} → $${sp.priceUsd} → ₹${usdToInr(sp.priceUsd)}`),
-    );
-  }
+  console.log(`${pg} GOAT size prices (USD → INR):`);
+  sizePrices.forEach((sp) =>
+    console.log(`  US ${sp.size} → $${sp.priceUsd} → ₹${usdToInr(sp.priceUsd)}`),
+  );
 
-  // Build GOAT size map (US size → INR price)
   const goatSizeMap = new Map();
   for (const sp of sizePrices) {
     goatSizeMap.set(parseFloat(sp.size), usdToInr(sp.priceUsd));
   }
 
-  // Match DB sizes → GOAT sizes (brand-aware UK→US conversion)
-  // Collect matched INR prices so the listing-level min reflects only sizes we actually stock
   const offset = brandSizeOffset(listing.brand);
   const dbSizes = listing.product_listing_sizes || [];
   const sizeUpdatePromises = [];
   const matchedPricesInr = [];
-  const notifications = [];
-
-  if (debug) {
-    vlog(`${pg} UK→US offset for brand "${listing.brand}": +${offset}`);
-  }
 
   for (const dbSize of dbSizes) {
     const usMatch = dbSize.size_value.match(/us\s*([0-9.]+)/i);
@@ -372,22 +403,11 @@ async function processListing(page, listing, idx, total) {
     if (usMatch) usSize = parseFloat(usMatch[1]);
     else if (ukMatch) usSize = parseFloat(ukMatch[1]) + offset;
 
-    if (usSize == null) {
-      if (debug) {
-        vlog(
-          `${pg} size="${dbSize.size_value}" — could not parse US size, skipping`,
-        );
-      }
-      continue;
-    }
-
     const newSizeInr = goatSizeMap.get(usSize);
 
-    if (debug) {
-      vlog(
-        `${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`,
-      );
-    }
+    console.log(
+      `${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`,
+    );
 
     if (!newSizeInr) continue;
 
@@ -395,19 +415,17 @@ async function processListing(page, listing, idx, total) {
 
     if (newSizeInr === dbSize.price) continue;
 
+    // ── Collect price-drop alerts instead of sending immediately ──────────
     if (dbSize.price && newSizeInr < dbSize.price) {
       const dropPercent = ((dbSize.price - newSizeInr) / dbSize.price) * 100;
-      if (dropPercent > 5) {
-        const under13k = newSizeInr < 13000 ? "\n🔥 <b>Under ₹13,000!</b>" : "";
-        if (newSizeInr < 25000) {
-          notifications.push(
-            `📉 <b>Price Drop (${dropPercent.toFixed(1)}%)</b>\n` +
-              `👟 ${listing.title}\n` +
-              `📏 Size: ${dbSize.size_value}\n` +
-              `💰 ₹${dbSize.price} ➡️ ₹${newSizeInr}` +
-              under13k,
-          );
-        }
+      if (dropPercent > 5 && newSizeInr < 25000) {
+        priceDropAlerts.push({
+          title: listing.title,
+          size: dbSize.size_value,
+          prevPrice: dbSize.price,
+          newPrice: newSizeInr,
+          dropPercent: dropPercent.toFixed(1),
+        });
       }
     }
 
@@ -419,20 +437,14 @@ async function processListing(page, listing, idx, total) {
     );
   }
 
-  for (const msg of notifications) {
-    await sendTelegramMessage(msg);
-    await delay(1000); // avoid Telegram rate limit (30 msg/sec per chat)
-  }
-
   const sizeResults = await Promise.all(sizeUpdatePromises);
   const sizeUpdateCount = sizeResults.filter((r) => !r.error).length;
   sizeResults
     .filter((r) => r.error)
-    .forEach((r) => {
-      console.error(`${pg} ⚠️  size DB update error: ${r.error.message}`);
-    });
+    .forEach((r) =>
+      console.error(`${pg} ⚠️  size DB update error: ${r.error.message}`),
+    );
 
-  // Min price derived only from DB sizes that matched GOAT — not all GOAT sizes
   const newPriceInr =
     matchedPricesInr.length > 0 ? Math.min(...matchedPricesInr) : null;
   const newRetailInr = matchRetailPriceCents
@@ -443,14 +455,7 @@ async function processListing(page, listing, idx, total) {
   const retailChanged =
     newRetailInr !== null && newRetailInr !== listing.retail_price;
 
-  if (debug) {
-    vlog(`${pg} matchedPricesInr: [${matchedPricesInr.join(", ")}]`);
-    vlog(
-      `${pg} newPriceInr=₹${newPriceInr} (DB was ₹${listing.price}) | priceChanged=${priceChanged}`,
-    );
-  }
 
-  // Update listing-level price
   let listingUpdated = false;
   if (priceChanged || retailChanged) {
     const payload = { updated_at: new Date().toISOString() };
@@ -469,22 +474,11 @@ async function processListing(page, listing, idx, total) {
     listingUpdated = true;
   }
 
-  if (debug) {
-    vlog(
-      `${pg} result: ${listingUpdated ? `✅ updated to ₹${newPriceInr}` : "no change"} | sizeUpdateCount=${sizeUpdateCount}`,
-    );
-    vlog(`──────────────────────────────────────────\n`);
-  }
-
   return { status: listingUpdated ? "updated" : "noChange", sizeUpdateCount };
 }
 
 // ─── Live exchange rate ────────────────────────────────────────────────────
 
-/**
- * Fetch live USD→INR rate from frankfurter.app (free, no API key).
- * Falls back to the env/default value if the request fails.
- */
 async function fetchLiveUsdToInr() {
   try {
     const res = await fetch(
@@ -507,10 +501,9 @@ async function fetchLiveUsdToInr() {
 
 async function main() {
   const liveRate = await fetchLiveUsdToInr();
-  if (liveRate) {
-    USD_TO_INR = liveRate;
-  }
+  if (liveRate) USD_TO_INR = liveRate;
 
+  // Paginated fetch of all active sneaker listings
   const listings = [];
   const PAGE_SIZE = 1000;
   let from = 0;
@@ -522,7 +515,7 @@ async function main() {
       )
       .eq("status", "active")
       .eq("category", "sneakers")
-      .is("reviewed_at", null) // only scraped catalog listings; seller listings have reviewed_at set
+      .is("reviewed_at", null)
       .range(from, from + PAGE_SIZE - 1);
 
     if (fetchErr) {
@@ -533,14 +526,6 @@ async function main() {
     if (data.length < PAGE_SIZE) break;
     from += PAGE_SIZE;
   }
-
-  const vomeroInFetch = listings.filter((l) => isVomeroPremium(l.title));
-  console.log(
-    `[VOMERO DEBUG] Total listings fetched: ${listings.length} | Vomero Premium in fetch: ${vomeroInFetch.length}`,
-  );
-  vomeroInFetch.forEach((l) =>
-    console.log(`[VOMERO DEBUG]   id=${l.id} title="${l.title}"`),
-  );
 
   const browser = await stealthChromium.launch({
     headless: true,
@@ -610,6 +595,17 @@ async function main() {
 
   await Promise.all(pages.map((page) => runWorker(page)));
   await browser.close();
+
+  // ── Send the collected drops report once, at the very end ────────────────
+  console.log(
+    `\n📊 Run complete. Collected ${priceDropAlerts.length} price-drop alert(s). Sending Telegram report…`,
+  );
+  await sendDropsReport();
+
+  console.log(`\n✅ Done.`);
+  console.log(
+    `   Updated: ${stats.updated} | No change: ${stats.noChange} | Not found: ${stats.notFound}`,
+  );
 }
 
 main().catch((err) => {
