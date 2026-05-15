@@ -383,7 +383,9 @@ async function processListing(page, listing, idx, total) {
 
   console.log(`${pg} GOAT size prices (USD → INR):`);
   sizePrices.forEach((sp) =>
-    console.log(`  US ${sp.size} → $${sp.priceUsd} → ₹${usdToInr(sp.priceUsd)}`),
+    console.log(
+      `  US ${sp.size} → $${sp.priceUsd} → ₹${usdToInr(sp.priceUsd)}`,
+    ),
   );
 
   const goatSizeMap = new Map();
@@ -418,7 +420,7 @@ async function processListing(page, listing, idx, total) {
     // ── Collect price-drop alerts instead of sending immediately ──────────
     if (dbSize.price && newSizeInr < dbSize.price) {
       const dropPercent = ((dbSize.price - newSizeInr) / dbSize.price) * 100;
-      if (dropPercent > 5 && newSizeInr < 25000) {
+      if (dropPercent > 5) {
         priceDropAlerts.push({
           title: listing.title,
           size: dbSize.size_value,
@@ -454,7 +456,6 @@ async function processListing(page, listing, idx, total) {
   const priceChanged = newPriceInr !== null && newPriceInr !== listing.price;
   const retailChanged =
     newRetailInr !== null && newRetailInr !== listing.retail_price;
-
 
   let listingUpdated = false;
   if (priceChanged || retailChanged) {
