@@ -58,6 +58,7 @@ export default [
   route("admin/descriptions", "./pages/AdminDescriptions.tsx"),
   route("admin/coupons", "./pages/AdminCoupons.tsx"),
   route("admin/new-drops", "./pages/AdminNewDrops.tsx"),
+  route("admin/hot-deals", "./pages/AdminHotDeals.tsx"),
   route("admin/messages", "./pages/AdminMessages.tsx"),
   route("admin/orders", "./pages/AdminOrders.tsx"),
 

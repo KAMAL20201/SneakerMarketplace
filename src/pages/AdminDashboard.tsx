@@ -9,6 +9,7 @@ import {
   FileText,
   Tag,
   Zap,
+  Flame,
   MessageCircle,
   Star,
   ShoppingBag,
@@ -63,6 +64,13 @@ const ADMIN_SECTIONS = [
     url: ROUTE_NAMES.ADMIN_NEW_DROPS,
     icon: Zap,
     color: "from-violet-500 to-purple-500",
+  },
+  {
+    title: "Hot Deals",
+    description: "Select 30%+ off listings to feature in Hot Deals",
+    url: ROUTE_NAMES.ADMIN_HOT_DEALS,
+    icon: Flame,
+    color: "from-orange-500 to-red-500",
   },
   {
     title: "Messages",
