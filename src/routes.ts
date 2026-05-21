@@ -31,6 +31,7 @@ export default [
   // Blog — SEO-critical (SSR)
   route("blog", "./pages/Blog.tsx"),
   route("blog/:slug", "./pages/BlogPost.tsx"),
+  route("sale/:slug", "./pages/SalePage.tsx"),
 
   // Static public pages
   route("review", "./pages/ReviewPage.tsx"),
@@ -61,6 +62,7 @@ export default [
   route("admin/hot-deals", "./pages/AdminHotDeals.tsx"),
   route("admin/messages", "./pages/AdminMessages.tsx"),
   route("admin/orders", "./pages/AdminOrders.tsx"),
+  route("admin/sale-products/:bannerId", "./pages/AdminSaleProducts.tsx"),
 
   // API resource routes (server-side only, no UI component)
   route("api/generate-description", "./api/generate-description.ts"),

@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Upload,
   Loader2,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,13 +18,14 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router";
-import { ROUTE_NAMES } from "@/constants/enums";
+import { ROUTE_HELPERS, ROUTE_NAMES } from "@/constants/enums";
 
 interface Banner {
   id: string;
   image_url: string;
   mobile_image_url: string | null;
   cta_url: string | null;
+  sale_slug: string | null;
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;
@@ -44,6 +46,7 @@ function AdminBanners() {
     image_url: "",
     mobile_image_url: "",
     cta_url: "",
+    sale_slug: "",
     is_active: true,
     start_date: "",
     end_date: "",
@@ -126,10 +129,12 @@ function AdminBanners() {
       return;
     }
     setSaving(true);
+    const slug = form.sale_slug.trim().toLowerCase().replace(/\s+/g, "-") || null;
     const { error } = await supabase.from("banners").insert({
       image_url: form.image_url,
       mobile_image_url: form.mobile_image_url || null,
-      cta_url: form.cta_url.trim() || null,
+      cta_url: slug ? `/sale/${slug}` : form.cta_url.trim() || null,
+      sale_slug: slug,
       is_active: form.is_active,
       start_date: form.start_date || null,
       end_date: form.end_date || null,
@@ -145,6 +150,7 @@ function AdminBanners() {
         image_url: "",
         mobile_image_url: "",
         cta_url: "",
+        sale_slug: "",
         is_active: true,
         start_date: "",
         end_date: "",
@@ -346,15 +352,38 @@ function AdminBanners() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2 space-y-1">
-                  <Label>Link on tap (optional)</Label>
+                  <Label>
+                    Sale Slug{" "}
+                    <span className="text-gray-400 font-normal text-xs">
+                      (optional — creates a /sale/[slug] page with products)
+                    </span>
+                  </Label>
                   <Input
-                    value={form.cta_url}
+                    value={form.sale_slug}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, cta_url: e.target.value }))
+                      setForm((f) => ({ ...f, sale_slug: e.target.value }))
                     }
-                    placeholder="/sneakers or /browse?brand=nike"
+                    placeholder="e.g. summer-sale or jordan-fest"
                   />
+                  {form.sale_slug.trim() && (
+                    <p className="text-xs text-purple-600">
+                      Banner will link to: /sale/{form.sale_slug.trim().toLowerCase().replace(/\s+/g, "-")}
+                    </p>
+                  )}
                 </div>
+
+                {!form.sale_slug.trim() && (
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label>Link on tap (optional)</Label>
+                    <Input
+                      value={form.cta_url}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, cta_url: e.target.value }))
+                      }
+                      placeholder="/sneakers or /browse?brand=nike"
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <Label>Start Date</Label>
@@ -430,7 +459,9 @@ function AdminBanners() {
                     setShowForm(false);
                     setForm({
                       image_url: "",
+                      mobile_image_url: "",
                       cta_url: "",
+                      sale_slug: "",
                       is_active: true,
                       start_date: "",
                       end_date: "",
@@ -485,7 +516,7 @@ function AdminBanners() {
                     )}
                   </div>
                   <div className="px-4 py-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
                       <Badge
                         className={`text-xs shrink-0 ${
                           banner.is_active
@@ -495,7 +526,12 @@ function AdminBanners() {
                       >
                         {banner.is_active ? "Active" : "Inactive"}
                       </Badge>
-                      {banner.cta_url && (
+                      {banner.sale_slug && (
+                        <Badge className="text-xs shrink-0 bg-purple-100 text-purple-700 hover:bg-purple-100">
+                          Sale: {banner.sale_slug}
+                        </Badge>
+                      )}
+                      {!banner.sale_slug && banner.cta_url && (
                         <span className="text-xs text-gray-400 truncate">
                           → {banner.cta_url}
                         </span>
@@ -512,6 +548,15 @@ function AdminBanners() {
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                      {banner.sale_slug && (
+                        <Link
+                          to={ROUTE_HELPERS.ADMIN_SALE_PRODUCTS(banner.id)}
+                          title="Manage sale products"
+                          className="p-2 rounded-xl hover:bg-purple-50 transition-colors"
+                        >
+                          <ShoppingBag className="h-4 w-4 text-purple-500" />
+                        </Link>
+                      )}
                       <div className="flex items-center gap-1 mr-1">
                         <button
                           onClick={() =>
