@@ -73,6 +73,13 @@ const ADMIN_SECTIONS = [
     color: "from-orange-500 to-red-500",
   },
   {
+    title: "Instant Ship",
+    description: "Mark individual sizes as in-hand instant ship inventory",
+    url: ROUTE_NAMES.ADMIN_INSTANT_SHIP,
+    icon: Zap,
+    color: "from-teal-500 to-cyan-500",
+  },
+  {
     title: "Messages",
     description: "View and respond to customer messages",
     url: ROUTE_NAMES.ADMIN_MESSAGES,

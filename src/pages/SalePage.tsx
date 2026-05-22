@@ -21,6 +21,7 @@ interface SaleListing {
   brand: string;
   price: number;
   retail_price: number | null;
+  min_price: number | null;
   condition: string;
   size_value: string;
   image_url: string;
@@ -42,7 +43,9 @@ export default function SalePage() {
       // Fetch the sale banner
       const { data: bannerData, error: bannerError } = await supabase
         .from("banners")
-        .select("id, sale_slug, image_url, mobile_image_url, is_active, end_date")
+        .select(
+          "id, sale_slug, image_url, mobile_image_url, is_active, end_date",
+        )
         .eq("sale_slug", slug)
         .single();
 
@@ -61,10 +64,14 @@ export default function SalePage() {
         .eq("banner_id", bannerData.id);
 
       if (!productsError && saleProducts && saleProducts.length > 0) {
-        const ids = saleProducts.map((r: { listing_id: string }) => r.listing_id);
+        const ids = saleProducts.map(
+          (r: { listing_id: string }) => r.listing_id,
+        );
         const { data: listingData } = await supabase
           .from("listings_with_images")
-          .select("id, slug, title, brand, price, retail_price, condition, size_value, image_url")
+          .select(
+            "id, slug, title, brand, price, min_price, retail_price, condition, size_value, image_url",
+          )
           .in("id", ids)
           .eq("status", "active");
 
@@ -92,7 +99,10 @@ export default function SalePage() {
         <p className="text-gray-400 text-sm text-center">
           This sale may have ended or the link is incorrect.
         </p>
-        <Link to={ROUTE_NAMES.HOME} className="text-purple-600 text-sm underline mt-2">
+        <Link
+          to={ROUTE_NAMES.HOME}
+          className="text-purple-600 text-sm underline mt-2"
+        >
           Back to home
         </Link>
       </div>
@@ -105,20 +115,15 @@ export default function SalePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Back nav */}
-      <div className="px-4 pt-4 pb-2">
-        <Link to={ROUTE_NAMES.HOME} className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700">
-          <ArrowLeft className="h-4 w-4" />
-          Home
-        </Link>
-      </div>
-
       {/* Sale banner */}
-      <div className="md:px-4 md:pb-4">
-        <div className="md:rounded-3xl overflow-hidden aspect-[9/16] md:aspect-[2/1] bg-gray-100 w-full">
+      <div className=" md:pb-4">
+        <div className=" overflow-hidden aspect-[9/16] md:aspect-[2/1] bg-gray-100 w-full">
           <picture className="w-full h-full">
             {banner.mobile_image_url && (
-              <source media="(max-width: 767px)" srcSet={banner.mobile_image_url} />
+              <source
+                media="(max-width: 767px)"
+                srcSet={banner.mobile_image_url}
+              />
             )}
             <img
               src={banner.image_url}
@@ -147,7 +152,9 @@ export default function SalePage() {
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 mb-4">{listings.length} product{listings.length !== 1 ? "s" : ""}</p>
+            <p className="text-sm text-gray-500 mb-4">
+              {listings.length} product{listings.length !== 1 ? "s" : ""}
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {listings.map((listing) => (
                 <ProductCard
@@ -158,7 +165,7 @@ export default function SalePage() {
                     slug: listing.slug,
                     title: listing.title,
                     brand: listing.brand,
-                    price: listing.price,
+                    price: listing.min_price ?? listing.price,
                     retail_price: listing.retail_price,
                     condition: listing.condition,
                     size_value: listing.size_value,

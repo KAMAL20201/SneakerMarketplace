@@ -20,6 +20,7 @@ export const ROUTE_NAMES = {
   ADMIN_COUPONS: "/admin/coupons",
   ADMIN_NEW_DROPS: "/admin/new-drops",
   ADMIN_HOT_DEALS: "/admin/hot-deals",
+  ADMIN_INSTANT_SHIP: "/admin/instant-ship",
   ADMIN_MESSAGES: "/admin/messages",
   ADMIN_ORDERS: "/admin/orders",
   BLOG: "/blog",

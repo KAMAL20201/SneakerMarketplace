@@ -101,9 +101,9 @@ export async function loader({ params }: Route.LoaderArgs) {
       product_images (id, image_url, is_poster_image, display_order),
       product_variants (
         id, color_name, color_hex, price, display_order, image_url,
-        product_variant_sizes (variant_id, size_value, price, is_sold)
+        product_variant_sizes (variant_id, size_value, price, is_sold, is_instant_ship)
       ),
-      product_listing_sizes (size_value, price, is_sold),
+      product_listing_sizes (size_value, price, is_sold, is_instant_ship),
       reviews (id, rating, comment, reviewer_name, verified_purchase, created_at, is_approved)`,
     )
     .eq("slug", param)
@@ -310,7 +310,7 @@ export default function ProductDetailPage() {
   const buildVariantSizesMap = () => {
     const map: Record<
       string,
-      { size_value: string; price: number; is_sold: boolean }[]
+      { size_value: string; price: number; is_sold: boolean; is_instant_ship: boolean }[]
     > = {};
     for (const vs of variantSizesData) {
       if (!map[vs.variant_id]) map[vs.variant_id] = [];
@@ -318,6 +318,7 @@ export default function ProductDetailPage() {
         size_value: vs.size_value,
         price: vs.price,
         is_sold: vs.is_sold,
+        is_instant_ship: vs.is_instant_ship ?? false,
       });
     }
     return map;
@@ -372,7 +373,7 @@ export default function ProductDetailPage() {
     buildVariantSizesMap(),
   );
   const [availableSizes, setAvailableSizes] = useState<
-    { size_value: string; price: number; is_sold: boolean }[]
+    { size_value: string; price: number; is_sold: boolean; is_instant_ship: boolean }[]
   >(() => {
     if (initialVariants.length > 0) {
       const map = buildVariantSizesMap();
@@ -408,6 +409,14 @@ export default function ProductDetailPage() {
     setSelectedImageIndex(0);
     setSimilarProducts(initialSimilarProducts);
     setDescExpanded(false);
+    setDeliveryTab(
+      (initialVariants.length > 0
+        ? (newMap[initialVariants[0]?.id] ?? [])
+        : legacySizes
+      ).some((s) => s.is_instant_ship)
+        ? "instant"
+        : "standard",
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
   const { addToCart, items } = useCart();
@@ -417,6 +426,9 @@ export default function ProductDetailPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [deliveryTab, setDeliveryTab] = useState<"instant" | "standard">(() =>
+    availableSizes.some((s) => s.is_instant_ship) ? "instant" : "standard",
+  );
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [returnsOpen, setReturnsOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -823,13 +835,14 @@ export default function ProductDetailPage() {
             )}
 
             {/* Delivery Timeline */}
-            {listing?.delivery_days &&
-              parseMinDeliveryDays(listing.delivery_days) < 10 && (
-                <div className="mt-3 inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-semibold">
-                  <Zap className="h-3 w-3" />
-                  Instant Ship
-                </div>
-              )}
+            {(availableSizes.some((s) => s.is_instant_ship) ||
+              (listing?.delivery_days &&
+                parseMinDeliveryDays(listing.delivery_days) < 10)) && (
+              <div className="mt-3 inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-semibold">
+                <Zap className="h-3 w-3" />
+                Instant Ship
+              </div>
+            )}
             {listing?.delivery_days && (
               <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
                 <Truck className="h-4 w-4 text-purple-400 flex-shrink-0" />
@@ -978,85 +991,126 @@ export default function ProductDetailPage() {
           )}
 
           {/* Size Selection */}
-          {(availableSizes.length > 0 || listing?.size_value) && (
-            <div className="px-4 pb-6 lg:px-0">
-              <Card className="glass-card border-0 rounded-3xl">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-800">
-                      Available Sizes
-                    </h3>
-                    <button
-                      onClick={() => setSizeGuideOpen(true)}
-                      className="text-purple-600 text-xs font-medium hover:underline flex items-center gap-1"
-                    >
-                      <Ruler className="h-3 w-3" />
-                      Size Guide
-                    </button>
-                  </div>
+          {(availableSizes.length > 0 || listing?.size_value) && (() => {
+            const hasInstantSizes = availableSizes.some((s) => s.is_instant_ship);
+            const hasStandardSizes = availableSizes.some((s) => !s.is_instant_ship);
+            const showTabs = hasInstantSizes && hasStandardSizes;
+            const displaySizes = showTabs
+              ? availableSizes.filter((s) =>
+                  deliveryTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
+                )
+              : availableSizes;
 
-                  {availableSizes.length > 0 ? (
-                    // ── Multi-size listing: grid of UK sizes with per-size price ──
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                      {availableSizes.map((s) => {
-                        const isSelected = selectedSize === s.size_value;
-                        return (
-                          <Button
-                            key={s.size_value}
-                            variant={isSelected ? "default" : "outline"}
-                            disabled={s.is_sold}
-                            onClick={() => {
-                              if (!s.is_sold) {
-                                setSelectedSize(s.size_value);
-                                setSelectedPrice(s.price);
-                              }
-                            }}
-                            className={`flex flex-col h-auto py-3 rounded-2xl border-0 font-semibold uppercase gap-0.5 ${
-                              s.is_sold
-                                ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
-                                : isSelected
-                                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                                  : "glass-button text-gray-700 hover:bg-white/30"
-                            }`}
-                          >
-                            <span className="text-sm">
-                              {s.size_value.toUpperCase()}
-                            </span>
-                            <span
-                              className={`text-xs font-normal ${s.is_sold ? "text-gray-400" : isSelected ? "text-white/80" : "text-gray-500"}`}
-                            >
-                              {s.is_sold
-                                ? "Sold Out"
-                                : `₹${s.price.toLocaleString("en-IN")}`}
-                            </span>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    // ── Single-size listing: one button, no price (shown at top) ──
-                    <div className="grid grid-cols-4 gap-3">
-                      <Button
-                        variant={
-                          selectedSize === listing?.size_value
-                            ? "default"
-                            : "outline"
-                        }
-                        onClick={() => setSelectedSize(listing?.size_value)}
-                        className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
-                          selectedSize === listing?.size_value
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                            : "glass-button text-gray-700 hover:bg-white/30"
-                        }`}
+            return (
+              <div className="px-4 pb-6 lg:px-0">
+                <Card className="glass-card border-0 rounded-3xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold text-gray-800">
+                        Available Sizes
+                      </h3>
+                      <button
+                        onClick={() => setSizeGuideOpen(true)}
+                        className="text-purple-600 text-xs font-medium hover:underline flex items-center gap-1"
                       >
-                        {listing?.size_value}
-                      </Button>
+                        <Ruler className="h-3 w-3" />
+                        Size Guide
+                      </button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
+
+                    {/* Delivery tabs — only when product has BOTH instant and standard sizes */}
+                    {showTabs && (
+                      <Tabs
+                        value={deliveryTab}
+                        onValueChange={(v) =>
+                          setDeliveryTab(v as "instant" | "standard")
+                        }
+                        className="mb-4"
+                      >
+                        <TabsList className="w-full grid grid-cols-2 rounded-2xl bg-gray-100">
+                          <TabsTrigger
+                            value="instant"
+                            className="rounded-xl flex items-center gap-1.5"
+                          >
+                            <Zap className="h-3 w-3" /> Instant Ship
+                          </TabsTrigger>
+                          <TabsTrigger value="standard" className="rounded-xl">
+                            3–4 Weeks
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    )}
+
+                    {/* Single-tab label when only instant sizes exist */}
+                    {!showTabs && hasInstantSizes && (
+                      <div className="mb-3 inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-semibold">
+                        <Zap className="h-3 w-3" /> Instant Ship
+                      </div>
+                    )}
+
+                    {availableSizes.length > 0 ? (
+                      // ── Multi-size listing: grid of UK sizes with per-size price ──
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {displaySizes.map((s) => {
+                          const isSelected = selectedSize === s.size_value;
+                          return (
+                            <Button
+                              key={s.size_value}
+                              variant={isSelected ? "default" : "outline"}
+                              disabled={s.is_sold}
+                              onClick={() => {
+                                if (!s.is_sold) {
+                                  setSelectedSize(s.size_value);
+                                  setSelectedPrice(s.price);
+                                }
+                              }}
+                              className={`flex flex-col h-auto py-3 rounded-2xl border-0 font-semibold uppercase gap-0.5 ${
+                                s.is_sold
+                                  ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
+                                  : isSelected
+                                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                                    : "glass-button text-gray-700 hover:bg-white/30"
+                              }`}
+                            >
+                              <span className="text-sm">
+                                {s.size_value.toUpperCase()}
+                              </span>
+                              <span
+                                className={`text-xs font-normal ${s.is_sold ? "text-gray-400" : isSelected ? "text-white/80" : "text-gray-500"}`}
+                              >
+                                {s.is_sold
+                                  ? "Sold Out"
+                                  : `₹${s.price.toLocaleString("en-IN")}`}
+                              </span>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      // ── Single-size listing: one button, no price (shown at top) ──
+                      <div className="grid grid-cols-4 gap-3">
+                        <Button
+                          variant={
+                            selectedSize === listing?.size_value
+                              ? "default"
+                              : "outline"
+                          }
+                          onClick={() => setSelectedSize(listing?.size_value)}
+                          className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
+                            selectedSize === listing?.size_value
+                              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                              : "glass-button text-gray-700 hover:bg-white/30"
+                          }`}
+                        >
+                          {listing?.size_value}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
 
           <div className="px-4 pb-6 grid grid-cols-2 gap-4 lg:px-0">
             <Button

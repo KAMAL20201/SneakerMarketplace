@@ -56,6 +56,34 @@ export default defineConfig(({ isSsrBuild, command }) => ({
     host: "localhost", // Changed from 0.0.0.0 for security
     port: 5173, // Default Vite port
   },
+  // Pre-bundle deps that are only reached via lazy routes / prefetch="intent".
+  // Without this, Vite discovers them mid-session and triggers a full page
+  // reload ("optimized dependencies changed. reloading") — which looks like
+  // the page is auto-refreshing every few seconds while scrolling.
+  optimizeDeps: {
+    include: [
+      "react-helmet-async",
+      "sonner",
+      "lucide-react",
+      "@supabase/supabase-js",
+      "class-variance-authority",
+      "clsx",
+      "tailwind-merge",
+      "react-hook-form",
+      "@hookform/resolvers/zod",
+      "zod",
+      "embla-carousel-react",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-separator",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-label",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+    ],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

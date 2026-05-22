@@ -399,6 +399,7 @@ async function processListing(page, listing, idx, total) {
   const matchedPricesInr = [];
 
   for (const dbSize of dbSizes) {
+    if (dbSize.is_instant_ship) continue; // skip instant-ship sizes (in-hand inventory)
     const usMatch = dbSize.size_value.match(/us\s*([0-9.]+)/i);
     const ukMatch = dbSize.size_value.match(/uk\s*([0-9.]+)/i);
     let usSize = null;
@@ -512,7 +513,7 @@ async function main() {
     const { data, error: fetchErr } = await supabase
       .from("product_listings")
       .select(
-        "id, title, brand, price, retail_price, goat_template_id, product_listing_sizes(id, size_value, price)",
+        "id, title, brand, price, retail_price, goat_template_id, product_listing_sizes(id, size_value, price, is_instant_ship)",
       )
       .eq("status", "active")
       .eq("category", "sneakers")
