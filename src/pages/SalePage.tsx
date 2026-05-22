@@ -113,18 +113,19 @@ export default function SalePage() {
     !banner.is_active ||
     (banner.end_date ? new Date(banner.end_date) < new Date() : false);
 
+  console.log("kamal", banner);
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Sale banner */}
       <div className=" md:pb-4">
-        <div className=" overflow-hidden aspect-[9/16] md:aspect-[2/1] bg-gray-100 w-full">
+        <div className=" overflow-hidden aspect-[2/1] bg-gray-100 w-full">
           <picture className="w-full h-full">
-            {banner.mobile_image_url && (
+            {/* {banner.mobile_image_url && (
               <source
                 media="(max-width: 767px)"
                 srcSet={banner.mobile_image_url}
               />
-            )}
+            )} */}
             <img
               src={banner.image_url}
               alt={`${banner.sale_slug} sale`}
