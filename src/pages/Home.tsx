@@ -99,7 +99,7 @@ export async function loader(_: Route.LoaderArgs) {
   const newDropsPromise = ssrSupabase
     .from("listings_with_images")
     .select(
-      "id, title, brand, price, retail_price, condition, size_value, image_url",
+      "id, title, brand, price, min_price, retail_price, condition, size_value, image_url",
     )
     .eq("status", "active")
     .eq("is_new_drop", true)
@@ -336,7 +336,10 @@ const Home = () => {
             <div className="h-8 w-40 bg-gray-200 rounded animate-pulse mb-4" />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="rounded-2xl overflow-hidden animate-pulse">
+                <div
+                  key={i}
+                  className="rounded-2xl overflow-hidden animate-pulse"
+                >
                   <div className="h-40 sm:h-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" />
                   <div className="p-3 space-y-2">
                     <div className="h-3 bg-gray-200 rounded w-16" />

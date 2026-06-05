@@ -15,6 +15,7 @@ interface ProductCardProps {
     title: string;
     brand: string;
     price: number;
+    min_price?: number;
     originalPrice?: number;
     retail_price?: number | null;
     condition: string;
@@ -92,7 +93,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                 <div className="flex items-center justify-between ">
                   <>
                     <span className="font-bold text-gray-800 text-lg">
-                      ₹ {product.price}
+                      ₹ {product?.min_price ?? product.price}
                     </span>
                     {product.originalPrice &&
                       product.originalPrice > product.price && (
