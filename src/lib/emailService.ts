@@ -27,6 +27,9 @@ export interface OrderEmailData {
   estimated_delivery?: string;
   product_id?: string;
   brand?: string;
+  variant_name?: string;
+  ordered_size?: string;
+  custom_message?: string;
   similar_products?: SimilarProduct[];
 }
 

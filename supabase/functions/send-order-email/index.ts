@@ -58,6 +58,9 @@ interface OrderEmailData {
   estimated_delivery?: string;
   product_id?: string;
   brand?: string;
+  variant_name?: string;
+  ordered_size?: string;
+  custom_message?: string;
   similar_products?: SimilarProduct[];
 }
 
@@ -208,13 +211,39 @@ function buildOrderConfirmed(
   order: OrderEmailData,
   actionUrl: string
 ): string {
+  const customMessageHtml = order.custom_message
+    ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:24px;">
+        <p style="margin:0;color:#92400e;font-size:14px;line-height:1.5;">${order.custom_message}</p>
+       </div>`
+    : "";
+
+  const imageHtml = order.product_image
+    ? `<div style="text-align:center;margin-bottom:20px;">
+        <img src="${order.product_image}" alt="${order.product_title}" style="max-width:180px;max-height:180px;object-fit:contain;border-radius:16px;background:#f9fafb;padding:12px;" />
+       </div>`
+    : "";
+
+  const variantHtml = order.variant_name
+    ? `<p style="margin:6px 0 0;font-size:14px;color:#4b5563;">Variant: <strong>${order.variant_name}</strong></p>`
+    : "";
+
+  const sizeHtml = order.ordered_size
+    ? `<p style="margin:4px 0 0;font-size:14px;color:#4b5563;">Size: <strong>${order.ordered_size}</strong></p>`
+    : "";
+
   return `
     <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#111827;">🎉 Order Confirmed!</h2>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;">Hi ${name}, your order has been confirmed and is being processed.</p>
 
+    ${customMessageHtml}
+
+    ${imageHtml}
+
     <div style="background:#f9fafb;border-radius:12px;padding:20px;margin-bottom:24px;">
       <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">You ordered</p>
       <p style="margin:0;font-size:17px;font-weight:700;color:#111827;">${order.product_title}</p>
+      ${variantHtml}
+      ${sizeHtml}
     </div>
 
     <table width="100%" cellpadding="0" cellspacing="0">

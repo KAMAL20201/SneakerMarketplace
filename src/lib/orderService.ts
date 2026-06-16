@@ -302,6 +302,7 @@ export class OrderService {
           shipping_address: shippingAddress || undefined,
           product_id: item.productId,
           brand: productDetails.brand ?? undefined,
+          ordered_size: item.size,
         };
 
         // Send email notifications

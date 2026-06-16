@@ -336,6 +336,45 @@ export class StockValidationService {
   }
 
   /**
+   * Release a previously sold size (e.g., when an order is cancelled or variant is updated)
+   */
+  static async releaseSize(
+    productId: string,
+    size: string,
+    variantId?: string | null
+  ): Promise<boolean> {
+    try {
+      if (variantId) {
+        const { error } = await supabase
+          .from("product_variant_sizes")
+          .update({ is_sold: false })
+          .eq("variant_id", variantId)
+          .eq("size_value", size);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("product_listing_sizes")
+          .update({ is_sold: false })
+          .eq("listing_id", productId)
+          .eq("size_value", size);
+        if (error) throw error;
+      }
+
+      // Re-activate parent product status if it was set to sold
+      await supabase
+        .from("product_listings")
+        .update({ status: "active" })
+        .eq("id", productId)
+        .eq("status", "sold");
+
+      return true;
+    } catch (error) {
+      console.error("Error in releaseSize:", error);
+      return false;
+    }
+  }
+
+  /**
    * Validate and update product status with optimistic locking
    * Returns true if successfully marked as sold, false if already sold
    */

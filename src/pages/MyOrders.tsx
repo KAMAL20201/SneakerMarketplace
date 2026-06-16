@@ -20,6 +20,8 @@ import {
   MapPin,
   PackageCheck,
   Trash2,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -32,13 +34,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { OrderService, type Order as OrderType } from "@/lib/orderService";
-import { supabase } from "@/lib/supabase";
+import { supabase, toStorageUrl } from "@/lib/supabase";
 import { toast } from "sonner";
 import ShipNowModal from "@/components/ShipNowModal";
 import { StockValidationService } from "@/lib/stockValidationService";
@@ -155,6 +165,214 @@ const MyOrders = () => {
   const openShipModal = (order: Order) => {
     setSelectedOrder(order);
     setShipModalOpen(true);
+  };
+
+  // Change Variant Modal state
+  const [variantModalOpen, setVariantModalOpen] = useState(false);
+  const [variantOrder, setVariantOrder] = useState<Order | null>(null);
+  const [productVariants, setProductVariants] = useState<any[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
+  const [availableSizes, setAvailableSizes] = useState<any[]>([]);
+  const [selectedSize, setSelectedSize] = useState<any | null>(null);
+  const [loadingVariants, setLoadingVariants] = useState(false);
+  const [updatingVariant, setUpdatingVariant] = useState(false);
+
+  const openChangeVariantModal = async (order: Order) => {
+    setVariantOrder(order);
+    setVariantModalOpen(true);
+    setLoadingVariants(true);
+    setSelectedVariant(null);
+    setAvailableSizes([]);
+    setSelectedSize(null);
+
+    try {
+      // Fetch variants for this listing
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select(`
+          id, color_name, color_hex, price, display_order, image_url,
+          product_variant_sizes (variant_id, size_value, price, is_sold, is_instant_ship)
+        `)
+        .eq("listing_id", order.product_id)
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+
+      let variantsList = data || [];
+
+      // Fallback: check if it's a legacy multi-size listing with no variants
+      if (variantsList.length === 0) {
+        const { data: legacySizes, error: sizeErr } = await supabase
+          .from("product_listing_sizes")
+          .select("size_value, price, is_sold")
+          .eq("listing_id", order.product_id);
+        
+        if (sizeErr) throw sizeErr;
+
+        if (legacySizes && legacySizes.length > 0) {
+          const mockVariant = {
+            id: null,
+            color_name: "Default (Legacy Listing)",
+            price: order.amount,
+            product_variant_sizes: legacySizes.map(s => ({
+              variant_id: null,
+              size_value: s.size_value,
+              price: s.price,
+              is_sold: s.is_sold,
+              is_instant_ship: false
+            }))
+          };
+          variantsList = [mockVariant];
+        }
+      }
+
+      setProductVariants(variantsList);
+      
+      // Auto-select current variant and size
+      if (variantsList.length > 0) {
+        const current = order.variant_id 
+          ? variantsList.find(v => v.id === order.variant_id)
+          : variantsList[0];
+
+        if (current) {
+          setSelectedVariant(current);
+          const sizes = current.product_variant_sizes || [];
+          setAvailableSizes(sizes);
+          if (order.ordered_size) {
+            const size = sizes.find((s: any) => s.size_value === order.ordered_size);
+            if (size) setSelectedSize(size);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching variants:", err);
+      toast.error("Failed to load variants for this product");
+    } finally {
+      setLoadingVariants(false);
+    }
+  };
+
+  const handleConfirmChangeVariant = async () => {
+    if (!variantOrder || !selectedSize) {
+      toast.error("Please select a size / variant");
+      return;
+    }
+
+    setUpdatingVariant(true);
+    try {
+      const isConfirmedOrder = variantOrder.status === "confirmed";
+
+      // 1. Release old size/variant stock if the order is confirmed
+      if (isConfirmedOrder && variantOrder.ordered_size) {
+        await StockValidationService.releaseSize(
+          variantOrder.product_id,
+          variantOrder.ordered_size,
+          variantOrder.variant_id
+        );
+      }
+
+      // 2. Reserve new size/variant stock if the order is confirmed
+      if (isConfirmedOrder) {
+        const markedAsSold = await StockValidationService.markSizeAsSold(
+          variantOrder.product_id,
+          selectedSize.size_value,
+          selectedVariant?.id
+        );
+        if (!markedAsSold) {
+          toast.warning("Note: Failed to mark new variant size as sold in stock. It might be already sold out.");
+        }
+      }
+
+      // 3. Update order in database
+      const updateFields: Record<string, any> = {
+        variant_id: selectedVariant?.id || null,
+        variant_name: selectedVariant?.id ? selectedVariant.color_name : (selectedVariant ? "Default" : null),
+        ordered_size: selectedSize.size_value,
+      };
+
+      const { error: dbError } = await supabase
+        .from("orders")
+        .update(updateFields)
+        .eq("id", variantOrder.id);
+
+      if (dbError) throw dbError;
+
+      // 4. Send updated confirmation email to buyer (only if order is already confirmed/paid)
+      if (variantOrder.buyer_email && isConfirmedOrder) {
+        const productDetails = await OrderService.getProductDetails(variantOrder.product_id);
+        const posterImage = selectedVariant?.image_url
+          ? toStorageUrl(selectedVariant.image_url)
+          : (productDetails?.product_images?.find((img: any) => img.is_poster_image)?.image_url ||
+             productDetails?.product_images?.[0]?.image_url);
+
+        const orderEmailData: OrderEmailData = {
+          order_id: variantOrder.id,
+          product_title: productDetails?.title || variantOrder.product_listings?.title || "Product",
+          product_image: posterImage,
+          amount: variantOrder.amount, // keep paid amount unchanged
+          currency: "INR",
+          buyer_name: variantOrder.buyer_name || undefined,
+          buyer_email: variantOrder.buyer_email || undefined,
+          seller_name: user?.user_metadata?.full_name || undefined,
+          seller_email: user?.email || undefined,
+          order_status: "confirmed",
+          shipping_address: variantOrder.shipping_address,
+          product_id: variantOrder.product_id,
+          brand: productDetails?.brand || variantOrder.product_listings?.brand || undefined,
+          variant_name: selectedVariant?.id ? selectedVariant.color_name : undefined,
+          ordered_size: selectedSize.size_value,
+          custom_message: "We have updated your order to a different variant as agreed, because the originally ordered variant is no longer available. Below are the updated details of your order.",
+        };
+
+        const { error: mailError } = await supabase.functions.invoke("send-order-email", {
+          body: {
+            type: "order_confirmed",
+            recipient_email: variantOrder.buyer_email,
+            recipient_name: variantOrder.buyer_name || "Customer",
+            order_data: orderEmailData,
+            template_data: {
+              subject: `🎉 Order Confirmation Update — Order #${variantOrder.id.slice(0, 8).toUpperCase()}`,
+              action_url: `${window.location.origin}/`,
+            }
+          }
+        });
+
+        if (mailError) {
+          console.warn("Mail invoke error:", mailError);
+          toast.warning("Order updated, but failed to send email notification.");
+        } else {
+          toast.success("Order updated and confirmation email sent!");
+        }
+      } else {
+        toast.success(
+          isConfirmedOrder
+            ? "Order updated successfully in database."
+            : "Order variant updated! Confirmation email will be sent when payment is confirmed."
+        );
+      }
+
+      // 5. Update local state
+      setSellOrders(prev =>
+        prev.map(o =>
+          o.id === variantOrder.id
+            ? {
+                ...o,
+                variant_id: selectedVariant?.id || null,
+                variant_name: selectedVariant?.id ? selectedVariant.color_name : (selectedVariant ? "Default" : null),
+                ordered_size: selectedSize.size_value,
+              }
+            : o
+        )
+      );
+
+      // Close modal
+      setVariantModalOpen(false);
+    } catch (err) {
+      console.error("Error updating variant:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to update order variant");
+    } finally {
+      setUpdatingVariant(false);
+    }
   };
 
   // Pagination state for sell orders
@@ -518,12 +736,24 @@ const MyOrders = () => {
                                     const productTitle =
                                       order.product_listings?.title ||
                                       "Product";
-                                    const productImage =
+                                    let productImage =
                                       order.product_listings?.product_images?.find(
                                         (img) => img.is_poster_image,
                                       )?.image_url ||
                                       order.product_listings
                                         ?.product_images?.[0]?.image_url;
+
+                                    if (order.variant_id) {
+                                      const { data: varData } = await supabase
+                                        .from("product_variants")
+                                        .select("image_url")
+                                        .eq("id", order.variant_id)
+                                        .maybeSingle();
+                                      if (varData?.image_url) {
+                                        productImage = toStorageUrl(varData.image_url);
+                                      }
+                                    }
+
                                     const orderEmailData: OrderEmailData = {
                                       order_id: order.id,
                                       product_title: productTitle,
@@ -539,6 +769,8 @@ const MyOrders = () => {
                                       shipping_address: order.shipping_address,
                                       product_id: order.product_id,
                                       brand: order.product_listings?.brand ?? undefined,
+                                      variant_name: order.variant_name || undefined,
+                                      ordered_size: order.ordered_size || undefined,
                                     };
                                     try {
                                       if (order.buyer_email) {
@@ -569,6 +801,17 @@ const MyOrders = () => {
                               >
                                 <CheckCircle className="h-4 w-4 mr-2" />
                                 Confirm Payment
+                              </Button>
+                            )}
+                            {["pending_payment", "confirmed"].includes(order.status) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-purple-200 text-purple-700 hover:bg-purple-50 rounded-2xl"
+                                onClick={() => openChangeVariantModal(order)}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Change Variant
                               </Button>
                             )}
                             {order.status === "confirmed" && (
@@ -784,6 +1027,133 @@ const MyOrders = () => {
           }
         }}
       />
+
+      {/* Change Variant Modal */}
+      <Dialog open={variantModalOpen} onOpenChange={setVariantModalOpen}>
+        <DialogContent className="max-w-md bg-white rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Change Order Variant</DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 mt-1">
+              Select a different variant / size to confirm. This will update the order, release old inventory, reserve new inventory, and send a confirmation email with the new picture to the buyer.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingVariants ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 text-purple-600 animate-spin" />
+              <p className="text-sm text-gray-500 mt-2">Loading variants...</p>
+            </div>
+          ) : (
+            <div className="space-y-4 my-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
+                  Select Variant
+                </label>
+                <select
+                  className="w-full rounded-xl border border-gray-200 p-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  value={selectedVariant?.id || ""}
+                  onChange={(e) => {
+                    const selectedId = e.target.value === "" ? null : e.target.value;
+                    const variant = productVariants.find(v => v.id === selectedId);
+                    setSelectedVariant(variant || null);
+                    if (variant) {
+                      const sizes = variant.product_variant_sizes || [];
+                      setAvailableSizes(sizes);
+                      setSelectedSize(sizes.find((s: any) => !s.is_sold) || sizes[0] || null);
+                    } else {
+                      setAvailableSizes([]);
+                      setSelectedSize(null);
+                    }
+                  }}
+                >
+                  {productVariants.map((v) => (
+                    <option key={v.id || "default"} value={v.id || ""}>
+                      {v.color_name} {v.price ? `(₹${v.price.toLocaleString("en-IN")})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedVariant && (
+                <div className="flex gap-4 items-center bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                  <div className="w-16 h-16 bg-white rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-gray-150">
+                    {selectedVariant.image_url ? (
+                      <img
+                        src={toStorageUrl(selectedVariant.image_url)}
+                        alt={selectedVariant.color_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="h-6 w-6 text-gray-300" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-gray-800 text-sm truncate">{selectedVariant.color_name}</p>
+                    <p className="text-xs text-gray-400">Variant Image Preview</p>
+                  </div>
+                </div>
+              )}
+
+              {availableSizes.length > 0 && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-2">
+                    Select Size
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {availableSizes.map((s) => (
+                      <button
+                        key={s.size_value}
+                        type="button"
+                        disabled={s.is_sold && s.size_value !== variantOrder?.ordered_size}
+                        onClick={() => setSelectedSize(s)}
+                        className={`py-2 px-3 text-xs font-semibold rounded-xl border text-center transition-all duration-150 ${
+                          selectedSize?.size_value === s.size_value
+                            ? "bg-purple-600 border-purple-600 text-white shadow-sm"
+                            : s.is_sold
+                            ? "bg-gray-100 border-gray-100 text-gray-300 cursor-not-allowed"
+                            : "bg-white border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-purple-50/30"
+                        }`}
+                      >
+                        {s.size_value}
+                        <span className="block text-[9px] font-normal opacity-80">
+                          ₹{s.price.toLocaleString("en-IN")}
+                        </span>
+                        {s.is_sold && s.size_value !== variantOrder?.ordered_size && (
+                          <span className="block text-[8px] font-bold text-red-500 uppercase mt-0.5">Sold</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="mt-6 flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setVariantModalOpen(false)}
+              className="rounded-xl flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmChangeVariant}
+              disabled={updatingVariant || loadingVariants || !selectedSize}
+              className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl flex-1 shadow-md"
+            >
+              {updatingVariant ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Confirm & Send Email"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
