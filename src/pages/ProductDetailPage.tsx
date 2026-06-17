@@ -565,6 +565,23 @@ export default function ProductDetailPage() {
     retailInr && retailInr > currentPrice
       ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
       : null;
+
+  // Determine if the currently selected size/variant is sold out
+  const isSoldOut = (() => {
+    if (listing?.status === "sold") return true;
+
+    if (availableSizes.length > 0) {
+      if (!selectedSize) return false;
+      const sizeObj = availableSizes.find((s) => s.size_value === selectedSize);
+      return sizeObj ? sizeObj.is_sold : false;
+    }
+
+    if (listing?.size_value) {
+      return listing.status === "sold";
+    }
+
+    return false;
+  })();
   // pageDescription is used in the JSON-LD structured data below
   const pageDescription = listing
     ? `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop 100% authentic sneakers and streetwear on The Plug Market.`
@@ -1117,15 +1134,15 @@ export default function ProductDetailPage() {
               size="lg"
               variant="outline"
               onClick={() => handleAddToCart(listing?.seller_details)}
-              disabled={isItemInCart()}
+              disabled={isItemInCart() || isSoldOut}
               className={`border-0 rounded-2xl shadow-lg h-12 ${
-                isItemInCart()
+                isItemInCart() || isSoldOut
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
               }`}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
-              {isItemInCart() ? "In Cart" : "Add to Cart"}
+              {isSoldOut ? "Sold Out" : isItemInCart() ? "In Cart" : "Add to Cart"}
             </Button>
 
             <Button
@@ -1143,12 +1160,17 @@ export default function ProductDetailPage() {
               }}
               disabled={
                 // Only require a size selection if this listing actually has sizes
-                (availableSizes.length > 0 || listing?.size_value) &&
-                !selectedSize
+                ((availableSizes.length > 0 || listing?.size_value) &&
+                  !selectedSize) ||
+                isSoldOut
               }
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl shadow-lg h-12"
+              className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
+                isSoldOut
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+              }`}
             >
-              Buy Now
+              {isSoldOut ? "Sold Out" : "Buy Now"}
             </Button>
           </div>
           {/* Buy Now Modal requiring shipping address */}
