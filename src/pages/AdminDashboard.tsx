@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Star,
   ShoppingBag,
+  Activity,
 } from "lucide-react";
 
 const ADMIN_SECTIONS = [
@@ -71,6 +72,13 @@ const ADMIN_SECTIONS = [
     url: ROUTE_NAMES.ADMIN_HOT_DEALS,
     icon: Flame,
     color: "from-orange-500 to-red-500",
+  },
+  {
+    title: "Running Sneakers",
+    description: "Choose which sneakers are shown in Running Sneakers page",
+    url: ROUTE_NAMES.ADMIN_RUNNING_SNEAKERS,
+    icon: Activity,
+    color: "from-blue-500 to-indigo-500",
   },
   {
     title: "Instant Ship",

@@ -173,15 +173,16 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { data: rpcData } = await ssrSupabase.rpc("browse_all_listings", {
     p_categories: null,
     p_sizes: null,
-    p_brands: [collection.brand],
+    p_brands: collection.isRunningCurated ? null : [collection.brand],
     p_conditions: null,
     p_price_min: 0,
     p_price_max: 100000,
-    p_search: collection.searchTerm,
+    p_search: collection.isRunningCurated ? null : (collection.searchTerm || null),
     p_sort: "newest",
     p_limit: PAGE_SIZE,
     p_offset: 0,
     p_deals: false,
+    p_running_sneakers: collection.isRunningCurated ?? false,
   });
 
   type RpcRow = Omit<Listing, "matched_size_price"> & {
@@ -287,18 +288,21 @@ const CollectionPage = () => {
             p_categories: null,
             p_sizes:
               currentFilters.size.length > 0 ? currentFilters.size : null,
-            p_brands: [collection.brand],
+            p_brands: collection.isRunningCurated ? null : [collection.brand],
             p_conditions:
               currentFilters.condition.length > 0
                 ? currentFilters.condition
                 : null,
             p_price_min: currentFilters.priceRange[0],
             p_price_max: currentFilters.priceRange[1],
-            p_search: collection.searchTerm,
+            p_search: collection.isRunningCurated
+              ? null
+              : collection.searchTerm || null,
             p_sort: currentFilters.sortBy,
             p_limit: PAGE_SIZE,
             p_offset: fromOffset,
             p_deals: false,
+            p_running_sneakers: collection.isRunningCurated ?? false,
           },
         );
 

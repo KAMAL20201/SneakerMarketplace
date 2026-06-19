@@ -12,9 +12,27 @@ export interface CollectionConfig {
   badge?: string; // optional badge like "Trending" or "Most Popular"
   imageUrl?: string; // banner image URL (AI-generated or from storage)
   category: string; // "sneakers"
+  /** When true, CollectionPage filters by is_running_sneaker=true via the RPC
+   *  instead of by brand/searchTerm. Used for the curated running collection. */
+  isRunningCurated?: boolean;
 }
 
 export const COLLECTIONS_CONFIG: Record<string, CollectionConfig> = {
+  "running-sneakers": {
+    id: "running-sneakers",
+    name: "Running Sneakers",
+    slug: "running-sneakers",
+    brand: "curated",
+    brandSlug: "curated",
+    brandName: "Curated",
+    searchTerm: "",
+    exactPhrase: false,
+    tagline: "Performance meets comfort",
+    description: "Buy authentic running sneakers in India. Shop verified running sneakers at the best prices. Fast delivery across India.",
+    category: "sneakers",
+    imageUrl: 'https://vojwfupyoathhvujwaqh.supabase.co/storage/v1/object/public/static-assets/running-collection.png',
+    isRunningCurated: true,
+  },
   "new-balance-9060": {
     id: "new-balance-9060",
     name: "New Balance 9060",
@@ -129,7 +147,7 @@ export const COLLECTIONS_CONFIG: Record<string, CollectionConfig> = {
     description:
       "Buy authentic Onitsuka Tiger Mexico 66 in India. Shop verified Mexico 66 at the best prices. Fast delivery across India.",
     category: "sneakers",
-      imageUrl:
+    imageUrl:
       "https://vojwfupyoathhvujwaqh.supabase.co/storage/v1/object/public/static-assets/mexico66.webp",
   },
 };
