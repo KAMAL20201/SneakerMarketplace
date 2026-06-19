@@ -432,6 +432,7 @@ export default function ProductDetailPage() {
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [returnsOpen, setReturnsOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const [emblaApi, setEmblaApi] = useState<EmblaCarouselType | null>(null);
   const [zoomEmblaApi, setZoomEmblaApi] = useState<EmblaCarouselType | null>(
     null,
@@ -1527,7 +1528,7 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-2">
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <span className="font-bold text-gray-900">
-                {aggregateRating.average_rating}
+                {aggregateRating.average_rating.toFixed(1)}
               </span>
               <span className="text-gray-400 text-sm">
                 ({aggregateRating.review_count})
@@ -1545,7 +1546,7 @@ export default function ProductDetailPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {reviews.map((review) => (
+            {(showAllReviews ? reviews : reviews.slice(0, 2)).map((review) => (
               <div
                 key={review.id}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
@@ -1582,6 +1583,17 @@ export default function ProductDetailPage() {
                 )}
               </div>
             ))}
+            {reviews.length > 2 && (
+              <button
+                type="button"
+                onClick={() => setShowAllReviews((prev) => !prev)}
+                className="w-full mt-2 py-3 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-purple-600 hover:bg-purple-50 transition-colors shadow-sm"
+              >
+                {showAllReviews
+                  ? "View less"
+                  : `View all ${reviews.length} reviews`}
+              </button>
+            )}
           </div>
         )}
       </section>
