@@ -34,6 +34,7 @@ import ProductCard from "@/components/ui/ProductCard";
 import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart } from "@/constants/sizeCharts";
+import { WhatsAppService } from "@/lib/whatsappService";
 import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -1314,6 +1315,47 @@ export default function ProductDetailPage() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* WhatsApp Contact Info */}
+          <div className="px-4 pb-4 lg:px-0">
+            <a
+              href={WhatsAppService.generateQueryURL(listing?.title, listing?.brand)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-colors shadow-sm group"
+            >
+              {/* WhatsApp Icon */}
+              <span className="flex-shrink-0 w-9 h-9 rounded-full bg-green-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 32 32"
+                  className="w-5 h-5 fill-white"
+                  aria-hidden="true"
+                >
+                  <path d="M16 0C7.163 0 0 7.163 0 16c0 2.822.736 5.467 2.027 7.773L0 32l8.46-2.007A15.934 15.934 0 0016 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.333a13.28 13.28 0 01-6.787-1.853l-.487-.29-5.02 1.19 1.22-4.887-.32-.503A13.267 13.267 0 012.667 16C2.667 8.636 8.636 2.667 16 2.667S29.333 8.636 29.333 16 23.364 29.333 16 29.333zm7.27-9.877c-.398-.2-2.356-1.163-2.72-1.295-.365-.133-.63-.2-.896.2-.266.398-1.03 1.295-1.263 1.56-.232.266-.465.3-.863.1-.398-.2-1.68-.619-3.2-1.977-1.183-1.056-1.981-2.36-2.213-2.758-.232-.398-.025-.613.175-.811.18-.178.398-.465.597-.697.2-.233.266-.4.398-.665.133-.266.067-.5-.033-.697-.1-.2-.896-2.16-1.228-2.957-.323-.776-.65-.671-.896-.683-.232-.012-.498-.015-.763-.015s-.697.1-.1063.498c-.365.398-1.394 1.362-1.394 3.321s1.427 3.853 1.626 4.119c.2.266 2.808 4.287 6.803 6.014.951.411 1.693.656 2.272.84.954.303 1.823.26 2.51.158.765-.114 2.356-.963 2.688-1.893.332-.93.332-1.727.233-1.893-.1-.166-.365-.266-.763-.465z" />
+                </svg>
+              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold text-green-800">
+                  Have a query? Chat with us on WhatsApp
+                </span>
+                <span className="text-xs text-green-600 truncate">
+                  We're here to help — tap to connect instantly
+                </span>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="ml-auto w-4 h-4 text-green-500 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
           </div>
 
           {/* Size Guide Modal */}

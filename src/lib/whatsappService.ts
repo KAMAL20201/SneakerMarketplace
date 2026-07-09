@@ -1,6 +1,6 @@
 // WhatsApp business number (with country code, no + sign)
 // Update this with your WhatsApp number via VITE_WHATSAPP_NUMBER env variable
-const WHATSAPP_NUMBER =
+export const WHATSAPP_NUMBER =
   import.meta.env.VITE_WHATSAPP_NUMBER || "919999999999";
 
 export class WhatsAppService {
@@ -48,5 +48,23 @@ export class WhatsAppService {
     const message = this.formatOrderMessage(orderIds, couponCode, discountAmount);
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+  }
+
+  /**
+   * Generate a WhatsApp URL pre-filled with a product enquiry message.
+   * @param productTitle  Optional product title to make the message contextual.
+   * @param brand         Optional brand name for extra context.
+   */
+  static generateQueryURL(productTitle?: string | null, brand?: string | null): string {
+    const productLine =
+      productTitle
+        ? `*${brand ? brand + " " : ""}${productTitle}*`
+        : "a product on The Plug Market";
+
+    const message =
+      `Hi! 👋 I have a query regarding ${productLine}.\n\n` +
+      `Could you please help me out? Looking forward to hearing from you!`;
+
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   }
 }
