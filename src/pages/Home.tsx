@@ -16,6 +16,7 @@ import CollectionsSection from "@/components/CollectionsSection";
 import { useLoaderData, data, Await } from "react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/Home";
+import FAQSection from "@/components/FAQSection";
 
 // Lazy-loaded: JS chunk + 3MB video assets deferred until component mounts
 const InstagramFeed = lazy(() => import("@/components/InstagramFeed"));
@@ -517,6 +518,9 @@ const Home = () => {
 
       {/* [MARKETPLACE REMOVED] How It Works Section - escrow system not used in ecommerce model */}
       {/* <HowItWorks /> */}
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* Bottom spacing */}
       <div className="h-8"></div>

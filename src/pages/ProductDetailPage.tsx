@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/carousel";
 import type { EmblaCarouselType } from "embla-carousel";
 import type { Route } from "./+types/ProductDetailPage";
+import FAQSection from "@/components/FAQSection";
 
 declare global {
   interface Window {
@@ -1656,8 +1657,17 @@ export default function ProductDetailPage() {
         </section>
       )}
 
+
+      {/* FAQ Section — compact, product-page focused */}
+      <FAQSection
+        heading="Common Questions"
+        categories={["delivery", "payment", "issues", "sizing"]}
+        showFilter={false}
+      />
+
       {/* Blog Teaser — internal linking for SEO */}
       <BlogTeaser posts={blogPosts} heading="Read From The Plug Journal" />
+
 
       {/* Bottom spacing */}
       <div className="h-8"></div>
