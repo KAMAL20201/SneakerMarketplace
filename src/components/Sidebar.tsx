@@ -12,6 +12,7 @@ import {
   Book,
   Layers,
   LayoutDashboard,
+  Zap,
 } from "lucide-react";
 
 import {
@@ -48,10 +49,15 @@ const getNavData = (isAdmin: boolean) => ({
           url: ROUTE_NAMES.NEW_ARRIVALS,
           icon: Sparkles,
         },
-{
+        {
           title: "Wishlist",
           url: ROUTE_NAMES.WISHLIST,
           icon: Heart,
+        },
+        {
+          title: "Instant Shipping",
+          url: `${ROUTE_NAMES.BROWSE}?instantShipping=true`,
+          icon: Zap,
         },
       ],
     },
