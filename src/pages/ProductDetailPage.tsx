@@ -415,7 +415,7 @@ export default function ProductDetailPage() {
       (initialVariants.length > 0
         ? (newMap[initialVariants[0]?.id] ?? [])
         : legacySizes
-      ).some((s) => s.is_instant_ship)
+      ).some((s) => s.is_instant_ship && !s.is_sold)
         ? "instant"
         : "standard",
     );
@@ -429,7 +429,7 @@ export default function ProductDetailPage() {
   const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [deliveryTab, setDeliveryTab] = useState<"instant" | "standard">(() =>
-    availableSizes.some((s) => s.is_instant_ship) ? "instant" : "standard",
+    availableSizes.some((s) => s.is_instant_ship && !s.is_sold) ? "instant" : "standard",
   );
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [returnsOpen, setReturnsOpen] = useState(false);
@@ -569,14 +569,28 @@ export default function ProductDetailPage() {
       ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
       : null;
 
-  // Determine if the currently selected size/variant is sold out
+  // Sizes visible in the currently-active delivery tab
+  const activeTabSizes = (() => {
+    const hasInstantSizes = availableSizes.some((s) => s.is_instant_ship);
+    const hasStandardSizes = availableSizes.some((s) => !s.is_instant_ship);
+    const showTabs = hasInstantSizes && hasStandardSizes;
+    if (!showTabs) return availableSizes;
+    return availableSizes.filter((s) =>
+      deliveryTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
+    );
+  })();
+
+  // Determine if the currently selected size is sold out in the ACTIVE tab
   const isSoldOut = (() => {
     if (listing?.status === "sold") return true;
 
     if (availableSizes.length > 0) {
       if (!selectedSize) return false;
-      const sizeObj = availableSizes.find((s) => s.size_value === selectedSize);
-      return sizeObj ? sizeObj.is_sold : false;
+      // Check only in the sizes currently shown (respects active delivery tab)
+      const sizeObj = activeTabSizes.find((s) => s.size_value === selectedSize);
+      // If the size doesn't exist in this tab, treat as not-selected (not sold out)
+      if (!sizeObj) return false;
+      return sizeObj.is_sold;
     }
 
     if (listing?.size_value) {
@@ -1042,9 +1056,22 @@ export default function ProductDetailPage() {
                     {showTabs && (
                       <Tabs
                         value={deliveryTab}
-                        onValueChange={(v) =>
-                          setDeliveryTab(v as "instant" | "standard")
-                        }
+                        onValueChange={(v) => {
+                          const nextTab = v as "instant" | "standard";
+                          setDeliveryTab(nextTab);
+                          // Auto-select the first available size in the new tab
+                          const nextTabSizes = availableSizes.filter((s) =>
+                            nextTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
+                          );
+                          const pick = nextTabSizes.find((s) => !s.is_sold) ?? nextTabSizes[0] ?? null;
+                          if (pick) {
+                            setSelectedSize(pick.size_value);
+                            setSelectedPrice(pick.price);
+                          } else {
+                            setSelectedSize(null);
+                            setSelectedPrice(null);
+                          }
+                        }}
                         className="mb-4"
                       >
                         <TabsList className="w-full grid grid-cols-2 rounded-2xl bg-gray-100">
