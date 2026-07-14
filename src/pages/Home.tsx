@@ -412,12 +412,12 @@ const Home = () => {
         viewAllUrl={ROUTE_NAMES.SNEAKERS}
       />
 
-      {/* Apparels Section */}
+      {/* Apparels Section
       <CategorySection
         categoryId="clothing"
         title="Apparels & Bags"
         viewAllUrl={ROUTE_NAMES.APPARELS}
-      />
+      /> */}
 
       {/* Trending Section */}
       {/* <section className="px-4 py-6">

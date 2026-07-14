@@ -16,7 +16,6 @@ import type { CartItem } from "@/lib/orderService";
 interface PaymentButtonProps {
   amount: number;
   items: CartItem[];
-
   currency?: string;
   description?: string;
   metadata?: Record<string, string>;
@@ -73,8 +72,8 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
           </>
         ) : (
           <>
-            <MessageCircle className="mr-2 h-4 w-4" />
-            {buttonText || `Order via WhatsApp - ₹${amount}`}
+            {/* <MessageCircle className="mr-2 h-4 w-4" /> */}
+            {buttonText || `Checkout Now -  ₹${amount}`}
           </>
         )}
       </Button>

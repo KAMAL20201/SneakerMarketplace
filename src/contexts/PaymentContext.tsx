@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Copy, ExternalLink, CheckCircle2, MessageCircleQuestion } from "lucide-react";
 // [WHATSAPP CHECKOUT] Razorpay imports commented out until payment provider is set up
 // import { PaymentService } from "../lib/paymentService";
 import { OrderService } from "../lib/orderService";
@@ -37,7 +37,7 @@ import type { CartItem } from "../lib/orderService";
 //   CreateOrderRequest,
 // } from "../types/razorpay";
 import type { ShippingAddress } from "@/types/shipping";
-import { WhatsAppService } from "@/lib/whatsappService";
+import { WhatsAppService, WHATSAPP_NUMBER } from "@/lib/whatsappService";
 
 const UPI_ID = import.meta.env.VITE_UPI_ID || "ks708570-3@oksbi";
 
@@ -299,6 +299,22 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           <p className="text-center text-xs text-gray-400">
             After paying, tap above to send us your order confirmation
           </p>
+
+          {/* Unable to pay CTA */}
+          <div className="mt-3 flex items-center justify-center gap-1.5">
+            <MessageCircleQuestion className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+            <span className="text-xs text-gray-400">Unable to pay?</span>
+            <a
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+                "Hi! 👋 I'm interested in placing an order on The Plug Market but I'm facing an issue with the QR code / UPI payment. Could you help me complete my purchase? Thanks!"
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-[#25D366] underline-offset-2 hover:underline"
+            >
+              DM us on WhatsApp
+            </a>
+          </div>
         </DialogContent>
       </Dialog>
 
