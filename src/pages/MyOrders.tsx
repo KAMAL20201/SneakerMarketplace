@@ -1,5 +1,5 @@
 import { AdminRoute } from "@/components/AdminRoute";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
 import { ROUTE_HELPERS } from "@/constants/enums";
 import {
@@ -124,6 +124,115 @@ const formatPrice = (price: number) => {
     maximumFractionDigits: 0,
   }).format(price);
 };
+
+// ── AdaptivePaginator ────────────────────────────────────────────────────────
+// Measures its own container width via ResizeObserver and fills it with as
+// many page-number buttons as physically fit — no hardcoded window sizes.
+interface AdaptivePaginatorProps {
+  totalPages: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+}
+
+const AdaptivePaginator = ({ totalPages, currentPage, onPageChange }: AdaptivePaginatorProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [slots, setSlots] = useState(5); // page-number slots (re-computed on resize)
+
+  const computeSlots = useCallback(() => {
+    if (!containerRef.current) return;
+    const containerWidth = containerRef.current.offsetWidth;
+    // Prev + Next buttons: ~82px each (icon + text + padding), gap: 6px
+    const navWidth = 82 * 2 + 6 * 2;
+    // Each page button: 36px wide, gap between items: 6px
+    const btnWidth = 36 + 6;
+    const available = containerWidth - navWidth;
+    const count = Math.max(1, Math.floor(available / btnWidth));
+    setSlots(count);
+  }, []);
+
+  useEffect(() => {
+    computeSlots();
+    const ro = new ResizeObserver(computeSlots);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [computeSlots]);
+
+  if (totalPages <= 1) return null;
+
+  // Build visible page items to fill exactly `slots` number slots
+  const buildPageItems = (): (number | "…")[] => {
+    if (totalPages <= slots) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    // We always show first + last; remaining inner slots surround current page
+    const innerSlots = Math.max(1, slots - 2); // -2 for first & last
+    const halfWin = Math.floor(innerSlots / 2);
+    let winStart = Math.max(2, currentPage - halfWin);
+    let winEnd = winStart + innerSlots - 1;
+    if (winEnd >= totalPages) {
+      winEnd = totalPages - 1;
+      winStart = Math.max(2, winEnd - innerSlots + 1);
+    }
+
+    const items: (number | "…")[] = [1];
+    if (winStart > 2) items.push("…");
+    for (let p = winStart; p <= winEnd; p++) items.push(p);
+    if (winEnd < totalPages - 1) items.push("…");
+    items.push(totalPages);
+    return items;
+  };
+
+  const pages = buildPageItems();
+
+  return (
+    <div ref={containerRef} className="flex items-center justify-center gap-1.5 mt-8 w-full">
+      {/* Prev */}
+      <Button
+        variant="ghost"
+        onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+        disabled={currentPage === 1}
+        className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50 flex items-center gap-1 px-3 shrink-0"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        <span className="hidden sm:inline text-sm">Prev</span>
+      </Button>
+
+      {/* Page numbers */}
+      {pages.map((item, idx) =>
+        item === "…" ? (
+          <span key={`ellipsis-${idx}`} className="text-gray-400 select-none px-1 shrink-0">
+            …
+          </span>
+        ) : (
+          <Button
+            key={item}
+            variant={currentPage === item ? "default" : "ghost"}
+            onClick={() => onPageChange(item as number)}
+            className={`h-9 w-9 p-0 rounded-xl text-sm font-medium shrink-0 ${
+              currentPage === item
+                ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-md"
+                : "glass-button border-0 text-gray-700 hover:bg-white/30"
+            }`}
+          >
+            {item}
+          </Button>
+        )
+      )}
+
+      {/* Next */}
+      <Button
+        variant="ghost"
+        onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
+        disabled={currentPage === totalPages}
+        className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50 flex items-center gap-1 px-3 shrink-0"
+      >
+        <span className="hidden sm:inline text-sm">Next</span>
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 const EmptyOrdersState = () => (
   <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -905,56 +1014,12 @@ const MyOrders = () => {
                 )}
               </div>
 
-              {/* Pagination */}
-              {Math.ceil(filteredOrders.length / itemsPerPage) > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <Button
-                    variant="ghost"
-                    onClick={() =>
-                      setSellCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
-                    disabled={sellCurrentPage === 1}
-                    className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-
-                  <div className="flex gap-1">
-                    {Array.from(
-                      { length: Math.ceil(filteredOrders.length / itemsPerPage) },
-                      (_, i) => i + 1,
-                    ).map((page) => (
-                      <Button
-                        key={page}
-                        variant={sellCurrentPage === page ? "default" : "ghost"}
-                        onClick={() => setSellCurrentPage(page)}
-                        className={`rounded-xl ${
-                          sellCurrentPage === page
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
-                            : "glass-button border-0 text-gray-700 hover:bg-white/30"
-                        }`}
-                      >
-                        {page}
-                      </Button>
-                    ))}
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    onClick={() =>
-                      setSellCurrentPage((prev) =>
-                        Math.min(prev + 1, Math.ceil(filteredOrders.length / itemsPerPage)),
-                      )
-                    }
-                    disabled={sellCurrentPage === Math.ceil(filteredOrders.length / itemsPerPage)}
-                    className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+              {/* Pagination – width-driven, no hardcoded limits */}
+              <AdaptivePaginator
+                totalPages={Math.ceil(filteredOrders.length / itemsPerPage)}
+                currentPage={sellCurrentPage}
+                onPageChange={setSellCurrentPage}
+              />
             </>
           )}
         </div>

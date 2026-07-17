@@ -64,6 +64,7 @@ export default [
   route("admin/instant-ship", "./pages/AdminInstantShip.tsx"),
   route("admin/messages", "./pages/AdminMessages.tsx"),
   route("admin/orders", "./pages/AdminOrders.tsx"),
+  route("admin/pending-payments", "./pages/AdminPendingPayments.tsx"),
   route("admin/sale-products/:bannerId", "./pages/AdminSaleProducts.tsx"),
 
   // API resource routes (server-side only, no UI component)

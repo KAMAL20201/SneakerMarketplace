@@ -15,6 +15,8 @@ export interface OrderEmailData {
   product_title: string;
   product_image?: string;
   amount: number;
+  original_amount?: number;
+  discount_amount?: number;
   currency: string;
   buyer_name?: string;
   buyer_email?: string;
@@ -39,7 +41,8 @@ export interface EmailNotificationRequest {
     | "order_shipped"
     | "order_delivered"
     | "order_cancelled"
-    | "payment_received";
+    | "payment_received"
+    | "payment_reminder";
   recipient_email: string;
   recipient_name: string;
   order_data: OrderEmailData;
@@ -302,6 +305,31 @@ export class EmailService {
     }
 
     return { success: successCount, failed: failedCount };
+  }
+
+  /**
+   * Send payment reminder email to buyer who has a pending_payment order
+   */
+  static async sendPaymentReminderEmail(
+    buyerEmail: string,
+    buyerName: string,
+    orderData: OrderEmailData
+  ): Promise<boolean> {
+    const productUrl = orderData.product_id
+      ? `${window.location.origin}/product/${orderData.product_id}`
+      : `${window.location.origin}/`;
+    const enriched = await this.withSimilarProducts(orderData);
+    return await this.sendEmail(
+      "payment_reminder",
+      buyerEmail,
+      buyerName,
+      enriched,
+      {
+        subject: `Don't miss out — complete your order for ${orderData.product_title}`,
+        action_text: "Complete Your Purchase",
+        action_url: productUrl,
+      }
+    );
   }
 
   /**

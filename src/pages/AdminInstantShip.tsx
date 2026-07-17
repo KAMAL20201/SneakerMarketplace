@@ -55,22 +55,31 @@ function SizeListItem({ size, toggling, onToggle, onSavePrice }: SizeListItemPro
     setSaving(false);
   };
 
+  // Sold-out sizes that are NOT instant ship are locked (can't be marked).
+  // Sold-out sizes that ARE instant ship remain clickable so admins can revert them.
+  const isLocked = size.is_sold && !size.is_instant_ship;
+
   if (!expanded) {
     return (
       <button
         type="button"
-        disabled={size.is_sold}
+        disabled={isLocked}
         onClick={() => setExpanded(true)}
         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold uppercase transition-all border ${
-          size.is_sold
+          isLocked
             ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
             : size.is_instant_ship
-              ? "bg-teal-500 text-white border-teal-500 hover:bg-teal-600"
+              ? size.is_sold
+                ? "bg-teal-400 text-white border-teal-400 hover:bg-teal-500 ring-1 ring-offset-1 ring-teal-300"
+                : "bg-teal-500 text-white border-teal-500 hover:bg-teal-600"
               : "bg-white text-gray-600 border-gray-200 hover:border-teal-400 hover:text-teal-600"
         }`}
       >
         {size.is_instant_ship && <Zap className="h-2.5 w-2.5" />}
         {size.size_value}
+        {size.is_sold && size.is_instant_ship && (
+          <span className="text-[9px] opacity-80 normal-case font-normal">(sold)</span>
+        )}
       </button>
     );
   }

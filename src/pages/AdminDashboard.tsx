@@ -14,6 +14,7 @@ import {
   Star,
   ShoppingBag,
   Activity,
+  Mail,
 } from "lucide-react";
 
 const ADMIN_SECTIONS = [
@@ -100,6 +101,13 @@ const ADMIN_SECTIONS = [
     url: ROUTE_NAMES.ADMIN_ORDERS,
     icon: Star,
     color: "from-red-500 to-pink-500",
+  },
+  {
+    title: "Payment Recovery",
+    description: "Send reminder emails to buyers with pending payments (127 orders)",
+    url: ROUTE_NAMES.ADMIN_PENDING_PAYMENTS,
+    icon: Mail,
+    color: "from-amber-500 to-orange-500",
   },
   {
     title: "My Listings",

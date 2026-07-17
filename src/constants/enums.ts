@@ -24,6 +24,7 @@ export const ROUTE_NAMES = {
   ADMIN_INSTANT_SHIP: "/admin/instant-ship",
   ADMIN_MESSAGES: "/admin/messages",
   ADMIN_ORDERS: "/admin/orders",
+  ADMIN_PENDING_PAYMENTS: "/admin/pending-payments",
   BLOG: "/blog",
   PROFILE: "/profile",
   MY_ADDRESSES: "/my-addresses",
