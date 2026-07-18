@@ -47,6 +47,7 @@ import {
 import type { EmblaCarouselType } from "embla-carousel";
 import type { Route } from "./+types/ProductDetailPage";
 import FAQSection from "@/components/FAQSection";
+import PriceCountdownBanner from "@/components/PriceCountdownBanner";
 
 declare global {
   interface Window {
@@ -822,6 +823,15 @@ export default function ProductDetailPage() {
             <span className="mb-[20px] mx-[30px] lg:mx-0 text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg">
               {pctOff}% off
             </span>
+          )}
+
+          {/* Price increase countdown — only for Dynafish Xiaonian 5403ef */}
+          {listing?.slug === "dynafish-xiaonian-5403ef" && (
+            <PriceCountdownBanner
+              deadline="2026-07-25T21:25:00+05:30"
+              currentPrice={9999}
+              newPrice={10499}
+            />
           )}
 
           <div className="mt-3 px-8 pb-5 lg:px-0 lg:pb-6">
