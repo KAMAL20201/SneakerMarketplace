@@ -70,13 +70,13 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col h-[80vh]">
+          <div className="flex flex-col h-[80vh] w-full min-w-0 overflow-x-hidden">
             <div className="px-4 pt-4">
               <DialogHeader>
                 <DialogTitle>Confirm & Order</DialogTitle>
               </DialogHeader>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
               {/* Shipping Address Summary */}
               {shippingAddress && (
                 <div className="bg-gray-50 rounded-lg p-4">

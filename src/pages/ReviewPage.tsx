@@ -35,6 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     listing_title: string;
     listing_slug: string;
     listing_image: string | null;
+    buyer_name: string | null;
     is_valid: boolean;
   };
 
@@ -46,6 +47,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     valid: true,
     token,
     prefillRating,
+    buyerName: row.buyer_name ?? "",
     listing: {
       id: row.listing_id,
       title: row.listing_title,
@@ -117,7 +119,7 @@ export default function ReviewPage() {
 
   const [rating, setRating] = useState(loaderData.valid ? loaderData.prefillRating : 0);
   const [body, setBody] = useState("");
-  const [reviewerName, setReviewerName] = useState("");
+  const buyerName = loaderData.valid ? (loaderData.buyerName ?? "") : "";
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,6 +187,10 @@ export default function ReviewPage() {
 
   // ── Review form ────────────────────────────────────────────────────────────
 
+  /** Count distinct words in a string */
+  const wordCount = (text: string) =>
+    text.trim().split(/\s+/).filter(Boolean).length;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -194,13 +200,18 @@ export default function ReviewPage() {
       return;
     }
 
+    if (wordCount(body) < 2) {
+      setError("Please write at least 2–3 words about your experience.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { data: success, error: rpcError } = await supabase.rpc("submit_review", {
         p_token:         token,
         p_rating:        rating,
         p_body:          body.trim() || null,
-        p_reviewer_name: reviewerName.trim() || null,
+        p_reviewer_name: buyerName.trim() || null,
       });
 
       if (rpcError) throw rpcError;
@@ -272,7 +283,8 @@ export default function ReviewPage() {
                 className="block text-sm font-semibold text-gray-700 mb-1.5"
               >
                 Write a review{" "}
-                <span className="text-gray-400 font-normal">(optional)</span>
+                <span className="text-pink-500">*</span>
+                <span className="text-gray-400 font-normal text-xs ml-1">(min. 2 words)</span>
               </label>
               <textarea
                 id="review-body"
@@ -286,26 +298,6 @@ export default function ReviewPage() {
               <p className="text-right text-xs text-gray-400 mt-1">{body.length}/1000</p>
             </div>
 
-            {/* Display name */}
-            <div>
-              <label
-                htmlFor="reviewer-name"
-                className="block text-sm font-semibold text-gray-700 mb-1.5"
-              >
-                Your name{" "}
-                <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                id="reviewer-name"
-                type="text"
-                value={reviewerName}
-                onChange={(e) => setReviewerName(e.target.value)}
-                placeholder="Displayed as 'Verified Buyer' if left blank"
-                maxLength={60}
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-              />
-            </div>
-
             {error && (
               <p className="text-sm text-red-500 text-center">{error}</p>
             )}
@@ -313,7 +305,7 @@ export default function ReviewPage() {
             <Button
               type="submit"
               disabled={submitting || rating === 0}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl h-12 font-semibold text-base"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl h-12 font-semibold text-base disabled:opacity-50"
             >
               {submitting ? "Submitting…" : "Submit Review"}
             </Button>
