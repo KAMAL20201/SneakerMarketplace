@@ -7,6 +7,25 @@ import { ROUTE_NAMES } from "@/constants/enums";
 import { Zap } from "lucide-react";
 
 const DISPLAY_LIMIT = 10;
+const FETCH_POOL = 50;
+
+/** Seeded pseudo-random number (mulberry32) — same seed → same sequence */
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Daily seed: changes once per calendar day */
+function getDailySeed(): number {
+  const now = new Date();
+  return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+}
 
 const InstantShipping = () => {
   const [listings, setListings] = useState<any[]>([]);
@@ -17,11 +36,17 @@ const InstantShipping = () => {
       const { data, error } = await supabase
         .from("instant_shipping_with_images")
         .select("*")
-        .order("min_price", { ascending: true })
-        .limit(DISPLAY_LIMIT);
+        .limit(FETCH_POOL);
 
-      if (!error && data) {
-        setListings(data);
+      if (!error && data && data.length > 0) {
+        // Shuffle deterministically using today's date as seed
+        const rand = seededRandom(getDailySeed());
+        const shuffled = [...data];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(rand() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        setListings(shuffled.slice(0, DISPLAY_LIMIT));
       }
       setLoading(false);
     };
