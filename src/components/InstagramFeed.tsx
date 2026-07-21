@@ -21,6 +21,18 @@ const INSTAGRAM_POSTS: InstagramPost[] = [
     videoUrl: "https://vojwfupyoathhvujwaqh.supabase.co/storage/v1/object/public/static-assets/instagram-theplugmarket.mp4",
     instagramUrl: "https://instagram.com/the.plugmarket",
   },
+  {
+    id: "3",
+    videoUrl:
+      "https://vojwfupyoathhvujwaqh.supabase.co/storage/v1/object/public/static-assets/insta-what-all-toget.mp4",
+    instagramUrl: "https://instagram.com/the.plugmarket",
+  },
+  {
+    id: "4",
+    videoUrl:
+      "https://vojwfupyoathhvujwaqh.supabase.co/storage/v1/object/public/static-assets/insta-nike-killshot.mp4",
+    instagramUrl: "https://instagram.com/the.plugmarket",
+  },
 ];
 
 const VideoCard = ({
