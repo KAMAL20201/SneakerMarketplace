@@ -456,3 +456,18 @@ body.cart-open {
 .productZoom .embla {
   height: 100%;
 }
+/* ── Review Screenshots Marquee ──────────────────────────────────────────── */
+@keyframes review-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-33.3333%); }
+}
+
+.review-marquee-track {
+  animation: review-marquee var(--marquee-duration, 40s) linear infinite;
+  will-change: transform;
+}
+
+/* Pause when hovering the whole wrapper */
+.review-marquee-wrapper:hover .review-marquee-track {
+  animation-play-state: paused;
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import {
   ShoppingCart,
   ZoomIn,
@@ -48,6 +48,10 @@ import type { EmblaCarouselType } from "embla-carousel";
 import type { Route } from "./+types/ProductDetailPage";
 import FAQSection from "@/components/FAQSection";
 import PriceCountdownBanner from "@/components/PriceCountdownBanner";
+const ReviewScreenshots = lazy(
+  () => import("@/components/ReviewScreenshots"),
+);
+
 
 declare global {
   interface Window {
@@ -1677,6 +1681,11 @@ export default function ProductDetailPage() {
           </div>
         )}
       </section>
+
+      {/* Review Screenshots — global social proof strip */}
+      <Suspense fallback={null}>
+        <ReviewScreenshots />
+      </Suspense>
 
       {/* You May Also Like */}
       {similarProducts.length > 0 && (
