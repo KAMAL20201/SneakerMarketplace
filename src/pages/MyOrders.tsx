@@ -22,6 +22,7 @@ import {
   Trash2,
   RefreshCw,
   Loader2,
+  Search,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -43,6 +44,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -266,6 +268,7 @@ const MyOrders = () => {
   const [sellOrders, setSellOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabStatus>("all");
+  const [search, setSearch] = useState("");
 
   // Ship Now modal state
   const [shipModalOpen, setShipModalOpen] = useState(false);
@@ -514,10 +517,21 @@ const MyOrders = () => {
     }
   }, [user]);
 
-  const filteredOrders =
+  const tabFilteredOrders =
     activeTab === "all"
       ? sellOrders
       : sellOrders.filter((o) => o.status === activeTab);
+
+  const filteredOrders = search.trim()
+    ? tabFilteredOrders.filter((o) => {
+        const q = search.trim().toLowerCase();
+        return (
+          o.id.toLowerCase().includes(q) ||
+          (o.buyer_name ?? "").toLowerCase().includes(q) ||
+          (o.shipping_address?.city ?? "").toLowerCase().includes(q)
+        );
+      })
+    : tabFilteredOrders;
 
   const tabCounts = {
     all: sellOrders.length,
@@ -533,6 +547,11 @@ const MyOrders = () => {
     setSellTotalPages(Math.ceil(
       (tab === "all" ? sellOrders.length : sellOrders.filter((o) => o.status === tab).length) / itemsPerPage
     ));
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setSellCurrentPage(1);
   };
 
   // Get paginated orders for current tab
@@ -566,6 +585,17 @@ const MyOrders = () => {
           <p className="text-gray-600">
             All customer orders ({sellOrders.length})
           </p>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-5">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <Input
+            className="pl-9 rounded-2xl bg-white/60 border-gray-200 focus:border-purple-400"
+            placeholder="Search by order ID, name, or city…"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
         </div>
 
         {/* Status Tabs */}
