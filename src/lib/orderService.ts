@@ -30,6 +30,8 @@ export interface Order {
   discount_amount?: number;
   original_amount?: number | null;
   is_deleted?: boolean;
+  /** Admin-only international tracking reference — not shown to customers */
+  intl_tracking_number?: string | null;
   created_at: string;
   updated_at: string;
 }

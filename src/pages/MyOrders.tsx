@@ -23,6 +23,9 @@ import {
   RefreshCw,
   Loader2,
   Search,
+  Globe,
+  Pencil,
+  Check,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -288,6 +291,30 @@ const MyOrders = () => {
   const [selectedSize, setSelectedSize] = useState<any | null>(null);
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [updatingVariant, setUpdatingVariant] = useState(false);
+
+  // Intl tracking state: orderId -> draft value while editing
+  const [intlTrackingEdit, setIntlTrackingEdit] = useState<Record<string, string | undefined>>({});
+  // Saving indicator per order
+  const [savingIntlTracking, setSavingIntlTracking] = useState<string | null>(null);
+
+  const saveIntlTracking = useCallback(async (orderId: string, value: string) => {
+    setSavingIntlTracking(orderId);
+    const { error } = await supabase
+      .from("orders")
+      .update({ intl_tracking_number: value.trim() || null })
+      .eq("id", orderId);
+    if (error) {
+      toast.error("Failed to save tracking number");
+    } else {
+      setSellOrders((prev) =>
+        prev.map((o) => o.id === orderId ? { ...o, intl_tracking_number: value.trim() || null } : o)
+      );
+      // Close the inline edit
+      setIntlTrackingEdit((prev) => { const n = { ...prev }; delete n[orderId]; return n; });
+      toast.success("International tracking saved");
+    }
+    setSavingIntlTracking(null);
+  }, []);
 
   const openChangeVariantModal = async (order: Order) => {
     setVariantOrder(order);
@@ -954,15 +981,75 @@ const MyOrders = () => {
                               </Button>
                             )}
                             {order.status === "confirmed" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-white hover:text-white border-gray-200 rounded-2xl"
-                                onClick={() => openShipModal(order)}
-                              >
-                                <Truck className="h-4 w-4 mr-2" />
-                                Ship now
-                              </Button>
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white hover:text-white border-gray-200 rounded-2xl"
+                                  onClick={() => openShipModal(order)}
+                                >
+                                  <Truck className="h-4 w-4 mr-2" />
+                                  Ship now
+                                </Button>
+
+                                {/* ── Intl Tracking (admin-only) ── */}
+                                {intlTrackingEdit[order.id] !== undefined ? (
+                                  // Editing mode
+                                  <div className="flex items-center gap-1.5">
+                                    <Globe className="h-4 w-4 text-sky-500 flex-shrink-0" />
+                                    <Input
+                                      className="h-8 w-44 text-xs rounded-xl border-sky-200 focus-visible:ring-sky-400"
+                                      placeholder="Intl tracking #"
+                                      value={intlTrackingEdit[order.id] ?? ""}
+                                      onChange={(e) =>
+                                        setIntlTrackingEdit((prev) => ({ ...prev, [order.id]: e.target.value }))
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") saveIntlTracking(order.id, intlTrackingEdit[order.id] ?? "");
+                                        if (e.key === "Escape") setIntlTrackingEdit((prev) => { const n = { ...prev }; delete n[order.id]; return n; });
+                                      }}
+                                      autoFocus
+                                    />
+                                    <Button
+                                      size="sm"
+                                      className="h-8 px-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl"
+                                      disabled={savingIntlTracking === order.id}
+                                      onClick={() => saveIntlTracking(order.id, intlTrackingEdit[order.id] ?? "")}
+                                    >
+                                      {savingIntlTracking === order.id ? (
+                                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Check className="h-3.5 w-3.5" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                ) : order.intl_tracking_number ? (
+                                  // Display mode — tracking exists
+                                  <button
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50 border border-sky-200 text-sky-700 text-xs font-medium hover:bg-sky-100 transition-colors"
+                                    title="Click to edit international tracking"
+                                    onClick={() =>
+                                      setIntlTrackingEdit((prev) => ({ ...prev, [order.id]: order.intl_tracking_number ?? "" }))
+                                    }
+                                  >
+                                    <Globe className="h-3.5 w-3.5" />
+                                    {order.intl_tracking_number}
+                                    <Pencil className="h-3 w-3 opacity-60" />
+                                  </button>
+                                ) : (
+                                  // Empty state — add tracking
+                                  <button
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gray-50 border border-dashed border-gray-300 text-gray-400 text-xs hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                                    title="Add international tracking number"
+                                    onClick={() =>
+                                      setIntlTrackingEdit((prev) => ({ ...prev, [order.id]: "" }))
+                                    }
+                                  >
+                                    <Globe className="h-3.5 w-3.5" />
+                                    Add intl tracking
+                                  </button>
+                                )}
+                              </>
                             )}
                             {order.status === "shipped" && (
                               <Button
