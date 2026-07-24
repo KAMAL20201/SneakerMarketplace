@@ -297,6 +297,14 @@ const MyOrders = () => {
   // Saving indicator per order
   const [savingIntlTracking, setSavingIntlTracking] = useState<string | null>(null);
 
+  // Intl-tracking sub-filter (only relevant when activeTab === "confirmed")
+  type IntlTrackingFilter = "all" | "no_tracking" | "has_tracking";
+  const [intlTrackingFilter, setIntlTrackingFilter] = useState<IntlTrackingFilter>("all");
+
+  // Sort order for orders list
+  type SortOrder = "newest" | "oldest";
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+
   const saveIntlTracking = useCallback(async (orderId: string, value: string) => {
     setSavingIntlTracking(orderId);
     const { error } = await supabase
@@ -549,8 +557,18 @@ const MyOrders = () => {
       ? sellOrders
       : sellOrders.filter((o) => o.status === activeTab);
 
-  const filteredOrders = search.trim()
-    ? tabFilteredOrders.filter((o) => {
+  // Apply intl-tracking sub-filter when on the Confirmed tab
+  const intlFilteredOrders =
+    activeTab === "confirmed" && intlTrackingFilter !== "all"
+      ? tabFilteredOrders.filter((o) =>
+          intlTrackingFilter === "has_tracking"
+            ? !!o.intl_tracking_number
+            : !o.intl_tracking_number
+        )
+      : tabFilteredOrders;
+
+  const searchFilteredOrders = search.trim()
+    ? intlFilteredOrders.filter((o) => {
         const q = search.trim().toLowerCase();
         return (
           o.id.toLowerCase().includes(q) ||
@@ -558,7 +576,13 @@ const MyOrders = () => {
           (o.shipping_address?.city ?? "").toLowerCase().includes(q)
         );
       })
-    : tabFilteredOrders;
+    : intlFilteredOrders;
+
+  const filteredOrders = [...searchFilteredOrders].sort((a, b) => {
+    const aTime = new Date(a.created_at ?? 0).getTime();
+    const bTime = new Date(b.created_at ?? 0).getTime();
+    return sortOrder === "newest" ? bTime - aTime : aTime - bTime;
+  });
 
   const tabCounts = {
     all: sellOrders.length,
@@ -568,9 +592,18 @@ const MyOrders = () => {
     delivered: sellOrders.filter((o) => o.status === "delivered").length,
   };
 
+
+  const confirmedOrders = sellOrders.filter((o) => o.status === "confirmed");
+  const intlTrackingCounts = {
+    all: confirmedOrders.length,
+    no_tracking: confirmedOrders.filter((o) => !o.intl_tracking_number).length,
+    has_tracking: confirmedOrders.filter((o) => !!o.intl_tracking_number).length,
+  };
+
   const handleTabChange = (tab: TabStatus) => {
     setActiveTab(tab);
     setSellCurrentPage(1);
+    setIntlTrackingFilter("all"); // reset sub-filter on tab switch
     setSellTotalPages(Math.ceil(
       (tab === "all" ? sellOrders.length : sellOrders.filter((o) => o.status === tab).length) / itemsPerPage
     ));
@@ -614,15 +647,34 @@ const MyOrders = () => {
           </p>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-5">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-          <Input
-            className="pl-9 rounded-2xl bg-white/60 border-gray-200 focus:border-purple-400"
-            placeholder="Search by order ID, name, or city…"
-            value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
+        {/* Search + Sort */}
+        <div className="flex gap-2 mb-5">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Input
+              className="pl-9 rounded-2xl bg-white/60 border-gray-200 focus:border-purple-400"
+              placeholder="Search by order ID, name, or city…"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={() => setSortOrder((prev) => prev === "newest" ? "oldest" : "newest")}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-sm font-semibold glass-card border-0 text-gray-600 hover:text-gray-900 transition-all duration-200 whitespace-nowrap"
+            title={sortOrder === "newest" ? "Sorted: Newest first" : "Sorted: Oldest first"}
+          >
+            {sortOrder === "newest" ? (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                Newest
+              </>
+            ) : (
+              <>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                Oldest
+              </>
+            )}
+          </button>
         </div>
 
         {/* Status Tabs */}
@@ -650,6 +702,47 @@ const MyOrders = () => {
             </button>
           ))}
         </div>
+
+        {/* Intl-tracking sub-tabs — only when Confirmed tab is active */}
+        {activeTab === "confirmed" && (
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <Globe className="h-4 w-4 text-sky-500 flex-shrink-0" />
+            <span className="text-xs text-gray-500 font-medium mr-1">Intl tracking:</span>
+            {(
+              [
+                { key: "all",          label: "All",            icon: null },
+                { key: "no_tracking",  label: "No Tracking" },
+                { key: "has_tracking", label: "Tracking Added" },
+              ] as { key: "all" | "no_tracking" | "has_tracking"; label: string }[]
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => { setIntlTrackingFilter(key); setSellCurrentPage(1); }}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border transition-all duration-150 ${
+                  intlTrackingFilter === key
+                    ? key === "no_tracking"
+                      ? "bg-amber-500 border-amber-500 text-white shadow-sm"
+                      : key === "has_tracking"
+                        ? "bg-sky-500 border-sky-500 text-white shadow-sm"
+                        : "bg-gray-700 border-gray-700 text-white shadow-sm"
+                    : key === "no_tracking"
+                      ? "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                      : key === "has_tracking"
+                        ? "bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100"
+                        : "bg-gray-100 border-transparent text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Globe className="h-3 w-3" />
+                {label}
+                <span className={`inline-flex items-center justify-center min-w-[1.1rem] h-4 px-1 rounded-full text-[10px] font-bold ${
+                  intlTrackingFilter === key ? "bg-white/25" : "bg-black/10"
+                }`}>
+                  {intlTrackingCounts[key]}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Sell Orders */}
         <div className="space-y-6">
