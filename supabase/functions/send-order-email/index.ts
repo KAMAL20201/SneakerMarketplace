@@ -76,7 +76,8 @@ interface EmailRequest {
     | "shipping_reminder"
     | "review_request"
     | "admin_otp"
-    | "payment_reminder";
+    | "payment_reminder"
+    | "whatsapp_invite";
   recipient_email: string;
   recipient_name: string;
   order_data: OrderEmailData;
@@ -582,6 +583,93 @@ function buildPaymentReminder(
   `;
 }
 
+const WHATSAPP_INVITE_URL = "https://chat.whatsapp.com/DqDlG8APM0BFjKRmAI8Eb5";
+
+const WHATSAPP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>`;
+
+function buildWhatsAppInvite(name: string): string {
+  // ── DEAL IMAGES ────────────────────────────────────────────────────────────
+  // Replace the placeholder src values below with real deal screenshot URLs.
+  // Recommended size: 560×320 px. Leave empty strings to hide that slot.
+  const dealImage1 = "https://vojwfupyoathhvujwaqh.supabase.co/storage/v1/object/public/static-assets/whatsapp_reviews/IMG_5031.jpg"; // <!-- DEAL IMAGE 1: paste URL here -->
+  const dealImage2 = "https://vojwfupyoathhvujwaqh.supabase.co/storage/v1/object/public/static-assets/whatsapp_reviews/IMG_5032.jpg"; // <!-- DEAL IMAGE 2: paste URL here -->
+
+  const dealImageHtml = (url: string, label: string) =>
+    url
+      ? `<div style="margin-bottom:12px;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+           <img src="${url}" alt="${label}" width="520"
+                style="width:100%;max-width:520px;display:block;object-fit:cover;" />
+         </div>`
+      : `<div style="margin-bottom:12px;background:#f3f4f6;border-radius:12px;padding:20px;text-align:center;border:2px dashed #d1d5db;">
+           <p style="margin:0;color:#9ca3af;font-size:13px;">📸 Deal screenshot coming soon</p>
+         </div>`;
+
+  return `
+    <!-- Hero -->
+    <h2 style="margin:0 0 4px;font-size:26px;font-weight:900;color:#111827;line-height:1.2;">🔥 Exclusive Deals &amp; Drops</h2>
+    <h3 style="margin:0 0 20px;font-size:18px;font-weight:700;color:#7c3aed;">Join Our WhatsApp Community</h3>
+
+    <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.7;">
+      Hi ${name}! 👋 As a valued customer of <strong>The Plug Market</strong>, you get exclusive
+      access to our private WhatsApp community — where we drop <strong>steal deals</strong>,
+      <strong>restock alerts</strong>, and <strong>early access</strong> before anyone else.
+    </p>
+
+    <!-- Value props -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+      <tr>
+        <td style="padding:10px 14px;background:#fdf4ff;border-radius:10px;margin-bottom:8px;display:block;margin:0 0 8px;">
+          <span style="font-size:20px;vertical-align:middle;">🔥</span>
+          <span style="font-size:14px;font-weight:700;color:#6d28d9;vertical-align:middle;margin-left:8px;">Steal Deals</span>
+          <span style="font-size:13px;color:#374151;vertical-align:middle;"> — Sneakers &amp; streetwear at prices you won't find anywhere else</span>
+        </td>
+      </tr>
+      <tr><td style="height:8px;"></td></tr>
+      <tr>
+        <td style="padding:10px 14px;background:#f0fdf4;border-radius:10px;">
+          <span style="font-size:20px;vertical-align:middle;">📦</span>
+          <span style="font-size:14px;font-weight:700;color:#16a34a;vertical-align:middle;margin-left:8px;">Stock Notifications</span>
+          <span style="font-size:13px;color:#374151;vertical-align:middle;"> — Know the moment limited pairs drop back in stock</span>
+        </td>
+      </tr>
+      <tr><td style="height:8px;"></td></tr>
+      <tr>
+        <td style="padding:10px 14px;background:#fff7ed;border-radius:10px;">
+          <span style="font-size:20px;vertical-align:middle;">⚡</span>
+          <span style="font-size:14px;font-weight:700;color:#c2410c;vertical-align:middle;margin-left:8px;">First Priority Access</span>
+          <span style="font-size:13px;color:#374151;vertical-align:middle;"> — Community members get 24-hour early access on every new drop</span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Past deals preview -->
+    <div style="margin-bottom:28px;">
+      <p style="margin:0 0 14px;font-size:15px;font-weight:700;color:#111827;">📸 Glimpse of past community deals:</p>
+      ${dealImageHtml(dealImage1, "Past deal 1")}
+      ${dealImageHtml(dealImage2, "Past deal 2")}
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:32px 0 12px;">
+      <a href="${WHATSAPP_INVITE_URL}"
+         style="display:inline-flex;align-items:center;gap:10px;background:#25d366;color:#fff;font-weight:800;font-size:16px;text-decoration:none;padding:16px 36px;border-radius:50px;box-shadow:0 6px 20px rgba(37,211,102,0.4);">
+        ${WHATSAPP_SVG}
+        Join the Community — It's Free!
+      </a>
+    </div>
+
+    <p style="margin:0 0 28px;color:#6b7280;font-size:12px;text-align:center;">
+      🔒 Private group · No spam · Leave anytime
+    </p>
+
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;">
+      <p style="margin:0;color:#92400e;font-size:13px;font-weight:600;">
+        ⏳ Spots are limited — community will be locked once full. Join now to secure your spot!
+      </p>
+    </div>
+  `;
+}
+
 function buildAdminOtp(name: string, otpCode: string): string {
   return `
     <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#111827;">🔐 Admin Login OTP</h2>
@@ -661,6 +749,9 @@ function buildEmailContent(req: EmailRequest): { subject: string; html: string }
     case "payment_reminder":
       body = buildPaymentReminder(recipient_name, order_data, actionUrl);
       break;
+    case "whatsapp_invite":
+      body = buildWhatsAppInvite(recipient_name);
+      break;
     default:
       body = `<p>Notification for order #${order_data.order_id}</p>`;
   }
@@ -683,6 +774,7 @@ function getDefaultSubject(type: string, productTitle: string): string {
     case "review_request":    return `How was your ${productTitle}? Leave a review`;
     case "admin_otp":         return `🔐 Your Admin Login OTP`;
     case "payment_reminder":  return `Don't miss out — complete your order for ${productTitle}`;
+    case "whatsapp_invite":   return `🔥 Exclusive Deals Inside — Join Our WhatsApp Community`;
     default:                  return `Order Update — ${productTitle}`;
   }
 }

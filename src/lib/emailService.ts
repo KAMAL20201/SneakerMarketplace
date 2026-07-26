@@ -42,7 +42,8 @@ export interface EmailNotificationRequest {
     | "order_delivered"
     | "order_cancelled"
     | "payment_received"
-    | "payment_reminder";
+    | "payment_reminder"
+    | "whatsapp_invite";
   recipient_email: string;
   recipient_name: string;
   order_data: OrderEmailData;
@@ -352,6 +353,89 @@ export class EmailService {
         action_url: reviewUrl,
       }
     );
+  }
+
+  /**
+   * Send WhatsApp community invite email to a single recipient
+   */
+  static async sendWhatsAppInviteEmail(
+    recipientEmail: string,
+    recipientName: string
+  ): Promise<boolean> {
+    // Minimal order_data required by edge function schema
+    const dummyOrderData: OrderEmailData = {
+      order_id: "whatsapp-invite",
+      product_title: "",
+      amount: 0,
+      currency: "INR",
+      order_status: "confirmed",
+    };
+    return await this.sendEmail(
+      "whatsapp_invite",
+      recipientEmail,
+      recipientName,
+      dummyOrderData,
+      { subject: "🔥 Exclusive Deals Inside — Join Our WhatsApp Community" }
+    );
+  }
+
+  /**
+   * Send WhatsApp invite to a list of recipients in batches.
+   * Records each send in campaign_sends so the same email is never sent twice.
+   * Adds a 300ms delay between sends to stay within Resend rate limits.
+   */
+  static async sendBulkWhatsAppInvite(
+    recipients: Array<{ email: string; name: string }>
+  ): Promise<{
+    success: number;
+    failed: number;
+    results: Array<{ email: string; status: "success" | "failed" }>;
+  }> {
+    let success = 0;
+    let failed = 0;
+    const results: Array<{ email: string; status: "success" | "failed" }> = [];
+
+    for (const recipient of recipients) {
+      let status: "success" | "failed" = "failed";
+      try {
+        const sent = await this.sendWhatsAppInviteEmail(recipient.email, recipient.name);
+        if (sent) {
+          success++;
+          status = "success";
+        } else {
+          failed++;
+        }
+      } catch (err) {
+        failed++;
+        logger.error(
+          `WhatsApp invite failed for ${recipient.email}: ${
+            err instanceof Error ? err.message : "Unknown error"
+          }`
+        );
+      }
+
+      // Record result in campaign_sends regardless of success/failure
+      try {
+        await supabase.from("campaign_sends").insert({
+          campaign: "whatsapp_invite",
+          email: recipient.email,
+          status,
+        });
+      } catch (dbErr) {
+        logger.error(
+          `Failed to record campaign_send for ${recipient.email}: ${
+            dbErr instanceof Error ? dbErr.message : "Unknown"
+          }`
+        );
+      }
+
+      results.push({ email: recipient.email, status });
+
+      // 300ms delay between sends — keeps us within Resend's rate limit
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+
+    return { success, failed, results };
   }
 
   /**
