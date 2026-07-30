@@ -54,6 +54,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { OrderService, type Order as OrderType } from "@/lib/orderService";
 import { supabase, toStorageUrl } from "@/lib/supabase";
+import { getEuSizeFromUk } from "@/constants/sizeCharts";
 import { toast } from "sonner";
 import ShipNowModal from "@/components/ShipNowModal";
 import { StockValidationService } from "@/lib/stockValidationService";
@@ -821,11 +822,24 @@ const MyOrders = () => {
                                         {order.variant_name}
                                       </span>
                                     )}
-                                    {order.ordered_size && (
-                                      <span className="inline-block text-xs font-semibold uppercase bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">
-                                        Size: {order.ordered_size}
-                                      </span>
-                                    )}
+                                    {order.ordered_size && (() => {
+                                      // Normalise: strip any "UK " prefix already in the stored value
+                                      const rawSize = order.ordered_size;
+                                      const ukSize = rawSize.replace(/^UK\s*/i, "").trim();
+                                      const brand = order.product_listings?.brand ?? "";
+                                      const euSize = getEuSizeFromUk(brand, ukSize);
+                                      return (
+                                        <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">
+                                          <span>UK {ukSize}</span>
+                                          {euSize && (
+                                            <>
+                                              <span className="text-gray-300">/</span>
+                                              <span className="text-blue-600">EU {euSize}</span>
+                                            </>
+                                          )}
+                                        </span>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                                 <div className="text-right">

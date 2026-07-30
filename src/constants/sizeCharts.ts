@@ -279,22 +279,68 @@ const DYNAFISH_CHART: BrandSizeChart = {
   ],
 };
 
+// ─── LI-NING ───────────────────────────────────────────────────────────────
+// Source: Official Li-Ning size chart (男/Men)
+// 尺码 = Li-Ning internal EU size | CHN = foot length in mm | EUR = 欧码 | UK = 英码
+const LI_NING_CHART: BrandSizeChart = {
+  men: [
+    { uk: "3.5",  us: "4.5",  eu: "36⅓", cm: "22"   },
+    { uk: "4",    us: "5",    eu: "37",   cm: "22.5" },
+    { uk: "4.5",  us: "5.5",  eu: "37⅔", cm: "23"   },
+    { uk: "5",    us: "6",    eu: "38⅓", cm: "23.5" },
+    { uk: "5.5",  us: "6.5",  eu: "39",   cm: "24"   },
+    { uk: "6",    us: "7",    eu: "39⅔", cm: "24.5" },
+    { uk: "6.5",  us: "7.5",  eu: "40⅓", cm: "25"   },
+    { uk: "7",    us: "8",    eu: "41",   cm: "25.5" },
+    { uk: "7.5",  us: "8.5",  eu: "41⅔", cm: "26"   },
+    { uk: "8",    us: "9",    eu: "42⅓", cm: "26.5" },
+    { uk: "8.5",  us: "9.5",  eu: "43",   cm: "27"   },
+    { uk: "9",    us: "10",   eu: "43⅔", cm: "27.5" },
+    { uk: "9.5",  us: "10.5", eu: "44⅓", cm: "28"   },
+    { uk: "10",   us: "11",   eu: "45",   cm: "28.5" },
+    { uk: "10.5", us: "11.5", eu: "45⅔", cm: "29"   },
+    { uk: "11",   us: "12",   eu: "46⅓", cm: "29.5" },
+    { uk: "11.5", us: "12.5", eu: "47",   cm: "30"   },
+    { uk: "12",   us: "13",   eu: "47⅔", cm: "30.5" },
+  ],
+};
+
 // ─── BRAND → CHART LOOKUP ──────────────────────────────────────────────────
 // Any brand not listed here falls back to NIKE_CHART
 const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
-  nike:        NIKE_CHART,
-  "air jordan": NIKE_CHART, // Air Jordan runs on Nike sizing
-  converse:    NIKE_CHART,
-  vans:        NIKE_CHART,
-  puma:        NIKE_CHART,
-  reebok:      NIKE_CHART,
-  adidas:      ADIDAS_CHART,
+  nike:          NIKE_CHART,
+  "air jordan":  NIKE_CHART, // Air Jordan runs on Nike sizing
+  converse:      NIKE_CHART,
+  vans:          NIKE_CHART,
+  puma:          NIKE_CHART,
+  reebok:        NIKE_CHART,
+  adidas:        ADIDAS_CHART,
   "new balance": NEW_BALANCE_CHART,
-  on:          ON_CHART,
-  dynafish:    DYNAFISH_CHART,
+  on:            ON_CHART,
+  dynafish:      DYNAFISH_CHART,
+  "li-ning":     LI_NING_CHART,
+  "li ning":     LI_NING_CHART,
 };
 
 export function getSizeChart(brand: string): BrandSizeChart {
   const key = brand?.toLowerCase().trim();
   return BRAND_CHART_MAP[key] ?? NIKE_CHART;
+}
+
+/**
+ * Given a brand name and a UK size string, returns the corresponding EU size
+ * string (e.g. "44.5"), or null if no match is found.
+ * Searches all gender categories (men → women → kids) in order.
+ */
+export function getEuSizeFromUk(brand: string, ukSize: string): string | null {
+  if (!ukSize) return null;
+  const chart = getSizeChart(brand);
+  const categories: (keyof BrandSizeChart)[] = ["men", "women", "kids"];
+  for (const cat of categories) {
+    const rows = chart[cat];
+    if (!rows) continue;
+    const match = rows.find((row) => row.uk === ukSize);
+    if (match) return match.eu;
+  }
+  return null;
 }
