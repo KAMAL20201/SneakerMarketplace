@@ -25,6 +25,8 @@ export interface Order {
   variant_id?: string | null;
   /** Display name of the ordered variant e.g. "University Blue" */
   variant_name?: string | null;
+  /** Joined variant image from product_variants */
+  product_variants?: { image_url: string | null } | null;
   coupon_id?: string | null;
   coupon_code?: string | null;
   discount_amount?: number;
@@ -519,6 +521,9 @@ export class OrderService {
               image_url,
               is_poster_image
             )
+          ),
+          product_variants (
+            image_url
           )
         `
         )

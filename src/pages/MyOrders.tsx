@@ -790,10 +790,11 @@ const MyOrders = () => {
                       <CardContent className="pt-0">
                         <div className="flex flex-col gap-4">
                           <div className="flex gap-4">
-                            {/* Product Image */}
+                            {/* Product Image — prefer variant image, fall back to product poster */}
                             <div className="w-20 h-20 flex-shrink-0">
                               <ThumbnailImage
                                 src={
+                                  order.product_variants?.image_url ||
                                   order.product_listings?.product_images?.find(
                                     (img) => img.is_poster_image,
                                   )?.image_url ||
