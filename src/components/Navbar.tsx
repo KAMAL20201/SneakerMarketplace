@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { ShieldCheck } from "lucide-react";
+import OrdersPausedBanner from "./OrdersPausedBanner";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -27,8 +28,9 @@ export function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full glass-navbar">
-      <div className=" flex h-16 items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full">
+      <OrdersPausedBanner />
+      <div className="glass-navbar flex h-16 items-center justify-between px-4">
         {/* Left side - Sidebar trigger */}
         <div className="flex items-center">
           <SidebarTrigger className="-ml-1 glass-button rounded-xl p-2 border-0" />

@@ -6,6 +6,10 @@ export const APP_CONFIG = {
     import.meta.env.VITE_IS_COMING_SOON === "true" &&
     import.meta.env.VITE_APP_DEV_ENV === "PROD",
 
+  // Set VITE_ORDERS_PAUSED=true in Vercel env vars to pause ordering.
+  // Remove or set to "false" when the current account is active.
+  ORDERS_PAUSED: import.meta.env.VITE_ORDERS_PAUSED === "true",
+
   // App metadata
   APP_NAME: "The Plug Market",
   APP_DESCRIPTION:

@@ -48,6 +48,8 @@ import type { EmblaCarouselType } from "embla-carousel";
 import type { Route } from "./+types/ProductDetailPage";
 import FAQSection from "@/components/FAQSection";
 import PriceCountdownBanner from "@/components/PriceCountdownBanner";
+import { APP_CONFIG } from "@/config/app";
+import OrdersPausedModal from "@/components/OrdersPausedModal";
 const ReviewScreenshots = lazy(
   () => import("@/components/ReviewScreenshots"),
 );
@@ -429,6 +431,7 @@ export default function ProductDetailPage() {
   const { addToCart, items } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [buyNowOpen, setBuyNowOpen] = useState(false);
+  const [ordersPausedOpen, setOrdersPausedOpen] = useState(false);
   const [similarProducts, setSimilarProducts] = useState(initialSimilarProducts);
   const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([]);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -1177,7 +1180,13 @@ export default function ProductDetailPage() {
             <Button
               size="lg"
               variant="outline"
-              onClick={() => handleAddToCart(listing?.seller_details)}
+              onClick={() => {
+                if (APP_CONFIG.ORDERS_PAUSED) {
+                  setOrdersPausedOpen(true);
+                  return;
+                }
+                handleAddToCart(listing?.seller_details);
+              }}
               disabled={isItemInCart() || isSoldOut}
               className={`border-0 rounded-2xl shadow-lg h-12 ${
                 isItemInCart() || isSoldOut
@@ -1192,6 +1201,10 @@ export default function ProductDetailPage() {
             <Button
               size="lg"
               onClick={() => {
+                if (APP_CONFIG.ORDERS_PAUSED) {
+                  setOrdersPausedOpen(true);
+                  return;
+                }
                 /* [GUEST CHECKOUT] Login check removed - guests can buy directly
                 if (!user) {
                   setOperationAfterLogin(() => () => setBuyNowOpen(true));
@@ -1217,6 +1230,12 @@ export default function ProductDetailPage() {
               {isSoldOut ? "Sold Out" : "Buy Now"}
             </Button>
           </div>
+          {/* Orders Paused Modal */}
+          <OrdersPausedModal
+            open={ordersPausedOpen}
+            onOpenChange={setOrdersPausedOpen}
+          />
+
           {/* Buy Now Modal requiring shipping address */}
           {listing && (
             <BuyNowModal

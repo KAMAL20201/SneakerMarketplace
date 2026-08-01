@@ -4,9 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
-import { Trash2, ShoppingBag, RefreshCw, TrendingUp, X } from "lucide-react";
+import { Trash2, ShoppingBag, RefreshCw, TrendingUp, X, Bell, CheckCircle2, Loader2 } from "lucide-react";
 import { useCartValidation } from "@/hooks/useCartValidation";
 import { Badge } from "@/components/ui/badge";
+import { APP_CONFIG } from "@/config/app";
+import { LaunchEmailService } from "@/lib/launchEmailService";
 
 interface CartItemsStepProps {
   onNext: () => void;
@@ -32,6 +34,38 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
       onNext();
     }
     // If validation fails, the UI will show the unavailable items
+  };
+
+  // ── Orders-paused email signup ──────────────────────────────────────────
+  const [pauseEmail, setPauseEmail] = useState("");
+  const [pauseStatus, setPauseStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [pauseMessage, setPauseMessage] = useState("");
+
+  const handlePauseNotify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pauseEmail.trim()) return;
+    setPauseStatus("loading");
+    try {
+      const result = await LaunchEmailService.subscribeEmail({
+        email: pauseEmail,
+        source: "orders-paused",
+      });
+      if (result.success || result.alreadySubscribed) {
+        setPauseStatus("success");
+        setPauseMessage(
+          result.alreadySubscribed
+            ? "You're already on the list! 🎉"
+            : "We'll notify you when ordering is back! 🎉"
+        );
+        setPauseEmail("");
+      } else {
+        setPauseStatus("error");
+        setPauseMessage(result.message);
+      }
+    } catch {
+      setPauseStatus("error");
+      setPauseMessage("Something went wrong. Please try again.");
+    }
   };
 
   if (items.length === 0) {
@@ -180,17 +214,62 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
           </div>
         </div>
 
-        <Button
-          onClick={handleContinue}
-          disabled={hasUnavailableItems || isValidating}
-          className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl py-3 text-lg font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isValidating
-            ? "Checking availability..."
-            : hasUnavailableItems
-              ? "Remove Unavailable Items"
-              : "Continue to Shipping"}
-        </Button>
+        {APP_CONFIG.ORDERS_PAUSED ? (
+          /* ── Orders paused state ──────────────────────────────────── */
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+              <Bell className="h-4 w-4 text-amber-600 shrink-0" />
+              <p className="text-xs text-amber-800 font-medium">
+                We're upgrading our payment systems. Ordering will resume shortly!
+              </p>
+            </div>
+
+            {pauseStatus === "success" ? (
+              <div className="flex items-center justify-center gap-2 py-2">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                <p className="text-sm font-medium text-green-700">{pauseMessage}</p>
+              </div>
+            ) : (
+              <form onSubmit={handlePauseNotify} className="flex gap-2">
+                <input
+                  type="email"
+                  required
+                  value={pauseEmail}
+                  onChange={(e) => setPauseEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                />
+                <Button
+                  type="submit"
+                  disabled={pauseStatus === "loading"}
+                  className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-md px-4"
+                >
+                  {pauseStatus === "loading" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Notify Me"
+                  )}
+                </Button>
+              </form>
+            )}
+            {pauseStatus === "error" && (
+              <p className="text-xs text-red-500 text-center">{pauseMessage}</p>
+            )}
+          </div>
+        ) : (
+          /* ── Normal checkout flow ──────────────────────────────────── */
+          <Button
+            onClick={handleContinue}
+            disabled={hasUnavailableItems || isValidating}
+            className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl py-3 text-lg font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isValidating
+              ? "Checking availability..."
+              : hasUnavailableItems
+                ? "Remove Unavailable Items"
+                : "Continue to Shipping"}
+          </Button>
+        )}
       </div>
     </div>
   );
