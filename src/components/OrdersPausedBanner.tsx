@@ -104,7 +104,10 @@ const OrdersPausedBanner: React.FC = () => {
                 {status === "loading" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Notify Me When Resumed"
+                  <>
+                    <span className="sm:hidden">Notify Me</span>
+                    <span className="hidden sm:inline">Notify Me When Resumed</span>
+                  </>
                 )}
               </button>
             </form>
