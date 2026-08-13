@@ -33,6 +33,7 @@ export interface OrderEmailData {
   ordered_size?: string;
   custom_message?: string;
   similar_products?: SimilarProduct[];
+  tracking_url?: string;
 }
 
 export interface EmailNotificationRequest {

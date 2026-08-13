@@ -309,6 +309,21 @@ export class OrderService {
           ordered_size: item.size,
         };
 
+        // Generate tracking token for the "Track Your Order" link
+        let trackingUrl: string | undefined;
+        try {
+          if (buyerDetails.email) {
+            const trackingToken = await OrderService.createTrackingToken(
+              order.id,
+              buyerDetails.email,
+            );
+            trackingUrl = `${window.location.origin}/track-order?token=${trackingToken}`;
+            orderEmailData.tracking_url = trackingUrl;
+          }
+        } catch {
+          // Non-fatal
+        }
+
         // Send email notifications
         try {
           // Send order confirmation to buyer
@@ -816,4 +831,31 @@ export class OrderService {
   //     return null;
   //   }
   // }
+
+  /**
+   * Create (or retrieve) a tracking token for an order.
+   * Used to generate the public "Track Your Order" link sent in emails.
+   */
+  static async createTrackingToken(orderId: string, email: string): Promise<string> {
+    const { data, error } = await supabase.rpc("create_order_tracking_token", {
+      p_order_id: orderId,
+      p_email: email,
+    });
+    if (error) throw error;
+    return data as string;
+  }
+
+  /**
+   * Look up an existing tracking token for an order (if one was already created).
+   * Returns the token UUID or null.
+   */
+  static async getTrackingTokenForOrder(orderId: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from("order_tracking_tokens")
+      .select("token")
+      .eq("order_id", orderId)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data.token as string;
+  }
 }

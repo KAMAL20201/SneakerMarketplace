@@ -13,6 +13,7 @@ import {
   Layers,
   LayoutDashboard,
   Zap,
+  Truck,
 } from "lucide-react";
 
 import {
@@ -130,6 +131,11 @@ const getNavData = (isAdmin: boolean) => ({
           title: "My Addresses",
           url: ROUTE_NAMES.MY_ADDRESSES,
           icon: MapPin,
+        },
+        {
+          title: "Track Order",
+          url: ROUTE_NAMES.TRACK_ORDER,
+          icon: Truck,
         },
         {
           title: "Contact Us",

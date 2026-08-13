@@ -64,6 +64,7 @@ interface OrderEmailData {
   ordered_size?: string;
   custom_message?: string;
   similar_products?: SimilarProduct[];
+  tracking_url?: string;
 }
 
 interface EmailRequest {
@@ -86,6 +87,7 @@ interface EmailRequest {
     action_text?: string;
     action_url?: string;
     otp_code?: string;
+    tracking_url?: string;
   };
 }
 
@@ -262,6 +264,7 @@ function buildOrderConfirmed(
       <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">${addressBlock(order.shipping_address)}</p>
     </div>` : ""}
 
+    ${order.tracking_url ? ctaButton("Track Your Order", order.tracking_url) : ""}
     ${ctaButton("Continue Shopping", actionUrl)}
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
@@ -340,6 +343,7 @@ function buildOrderShipped(
       ${order.estimated_delivery ? orderSummaryRow("Expected Delivery", order.estimated_delivery) : ""}
     </table>
 
+    ${order.tracking_url ? ctaButton("Track Your Order", order.tracking_url) : ""}
     ${ctaButton("Contact Support", actionUrl)}
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
@@ -434,6 +438,7 @@ function buildOrderDelivered(
       ${orderSummaryRow("Amount", formatAmount(order.amount, order.currency))}
     </table>
 
+    ${order.tracking_url ? ctaButton("View Order Details", order.tracking_url) : ""}
     ${ctaButton("Shop Again", actionUrl)}
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
@@ -711,6 +716,11 @@ function buildEmailContent(req: EmailRequest): { subject: string; html: string }
   const actionUrl = template_data?.action_url ?? DEFAULT_ACTION_URLS[type] ?? BASE_URL;
   const subject =
     template_data?.subject ?? getDefaultSubject(type, order_data.product_title);
+
+  // Merge tracking_url from template_data into order_data for template builders
+  if (template_data?.tracking_url && !order_data.tracking_url) {
+    order_data.tracking_url = template_data.tracking_url;
+  }
 
   const BUYER_EMAIL_TYPES = new Set([
     "order_confirmed",

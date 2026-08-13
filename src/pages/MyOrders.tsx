@@ -1046,6 +1046,20 @@ const MyOrders = () => {
                                       variant_name: order.variant_name || undefined,
                                       ordered_size: order.ordered_size || undefined,
                                     };
+
+                                    // Generate tracking token for the "Track Your Order" link
+                                    let trackingUrl: string | undefined;
+                                    try {
+                                      const trackingToken = await OrderService.createTrackingToken(
+                                        order.id,
+                                        order.buyer_email || "",
+                                      );
+                                      trackingUrl = `${window.location.origin}/track-order?token=${trackingToken}`;
+                                      orderEmailData.tracking_url = trackingUrl;
+                                    } catch {
+                                      // Non-fatal — email will just lack the tracking link
+                                    }
+
                                     try {
                                       if (order.buyer_email) {
                                         await EmailService.sendOrderConfirmationToBuyer(
@@ -1300,6 +1314,17 @@ const MyOrders = () => {
                 product_id: selectedOrder.product_id,
                 brand: selectedOrder.product_listings?.brand ?? undefined,
               };
+
+              // Include tracking URL if a token was previously generated
+              try {
+                const existingToken = await OrderService.getTrackingTokenForOrder(selectedOrder.id);
+                if (existingToken) {
+                  orderEmailData.tracking_url = `${window.location.origin}/track-order?token=${existingToken}`;
+                }
+              } catch {
+                // Non-fatal
+              }
+
               try {
                 await EmailService.sendShippingNotificationToBuyer(
                   selectedOrder.buyer_email,

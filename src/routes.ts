@@ -34,6 +34,7 @@ export default [
   route("sale/:slug", "./pages/SalePage.tsx"),
 
   // Static public pages
+  route("track-order", "./pages/TrackOrder.tsx"),
   route("review", "./pages/ReviewPage.tsx"),
   route("about", "./pages/AboutUs.tsx"),
   route("contact-us", "./pages/ContactUs.tsx"),

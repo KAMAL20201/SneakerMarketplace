@@ -49,6 +49,7 @@ export const ROUTE_NAMES = {
   WISHLIST: "/wishlist",
   NEW_ARRIVALS: "/new-arrivals",
   NEW_DROPS: "/new-drops",
+  TRACK_ORDER: "/track-order",
   RUNNING_SNEAKERS: "/collections/running-sneakers",
   SNEAKERS: "/sneakers",
   APPARELS: "/apparels",
