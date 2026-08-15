@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -156,8 +156,18 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                           <p className="text-xs text-gray-700 font-medium uppercase">
                             {item.size ? `Size: ${item.size}` : "One Size"}
                           </p>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
                             <ConditionBadge condition={item.condition} />
+                            {item.isInstantShip && (
+                              <Badge className="text-[10px] bg-amber-100 text-amber-900 border-amber-300 px-1.5 py-0.5 font-semibold">
+                                ⚡ Instant Ship
+                              </Badge>
+                            )}
+                            {APP_CONFIG.ORDERS_PAUSED && !item.isInstantShip && (
+                              <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
+                                Orders Paused
+                              </Badge>
+                            )}
                             {isUnavailable && (
                               <Badge variant="destructive" className="text-xs">
                                 Sold Out
@@ -214,13 +224,15 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
           </div>
         </div>
 
-        {APP_CONFIG.ORDERS_PAUSED ? (
-          /* ── Orders paused state ──────────────────────────────────── */
+        {APP_CONFIG.ORDERS_PAUSED && items.some((i) => !i.isInstantShip) ? (
+          /* ── Orders paused state for standard items ───────────────── */
           <div className="space-y-3">
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
               <Bell className="h-4 w-4 text-amber-600 shrink-0" />
               <p className="text-xs text-amber-800 font-medium">
-                We're upgrading our payment systems. Ordering will resume shortly!
+                {items.some((i) => i.isInstantShip)
+                  ? "Standard shipping orders are paused. Please remove non-instant items to continue checkout!"
+                  : "We're upgrading our payment systems. Standard shipping orders will resume shortly!"}
               </p>
             </div>
 
@@ -257,7 +269,7 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
             )}
           </div>
         ) : (
-          /* ── Normal checkout flow ──────────────────────────────────── */
+          /* ── Normal checkout flow (or all items in cart are instant ship) ── */
           <Button
             onClick={handleContinue}
             disabled={hasUnavailableItems || isValidating}

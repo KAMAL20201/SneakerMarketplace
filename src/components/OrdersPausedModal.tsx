@@ -79,14 +79,12 @@ const OrdersPausedModal: React.FC<OrdersPausedModalProps> = ({
           </div>
 
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Ordering Paused Temporarily
+            Standard Orders Paused
           </DialogTitle>
 
           <DialogDescription className="text-gray-600 text-sm leading-relaxed">
-            We're switching to a new payment system to serve you better. New
-            orders are paused briefly, but all already placed orders will be
-            dispatched as usual. You can still browse and explore everything —
-            we'll be back very shortly!
+            Standard shipping orders are currently paused while we upgrade our system.
+            However, <strong>Instant Shipping items</strong> are in-hand and available to order!
           </DialogDescription>
         </DialogHeader>
 

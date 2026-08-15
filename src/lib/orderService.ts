@@ -73,6 +73,8 @@ export interface CartItem {
   variantId?: string | null;
   /** Display name of the selected variant e.g. "University Blue" */
   variantName?: string | null;
+  /** Whether the selected item size is available for instant shipping */
+  isInstantShip?: boolean;
 }
 
 export class OrderService {

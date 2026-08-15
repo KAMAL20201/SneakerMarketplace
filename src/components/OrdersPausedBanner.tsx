@@ -72,8 +72,7 @@ const OrdersPausedBanner: React.FC = () => {
           <div className="flex items-center gap-1.5 text-[11px] sm:text-sm font-medium text-amber-800">
             <Bell className="h-4 w-4 shrink-0 animate-bounce text-amber-600" />
             <span>
-              We're upgrading our payment systems — new orders are paused
-              briefly. Already placed orders will be dispatched as usual!
+              Standard shipping orders are temporarily paused. ⚡ <strong>Instant Shipping items</strong> are still available to order!
             </span>
           </div>
 

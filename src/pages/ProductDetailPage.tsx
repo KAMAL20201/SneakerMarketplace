@@ -502,6 +502,11 @@ export default function ProductDetailPage() {
       .then(({ data }) => setBlogPosts(data ?? []));
   }, []);
 
+  const isCurrentSelectionInstantShip = () => {
+    const selectedSizeObj = availableSizes.find((s) => s.size_value === selectedSize);
+    return selectedSizeObj ? selectedSizeObj.is_instant_ship : deliveryTab === "instant";
+  };
+
   const handleAddToCart = (
     seller: { id: number | string; display_name: string; email: string } | null,
   ) => {
@@ -521,6 +526,7 @@ export default function ProductDetailPage() {
       quantity: 1,
       variantId: selectedVariantId ?? null,
       variantName: selectedVariant?.color_name ?? null,
+      isInstantShip: isCurrentSelectionInstantShip(),
     };
 
     const success = addToCart(cartItem);
@@ -1181,7 +1187,7 @@ export default function ProductDetailPage() {
               size="lg"
               variant="outline"
               onClick={() => {
-                if (APP_CONFIG.ORDERS_PAUSED) {
+                if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
                   setOrdersPausedOpen(true);
                   return;
                 }
@@ -1201,18 +1207,10 @@ export default function ProductDetailPage() {
             <Button
               size="lg"
               onClick={() => {
-                if (APP_CONFIG.ORDERS_PAUSED) {
+                if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
                   setOrdersPausedOpen(true);
                   return;
                 }
-                /* [GUEST CHECKOUT] Login check removed - guests can buy directly
-                if (!user) {
-                  setOperationAfterLogin(() => () => setBuyNowOpen(true));
-                  toast.error("Please login to continue");
-                  navigate(ROUTE_NAMES.LOGIN);
-                  return;
-                }
-                */
                 setBuyNowOpen(true);
               }}
               disabled={
@@ -1261,6 +1259,7 @@ export default function ProductDetailPage() {
                   quantity: 1,
                   variantId: selectedVariantId ?? null,
                   variantName: selectedVariant?.color_name ?? null,
+                  isInstantShip: isCurrentSelectionInstantShip(),
                 };
               })()}
             />
