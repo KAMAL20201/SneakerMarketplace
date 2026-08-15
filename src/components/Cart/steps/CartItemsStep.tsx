@@ -15,7 +15,8 @@ interface CartItemsStepProps {
 }
 
 export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
-  const { items, removeItem, totalPrice, pricesUpdated, dismissPriceUpdate } = useCart();
+  const { items, removeItem, totalPrice, instantShippingFee, pricesUpdated, dismissPriceUpdate } = useCart();
+
 
   // Cart validation to check stock availability
   const { validation, isValidating, validateCart, unavailableProductIds } =
@@ -215,7 +216,16 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
             <p className="text-sm text-gray-600">
               Total ({availableItemsCount} of {items.length} items)
             </p>
-            <p className="text-2xl font-bold text-gray-900">₹{totalPrice}</p>
+            {instantShippingFee > 0 ? (
+              <>
+                <p className="text-2xl font-bold text-gray-900">₹{totalPrice + instantShippingFee}</p>
+                <p className="text-xs text-amber-700 font-medium mt-0.5">
+                  incl. ⚡ ₹{instantShippingFee} instant shipping
+                </p>
+              </>
+            ) : (
+              <p className="text-2xl font-bold text-gray-900">₹{totalPrice}</p>
+            )}
             {hasUnavailableItems && (
               <p className="text-xs text-red-600 mt-1">
                 Remove unavailable items to continue

@@ -4,6 +4,10 @@ import type { CartItem } from "@/lib/orderService";
 import { supabase } from "../lib/supabase";
 import type { AppliedCoupon } from "@/types/coupon";
 
+/** Extra shipping charged per Instant Ship item (in INR) */
+export const INSTANT_SHIPPING_FEE = 300;
+
+
 interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
@@ -14,6 +18,8 @@ interface CartContextType {
   toggleCart: () => void;
   clearCart: () => void;
   totalPrice: number;
+  /** ₹300 × number of instant-ship items in cart */
+  instantShippingFee: number;
   pricesUpdated: boolean;
   dismissPriceUpdate: () => void;
   appliedCoupon: AppliedCoupon | null;
@@ -21,6 +27,7 @@ interface CartContextType {
   removeCoupon: () => void;
   discountedTotal: number;
 }
+
 
 export const CartContext = createContext<CartContextType>({
   isOpen: false,
@@ -32,6 +39,7 @@ export const CartContext = createContext<CartContextType>({
   toggleCart: () => {},
   clearCart: () => {},
   totalPrice: 0,
+  instantShippingFee: 0,
   pricesUpdated: false,
   dismissPriceUpdate: () => {},
   appliedCoupon: null,
@@ -39,6 +47,7 @@ export const CartContext = createContext<CartContextType>({
   removeCoupon: () => {},
   discountedTotal: 0,
 });
+
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -223,10 +232,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [items]);
 
+  /** ₹300 extra per instant-ship item in the cart */
+  const instantShippingFee = useMemo(() => {
+    return items.reduce(
+      (sum, item) => sum + (item.isInstantShip ? INSTANT_SHIPPING_FEE * item.quantity : 0),
+      0
+    );
+  }, [items]);
+
   const discountedTotal = useMemo(() => {
-    if (!appliedCoupon) return totalPrice;
-    return Math.max(totalPrice - appliedCoupon.discountAmount, 0);
-  }, [totalPrice, appliedCoupon]);
+    if (!appliedCoupon) return totalPrice + instantShippingFee;
+    return Math.max(totalPrice - appliedCoupon.discountAmount, 0) + instantShippingFee;
+  }, [totalPrice, instantShippingFee, appliedCoupon]);
+
 
   return (
     <CartContext.Provider
@@ -240,6 +258,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         toggleCart,
         clearCart,
         totalPrice,
+        instantShippingFee,
         pricesUpdated,
         dismissPriceUpdate,
         appliedCoupon,

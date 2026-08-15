@@ -41,11 +41,13 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
   const {
     items,
     totalPrice,
+    instantShippingFee,
     appliedCoupon,
     applyDiscount,
     removeCoupon,
     discountedTotal,
   } = useCart();
+
 
   const productIds = items.map((i) => i.productId);
   const itemAmounts = items.map((i) => i.price);
@@ -171,6 +173,12 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                 </span>
               </div>
             )}
+            {instantShippingFee > 0 && (
+              <div className="flex justify-between text-sm text-amber-700">
+                <span>⚡ Instant Shipping</span>
+                <span className="font-medium">+₹{instantShippingFee}</span>
+              </div>
+            )}
             <div className="border-t pt-2 mt-1">
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
@@ -178,6 +186,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
               </div>
             </div>
           </div>
+
         </div>
 
         {/* Coupon Input */}

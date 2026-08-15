@@ -7,12 +7,14 @@ import {
 } from "@/components/ui/dialog";
 import { ShippingStep } from "@/components/Cart/steps/ShippingStep";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag } from "lucide-react";
+import { MapPin, Tag, Zap } from "lucide-react";
 import type { ShippingAddress } from "@/types/shipping";
 import { PaymentButton } from "@/components/PaymentButton";
 import { CouponInput } from "@/components/CouponInput";
 import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
+import { INSTANT_SHIPPING_FEE } from "@/contexts/CartContext";
+
 
 type BuyNowModalProps = {
   open: boolean;
@@ -32,9 +34,13 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
     useState<ShippingAddress | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
+  /** shipping surcharge for instant items */
+  const shippingFee = item.isInstantShip ? INSTANT_SHIPPING_FEE : 0;
+
   const discountedAmount = appliedCoupon
-    ? Math.max(amount - appliedCoupon.discountAmount, 0)
-    : amount;
+    ? Math.max(amount - appliedCoupon.discountAmount, 0) + shippingFee
+    : amount + shippingFee;
+
 
   const handleShippingNext = (address: ShippingAddress) => {
     setShippingAddress(address);
@@ -173,6 +179,12 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                       <span className="font-medium">−₹{appliedCoupon.discountAmount}</span>
                     </div>
                   )}
+                  {shippingFee > 0 && (
+                    <div className="flex justify-between text-sm text-amber-700">
+                      <span className="flex items-center gap-1"><Zap className="h-3 w-3" /> Instant Shipping</span>
+                      <span className="font-medium">+₹{shippingFee}</span>
+                    </div>
+                  )}
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total</span>
@@ -180,6 +192,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                     </div>
                   </div>
                 </div>
+
               </div>
 
               {/* Coupon Input */}
