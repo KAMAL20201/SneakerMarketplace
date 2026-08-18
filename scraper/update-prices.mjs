@@ -399,7 +399,13 @@ async function processListing(page, listing, idx, total) {
   const matchedPricesInr = [];
 
   for (const dbSize of dbSizes) {
-    if (dbSize.is_instant_ship) continue; // skip instant-ship sizes (in-hand inventory)
+    // Skip in-hand instant-ship sizes that haven't been sold yet — their price
+    // is fixed (it's a real in-stock item). But if the size is instant-ship AND
+    // already sold (is_sold = true), we must update the price from GOAT and
+    // clear the is_instant_ship flag so it becomes a regular pre-order size.
+    const isSoldInstant = dbSize.is_instant_ship && dbSize.is_sold;
+    if (dbSize.is_instant_ship && !isSoldInstant) continue;
+
     const usMatch = dbSize.size_value.match(/us\s*([0-9.]+)/i);
     const ukMatch = dbSize.size_value.match(/uk\s*([0-9.]+)/i);
     let usSize = null;
@@ -409,14 +415,17 @@ async function processListing(page, listing, idx, total) {
     const newSizeInr = goatSizeMap.get(usSize);
 
     console.log(
-      `${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}`,
+      `${pg} size="${dbSize.size_value}" → US ${usSize} | GOAT INR=₹${newSizeInr ?? "not found"} | DB INR=₹${dbSize.price}${isSoldInstant ? " | ⚡ sold instant-ship → clearing flag" : ""}`,
     );
 
     if (!newSizeInr) continue;
 
     matchedPricesInr.push(newSizeInr);
 
-    if (newSizeInr === dbSize.price) continue;
+    // For sold instant-ship sizes we always update (to strip the flag), even
+    // if the price itself hasn't changed.
+    const priceUnchanged = newSizeInr === dbSize.price;
+    if (priceUnchanged && !isSoldInstant) continue;
 
     // ── Collect price-drop alerts instead of sending immediately ──────────
     if (dbSize.price && newSizeInr < dbSize.price) {
@@ -432,10 +441,14 @@ async function processListing(page, listing, idx, total) {
       }
     }
 
+    // Build the update payload — always clear is_instant_ship for sold sizes
+    const updatePayload = { price: newSizeInr };
+    if (isSoldInstant) updatePayload.is_instant_ship = false;
+
     sizeUpdatePromises.push(
       supabase
         .from("product_listing_sizes")
-        .update({ price: newSizeInr })
+        .update(updatePayload)
         .eq("id", dbSize.id),
     );
   }
@@ -513,7 +526,7 @@ async function main() {
     const { data, error: fetchErr } = await supabase
       .from("product_listings")
       .select(
-        "id, title, brand, price, retail_price, goat_template_id, product_listing_sizes(id, size_value, price, is_instant_ship)",
+        "id, title, brand, price, retail_price, goat_template_id, product_listing_sizes(id, size_value, price, is_instant_ship, is_sold)",
       )
       .eq("status", "active")
       .eq("category", "sneakers")
