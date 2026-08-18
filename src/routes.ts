@@ -15,6 +15,7 @@ export default [
   }),
   route("new-arrivals", "./pages/NewArrivals.tsx"),
   route("new-drops", "./pages/NewDrops.tsx"),
+  route("pre-orders", "./pages/PreOrders.tsx"),
   route("wishlist", "./pages/Wishlist.tsx"),
 
   // Collection pages — SEO-critical (SSR)
@@ -67,6 +68,7 @@ export default [
   route("admin/orders", "./pages/AdminOrders.tsx"),
   route("admin/pending-payments", "./pages/AdminPendingPayments.tsx"),
   route("admin/sale-products/:bannerId", "./pages/AdminSaleProducts.tsx"),
+  route("admin/pre-orders", "./pages/AdminPreOrders.tsx"),
 
   // API resource routes (server-side only, no UI component)
   route("api/generate-description", "./api/generate-description.ts"),

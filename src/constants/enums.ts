@@ -49,6 +49,7 @@ export const ROUTE_NAMES = {
   WISHLIST: "/wishlist",
   NEW_ARRIVALS: "/new-arrivals",
   NEW_DROPS: "/new-drops",
+  PRE_ORDERS: "/pre-orders",
   TRACK_ORDER: "/track-order",
   RUNNING_SNEAKERS: "/collections/running-sneakers",
   SNEAKERS: "/sneakers",
@@ -59,6 +60,7 @@ export const ROUTE_NAMES = {
   COLLECTIONS: "/collections",
   SALE_PAGE: "/sale/:slug",
   ADMIN_SALE_PRODUCTS: "/admin/sale-products/:bannerId",
+  ADMIN_PRE_ORDERS: "/admin/pre-orders",
 } as const;
 
 // Helper functions for dynamic routes

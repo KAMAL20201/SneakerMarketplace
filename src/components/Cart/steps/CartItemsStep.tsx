@@ -164,7 +164,12 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                                 ⚡ Instant Ship
                               </Badge>
                             )}
-                            {APP_CONFIG.ORDERS_PAUSED && !item.isInstantShip && (
+                            {item.isPreOrder && (
+                              <Badge className="text-[10px] bg-violet-100 text-violet-800 border-violet-300 px-1.5 py-0.5 font-semibold">
+                                📦 Pre-Order · 28–35 days
+                              </Badge>
+                            )}
+                            {APP_CONFIG.ORDERS_PAUSED && !item.isInstantShip && !item.isPreOrder && (
                               <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
                                 Orders Paused
                               </Badge>
@@ -234,7 +239,7 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
           </div>
         </div>
 
-        {APP_CONFIG.ORDERS_PAUSED && items.some((i) => !i.isInstantShip) ? (
+        {APP_CONFIG.ORDERS_PAUSED && items.some((i) => !i.isInstantShip && !i.isPreOrder) ? (
           /* ── Orders paused state for standard items ───────────────── */
           <div className="space-y-3">
             <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">

@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Zap,
   Truck,
+  PackageOpen,
 } from "lucide-react";
 
 import {
@@ -59,6 +60,11 @@ const getNavData = (isAdmin: boolean) => ({
           title: "Instant Shipping",
           url: `${ROUTE_NAMES.BROWSE}?instantShipping=true`,
           icon: Zap,
+        },
+        {
+          title: "Pre-Orders",
+          url: ROUTE_NAMES.PRE_ORDERS,
+          icon: PackageOpen,
         },
       ],
     },

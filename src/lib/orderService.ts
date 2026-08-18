@@ -75,6 +75,8 @@ export interface CartItem {
   variantName?: string | null;
   /** Whether the selected item size is available for instant shipping */
   isInstantShip?: boolean;
+  /** Whether this item is a pre-order (allowed even when ORDERS_PAUSED) */
+  isPreOrder?: boolean;
 }
 
 export class OrderService {

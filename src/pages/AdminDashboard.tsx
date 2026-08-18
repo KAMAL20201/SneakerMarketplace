@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   Activity,
   Mail,
+  PackageOpen,
 } from "lucide-react";
 
 const ADMIN_SECTIONS = [
@@ -108,6 +109,13 @@ const ADMIN_SECTIONS = [
     url: ROUTE_NAMES.ADMIN_PENDING_PAYMENTS,
     icon: Mail,
     color: "from-amber-500 to-orange-500",
+  },
+  {
+    title: "Pre-Orders",
+    description: "Launch timed pre-order windows and manage eligible products",
+    url: ROUTE_NAMES.ADMIN_PRE_ORDERS,
+    icon: PackageOpen,
+    color: "from-violet-500 to-purple-600",
   },
   {
     title: "My Listings",

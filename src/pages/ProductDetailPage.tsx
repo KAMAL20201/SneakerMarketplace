@@ -197,15 +197,29 @@ export async function loader({ params }: Route.LoaderArgs) {
     titleLower.includes(m.searchTerm.toLowerCase()),
   ) ?? null;
 
-  const similarProducts = await ssrSupabase
-    .from("listings_with_images")
-    .select("id, slug, title, brand, price, retail_price, condition, size_value, image_url")
-    .eq("status", "active")
-    .eq("brand", listing.brand)
-    .neq("id", listing.id)
-    .order("created_at", { ascending: false })
-    .limit(6)
-    .then(({ data }) => data ?? [], () => []);
+  // Run similar-products fetch AND pre-order window check in parallel.
+  const [similarProducts, preOrderCheck] = await Promise.all([
+    ssrSupabase
+      .from("listings_with_images")
+      .select("id, slug, title, brand, price, retail_price, condition, size_value, image_url")
+      .eq("status", "active")
+      .eq("brand", listing.brand)
+      .neq("id", listing.id)
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => data ?? [], () => []),
+
+    // Check if this product slug is part of any currently active pre-order window.
+    // A window is active when now() falls between starts_at and ends_at.
+    ssrSupabase
+      .from("pre_order_products")
+      .select("id, pre_order_windows!inner(id, starts_at, ends_at)")
+      .eq("product_slug", param)
+      .lte("pre_order_windows.starts_at", new Date().toISOString())
+      .gte("pre_order_windows.ends_at", new Date().toISOString())
+      .limit(1)
+      .then(({ data }) => (data ?? []).length > 0, () => false),
+  ]);
 
   return data(
     {
@@ -219,10 +233,15 @@ export async function loader({ params }: Route.LoaderArgs) {
       similarProducts,
       brandSlug: brandConfig?.slug ?? null,
       matchedModel: matchedModel ? { name: matchedModel.name, slug: matchedModel.slug } : null,
+      /** True when this product belongs to a currently active pre-order window. */
+      isPreOrder: preOrderCheck,
     },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        // Pre-order state changes hourly; don't cache for 5 mins on pre-order products
+        "Cache-Control": preOrderCheck
+          ? "public, s-maxage=60, stale-while-revalidate=120"
+          : "public, s-maxage=300, stale-while-revalidate=600",
       },
     },
   );
@@ -308,6 +327,7 @@ export default function ProductDetailPage() {
     similarProducts: initialSimilarProducts,
     brandSlug,
     matchedModel,
+    isPreOrder: loaderIsPreOrder,
   } = useLoaderData<typeof loader>();
 
   // ── URL params ────────────────────────────────────────────────────────────
@@ -507,6 +527,9 @@ export default function ProductDetailPage() {
     return selectedSizeObj ? selectedSizeObj.is_instant_ship : deliveryTab === "instant";
   };
 
+  /** True when this product belongs to a currently active pre-order window (resolved server-side). */
+  const isPreOrderProduct = loaderIsPreOrder;
+
   const handleAddToCart = (
     seller: { id: number | string; display_name: string; email: string } | null,
   ) => {
@@ -527,6 +550,7 @@ export default function ProductDetailPage() {
       variantId: selectedVariantId ?? null,
       variantName: selectedVariant?.color_name ?? null,
       isInstantShip: isCurrentSelectionInstantShip(),
+      isPreOrder: isPreOrderProduct,
     };
 
     const success = addToCart(cartItem);
@@ -1182,52 +1206,89 @@ export default function ProductDetailPage() {
             );
           })()}
 
-          <div className="px-4 pb-6 grid grid-cols-2 gap-4 lg:px-0">
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => {
-                if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
-                  setOrdersPausedOpen(true);
-                  return;
-                }
-                handleAddToCart(listing?.seller_details);
-              }}
-              disabled={isItemInCart() || isSoldOut}
-              className={`border-0 rounded-2xl shadow-lg h-12 ${
-                isItemInCart() || isSoldOut
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              {isSoldOut ? "Sold Out" : isItemInCart() ? "In Cart" : "Add to Cart"}
-            </Button>
+          {/* Pre-Order notice banner */}
+          {isPreOrderProduct && !isSoldOut && (
+            <div className="mx-4 mb-3 lg:mx-0 flex items-start gap-2 rounded-2xl bg-violet-50 border border-violet-200 px-4 py-3">
+              <Truck className="h-4 w-4 text-violet-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-violet-800">Pre-Order — Estimated Delivery: 28–35 days</p>
+                <p className="text-xs text-violet-600 mt-0.5">
+                  This item ships from an international source. You will receive updates via email once dispatched.
+                </p>
+              </div>
+            </div>
+          )}
 
-            <Button
-              size="lg"
-              onClick={() => {
-                if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
-                  setOrdersPausedOpen(true);
-                  return;
+          {isPreOrderProduct ? (
+            /* ── Pre-order: single full-width button ── */
+            <div className="px-4 pb-6 lg:px-0">
+              <Button
+                size="lg"
+                onClick={() => {
+                  setBuyNowOpen(true);
+                }}
+                disabled={
+                  ((availableSizes.length > 0 || listing?.size_value) &&
+                    !selectedSize) ||
+                  isSoldOut
                 }
-                setBuyNowOpen(true);
-              }}
-              disabled={
-                // Only require a size selection if this listing actually has sizes
-                ((availableSizes.length > 0 || listing?.size_value) &&
-                  !selectedSize) ||
-                isSoldOut
-              }
-              className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
-                isSoldOut
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              }`}
-            >
-              {isSoldOut ? "Sold Out" : "Buy Now"}
-            </Button>
-          </div>
+                className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
+                  isSoldOut
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
+                }`}
+              >
+                {isSoldOut ? "Sold Out" : "Pre-Order Now"}
+              </Button>
+            </div>
+          ) : (
+            /* ── Normal: Add to Cart + Buy Now ── */
+            <div className="px-4 pb-6 grid grid-cols-2 gap-4 lg:px-0">
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
+                    setOrdersPausedOpen(true);
+                    return;
+                  }
+                  handleAddToCart(listing?.seller_details);
+                }}
+                disabled={isItemInCart() || isSoldOut}
+                className={`border-0 rounded-2xl shadow-lg h-12 ${
+                  isItemInCart() || isSoldOut
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                {isSoldOut ? "Sold Out" : isItemInCart() ? "In Cart" : "Add to Cart"}
+              </Button>
+
+              <Button
+                size="lg"
+                onClick={() => {
+                  if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
+                    setOrdersPausedOpen(true);
+                    return;
+                  }
+                  setBuyNowOpen(true);
+                }}
+                disabled={
+                  ((availableSizes.length > 0 || listing?.size_value) &&
+                    !selectedSize) ||
+                  isSoldOut
+                }
+                className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
+                  isSoldOut
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                }`}
+              >
+                {isSoldOut ? "Sold Out" : "Buy Now"}
+              </Button>
+            </div>
+          )}
           {/* Orders Paused Modal */}
           <OrdersPausedModal
             open={ordersPausedOpen}
@@ -1260,6 +1321,7 @@ export default function ProductDetailPage() {
                   variantId: selectedVariantId ?? null,
                   variantName: selectedVariant?.color_name ?? null,
                   isInstantShip: isCurrentSelectionInstantShip(),
+                  isPreOrder: isPreOrderProduct,
                 };
               })()}
             />
@@ -1282,7 +1344,23 @@ export default function ProductDetailPage() {
             </button>
             {deliveryOpen && (
               <div className="mt-1 px-4 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-sm text-gray-600 space-y-3">
-                {listing?.delivery_days &&
+                {isPreOrderProduct ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-violet-700">
+                      <Truck className="h-4 w-4 flex-shrink-0" />
+                      Pre-Order — 28–35 Days
+                    </div>
+                    <p>
+                      This is a <span className="font-medium text-gray-800">pre-order</span> item sourced
+                      from an international supplier. Your order will be dispatched within{" "}
+                      <span className="font-medium text-gray-800">28–35 days</span> of payment confirmation.
+                    </p>
+                    <p>
+                      All tracking updates will be shared{" "}
+                      <span className="font-medium text-gray-800">via email</span> once your item ships.
+                    </p>
+                  </div>
+                ) : listing?.delivery_days &&
                 parseMinDeliveryDays(listing.delivery_days) < 10 ? (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-teal-700">
