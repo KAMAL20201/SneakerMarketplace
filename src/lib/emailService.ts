@@ -44,6 +44,7 @@ export interface EmailNotificationRequest {
     | "order_cancelled"
     | "payment_received"
     | "payment_reminder"
+    | "preorder_live"
     | "whatsapp_invite";
   recipient_email: string;
   recipient_name: string;
@@ -329,6 +330,31 @@ export class EmailService {
       {
         subject: `Don't miss out — complete your order for ${orderData.product_title}`,
         action_text: "Complete Your Purchase",
+        action_url: productUrl,
+      }
+    );
+  }
+
+  /**
+   * Send "Pre-Orders Are Live!" email to buyer
+   */
+  static async sendPreOrderLiveEmail(
+    buyerEmail: string,
+    buyerName: string,
+    orderData: OrderEmailData
+  ): Promise<boolean> {
+    const productUrl = orderData.product_id
+      ? `${window.location.origin}/product/${orderData.product_id}`
+      : `${window.location.origin}/pre-orders`;
+    const enriched = await this.withSimilarProducts(orderData);
+    return await this.sendEmail(
+      "preorder_live",
+      buyerEmail,
+      buyerName,
+      enriched,
+      {
+        subject: `🔥 Pre-Order Open: ${orderData.product_title} — Reserve Yours Now!`,
+        action_text: "Pre-Order Now",
         action_url: productUrl,
       }
     );

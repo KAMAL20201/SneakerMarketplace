@@ -195,6 +195,9 @@ function AdminPendingPayments() {
   const [previewOrder, setPreviewOrder] = useState<PendingOrder | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [dedupeByEmail, setDedupeByEmail] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [testSending, setTestSending] = useState(false);
+  const [emailTemplate, setEmailTemplate] = useState<"preorder_live" | "payment_reminder">("preorder_live");
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -316,11 +319,10 @@ function AdminPendingPayments() {
         ordered_size: order.ordered_size ?? undefined,
         order_status: "pending_payment",
       };
-      const sent = await EmailService.sendPaymentReminderEmail(
-        order.buyer_email,
-        order.buyer_name ?? "Customer",
-        orderData
-      );
+      const sent = emailTemplate === "preorder_live"
+        ? await EmailService.sendPreOrderLiveEmail(order.buyer_email, order.buyer_name ?? "Customer", orderData)
+        : await EmailService.sendPaymentReminderEmail(order.buyer_email, order.buyer_name ?? "Customer", orderData);
+
       setOrders((prev) =>
         prev.map((o) =>
           o.id === order.id ? { ...o, _sending: false, _sent: sent, _failed: !sent } : o
@@ -328,7 +330,7 @@ function AdminPendingPayments() {
       );
       if (sent) {
         markSentInStorage(order.id);
-        toast.success(`Reminder sent to ${order.buyer_email}`);
+        toast.success(`Email sent to ${order.buyer_email}`);
       } else {
         toast.error("Failed to send email");
       }
@@ -338,7 +340,7 @@ function AdminPendingPayments() {
       );
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     }
-  }, []);
+  }, [emailTemplate]);
 
   // ── Bulk send ──────────────────────────────────────────────────────────────
 
@@ -373,11 +375,10 @@ function AdminPendingPayments() {
           ordered_size: order.ordered_size ?? undefined,
           order_status: "pending_payment",
         };
-        const sent = await EmailService.sendPaymentReminderEmail(
-          order.buyer_email!,
-          order.buyer_name ?? "Customer",
-          orderData
-        );
+        const sent = emailTemplate === "preorder_live"
+          ? await EmailService.sendPreOrderLiveEmail(order.buyer_email!, order.buyer_name ?? "Customer", orderData)
+          : await EmailService.sendPaymentReminderEmail(order.buyer_email!, order.buyer_name ?? "Customer", orderData);
+
         setOrders((prev) =>
           prev.map((o) =>
             o.id === order.id ? { ...o, _sent: sent, _failed: !sent } : o
@@ -400,7 +401,7 @@ function AdminPendingPayments() {
     setBulkProgress(null);
     setSelectedIds(new Set());
     toast.success(`Bulk send complete: ${successCount} sent, ${failCount} failed`);
-  }, [filtered, selectedIds]);
+  }, [filtered, selectedIds, emailTemplate]);
 
   // ── Selection helpers ──────────────────────────────────────────────────────
 
@@ -423,6 +424,49 @@ function AdminPendingPayments() {
       return next;
     });
   }, [paginated, selectedIds]);
+
+  /** Select every order in the current filtered view (all pages). */
+  const selectAllFiltered = useCallback(() => {
+    const ids = filtered.filter((o) => o.buyer_email).map((o) => o.id);
+    setSelectedIds(new Set(ids));
+  }, [filtered]);
+
+  /** Send the email template to a test email address instead of real buyer emails. */
+  const handleTestSend = useCallback(async () => {
+    const target = filtered.find((o) => selectedIds.has(o.id)) ?? filtered[0];
+    if (!target) { toast.error("No orders to use as template"); return; }
+    const email = testEmail.trim();
+    if (!email) { toast.error("Enter a test email address"); return; }
+    setTestSending(true);
+    try {
+      const listing = target.product_listings;
+      const posterImage = getPosterImage(target);
+      const orderData: OrderEmailData = {
+        order_id: target.id,
+        product_title: listing?.title ?? "Your Item",
+        product_image: posterImage,
+        amount: target.amount,
+        original_amount: target.original_amount ?? undefined,
+        discount_amount: target.discount_amount,
+        currency: "INR",
+        buyer_name: "[Test Preview]",
+        brand: listing?.brand,
+        product_id: target.product_id,
+        variant_name: target.variant_name ?? undefined,
+        ordered_size: target.ordered_size ?? undefined,
+        order_status: "pending_payment",
+      };
+      const sent = emailTemplate === "preorder_live"
+        ? await EmailService.sendPreOrderLiveEmail(email, "[Test Preview]", orderData)
+        : await EmailService.sendPaymentReminderEmail(email, "[Test Preview]", orderData);
+
+      if (sent) toast.success(`Test email sent to ${email}`);
+      else toast.error("Test send failed — check edge function logs");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    }
+    setTestSending(false);
+  }, [filtered, selectedIds, testEmail, emailTemplate]);
 
   const pageEmailOrders = paginated.filter((o) => o.buyer_email);
   const allPageSelected =
@@ -540,51 +584,122 @@ function AdminPendingPayments() {
             </button>
           </div>
 
+          {/* Email Template Campaign Selector */}
+          <div className="bg-white border border-violet-200 rounded-xl p-3 flex items-center justify-between gap-3 shadow-sm flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-violet-800 uppercase tracking-wide">Campaign Template:</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEmailTemplate("preorder_live")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    emailTemplate === "preorder_live"
+                      ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  🔥 Pre-Orders Are Live!
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmailTemplate("payment_reminder")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    emailTemplate === "payment_reminder"
+                      ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  💳 Abandoned Cart Reminder
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">
+              {emailTemplate === "preorder_live"
+                ? 'Sends "🔥 Pre-Orders Are Live!" email with 28–35 day delivery notice.'
+                : 'Sends "You left something behind!" abandoned cart payment reminder.'}
+            </p>
+          </div>
+
+          {/* Test Email Bar (Always Visible) */}
+          <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
+            <span className="text-xs font-semibold text-violet-700 shrink-0 flex items-center gap-1.5">
+              🧪 Test Email:
+            </span>
+            <input
+              type="email"
+              placeholder="Enter your email to test (e.g. test@example.com)..."
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-400"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={testSending || bulkSending || !testEmail.trim() || filtered.length === 0}
+              onClick={handleTestSend}
+              className="shrink-0 border-violet-300 text-violet-700 hover:bg-violet-50 gap-1.5 font-semibold"
+            >
+              {testSending ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <SendHorizontal className="h-3.5 w-3.5" />}
+              {testSending ? "Sending..." : "Send Test Email"}
+            </Button>
+          </div>
+
           {/* Bulk action bar */}
           {selectedIds.size > 0 && (
-            <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-violet-600" />
-                <span className="text-sm font-semibold text-violet-700">
-                  {selectedIds.size} order{selectedIds.size !== 1 ? "s" : ""} selected
-                </span>
-                {bulkProgress && (
-                  <span className="text-xs text-violet-500 ml-2">
-                    {bulkProgress.done}/{bulkProgress.total} sent...
+            <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-3">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CheckCircle2 className="h-4 w-4 text-violet-600" />
+                  <span className="text-sm font-semibold text-violet-700">
+                    {selectedIds.size} order{selectedIds.size !== 1 ? "s" : ""} selected
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {bulkProgress && (
-                  <div className="w-36 bg-violet-200 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="bg-violet-600 h-full transition-all duration-300"
-                      style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }}
-                    />
-                  </div>
-                )}
-                <Button
-                  size="sm"
-                  className="bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
-                  onClick={handleBulkSend}
-                  disabled={bulkSending}
-                  id="bulk-send-btn"
-                >
-                  {bulkSending ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <SendHorizontal className="h-4 w-4" />
+                  {/* Select all filtered shortcut */}
+                  {filtered.filter((o) => o.buyer_email).length > selectedIds.size && (
+                    <button
+                      onClick={selectAllFiltered}
+                      className="text-xs text-violet-600 underline underline-offset-2 hover:text-violet-800"
+                    >
+                      Select all {filtered.filter((o) => o.buyer_email).length} filtered
+                    </button>
                   )}
-                  {bulkSending ? "Sending..." : `Send to ${selectedIds.size}`}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-violet-600 h-8 w-8 p-0"
-                  onClick={() => setSelectedIds(new Set())}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                  {bulkProgress && (
+                    <span className="text-xs text-violet-500 ml-2">
+                      {bulkProgress.done}/{bulkProgress.total} sent...
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {bulkProgress && (
+                    <div className="w-36 bg-violet-200 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-violet-600 h-full transition-all duration-300"
+                        style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  )}
+                  <Button
+                    size="sm"
+                    className="bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
+                    onClick={handleBulkSend}
+                    disabled={bulkSending || testSending}
+                    id="bulk-send-btn"
+                  >
+                    {bulkSending ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <SendHorizontal className="h-4 w-4" />
+                    )}
+                    {bulkSending ? "Sending..." : `Send to ${selectedIds.size}`}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-violet-600 h-8 w-8 p-0"
+                    onClick={() => setSelectedIds(new Set())}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -723,7 +838,11 @@ function AdminPendingPayments() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-amber-200 text-amber-700 hover:bg-amber-50 gap-1.5 text-xs"
+                              className={
+                                emailTemplate === "preorder_live"
+                                  ? "border-violet-200 text-violet-700 hover:bg-violet-50 gap-1.5 text-xs"
+                                  : "border-amber-200 text-amber-700 hover:bg-amber-50 gap-1.5 text-xs"
+                              }
                               onClick={() => handleSendReminder(order)}
                               disabled={!hasEmail || order._sending}
                               id={`send-${order.id}`}
@@ -733,7 +852,11 @@ function AdminPendingPayments() {
                               ) : (
                                 <SendHorizontal className="h-3.5 w-3.5" />
                               )}
-                              {order._sending ? "Sending..." : "Send Reminder"}
+                              {order._sending
+                                ? "Sending..."
+                                : emailTemplate === "preorder_live"
+                                  ? "Send Pre-Order Email"
+                                  : "Send Reminder"}
                             </Button>
                           </>
                         )}
@@ -846,7 +969,7 @@ function AdminPendingPayments() {
               <div className="flex-1 overflow-auto p-2">
                 <iframe
                   title="Email Preview"
-                  srcDoc={buildPreviewHtml(previewOrder)}
+                  srcDoc={buildPreviewHtml(previewOrder, emailTemplate)}
                   className="w-full h-full min-h-[500px] rounded-xl border border-gray-100"
                   sandbox="allow-same-origin"
                 />
