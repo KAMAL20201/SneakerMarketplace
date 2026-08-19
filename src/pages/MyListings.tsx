@@ -52,6 +52,22 @@ interface Listing {
   review_comment: string;
 }
 
+const getPaginationItems = (currentPage: number, totalPages: number): (number | string)[] => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, "...", totalPages];
+  }
+
+  if (currentPage >= totalPages - 3) {
+    return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+};
+
 const MyListings = () => {
   const { user } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
@@ -61,22 +77,11 @@ const MyListings = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const itemsPerPage = 6;
+  const itemsPerPage = 12;
 
   useEffect(() => {
-    if (user) {
-      fetchListings();
-    }
-  }, [user, currentPage, searchQuery]);
-
-  // Debounce search input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchQuery(searchInput);
-      setCurrentPage(1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+    fetchListings();
+  }, [currentPage, searchQuery]);
 
   const fetchListings = async () => {
     try {
@@ -84,15 +89,12 @@ const MyListings = () => {
 
       let countQuery = supabase
         .from("listings_with_images")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user?.id)
-        .not("review_comment", "is", null);
+        .select("*", { count: "exact", head: true });
 
       let dataQuery = supabase
         .from("listings_with_images")
         .select("*")
-        .eq("user_id", user?.id)
-        .not("review_comment", "is", null);
+        .order("created_at", { ascending: false });
 
       if (searchQuery.trim()) {
         const term = `%${searchQuery.trim()}%`;
@@ -112,7 +114,7 @@ const MyListings = () => {
       setListings(data || []);
     } catch (error) {
       console.error("Error fetching listings:", error);
-      toast.error("Failed to load your listings");
+      toast.error("Failed to load listings");
     } finally {
       setLoading(false);
     }
@@ -125,8 +127,7 @@ const MyListings = () => {
       const { error } = await supabase
         .from("product_listings")
         .update({ is_deleted: true })
-        .eq("id", listingId)
-        .eq("user_id", user?.id);
+        .eq("id", listingId);
 
       if (error) throw error;
 
@@ -247,23 +248,35 @@ const MyListings = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="relative mb-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSearchQuery(searchInput);
+              setCurrentPage(1);
+            }}
+            className="relative mb-6"
+          >
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             <Input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by title or brand..."
+              placeholder="Search by title or brand... (Press Enter to search)"
               className="pl-9 pr-9 glass-button border-0 rounded-2xl text-gray-700 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-purple-400"
             />
             {searchInput && (
               <button
-                onClick={() => setSearchInput("")}
+                type="button"
+                onClick={() => {
+                  setSearchInput("");
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
-          </div>
+          </form>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -509,7 +522,7 @@ const MyListings = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2 py-4 max-w-full overflow-x-auto">
                 <Button
                   variant="ghost"
                   onClick={() =>
@@ -518,26 +531,33 @@ const MyListings = () => {
                   disabled={currentPage === 1}
                   className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
                 >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Previous</span>
                 </Button>
 
-                <div className="flex gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
+                <div className="flex flex-wrap items-center gap-1">
+                  {getPaginationItems(currentPage, totalPages).map((item, idx) =>
+                    typeof item === "number" ? (
                       <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "ghost"}
-                        onClick={() => setCurrentPage(page)}
-                        className={`rounded-xl ${
-                          currentPage === page
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0"
+                        key={idx}
+                        variant={currentPage === item ? "default" : "ghost"}
+                        onClick={() => setCurrentPage(item)}
+                        className={`h-9 min-w-[36px] px-3 rounded-xl ${
+                          currentPage === item
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 font-bold"
                             : "glass-button border-0 text-gray-700 hover:bg-white/30"
                         }`}
                       >
-                        {page}
+                        {item}
                       </Button>
-                    ),
+                    ) : (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 text-gray-400 text-sm select-none"
+                      >
+                        {item}
+                      </span>
+                    )
                   )}
                 </div>
 
@@ -549,8 +569,8 @@ const MyListings = () => {
                   disabled={currentPage === totalPages}
                   className="glass-button border-0 rounded-xl text-gray-700 hover:bg-white/30 disabled:opacity-50"
                 >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             )}

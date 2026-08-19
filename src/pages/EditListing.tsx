@@ -74,10 +74,10 @@ const EditListing = () => {
   const hasSizeData = allSizes.length > 0;
 
   useEffect(() => {
-    if (id && user) {
+    if (id) {
       fetchListing();
     }
-  }, [id, user]);
+  }, [id]);
 
   const fetchListing = async () => {
     try {
@@ -87,7 +87,6 @@ const EditListing = () => {
         .from("listings_with_images")
         .select("*")
         .eq("id", id)
-        .eq("user_id", user?.id)
         .single();
 
       if (error) throw error;
@@ -367,13 +366,12 @@ const EditListing = () => {
       const { error: listingError } = await supabase
         .from("product_listings")
         .update({ price: parsedPrice, status: newStatus })
-        .eq("id", listing.id)
-        .eq("user_id", user?.id);
+        .eq("id", listing.id);
 
       if (listingError) throw listingError;
 
       toast.success("Listing updated successfully");
-      navigate(ROUTE_NAMES.MY_LISTINGS);
+      await fetchListing();
     } catch (err) {
       console.error("Error updating listing:", err);
       toast.error("Failed to update listing");
