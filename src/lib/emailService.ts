@@ -2,6 +2,11 @@ import { supabase } from "./supabase";
 import { logger } from "@/components/ui/Logger";
 import type { ShippingAddress } from "@/types/shipping";
 
+const BASE_URL =
+  typeof window !== "undefined" && !window.location.origin.includes("localhost")
+    ? window.location.origin
+    : "https://theplugmarket.in";
+
 export interface SimilarProduct {
   id: string;
   slug?: string;
@@ -160,7 +165,7 @@ export class EmailService {
       {
         subject: "🎉 Order Confirmed! Your purchase is being processed",
         action_text: "Continue Shopping",
-        action_url: `${window.location.origin}/`,
+        action_url: `${BASE_URL}/`,
       }
     );
   }
@@ -181,7 +186,7 @@ export class EmailService {
       {
         subject: "💰 Payment Received! New order to fulfill",
         action_text: "View Orders",
-        action_url: `${window.location.origin}/my-orders`,
+        action_url: `${BASE_URL}/my-orders`,
       }
     );
   }
@@ -203,7 +208,7 @@ export class EmailService {
       {
         subject: "📦 Your order has been shipped!",
         action_text: "Contact Support",
-        action_url: `${window.location.origin}/contact-us`,
+        action_url: `${BASE_URL}/contact-us`,
       }
     );
   }
@@ -225,7 +230,7 @@ export class EmailService {
       {
         subject: "✅ Your order has been delivered!",
         action_text: "Shop Again",
-        action_url: `${window.location.origin}/`,
+        action_url: `${BASE_URL}/`,
       }
     );
   }
@@ -247,7 +252,7 @@ export class EmailService {
       {
         subject: "❌ Order Cancelled",
         action_text: "Contact Support",
-        action_url: `${window.location.origin}/contact-us`,
+        action_url: `${BASE_URL}/contact-us`,
       }
     );
   }
@@ -268,7 +273,7 @@ export class EmailService {
       {
         subject: "⏰ Reminder: Ship your order within 24 hours",
         action_text: "View Orders",
-        action_url: `${window.location.origin}/my-orders`,
+        action_url: `${BASE_URL}/my-orders`,
       }
     );
   }
@@ -319,8 +324,8 @@ export class EmailService {
     orderData: OrderEmailData
   ): Promise<boolean> {
     const productUrl = orderData.product_id
-      ? `${window.location.origin}/product/${orderData.product_id}`
-      : `${window.location.origin}/`;
+      ? `${BASE_URL}/product/${orderData.product_id}`
+      : `${BASE_URL}/`;
     const enriched = await this.withSimilarProducts(orderData);
     return await this.sendEmail(
       "payment_reminder",
@@ -344,8 +349,8 @@ export class EmailService {
     orderData: OrderEmailData
   ): Promise<boolean> {
     const productUrl = orderData.product_id
-      ? `${window.location.origin}/product/${orderData.product_id}`
-      : `${window.location.origin}/pre-orders`;
+      ? `${BASE_URL}/product/${orderData.product_id}`
+      : `${BASE_URL}/pre-orders`;
     const enriched = await this.withSimilarProducts(orderData);
     return await this.sendEmail(
       "preorder_live",
@@ -369,7 +374,7 @@ export class EmailService {
     orderData: OrderEmailData,
     reviewToken: string
   ): Promise<boolean> {
-    const reviewUrl = `${window.location.origin}/review?token=${reviewToken}`;
+    const reviewUrl = `${BASE_URL}/review?token=${reviewToken}`;
     return await this.sendEmail(
       "review_request",
       buyerEmail,
