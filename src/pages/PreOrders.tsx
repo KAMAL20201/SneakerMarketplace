@@ -52,8 +52,60 @@ export async function loader(_: Route.LoaderArgs) {
   const windows: ActiveWindow[] = activeWindows ?? [];
 
   if (windows.length === 0) {
+    // Check if there is an upcoming/paused window scheduled for the future
+    const { data: upcomingWindows } = await ssrSupabase
+      .from("pre_order_windows")
+      .select("id, name, starts_at, ends_at")
+      .gt("starts_at", now)
+      .order("starts_at", { ascending: true })
+      .limit(1);
+
+    const upcoming = upcomingWindows?.[0] ?? null;
+
+    if (upcoming) {
+      const { data: productRows } = await ssrSupabase
+        .from("pre_order_products")
+        .select("product_slug")
+        .eq("window_id", upcoming.id);
+
+      const slugs = (productRows ?? []).map((p) => p.product_slug);
+      let listings: PreOrderListing[] = [];
+      if (slugs.length > 0) {
+        const { data: listingRows } = await ssrSupabase
+          .from("listings_with_images")
+          .select("id, slug, title, price, brand, size_value, condition, image_url, created_at")
+          .in("slug", slugs)
+          .eq("status", "active");
+
+        listings = (listingRows ?? []).map((l) => ({
+          ...l,
+          window_name: upcoming.name,
+          window_ends_at: upcoming.ends_at,
+        }));
+      }
+
+      return data(
+        {
+          listings,
+          windowsCount: 0,
+          endsAt: null as string | null,
+          isPaused: true,
+          upcomingStartsAt: upcoming.starts_at as string | null,
+          upcomingName: upcoming.name as string | null,
+        },
+        { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } },
+      );
+    }
+
     return data(
-      { listings: [] as PreOrderListing[], windowsCount: 0, endsAt: null as string | null },
+      {
+        listings: [] as PreOrderListing[],
+        windowsCount: 0,
+        endsAt: null as string | null,
+        isPaused: true,
+        upcomingStartsAt: null as string | null,
+        upcomingName: null as string | null,
+      },
       { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } },
     );
   }
@@ -74,7 +126,14 @@ export async function loader(_: Route.LoaderArgs) {
   const slugs = Object.keys(slugToWindow);
   if (slugs.length === 0) {
     return data(
-      { listings: [] as PreOrderListing[], windowsCount: windows.length, endsAt: windows[0]?.ends_at ?? null },
+      {
+        listings: [] as PreOrderListing[],
+        windowsCount: windows.length,
+        endsAt: windows[0]?.ends_at ?? null,
+        isPaused: false,
+        upcomingStartsAt: null as string | null,
+        upcomingName: null as string | null,
+      },
       { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } },
     );
   }
@@ -96,7 +155,14 @@ export async function loader(_: Route.LoaderArgs) {
   const endsAt = windows[0]?.ends_at ?? null;
 
   return data(
-    { listings, windowsCount: windows.length, endsAt },
+    {
+      listings,
+      windowsCount: windows.length,
+      endsAt,
+      isPaused: false,
+      upcomingStartsAt: null as string | null,
+      upcomingName: null as string | null,
+    },
     { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } },
   );
 }
@@ -128,10 +194,10 @@ export function meta(_: Route.MetaArgs) {
 
 // ─── Countdown hook — ticks every second ─────────────────────────────────────
 
-function useCountdown(endsAt: string | null) {
+function useCountdown(targetDate: string | null) {
   const calc = () => {
-    if (!endsAt) return null;
-    const diff = new Date(endsAt).getTime() - Date.now();
+    if (!targetDate) return null;
+    const diff = new Date(targetDate).getTime() - Date.now();
     if (diff <= 0) return null;
     const h = Math.floor(diff / 3_600_000);
     const m = Math.floor((diff % 3_600_000) / 60_000);
@@ -142,13 +208,12 @@ function useCountdown(endsAt: string | null) {
   const [tick, setTick] = useState(calc);
 
   useEffect(() => {
-    if (!endsAt) return;
-    // Recalculate immediately in case SSR snapshot is stale
+    if (!targetDate) return;
     setTick(calc());
     const id = setInterval(() => setTick(calc()), 1_000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [endsAt]);
+  }, [targetDate]);
 
   return tick;
 }
@@ -156,16 +221,26 @@ function useCountdown(endsAt: string | null) {
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function PreOrders() {
-  const { listings, endsAt } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
+  const { listings, endsAt, isPaused, upcomingStartsAt } = loaderData;
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const countdown = useCountdown(endsAt);
+
+  // Active window countdown or upcoming opening countdown
+  const targetDate = isPaused ? upcomingStartsAt : endsAt;
+  const countdown = useCountdown(targetDate);
 
   const hasListings = listings.length > 0;
 
   return (
     <div className="min-h-screen pb-12">
       {/* Hero header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 px-4 py-10 text-center text-white">
+      <div
+        className={`relative overflow-hidden px-4 py-10 text-center text-white ${
+          isPaused
+            ? "bg-gradient-to-br from-amber-600 via-orange-600 to-purple-700"
+            : "bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700"
+        }`}
+      >
         {/* Decorative blobs */}
         <div className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-10 -right-10 h-48 w-48 rounded-full bg-pink-400/20 blur-2xl" />
@@ -173,21 +248,24 @@ export default function PreOrders() {
         <div className="relative mx-auto max-w-xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm">
             <PackageOpen className="h-4 w-4" />
-            Limited Pre-Order Window
+            {isPaused ? "Pre-Orders Currently Paused" : "Limited Pre-Order Window"}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">
-            Pre-Order Now
+            {isPaused ? "Pre-Orders Resume Soon" : "Pre-Order Now"}
           </h1>
           <p className="text-violet-100 text-sm md:text-base leading-relaxed">
-            Reserve your pair before stocks close. Estimated delivery{" "}
-            <span className="font-semibold text-white">28–35 days</span> from order placement.
+            {isPaused
+              ? "Pre-orders are currently paused while we prepare the next drop batch. Estimated delivery 28–35 days once open."
+              : "Reserve your pair before stocks close. Estimated delivery 28–35 days from order placement."}
           </p>
 
           {/* Live countdown */}
           {countdown && (
             <div className="mt-6 inline-flex items-center gap-3">
               <Clock className="h-4 w-4 text-violet-200 shrink-0" />
-              <span className="text-xs text-violet-200 font-medium">Closes in</span>
+              <span className="text-xs text-violet-200 font-medium">
+                {isPaused ? "Resumes in" : "Closes in"}
+              </span>
               <div className="flex items-center gap-2">
                 {[
                   { label: "h", val: countdown.h },
@@ -205,10 +283,17 @@ export default function PreOrders() {
             </div>
           )}
 
-          {/* Window closed */}
-          {!countdown && endsAt && (
+          {/* Window closed state without upcoming window */}
+          {!countdown && !isPaused && endsAt && (
             <p className="mt-5 inline-block rounded-xl bg-white/10 px-4 py-2 text-sm text-violet-200">
               This pre-order window has closed. Check back for future drops.
+            </p>
+          )}
+
+          {/* Window paused without explicit timer */}
+          {isPaused && !countdown && (
+            <p className="mt-5 inline-block rounded-xl bg-white/10 px-4 py-2 text-sm text-amber-100">
+              Pre-orders are temporarily paused. Check back soon for the next drop window!
             </p>
           )}
         </div>
@@ -260,8 +345,14 @@ export default function PreOrders() {
                             className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                           />
                           {/* Pre-Order badge */}
-                          <Badge className="absolute top-3 left-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white border-0 rounded-xl text-xs px-2 shadow-md">
-                            Pre-Order
+                          <Badge
+                            className={`absolute top-3 left-3 border-0 rounded-xl text-xs px-2 shadow-md text-white ${
+                              isPaused
+                                ? "bg-gradient-to-r from-amber-500 to-orange-600"
+                                : "bg-gradient-to-r from-violet-500 to-purple-600"
+                            }`}
+                          >
+                            {isPaused ? "Opening Soon" : "Pre-Order"}
                           </Badge>
                         </div>
                         <div className="p-3 md:p-4">

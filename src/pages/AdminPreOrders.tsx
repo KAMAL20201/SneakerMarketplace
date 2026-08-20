@@ -11,6 +11,10 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
+  Play,
+  Pause,
+  Square,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -158,6 +162,59 @@ function AdminPreOrders() {
     }
   };
 
+  const handleOpenWindow = async (w: PreOrderWindow) => {
+    const now = new Date();
+    const durationMs = (w.duration_hours || 48) * 3_600_000;
+    const startsAt = now.toISOString();
+    const endsAt = new Date(now.getTime() + durationMs).toISOString();
+
+    const { error } = await supabase
+      .from("pre_order_windows")
+      .update({ starts_at: startsAt, ends_at: endsAt })
+      .eq("id", w.id);
+
+    if (error) {
+      toast.error("Failed to open pre-orders");
+    } else {
+      toast.success(`Pre-orders for "${w.name}" are now OPEN!`);
+      await fetchWindows();
+    }
+  };
+
+  const handlePauseWindow = async (w: PreOrderWindow, hours = 48) => {
+    const now = new Date();
+    const pauseStart = new Date(now.getTime() + hours * 3_600_000);
+    const durationMs = (w.duration_hours || 48) * 3_600_000;
+    const endsAt = new Date(pauseStart.getTime() + durationMs).toISOString();
+
+    const { error } = await supabase
+      .from("pre_order_windows")
+      .update({ starts_at: pauseStart.toISOString(), ends_at: endsAt })
+      .eq("id", w.id);
+
+    if (error) {
+      toast.error("Failed to pause pre-orders");
+    } else {
+      toast.success(`Pre-orders for "${w.name}" PAUSED for ${hours}h! (Countdown active)`);
+      await fetchWindows();
+    }
+  };
+
+  const handleCloseWindow = async (w: PreOrderWindow) => {
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from("pre_order_windows")
+      .update({ ends_at: now })
+      .eq("id", w.id);
+
+    if (error) {
+      toast.error("Failed to close pre-orders");
+    } else {
+      toast.success(`Pre-orders for "${w.name}" are now CLOSED.`);
+      await fetchWindows();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Header */}
@@ -170,9 +227,9 @@ function AdminPreOrders() {
             <PackageOpen className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-800">Pre-Orders</h1>
+            <h1 className="text-lg font-bold text-gray-800">Pre-Orders Admin</h1>
             <p className="text-xs text-gray-500">
-              Launch timed pre-order windows and manage which products are in them
+              Open, pause (48h timer), or close pre-order drops
             </p>
           </div>
         </div>
@@ -296,6 +353,9 @@ function AdminPreOrders() {
                   setExpandedId((prev) => (prev === w.id ? null : w.id))
                 }
                 onDelete={handleDeleteWindow}
+                onOpen={handleOpenWindow}
+                onPause={handlePauseWindow}
+                onClose={handleCloseWindow}
               />
             ))}
           </div>
@@ -312,11 +372,17 @@ function WindowCard({
   expanded,
   onToggleExpand,
   onDelete,
+  onOpen,
+  onPause,
+  onClose,
 }: {
   window: PreOrderWindow;
   expanded: boolean;
   onToggleExpand: () => void;
   onDelete: (w: PreOrderWindow) => void;
+  onOpen: (w: PreOrderWindow) => void;
+  onPause: (w: PreOrderWindow, hours?: number) => void;
+  onClose: (w: PreOrderWindow) => void;
 }) {
   const status = windowStatus(w);
   const [products, setProducts] = useState<PreOrderProduct[]>([]);
@@ -427,7 +493,7 @@ function WindowCard({
   const slugSet = new Set(products.map((p) => p.product_slug));
 
   return (
-    <Card className="rounded-2xl shadow-sm overflow-hidden">
+    <Card className="rounded-2xl shadow-sm overflow-hidden border border-gray-200">
       <CardContent className="p-0">
         <button
           type="button"
@@ -448,8 +514,57 @@ function WindowCard({
                 {formatCountdown(w.ends_at)}
               </p>
             )}
+            {status === "upcoming" && (
+              <p className="text-xs text-blue-600 font-semibold mt-0.5 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Opens in {formatCountdown(w.starts_at)}
+              </p>
+            )}
           </div>
+
           <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Action Control Buttons */}
+            <div
+              className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {status !== "active" && (
+                <button
+                  type="button"
+                  title="Open Pre-Orders Now"
+                  onClick={() => onOpen(w)}
+                  className="px-2 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition-colors"
+                >
+                  <Play className="h-3 w-3 fill-current" />
+                  <span>Open</span>
+                </button>
+              )}
+
+              {status !== "upcoming" && (
+                <button
+                  type="button"
+                  title="Pause Pre-Orders for 48 Hours"
+                  onClick={() => onPause(w, 48)}
+                  className="px-2 py-1 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 transition-colors"
+                >
+                  <Pause className="h-3 w-3 fill-current" />
+                  <span>Pause 48h</span>
+                </button>
+              )}
+
+              {status !== "expired" && (
+                <button
+                  type="button"
+                  title="Close Pre-Orders Now"
+                  onClick={() => onClose(w)}
+                  className="px-2 py-1 text-xs font-semibold rounded-lg bg-gray-600 hover:bg-gray-700 text-white flex items-center gap-1 transition-colors"
+                >
+                  <Square className="h-3 w-3 fill-current" />
+                  <span>Close</span>
+                </button>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={(e) => {
@@ -457,6 +572,7 @@ function WindowCard({
                 onDelete(w);
               }}
               className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              title="Delete Window"
             >
               <Trash2 className="h-4 w-4" />
             </button>
