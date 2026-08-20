@@ -1442,7 +1442,7 @@ export default function ProductDetailPage() {
                 </p>
                 <ul className="list-disc list-inside space-y-1 pl-1">
                   <li>Defective or damaged</li>
-                  <li>Wrong size</li>
+                  <li>Wrong size than what is ordered</li>
                   <li>Wrong product entirely</li>
                 </ul>
                 <p className="text-amber-700 bg-amber-50 rounded-xl px-3 py-2 font-medium">
