@@ -22,7 +22,7 @@ export class WhatsAppService {
 
     if (shortIds.length === 1) {
       return (
-        `Hi! I've completed my UPI payment for my order on The Plug Market.\n\n` +
+        `Hi! I've completed my payment for my order on The Plug Market.\n\n` +
         `*Order ID:* ${shortIds[0]}` +
         couponLine +
         `\n\nPlease confirm once you've received the payment. Thank you!`
@@ -30,7 +30,7 @@ export class WhatsAppService {
     }
 
     return (
-      `Hi! I've completed my UPI payment for my orders on The Plug Market.\n\n` +
+      `Hi! I've completed my payment for my orders on The Plug Market.\n\n` +
       `*Order IDs:*\n${shortIds.join("\n")}` +
       couponLine +
       `\n\nPlease confirm once you've received the payment. Thank you!`
