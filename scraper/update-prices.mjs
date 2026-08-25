@@ -208,7 +208,7 @@ function roundToNearest99(price) {
 function usdToInr(usd) {
   if (usd == null || isNaN(usd)) return null;
   const baseInr = (usd + 10) * USD_TO_INR;
-  const margin = baseInr >= 45000 ? 5000 : baseInr >= 25000 ? 4000 : 3000;
+  const margin = baseInr >= 40000 ? 6000 : baseInr >= 20000 ? 5000 : 4000;
   const raw = baseInr + margin;
   return roundToNearest99(raw);
 }
