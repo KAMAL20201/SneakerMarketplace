@@ -7,13 +7,14 @@ import {
 } from "@/components/ui/dialog";
 import { ShippingStep } from "@/components/Cart/steps/ShippingStep";
 import { Button } from "@/components/ui/button";
-import { MapPin, Tag, Zap } from "lucide-react";
+import { Tag } from "lucide-react";
 import type { ShippingAddress } from "@/types/shipping";
 import { PaymentButton } from "@/components/PaymentButton";
 import { CouponInput } from "@/components/CouponInput";
 import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
-import { INSTANT_SHIPPING_FEE } from "@/contexts/CartContext";
+import { SHIPPING_FEE, COURIER_OPTIONS, type CourierOption } from "@/contexts/CartContext";
+import { CourierSelector } from "@/components/checkout/CourierSelector";
 
 
 type BuyNowModalProps = {
@@ -33,9 +34,10 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
   const [shippingAddress, setShippingAddress] =
     useState<ShippingAddress | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [selectedCourier, setSelectedCourier] = useState<CourierOption>(COURIER_OPTIONS[0]);
 
-  /** shipping surcharge for instant items */
-  const shippingFee = item.isInstantShip ? INSTANT_SHIPPING_FEE : 0;
+  /** flat shipping fee per item */
+  const shippingFee = SHIPPING_FEE;
 
   const discountedAmount = appliedCoupon
     ? Math.max(amount - appliedCoupon.discountAmount, 0) + shippingFee
@@ -55,6 +57,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
     setStep("shipping");
     setShippingAddress(null);
     setAppliedCoupon(null);
+    setSelectedCourier(COURIER_OPTIONS[0]);
     onOpenChange(false);
   };
 
@@ -83,39 +86,8 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
               </DialogHeader>
             </div>
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
-              {/* Shipping Address Summary */}
-              {shippingAddress && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-2">
-                        Shipping to:
-                      </h4>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p className="font-medium">
-                          {shippingAddress.full_name}
-                        </p>
-                        <p>{shippingAddress.address_line1}</p>
-                        {shippingAddress.address_line2 && (
-                          <p>{shippingAddress.address_line2}</p>
-                        )}
-                        <p>
-                          {shippingAddress.city}, {shippingAddress.state} -{" "}
-                          {shippingAddress.pincode}
-                        </p>
-                        {shippingAddress.landmark && (
-                          <p>Near: {shippingAddress.landmark}</p>
-                        )}
-                        <p className="text-gray-500">{shippingAddress.phone}</p>
-                        {shippingAddress.email && (
-                          <p className="text-gray-500">{shippingAddress.email}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Courier Selector */}
+              <CourierSelector selected={selectedCourier} onChange={setSelectedCourier} />
 
               {/* Order Summary */}
               <div className="bg-gray-50 rounded-lg p-4">
@@ -179,12 +151,10 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                       <span className="font-medium">−₹{appliedCoupon.discountAmount}</span>
                     </div>
                   )}
-                  {shippingFee > 0 && (
-                    <div className="flex justify-between text-sm text-amber-700">
-                      <span className="flex items-center gap-1"><Zap className="h-3 w-3" /> Instant Shipping</span>
-                      <span className="font-medium">+₹{shippingFee}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Shipping ({selectedCourier.label})</span>
+                    <span className="font-medium">+₹{shippingFee}</span>
+                  </div>
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total</span>

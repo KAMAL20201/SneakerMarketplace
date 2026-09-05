@@ -6,7 +6,8 @@ import { CouponInput } from "@/components/CouponInput";
 import type { ShippingAddress } from "@/types/shipping";
 import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
-import { ArrowLeft, MapPin, Tag } from "lucide-react";
+import { ArrowLeft, Tag } from "lucide-react";
+import { CourierSelector } from "@/components/checkout/CourierSelector";
 
 interface PaymentStepProps {
   shippingAddress: ShippingAddress;
@@ -41,7 +42,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
   const {
     items,
     totalPrice,
-    instantShippingFee,
+    shippingFee,
+    selectedCourier,
+    setSelectedCourier,
     appliedCoupon,
     applyDiscount,
     removeCoupon,
@@ -62,33 +65,8 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
     <div className="flex flex-col h-full">
       {/* Content */}
       <div className="h-[70%] overflow-y-auto p-4 space-y-4">
-        {/* Shipping Address Summary */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-medium text-gray-900 mb-2">Shipping to:</h4>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p className="font-medium">{shippingAddress.full_name}</p>
-                <p>{shippingAddress.address_line1}</p>
-                {shippingAddress.address_line2 && (
-                  <p>{shippingAddress.address_line2}</p>
-                )}
-                <p>
-                  {shippingAddress.city}, {shippingAddress.state} -{" "}
-                  {shippingAddress.pincode}
-                </p>
-                {shippingAddress.landmark && (
-                  <p>Near: {shippingAddress.landmark}</p>
-                )}
-                <p className="text-gray-500">{shippingAddress.phone}</p>
-                {shippingAddress.email && (
-                  <p className="text-gray-500">{shippingAddress.email}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Courier Selector */}
+        <CourierSelector selected={selectedCourier} onChange={setSelectedCourier} />
 
         {/* Order Summary */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -173,10 +151,10 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                 </span>
               </div>
             )}
-            {instantShippingFee > 0 && (
-              <div className="flex justify-between text-sm text-amber-700">
-                <span>⚡ Instant Shipping</span>
-                <span className="font-medium">+₹{instantShippingFee}</span>
+            {shippingFee > 0 && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Shipping ({selectedCourier.label})</span>
+                <span className="font-medium">+₹{shippingFee}</span>
               </div>
             )}
             <div className="border-t pt-2 mt-1">

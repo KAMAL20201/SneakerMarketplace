@@ -4,8 +4,25 @@ import type { CartItem } from "@/lib/orderService";
 import { supabase } from "../lib/supabase";
 import type { AppliedCoupon } from "@/types/coupon";
 
-/** Extra shipping charged per Instant Ship item (in INR) */
-export const INSTANT_SHIPPING_FEE = 300;
+/** Flat shipping charged per item (in INR) */
+export const SHIPPING_FEE = 299;
+
+/** Unique identifier for each courier option */
+export type CourierOptionId = "speed_post_air" | "dtdc_surface" | "delhivery_surface";
+
+export interface CourierOption {
+  id: CourierOptionId;
+  label: string;
+  price: number;
+  eta: string;
+}
+
+/** Available courier options — first entry is the default */
+export const COURIER_OPTIONS: CourierOption[] = [
+  { id: "speed_post_air", label: "Speed Post (Air)", price: 299, eta: "5–7 days" },
+  { id: "dtdc_surface", label: "DTDC Surface", price: 299, eta: "7–10 days" },
+  { id: "delhivery_surface", label: "Delhivery Surface", price: 299, eta: "7–10 days" },
+];
 
 
 interface CartContextType {
@@ -18,8 +35,11 @@ interface CartContextType {
   toggleCart: () => void;
   clearCart: () => void;
   totalPrice: number;
-  /** ₹300 × number of instant-ship items in cart */
-  instantShippingFee: number;
+  /** ₹299 × number of items in cart */
+  shippingFee: number;
+  /** Currently selected courier option */
+  selectedCourier: CourierOption;
+  setSelectedCourier: (courier: CourierOption) => void;
   pricesUpdated: boolean;
   dismissPriceUpdate: () => void;
   appliedCoupon: AppliedCoupon | null;
@@ -39,7 +59,9 @@ export const CartContext = createContext<CartContextType>({
   toggleCart: () => {},
   clearCart: () => {},
   totalPrice: 0,
-  instantShippingFee: 0,
+  shippingFee: 0,
+  selectedCourier: COURIER_OPTIONS[0],
+  setSelectedCourier: () => {},
   pricesUpdated: false,
   dismissPriceUpdate: () => {},
   appliedCoupon: null,
@@ -54,6 +76,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [pricesUpdated, setPricesUpdated] = useState(false);
+  const [selectedCourier, setSelectedCourier] = useState<CourierOption>(COURIER_OPTIONS[0]);
 
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const { debouncedSave, immediateSave, load, clear } = useCartStorage();
@@ -232,18 +255,18 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [items]);
 
-  /** ₹300 extra per instant-ship item in the cart */
-  const instantShippingFee = useMemo(() => {
+  /** Flat ₹299 shipping per item in the cart */
+  const shippingFee = useMemo(() => {
     return items.reduce(
-      (sum, item) => sum + (item.isInstantShip ? INSTANT_SHIPPING_FEE * item.quantity : 0),
+      (sum, item) => sum + SHIPPING_FEE * item.quantity,
       0
     );
   }, [items]);
 
   const discountedTotal = useMemo(() => {
-    if (!appliedCoupon) return totalPrice + instantShippingFee;
-    return Math.max(totalPrice - appliedCoupon.discountAmount, 0) + instantShippingFee;
-  }, [totalPrice, instantShippingFee, appliedCoupon]);
+    if (!appliedCoupon) return totalPrice + shippingFee;
+    return Math.max(totalPrice - appliedCoupon.discountAmount, 0) + shippingFee;
+  }, [totalPrice, shippingFee, appliedCoupon]);
 
 
   return (
@@ -258,7 +281,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         toggleCart,
         clearCart,
         totalPrice,
-        instantShippingFee,
+        shippingFee,
+        selectedCourier,
+        setSelectedCourier,
         pricesUpdated,
         dismissPriceUpdate,
         appliedCoupon,

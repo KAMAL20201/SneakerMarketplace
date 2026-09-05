@@ -82,7 +82,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   // [GUEST CHECKOUT] user may be null for guest checkout — that's expected
   const { user } = useAuth();
-  const { toggleCart, isOpen, clearCart } = useCart();
+  const { toggleCart, isOpen, clearCart, selectedCourier } = useCart();
   const navigate = useNavigate();
   const clearError = useCallback(() => {
     setError(null);
@@ -141,7 +141,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
           const whatsappURL = WhatsAppService.generateWhatsAppURL(
             orderIds,
             couponCode ?? null,
-            discountAmount
+            discountAmount,
+            selectedCourier.label
           );
 
           // Always show the payment dialog
@@ -163,7 +164,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(false);
       }
     },
-    [user]
+    [user, selectedCourier]
   );
 
   const handleWhatsAppConfirm = useCallback(() => {
@@ -177,7 +178,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
     setUpiPaymentState(null);
     if (isOpen) toggleCart();
     clearCart();
-    navigate(ROUTE_NAMES.HOME);
+    navigate(ROUTE_NAMES.TRACK_ORDER);
     toast.success("Order placed! Complete your order details on WhatsApp.");
   }, [upiPaymentState, isOpen, toggleCart, clearCart, navigate]);
 

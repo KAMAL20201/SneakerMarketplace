@@ -12,19 +12,24 @@ export class WhatsAppService {
   static formatOrderMessage(
     orderIds: string[],
     couponCode?: string | null,
-    discountAmount?: number
+    discountAmount?: number,
+    courierLabel?: string | null
   ): string {
     const shortIds = orderIds.map((id) => `#${id.slice(0, 8)}`);
     const couponLine =
       couponCode
         ? `\n*Coupon:* ${couponCode}${discountAmount ? ` (−₹${discountAmount})` : ""}`
         : "";
+    const courierLine = courierLabel
+      ? `\n*Courier:* ${courierLabel}`
+      : "";
 
     if (shortIds.length === 1) {
       return (
         `Hi! I've completed my payment for my order on The Plug Market.\n\n` +
         `*Order ID:* ${shortIds[0]}` +
         couponLine +
+        courierLine +
         `\n\nPlease confirm once you've received the payment. Thank you!`
       );
     }
@@ -33,6 +38,7 @@ export class WhatsAppService {
       `Hi! I've completed my payment for my orders on The Plug Market.\n\n` +
       `*Order IDs:*\n${shortIds.join("\n")}` +
       couponLine +
+      courierLine +
       `\n\nPlease confirm once you've received the payment. Thank you!`
     );
   }
@@ -43,9 +49,10 @@ export class WhatsAppService {
   static generateWhatsAppURL(
     orderIds: string[],
     couponCode?: string | null,
-    discountAmount?: number
+    discountAmount?: number,
+    courierLabel?: string | null
   ): string {
-    const message = this.formatOrderMessage(orderIds, couponCode, discountAmount);
+    const message = this.formatOrderMessage(orderIds, couponCode, discountAmount, courierLabel);
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
   }
