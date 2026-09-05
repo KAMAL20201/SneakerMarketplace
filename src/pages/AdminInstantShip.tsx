@@ -1,6 +1,6 @@
 import { AdminRoute } from "@/components/AdminRoute";
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Zap, Loader2, Search, X } from "lucide-react";
+import { ArrowLeft, Zap, Loader2, Search, X, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,13 +17,25 @@ interface SizeRow {
   is_sold: boolean;
 }
 
+interface VariantRow {
+  id: string;
+  color_name: string;
+  color_hex?: string | null;
+  display_order?: number;
+  image_url?: string | null;
+  product_variant_sizes: SizeRow[];
+}
+
 interface ProductRow {
   id: string;
   title: string;
   brand: string;
   slug: string;
   product_listing_sizes: SizeRow[];
+  product_variants: VariantRow[];
 }
+
+type SizeTargetTable = "product_listing_sizes" | "product_variant_sizes";
 
 interface SizeListItemProps {
   size: SizeRow;
@@ -65,17 +77,17 @@ function SizeListItem({ size, toggling, onToggle, onSavePrice }: SizeListItemPro
         type="button"
         disabled={isLocked}
         onClick={() => setExpanded(true)}
-        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold uppercase transition-all border ${
+        className={`inline-flex items-center gap-1 min-h-[34px] px-3 py-1.5 rounded-xl text-xs font-semibold uppercase transition-all border ${
           isLocked
             ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
             : size.is_instant_ship
               ? size.is_sold
                 ? "bg-teal-400 text-white border-teal-400 hover:bg-teal-500 ring-1 ring-offset-1 ring-teal-300"
-                : "bg-teal-500 text-white border-teal-500 hover:bg-teal-600"
-              : "bg-white text-gray-600 border-gray-200 hover:border-teal-400 hover:text-teal-600"
+                : "bg-teal-500 text-white border-teal-500 hover:bg-teal-600 shadow-sm"
+              : "bg-white text-gray-700 border-gray-200 hover:border-teal-400 hover:text-teal-600"
         }`}
       >
-        {size.is_instant_ship && <Zap className="h-2.5 w-2.5" />}
+        {size.is_instant_ship && <Zap className="h-3 w-3" />}
         {size.size_value}
         {size.is_sold && size.is_instant_ship && (
           <span className="text-[9px] opacity-80 normal-case font-normal">(sold)</span>
@@ -86,7 +98,7 @@ function SizeListItem({ size, toggling, onToggle, onSavePrice }: SizeListItemPro
 
   return (
     <div className="w-full flex items-center gap-2 p-2 rounded-xl border border-teal-200 bg-teal-50/40">
-      <span className="text-xs font-bold uppercase w-10 shrink-0 text-gray-700">
+      <span className="text-xs font-bold uppercase w-12 shrink-0 text-gray-700">
         {size.size_value}
       </span>
       <div className="flex items-center gap-1 flex-1 min-w-0">
@@ -99,7 +111,7 @@ function SizeListItem({ size, toggling, onToggle, onSavePrice }: SizeListItemPro
           value={priceInput}
           onChange={(e) => setPriceInput(e.target.value)}
           disabled={saving}
-          className="w-full min-w-0 px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-400 disabled:bg-gray-100"
+          className="w-full min-w-0 px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-teal-400 disabled:bg-gray-100"
         />
         {dirty && (
           <Button
@@ -117,7 +129,7 @@ function SizeListItem({ size, toggling, onToggle, onSavePrice }: SizeListItemPro
         type="button"
         disabled={toggling}
         onClick={onToggle}
-        className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-semibold uppercase transition-all border ${
+        className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-semibold uppercase transition-all border ${
           size.is_instant_ship
             ? "bg-teal-500 text-white border-teal-500 hover:bg-teal-600"
             : "bg-white text-gray-600 border-gray-200 hover:border-teal-400 hover:text-teal-600"
@@ -136,12 +148,189 @@ function SizeListItem({ size, toggling, onToggle, onSavePrice }: SizeListItemPro
           setPriceInput(String(size.price ?? 0));
           setExpanded(false);
         }}
-        className="shrink-0 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+        className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
         aria-label="Close"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-4 w-4" />
       </button>
     </div>
+  );
+}
+
+interface ProductCardProps {
+  product: ProductRow;
+  toggling: string | null;
+  onToggleSize: (
+    targetTable: SizeTargetTable,
+    size: SizeRow,
+    variantId?: string,
+  ) => Promise<void>;
+  onUpdatePrice: (
+    targetTable: SizeTargetTable,
+    size: SizeRow,
+    newPrice: number,
+    variantId?: string,
+  ) => Promise<void>;
+}
+
+function ProductCard({
+  product,
+  toggling,
+  onToggleSize,
+  onUpdatePrice,
+}: ProductCardProps) {
+  const variants = (product.product_variants ?? [])
+    .slice()
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+  const hasVariants = variants.length > 0;
+
+  // Find default active variant: prefer one with instant-ship items, else first variant
+  const [activeVariantId, setActiveVariantId] = useState<string>(() => {
+    if (!hasVariants) return "";
+    const variantWithInstant = variants.find((v) =>
+      (v.product_variant_sizes ?? []).some((s) => s.is_instant_ship),
+    );
+    return variantWithInstant ? variantWithInstant.id : variants[0]?.id ?? "";
+  });
+
+  // Calculate total instant ship count across all variants and legacy sizes
+  const variantInstantCount = variants.reduce(
+    (acc, v) =>
+      acc + (v.product_variant_sizes ?? []).filter((s) => s.is_instant_ship).length,
+    0,
+  );
+  const legacyInstantCount = (product.product_listing_sizes ?? []).filter(
+    (s) => s.is_instant_ship,
+  ).length;
+  const totalInstantCount = variantInstantCount + legacyInstantCount;
+
+  // Currently active variant
+  const activeVariant = variants.find((v) => v.id === activeVariantId) || variants[0];
+
+  const activeSizes = hasVariants
+    ? (activeVariant?.product_variant_sizes ?? []).slice().sort((a, b) =>
+        a.size_value.localeCompare(b.size_value, undefined, { numeric: true }),
+      )
+    : (product.product_listing_sizes ?? []).slice().sort((a, b) =>
+        a.size_value.localeCompare(b.size_value, undefined, { numeric: true }),
+      );
+
+  return (
+    <Card className="rounded-2xl shadow-sm overflow-hidden border-gray-100">
+      <CardContent className="p-4 sm:p-5">
+        {/* Product Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="min-w-0 pr-2">
+            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
+              {product.brand}
+            </p>
+            <p className="text-sm sm:text-base font-bold text-gray-800 truncate">
+              {product.title}
+            </p>
+          </div>
+          {totalInstantCount > 0 && (
+            <Badge className="text-[10px] sm:text-xs px-2.5 py-1 bg-teal-100 text-teal-800 border-0 rounded-lg shrink-0 flex items-center gap-1 font-semibold">
+              <Zap className="h-3 w-3 fill-teal-600 text-teal-600" />
+              {totalInstantCount} instant
+            </Badge>
+          )}
+        </div>
+
+        {/* Variant Selectors (if product has variants) */}
+        {hasVariants && (
+          <div className="mb-4">
+            <div className="flex items-center gap-1.5 mb-2 text-xs font-semibold text-gray-600">
+              <Layers className="h-3.5 w-3.5 text-gray-400" />
+              <span>Variants ({variants.length})</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {variants.map((v) => {
+                const isSelected = v.id === (activeVariant?.id ?? activeVariantId);
+                const vInstantCount = (v.product_variant_sizes ?? []).filter(
+                  (s) => s.is_instant_ship,
+                ).length;
+
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setActiveVariantId(v.id)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all border ${
+                      isSelected
+                        ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                        : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300"
+                    }`}
+                  >
+                    {v.color_hex && (
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
+                        style={{ backgroundColor: v.color_hex }}
+                      />
+                    )}
+                    <span>{v.color_name || "Default Variant"}</span>
+                    {vInstantCount > 0 && (
+                      <span
+                        className={`inline-flex items-center text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                          isSelected
+                            ? "bg-teal-400 text-gray-950"
+                            : "bg-teal-100 text-teal-700"
+                        }`}
+                      >
+                        ⚡{vInstantCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Sizes List */}
+        {activeSizes.length === 0 ? (
+          <p className="text-xs text-gray-400 py-2">
+            {hasVariants ? "No sizes found for this variant." : "No sizes found."}
+          </p>
+        ) : (
+          <div>
+            {hasVariants && (
+              <p className="text-[11px] font-semibold text-gray-500 mb-2 uppercase tracking-wide">
+                Sizes for {activeVariant?.color_name}:
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {activeSizes.map((size) => (
+                <SizeListItem
+                  key={size.id}
+                  size={size}
+                  toggling={toggling === size.id}
+                  onToggle={() =>
+                    onToggleSize(
+                      hasVariants
+                        ? "product_variant_sizes"
+                        : "product_listing_sizes",
+                      size,
+                      activeVariant?.id,
+                    )
+                  }
+                  onSavePrice={(newPrice) =>
+                    onUpdatePrice(
+                      hasVariants
+                        ? "product_variant_sizes"
+                        : "product_listing_sizes",
+                      size,
+                      newPrice,
+                      activeVariant?.id,
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -157,7 +346,12 @@ function AdminInstantShip() {
     const req = supabase
       .from("product_listings")
       .select(
-        "id, title, brand, slug, product_listing_sizes(id, size_value, price, is_instant_ship, is_sold)",
+        `id, title, brand, slug,
+        product_listing_sizes(id, size_value, price, is_instant_ship, is_sold),
+        product_variants(
+          id, color_name, color_hex, display_order, image_url,
+          product_variant_sizes(id, size_value, price, is_instant_ship, is_sold)
+        )`,
       )
       .eq("status", "active")
       .order("title")
@@ -166,8 +360,11 @@ function AdminInstantShip() {
     if (q.trim()) req.ilike("title", `%${q.trim()}%`);
 
     const { data, error } = await req;
-    if (error) toast.error("Failed to load products");
-    else setProducts((data as ProductRow[]) ?? []);
+    if (error) {
+      toast.error("Failed to load products");
+    } else {
+      setProducts((data as unknown as ProductRow[]) ?? []);
+    }
     setLoading(false);
   }, []);
 
@@ -180,13 +377,18 @@ function AdminInstantShip() {
     setQuery(search);
   };
 
-  const toggleSize = async (size: SizeRow) => {
+  const toggleSize = async (
+    targetTable: SizeTargetTable,
+    size: SizeRow,
+    variantId?: string,
+  ) => {
     setToggling(size.id);
     const next = !size.is_instant_ship;
     const { error } = await supabase
-      .from("product_listing_sizes")
+      .from(targetTable)
       .update({ is_instant_ship: next })
       .eq("id", size.id);
+
     if (error) {
       toast.error("Failed to update size");
     } else {
@@ -196,34 +398,75 @@ function AdminInstantShip() {
           : `Removed ${size.size_value} from Instant Ship`,
       );
       setProducts((prev) =>
-        prev.map((p) => ({
-          ...p,
-          product_listing_sizes: p.product_listing_sizes.map((s) =>
-            s.id === size.id ? { ...s, is_instant_ship: next } : s,
-          ),
-        })),
+        prev.map((p) => {
+          if (targetTable === "product_variant_sizes" && variantId) {
+            return {
+              ...p,
+              product_variants: (p.product_variants ?? []).map((v) =>
+                v.id === variantId
+                  ? {
+                      ...v,
+                      product_variant_sizes: (v.product_variant_sizes ?? []).map(
+                        (s) =>
+                          s.id === size.id ? { ...s, is_instant_ship: next } : s,
+                      ),
+                    }
+                  : v,
+              ),
+            };
+          }
+          return {
+            ...p,
+            product_listing_sizes: (p.product_listing_sizes ?? []).map((s) =>
+              s.id === size.id ? { ...s, is_instant_ship: next } : s,
+            ),
+          };
+        }),
       );
     }
     setToggling(null);
   };
 
-  const updatePrice = async (size: SizeRow, newPrice: number) => {
+  const updatePrice = async (
+    targetTable: SizeTargetTable,
+    size: SizeRow,
+    newPrice: number,
+    variantId?: string,
+  ) => {
     const { error } = await supabase
-      .from("product_listing_sizes")
+      .from(targetTable)
       .update({ price: newPrice })
       .eq("id", size.id);
+
     if (error) {
       toast.error("Failed to update price");
       return;
     }
     toast.success(`Updated ${size.size_value} price to ₹${newPrice}`);
     setProducts((prev) =>
-      prev.map((p) => ({
-        ...p,
-        product_listing_sizes: p.product_listing_sizes.map((s) =>
-          s.id === size.id ? { ...s, price: newPrice } : s,
-        ),
-      })),
+      prev.map((p) => {
+        if (targetTable === "product_variant_sizes" && variantId) {
+          return {
+            ...p,
+            product_variants: (p.product_variants ?? []).map((v) =>
+              v.id === variantId
+                ? {
+                    ...v,
+                    product_variant_sizes: (v.product_variant_sizes ?? []).map(
+                      (s) => (s.id === size.id ? { ...s, price: newPrice } : s),
+                    ),
+                  }
+                : v,
+            ),
+          };
+        }
+        return {
+          ...p,
+          product_listing_sizes: (p.product_listing_sizes ?? []).map((s) =>
+            s.id === size.id ? { ...s, price: newPrice } : s,
+          ),
+        };
+      }),
     );
   };
 
@@ -244,7 +487,7 @@ function AdminInstantShip() {
           <div>
             <h1 className="text-lg font-bold text-gray-800">Instant Ship</h1>
             <p className="text-xs text-gray-500">
-              Mark individual sizes as in-hand (instant ship)
+              Mark individual sizes and variants as in-hand (instant ship)
             </p>
           </div>
         </div>
@@ -297,52 +540,15 @@ function AdminInstantShip() {
           </p>
         ) : (
           <div className="space-y-3">
-            {products.map((product) => {
-              const sizes = (product.product_listing_sizes ?? []).sort(
-                (a, b) => (a.price ?? 0) - (b.price ?? 0),
-              );
-              const instantCount = sizes.filter((s) => s.is_instant_ship).length;
-
-              return (
-                <Card key={product.id} className="rounded-2xl shadow-sm overflow-hidden">
-                  <CardContent className="p-4">
-                    {/* Product header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="min-w-0">
-                        <p className="text-xs text-gray-500 font-semibold capitalize">
-                          {product.brand}
-                        </p>
-                        <p className="text-sm font-bold text-gray-800 truncate">
-                          {product.title}
-                        </p>
-                      </div>
-                      {instantCount > 0 && (
-                        <Badge className="text-[10px] px-2 py-0.5 bg-teal-100 text-teal-700 border-0 rounded-lg shrink-0 ml-2 flex items-center gap-1">
-                          <Zap className="h-2.5 w-2.5" />
-                          {instantCount} instant
-                        </Badge>
-                      )}
-                    </div>
-
-                    {sizes.length === 0 ? (
-                      <p className="text-xs text-gray-400">No sizes found.</p>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        {sizes.map((size) => (
-                          <SizeListItem
-                            key={size.id}
-                            size={size}
-                            toggling={toggling === size.id}
-                            onToggle={() => toggleSize(size)}
-                            onSavePrice={(newPrice) => updatePrice(size, newPrice)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                toggling={toggling}
+                onToggleSize={toggleSize}
+                onUpdatePrice={updatePrice}
+              />
+            ))}
           </div>
         )}
 
@@ -363,3 +569,4 @@ export default function AdminInstantShipPage() {
     </AdminRoute>
   );
 }
+
