@@ -9,10 +9,17 @@ export interface BrandModel {
 export interface BrandConfig {
   name: string; // "New Balance"
   slug: string; // "new-balance" — URL segment
-  dbValue: string; // "new balance" — exact value stored in DB brand column
+  dbValue: string; // "new balance" — primary/canonical DB brand value
+  /** Additional DB brand values to include (for casing variants, aliases, etc.) */
+  dbValues?: string[];
   tagline: string; // short tagline shown on brands index
   description: string; // meta description + shown as subheading on brand page
   models: BrandModel[];
+}
+
+/** Returns all DB brand values (primary + variants) for use in RPC p_brands array */
+export function getBrandDbValues(config: BrandConfig): string[] {
+  return [config.dbValue, ...(config.dbValues ?? [])];
 }
 
 export const BRANDS_CONFIG: Record<string, BrandConfig> = {
@@ -252,6 +259,158 @@ export const BRANDS_CONFIG: Record<string, BrandConfig> = {
       },
     ],
   },
+
+  anta: {
+    name: "ANTA",
+    slug: "anta",
+    dbValue: "Anta",
+    dbValues: ["ANTA"],
+    tagline: "Keep Moving Forward",
+    description:
+      "Buy authentic ANTA shoes in India — ANTA C202, Fold H1, Zone 2 and more. China's top-performing running brand, now available in India with fast delivery at The Plug Market.",
+    models: [
+      {
+        name: "C202",
+        slug: "c202",
+        searchTerm: "C202",
+        description:
+          "Buy authentic ANTA C202 shoes in India. The ANTA C202 is China's iconic marathon racing shoe — verified listings, best prices, fast delivery at The Plug Market.",
+      },
+      {
+        name: "Fold H1",
+        slug: "fold-h1",
+        searchTerm: "Fold H1",
+        description:
+          "Buy authentic ANTA Fold H1 shoes in India. Shop ANTA Fold H1 with fast delivery and verified authenticity at The Plug Market.",
+      },
+      {
+        name: "Zone 2 90",
+        slug: "zone-2-90",
+        searchTerm: "Zone 2",
+        description:
+          "Buy authentic ANTA Zone 2 90 shoes in India. Shop ANTA Zone 2 with fast delivery and verified authenticity at The Plug Market.",
+      },
+    ],
+  },
+
+  "li-ning": {
+    name: "Li-Ning",
+    slug: "li-ning",
+    dbValue: "Li Ning",
+    tagline: "Anything is Possible",
+    description:
+      "Buy authentic Li-Ning shoes in India — Feidian 6, Red Hare and more. China's most innovative running brand with cutting-edge foam technology. Fast delivery with verified authenticity at The Plug Market.",
+    models: [
+      {
+        name: "Feidian 6 Elite",
+        slug: "feidian-6-elite",
+        searchTerm: "Feidian 6 Elite",
+        description:
+          "Buy authentic Li-Ning Feidian 6 Elite in India. The Feidian 6 Elite is Li-Ning's flagship racing shoe — verified listings, best prices, fast delivery at The Plug Market.",
+      },
+      {
+        name: "Feidian 6 Challenger",
+        slug: "feidian-6-challenger",
+        searchTerm: "Feidian 6 Challenger",
+        description:
+          "Buy authentic Li-Ning Feidian 6 Challenger in India. Shop Li-Ning Feidian 6 Challenger with fast delivery and verified authenticity at The Plug Market.",
+      },
+      {
+        name: "Red Hare 9 Ultra",
+        slug: "red-hare-9-ultra",
+        searchTerm: "Red Hare 9 Ultra",
+        description:
+          "Buy authentic Li-Ning Red Hare 9 Ultra in India. Shop Li-Ning Red Hare 9 Ultra with fast delivery and verified authenticity at The Plug Market.",
+      },
+    ],
+  },
+
+  xtep: {
+    name: "Xtep",
+    slug: "xtep",
+    dbValue: "Xtep",
+    tagline: "Feel the Difference",
+    description:
+      "Buy authentic Xtep shoes in India — Xtep 2000km, 160X and more. China's premier running brand known for marathon-level performance. Fast delivery with verified authenticity at The Plug Market.",
+    models: [
+      {
+        name: "2000km 5th Gen PRO",
+        slug: "2000km",
+        searchTerm: "2000",
+        description:
+          "Buy authentic Xtep 2000km shoes in India. The Xtep 2000km is one of China's top marathon racing shoes — verified listings, best prices, fast delivery at The Plug Market.",
+      },
+    ],
+  },
+
+  "361": {
+    name: "361°",
+    slug: "361",
+    dbValue: "361",
+    tagline: "One Degree Beyond",
+    description:
+      "Buy authentic 361° shoes in India — 361 Mega 3 Pro and more. China's rising running brand delivering competition-level performance. Fast delivery with verified authenticity at The Plug Market.",
+    models: [
+      {
+        name: "Mega 3 Pro",
+        slug: "mega-3-pro",
+        searchTerm: "Mega 3 Pro",
+        description:
+          "Buy authentic 361° Mega 3 Pro in India. Shop 361 Mega 3 Pro with fast delivery and verified authenticity at The Plug Market.",
+      },
+    ],
+  },
+
+  qiaodan: {
+    name: "Qiaodan",
+    slug: "qiaodan",
+    dbValue: "qiaodan",
+    tagline: "Born to Run",
+    description:
+      "Buy authentic Qiaodan shoes in India — Qiaodan Leili and more. China's fast-growing running brand inspired by elite marathon performance. Fast delivery with verified authenticity at The Plug Market.",
+    models: [
+      {
+        name: "Leili 2.0 GT",
+        slug: "leili-2-gt",
+        searchTerm: "Leili 2.0 GT",
+        description:
+          "Buy authentic Qiaodan Leili 2.0 GT in India. Shop Qiaodan Leili 2.0 GT with fast delivery and verified authenticity at The Plug Market.",
+      },
+      {
+        name: "Leili 2.0",
+        slug: "leili-2",
+        searchTerm: "Leili 2.0",
+        description:
+          "Buy authentic Qiaodan Leili 2.0 in India. Shop Qiaodan Leili 2.0 with fast delivery and verified authenticity at The Plug Market.",
+      },
+    ],
+  },
+
+  dynafish: {
+    name: "DynaFish",
+    slug: "dynafish",
+    dbValue: "Dynafish",
+    tagline: "Ultra Performance",
+    description:
+      "Buy authentic DynaFish shoes in India — DynaFish Xiaonian, Xianion and more. China's ultra-niche performance running brand. Fast delivery with verified authenticity at The Plug Market.",
+    models: [
+      {
+        name: "Xiaonian",
+        slug: "xiaonian",
+        searchTerm: "Xiaonian",
+        description:
+          "Buy authentic DynaFish Xiaonian in India. Shop DynaFish Xiaonian with fast delivery and verified authenticity at The Plug Market.",
+      },
+      {
+        name: "Xianion",
+        slug: "xianion",
+        searchTerm: "Xianion",
+        description:
+          "Buy authentic DynaFish Xianion in India. Shop DynaFish Xianion with fast delivery and verified authenticity at The Plug Market.",
+      },
+    ],
+  },
 };
 
 export const ALL_BRANDS = Object.values(BRANDS_CONFIG);
+

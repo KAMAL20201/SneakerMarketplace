@@ -41,6 +41,7 @@ import ConditionBadge from "@/components/ui/ConditionBadge";
 import { ROUTE_HELPERS, PRODUCT_CONDITIONS, SNEAKER_SIZES } from "@/constants/enums";
 import {
   BRANDS_CONFIG,
+  getBrandDbValues,
   type BrandConfig,
   type BrandModel,
 } from "@/constants/brandsConfig";
@@ -207,7 +208,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { data: rpcData } = await ssrSupabase.rpc("browse_all_listings", {
     p_categories: null,
     p_sizes: null,
-    p_brands: [brandConfig.dbValue],
+    p_brands: getBrandDbValues(brandConfig),
     p_conditions: null,
     p_price_min: 0,
     p_price_max: 100000,
@@ -324,7 +325,7 @@ const BrandPage = () => {
           {
             p_categories: null,
             p_sizes: currentFilters.size.length > 0 ? currentFilters.size : null,
-            p_brands: [brandConfig.dbValue],
+            p_brands: getBrandDbValues(brandConfig),
             p_conditions:
               currentFilters.condition.length > 0
                 ? currentFilters.condition

@@ -13,6 +13,46 @@ interface SpotlightBrand {
 // Brands with a dedicated brand page link there directly (better SEO — real <a> tags).
 // Brands without a dedicated page fall back to filtered browse.
 const SPOTLIGHT_BRANDS: SpotlightBrand[] = [
+   {
+    label: "ANTA",
+    href: "/brands/anta",
+    logoSrc:"/brandLogos/anta.png",
+    initial: "AN",
+    fallbackBg: "bg-red-600",
+    fallbackText: "text-white",
+  },
+  {
+    label: "Li-Ning",
+    href: "/brands/li-ning",
+    logoSrc:"/brandLogos/li-ning.png",
+    initial: "LN",
+    fallbackBg: "bg-yellow-500",
+    fallbackText: "text-black",
+  },
+  {
+    label: "Xtep",
+    href: "/brands/xtep",
+    logoSrc: "/brandLogos/xtep.svg",
+    initial: "XT",
+    fallbackBg: "bg-orange-500",
+    fallbackText: "text-white",
+  },
+  {
+    label: "361°",
+    href: "/brands/361",
+    logoSrc: "/brandLogos/361.webp",
+    initial: "361",
+    fallbackBg: "bg-blue-600",
+    fallbackText: "text-white",
+  },
+  {
+    label: "Qiaodan",
+    href: "/brands/qiaodan",
+    logoSrc:"/brandLogos/qiaodan.avif",
+    initial: "QD",
+    fallbackBg: "bg-green-600",
+    fallbackText: "text-white",
+  },
   {
     label: "Nike",
     href: "/brands/nike",
@@ -34,7 +74,6 @@ const SPOTLIGHT_BRANDS: SpotlightBrand[] = [
     href: "/brands/adidas",
     logoSrc: "/brandLogos/adidas.svg",
     initial: "A",
-
     fallbackBg: "bg-black",
     fallbackText: "text-white",
   },
@@ -54,22 +93,7 @@ const SPOTLIGHT_BRANDS: SpotlightBrand[] = [
     fallbackBg: "bg-blue-700",
     fallbackText: "text-white",
   },
-  {
-    label: "Onitsuka Tiger",
-    href: "/brands/onitsuka-tiger",
-    logoSrc: "/brandLogos/onitsuka.svg",
-    initial: "OT",
-    fallbackBg: "bg-red-500",
-    fallbackText: "text-white",
-  },
-  {
-    label: "Puma",
-    href: `${ROUTE_NAMES.BROWSE}?brand=puma`,
-    logoSrc: "/brandLogos/puma.svg",
-    initial: "P",
-    fallbackBg: "bg-zinc-800",
-    fallbackText: "text-white",
-  },
+ 
 ];
 
 // ── Per-chip component ────────────────────────────────────────────────────────

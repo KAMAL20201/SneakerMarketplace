@@ -220,6 +220,128 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- Chinese brand pages -->
+  <url>
+    <loc>https://theplugmarket.in/brands/anta</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/li-ning</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/xtep</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/361</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/qiaodan</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/dynafish</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Model pages — ANTA -->
+  <url>
+    <loc>https://theplugmarket.in/brands/anta/c202</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/anta/fold-h1</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/anta/zone-2-90</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Model pages — Li-Ning -->
+  <url>
+    <loc>https://theplugmarket.in/brands/li-ning/feidian-6-elite</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/li-ning/feidian-6-challenger</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/li-ning/red-hare-9-ultra</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Model pages — Xtep -->
+  <url>
+    <loc>https://theplugmarket.in/brands/xtep/2000km</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Model pages — 361° -->
+  <url>
+    <loc>https://theplugmarket.in/brands/361/mega-3-pro</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Model pages — Qiaodan -->
+  <url>
+    <loc>https://theplugmarket.in/brands/qiaodan/leili-2-gt</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/qiaodan/leili-2</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Model pages — DynaFish -->
+  <url>
+    <loc>https://theplugmarket.in/brands/dynafish/xiaonian</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://theplugmarket.in/brands/dynafish/xianion</loc>
+    <lastmod>2026-09-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+
   <!-- Static info pages -->
   <url>
     <loc>https://theplugmarket.in/about</loc>
