@@ -359,6 +359,23 @@ const THREE_SIXTY_ONE_CHART: BrandSizeChart = {
   ],
 };
 
+// ─── QIAODAN ───────────────────────────────────────────────────────────────
+// Source: Official Qiaodan Size Chart
+const QIAODAN_CHART: BrandSizeChart = {
+  men: [
+    { uk: "5.5",  us: "6.5",  eu: "39",   cm: "24.5" },
+    { uk: "6",    us: "7",    eu: "40",   cm: "25"   },
+    { uk: "6.5",  us: "7.5",  eu: "40.5", cm: "25.5" },
+    { uk: "7",    us: "8",    eu: "41",   cm: "26"   },
+    { uk: "7.5",  us: "8.5",  eu: "42",   cm: "26.5" },
+    { uk: "8",    us: "9",    eu: "42.5", cm: "27"   },
+    { uk: "8.5",  us: "9.5",  eu: "43",   cm: "27.5" },
+    { uk: "9",    us: "10",   eu: "44",   cm: "28"   },
+    { uk: "9.5",  us: "10.5", eu: "44.5", cm: "28.5" },
+    { uk: "10",   us: "11",   eu: "45",   cm: "29"   },
+  ],
+};
+
 // ─── BRAND → CHART LOOKUP ──────────────────────────────────────────────────
 // Any brand not listed here falls back to NIKE_CHART
 const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
@@ -380,6 +397,8 @@ const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
   "361 degrees": THREE_SIXTY_ONE_CHART,
   "361°":        THREE_SIXTY_ONE_CHART,
   "361-degrees": THREE_SIXTY_ONE_CHART,
+  qiaodan:       QIAODAN_CHART,
+  "qiaodan sports": QIAODAN_CHART,
 };
 
 export function getSizeChart(brand: string): BrandSizeChart {
@@ -399,7 +418,9 @@ export function isEuPrimaryBrand(brand: string | undefined | null): boolean {
     key === "361" ||
     key === "361 degrees" ||
     key === "361°" ||
-    key === "361-degrees"
+    key === "361-degrees" ||
+    key === "qiaodan" ||
+    key === "qiaodan sports"
   );
 }
 
