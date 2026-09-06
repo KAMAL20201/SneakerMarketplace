@@ -12,6 +12,8 @@ import {
   ChevronUp,
   Trash2,
   Play,
+  Pencil,
+  Check,
   Pause,
   Square,
   RefreshCw,
@@ -215,6 +217,32 @@ function AdminPreOrders() {
     }
   };
 
+  const handleUpdateWindow = async (
+    w: PreOrderWindow,
+    updates: { name?: string; starts_at?: string; ends_at?: string },
+  ) => {
+    const payload: Record<string, string | number> = {};
+    if (updates.name) payload.name = updates.name;
+    if (updates.starts_at) payload.starts_at = new Date(updates.starts_at).toISOString();
+    if (updates.ends_at) payload.ends_at = new Date(updates.ends_at).toISOString();
+    if (updates.starts_at && updates.ends_at) {
+      const diffMs = new Date(updates.ends_at).getTime() - new Date(updates.starts_at).getTime();
+      payload.duration_hours = Math.round(diffMs / 3_600_000);
+    }
+
+    const { error } = await supabase
+      .from("pre_order_windows")
+      .update(payload)
+      .eq("id", w.id);
+
+    if (error) {
+      toast.error("Failed to update window");
+    } else {
+      toast.success(`Window "${updates.name || w.name}" updated!`);
+      await fetchWindows();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Header */}
@@ -356,6 +384,7 @@ function AdminPreOrders() {
                 onOpen={handleOpenWindow}
                 onPause={handlePauseWindow}
                 onClose={handleCloseWindow}
+                onUpdate={handleUpdateWindow}
               />
             ))}
           </div>
@@ -375,6 +404,7 @@ function WindowCard({
   onOpen,
   onPause,
   onClose,
+  onUpdate,
 }: {
   window: PreOrderWindow;
   expanded: boolean;
@@ -383,6 +413,7 @@ function WindowCard({
   onOpen: (w: PreOrderWindow) => void;
   onPause: (w: PreOrderWindow, hours?: number) => void;
   onClose: (w: PreOrderWindow) => void;
+  onUpdate: (w: PreOrderWindow, updates: { name?: string; starts_at?: string; ends_at?: string }) => Promise<void>;
 }) {
   const status = windowStatus(w);
   const [products, setProducts] = useState<PreOrderProduct[]>([]);
@@ -391,6 +422,35 @@ function WindowCard({
   const [searchResults, setSearchResults] = useState<SearchListing[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
+
+  // ── Edit mode state ──
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(w.name);
+  const [editStartsAt, setEditStartsAt] = useState(
+    new Date(w.starts_at).toISOString().slice(0, 16),
+  );
+  const [editEndsAt, setEditEndsAt] = useState(
+    new Date(w.ends_at).toISOString().slice(0, 16),
+  );
+  const [saving, setSaving] = useState(false);
+
+  // Sync edit fields when window prop changes (e.g. after save)
+  useEffect(() => {
+    setEditName(w.name);
+    setEditStartsAt(new Date(w.starts_at).toISOString().slice(0, 16));
+    setEditEndsAt(new Date(w.ends_at).toISOString().slice(0, 16));
+  }, [w.name, w.starts_at, w.ends_at]);
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    await onUpdate(w, {
+      name: editName,
+      starts_at: editStartsAt,
+      ends_at: editEndsAt,
+    });
+    setSaving(false);
+    setEditing(false);
+  };
 
   const fetchProducts = useCallback(async () => {
     setLoadingProducts(true);
@@ -495,6 +555,82 @@ function WindowCard({
   return (
     <Card className="rounded-2xl shadow-sm overflow-hidden border border-gray-200">
       <CardContent className="p-0">
+        {/* ── Inline Edit Panel ── */}
+        {editing ? (
+          <div className="p-4 space-y-3 bg-violet-50/50" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-violet-700 uppercase tracking-wide">Edit Window</p>
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Window Name</label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="text-sm h-9"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Starts At</label>
+                <Input
+                  type="datetime-local"
+                  value={editStartsAt}
+                  onChange={(e) => setEditStartsAt(e.target.value)}
+                  className="text-sm h-9"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Ends At</label>
+                <Input
+                  type="datetime-local"
+                  value={editEndsAt}
+                  onChange={(e) => setEditEndsAt(e.target.value)}
+                  className="text-sm h-9"
+                />
+              </div>
+            </div>
+
+            {editEndsAt && editStartsAt && (
+              <p className="text-xs text-gray-500">
+                Duration:{" "}
+                <span className="font-semibold text-gray-700">
+                  {Math.round(
+                    (new Date(editEndsAt).getTime() - new Date(editStartsAt).getTime()) / 3_600_000,
+                  )}h
+                </span>
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                size="sm"
+                onClick={handleSaveEdit}
+                disabled={saving || !editName.trim()}
+                className="bg-violet-600 hover:bg-violet-700 text-white text-xs gap-1"
+              >
+                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditing(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
         <button
           type="button"
           onClick={onToggleExpand}
@@ -528,6 +664,17 @@ function WindowCard({
               className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Edit button */}
+              <button
+                type="button"
+                title="Edit Window Times"
+                onClick={() => setEditing(true)}
+                className="px-2 py-1 text-xs font-semibold rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 flex items-center gap-1 transition-colors"
+              >
+                <Pencil className="h-3 w-3" />
+                <span>Edit</span>
+              </button>
+
               {status !== "active" && (
                 <button
                   type="button"
@@ -583,6 +730,7 @@ function WindowCard({
             )}
           </div>
         </button>
+        )}
 
         {/* Expanded panel */}
         {expanded && (
