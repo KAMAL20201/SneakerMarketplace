@@ -5,6 +5,7 @@ import React, {
   useCallback,
   type ReactNode,
 } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Dialog,
   DialogContent,
@@ -198,11 +199,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
     });
   }, []);
 
-  const upiQrData = upiPaymentState && UPI_ID
-    ? encodeURIComponent(
-        `upi://pay?pa=${UPI_ID}&pn=The+Plug+Market&am=${upiPaymentState.amount}&cu=INR`
-      )
+  const upiDeepLink = upiPaymentState && UPI_ID
+    ? `upi://pay?pa=${UPI_ID}&pn=The+Plug+Market&am=${upiPaymentState.amount}&cu=INR`
     : "";
+
+  const [paymentTab, setPaymentTab] = useState<"upi" | "bank">(UPI_ID ? "upi" : "bank");
 
   const value: PaymentContextType = {
     isLoading,
@@ -245,113 +246,165 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             )}
           </div>
 
-          {/* Bank Transfer Details Section */}
-          <div className="my-3 space-y-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
-            <div className="flex items-center gap-2 text-slate-900 font-semibold text-sm">
-              <Landmark className="h-4 w-4 text-purple-600 shrink-0" />
-              <span>Bank Transfer (IMPS / NEFT / RTGS)</span>
+          {/* ── Payment Method Tabs ── */}
+          <div className="my-3">
+            {/* Tab bar */}
+            <div className="flex rounded-xl bg-gray-100 p-1 gap-1">
+              {UPI_ID && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentTab("upi")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    paymentTab === "upi"
+                      ? "bg-white text-violet-700 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                  </svg>
+                  UPI / QR
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setPaymentTab("bank")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  paymentTab === "bank"
+                    ? "bg-white text-slate-700 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Landmark className="h-3.5 w-3.5" />
+                Bank Transfer
+              </button>
             </div>
 
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Direct UPI/QR is currently updating. Please transfer <strong>₹{upiPaymentState?.amount}</strong> to the bank account below:
-            </p>
+            {/* ── UPI Tab Content ── */}
+            {paymentTab === "upi" && UPI_ID && (
+              <div className="mt-3 space-y-3 bg-violet-50/60 border border-violet-200/80 rounded-2xl p-4">
+                {/* QR Code */}
+                {upiDeepLink && (
+                  <div className="flex justify-center">
+                    <div className="bg-white p-3 rounded-xl border border-violet-100 shadow-sm inline-block">
+                      <QRCodeSVG
+                        value={upiDeepLink}
+                        size={160}
+                        level="M"
+                        bgColor="#ffffff"
+                        fgColor="#1e1b4b"
+                      />
+                    </div>
+                  </div>
+                )}
 
-            <div className="space-y-2 pt-1 text-xs">
-              {/* Account Holder Name */}
-              <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm gap-2">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Account Name</p>
-                  <p className="font-semibold text-slate-800 text-sm truncate">{BANK_DETAILS.accountName}</p>
+                <p className="text-xs text-violet-700/70 text-center leading-relaxed">
+                  Scan the QR code or copy the UPI ID below to pay <strong>₹{upiPaymentState?.amount}</strong>
+                </p>
+
+                {/* UPI ID with copy */}
+                <div className="bg-white rounded-xl p-2.5 flex items-center justify-between gap-3 border border-violet-100 shadow-sm">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-violet-400 uppercase tracking-wide font-medium">UPI ID</p>
+                    <p className="font-mono font-semibold text-gray-800 text-sm truncate">
+                      {UPI_ID}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyUpiId}
+                    className="flex-shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-700 transition-colors"
+                  >
+                    {copied ? (
+                      <>
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5 text-violet-500" />
+                        Copy
+                      </>
+                    )}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopyBankField(BANK_DETAILS.accountName, "Account Name")}
-                  className="shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                >
-                  {copiedField === "Account Name" ? (
-                    <span className="text-green-600 flex items-center gap-1 font-semibold"><CheckCircle2 className="h-3.5 w-3.5" /> Copied</span>
-                  ) : (
-                    <span className="flex items-center gap-1"><Copy className="h-3.5 w-3.5 text-slate-500" /> Copy</span>
-                  )}
-                </button>
               </div>
+            )}
 
-              {/* Account Number */}
-              <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm gap-2">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Account Number</p>
-                  <p className="font-mono font-bold text-slate-900 text-sm tracking-wide truncate">{BANK_DETAILS.accountNumber}</p>
+            {/* ── Bank Transfer Tab Content ── */}
+            {paymentTab === "bank" && (
+              <div className="mt-3 space-y-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Transfer <strong>₹{upiPaymentState?.amount}</strong> to the bank account below:
+                </p>
+
+                <div className="space-y-2 pt-1 text-xs">
+                  {/* Account Holder Name */}
+                  <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Account Name</p>
+                      <p className="font-semibold text-slate-800 text-sm truncate">{BANK_DETAILS.accountName}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyBankField(BANK_DETAILS.accountName, "Account Name")}
+                      className="shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                    >
+                      {copiedField === "Account Name" ? (
+                        <span className="text-green-600 flex items-center gap-1 font-semibold"><CheckCircle2 className="h-3.5 w-3.5" /> Copied</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><Copy className="h-3.5 w-3.5 text-slate-500" /> Copy</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Account Number */}
+                  <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Account Number</p>
+                      <p className="font-mono font-bold text-slate-900 text-sm tracking-wide truncate">{BANK_DETAILS.accountNumber}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyBankField(BANK_DETAILS.accountNumber, "Account Number")}
+                      className="shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                    >
+                      {copiedField === "Account Number" ? (
+                        <span className="text-green-600 flex items-center gap-1 font-semibold"><CheckCircle2 className="h-3.5 w-3.5" /> Copied</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><Copy className="h-3.5 w-3.5 text-slate-500" /> Copy</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* IFSC Code */}
+                  <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">IFSC Code</p>
+                      <p className="font-mono font-bold text-slate-900 text-sm tracking-wide truncate">{BANK_DETAILS.ifscCode}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyBankField(BANK_DETAILS.ifscCode, "IFSC Code")}
+                      className="shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                    >
+                      {copiedField === "IFSC Code" ? (
+                        <span className="text-green-600 flex items-center gap-1 font-semibold"><CheckCircle2 className="h-3.5 w-3.5" /> Copied</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><Copy className="h-3.5 w-3.5 text-slate-500" /> Copy</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Bank Name */}
+                  <div className="flex items-center justify-between px-1 pt-1">
+                    <span className="text-slate-500">Bank:</span>
+                    <span className="font-medium text-slate-700">{BANK_DETAILS.bankName}</span>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopyBankField(BANK_DETAILS.accountNumber, "Account Number")}
-                  className="shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                >
-                  {copiedField === "Account Number" ? (
-                    <span className="text-green-600 flex items-center gap-1 font-semibold"><CheckCircle2 className="h-3.5 w-3.5" /> Copied</span>
-                  ) : (
-                    <span className="flex items-center gap-1"><Copy className="h-3.5 w-3.5 text-slate-500" /> Copy</span>
-                  )}
-                </button>
               </div>
-
-              {/* IFSC Code */}
-              <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm gap-2">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">IFSC Code</p>
-                  <p className="font-mono font-bold text-slate-900 text-sm tracking-wide truncate">{BANK_DETAILS.ifscCode}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleCopyBankField(BANK_DETAILS.ifscCode, "IFSC Code")}
-                  className="shrink-0 flex items-center gap-1 text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                >
-                  {copiedField === "IFSC Code" ? (
-                    <span className="text-green-600 flex items-center gap-1 font-semibold"><CheckCircle2 className="h-3.5 w-3.5" /> Copied</span>
-                  ) : (
-                    <span className="flex items-center gap-1"><Copy className="h-3.5 w-3.5 text-slate-500" /> Copy</span>
-                  )}
-                </button>
-              </div>
-
-              {/* Bank Name */}
-              <div className="flex items-center justify-between px-1 pt-1">
-                <span className="text-slate-500">Bank:</span>
-                <span className="font-medium text-slate-700">{BANK_DETAILS.bankName}</span>
-              </div>
-            </div>
+            )}
           </div>
-
-          {/* UPI ID if available */}
-          {UPI_ID && (
-            <div className="mb-3 space-y-2">
-              <div className="bg-gray-50 rounded-2xl p-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">UPI ID</p>
-                  <p className="font-mono font-semibold text-gray-800 text-sm truncate">
-                    {UPI_ID}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCopyUpiId}
-                  className="flex-shrink-0 flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-xl bg-white border border-gray-200 shadow-sm transition-colors hover:bg-gray-100"
-                >
-                  {copied ? (
-                    <>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5 text-gray-500" />
-                      Copy
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* WhatsApp Confirm Button */}
           <button
