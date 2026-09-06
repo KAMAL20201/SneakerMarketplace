@@ -44,7 +44,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-let USD_TO_INR = parseFloat(process.env.USD_TO_INR || "91");
+let USD_TO_INR = parseFloat(process.env.USD_TO_INR || "95");
 const DELAY_MS = 400;
 const SEARCH_LIMIT = 3;
 const CONCURRENCY = 5;
@@ -207,7 +207,7 @@ function roundToNearest99(price) {
 
 function usdToInr(usd) {
   if (usd == null || isNaN(usd)) return null;
-  const baseInr = (usd + 10) * USD_TO_INR;
+  const baseInr = (usd + 10) * 1.1 * USD_TO_INR; // +10% on (product + $10 shipping)
   const margin = baseInr >= 40000 ? 6000 : baseInr >= 20000 ? 5000 : 4000;
   const raw = baseInr + margin;
   return roundToNearest99(raw);
