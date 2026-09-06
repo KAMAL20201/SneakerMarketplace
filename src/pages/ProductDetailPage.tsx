@@ -274,8 +274,8 @@ export function meta({ data }: Route.MetaArgs) {
     return [{ title: "Product Not Found | The Plug Market" }];
   }
   const { listing, images } = data;
-  const pageTitle = `${listing.title} | The Plug Market`;
-  const pageDescription = `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop authentic sneakers and streetwear on The Plug Market.`;
+  const pageTitle = `Buy ${listing.title} in India | The Plug Market`;
+  const pageDescription = `Buy authentic ${listing.title}${listing.brand ? " by " + listing.brand : ""} in India for ₹${listing.price?.toLocaleString("en-IN")}. Fast delivery across India, 100% verified authenticity, no customs hassle. Shop on The Plug Market.`;
   const posterImage =
     images?.[0]?.image_url ?? "https://theplugmarket.in/og-image.jpg";
   const canonicalUrl = `https://theplugmarket.in/product/${listing.slug}`;
@@ -639,7 +639,7 @@ export default function ProductDetailPage() {
   })();
   // pageDescription is used in the JSON-LD structured data below
   const pageDescription = listing
-    ? `Buy ${listing.title}${listing.brand ? " by " + listing.brand : ""} for ₹${listing.price?.toLocaleString("en-IN")}. Condition: ${listing.condition}. Shop 100% authentic sneakers and streetwear on The Plug Market.`
+    ? `Buy authentic ${listing.title}${listing.brand ? " by " + listing.brand : ""} in India for ₹${listing.price?.toLocaleString("en-IN")}. Fast delivery across India, 100% verified authenticity, no customs hassle. Shop on The Plug Market.`
     : "Shop 100% authentic sneakers and streetwear on The Plug Market.";
   const canonicalUrl = `https://theplugmarket.in/product/${productId}`;
 
