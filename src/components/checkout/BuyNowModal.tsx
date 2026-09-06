@@ -15,6 +15,7 @@ import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
 import { SHIPPING_FEE, COURIER_OPTIONS, type CourierOption } from "@/contexts/CartContext";
 import { CourierSelector } from "@/components/checkout/CourierSelector";
+import { formatDisplaySize } from "@/constants/sizeCharts";
 
 
 type BuyNowModalProps = {
@@ -110,7 +111,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                         {item.productName}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {item.brand} · Size {item.size}
+                        {item.brand} · Size {formatDisplaySize(item.brand, item.size)}
                         {item.variantName ? ` · ${item.variantName}` : ""}
                       </p>
                       {appliedCoupon &&

@@ -8,6 +8,7 @@ import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
 import { ArrowLeft, Tag } from "lucide-react";
 import { CourierSelector } from "@/components/checkout/CourierSelector";
+import { formatDisplaySize } from "@/constants/sizeCharts";
 
 interface PaymentStepProps {
   shippingAddress: ShippingAddress;
@@ -98,7 +99,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                       {item.productName}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {item.brand} · Size {item.size}
+                      {item.brand} · Size {formatDisplaySize(item.brand, item.size)}
                       {item.variantName ? ` · ${item.variantName}` : ""}
                     </p>
                     {eligible && appliedCoupon && (

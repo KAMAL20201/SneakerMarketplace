@@ -305,6 +305,60 @@ const LI_NING_CHART: BrandSizeChart = {
   ],
 };
 
+// ─── XTEP ──────────────────────────────────────────────────────────────────
+// Source: Official Xtep Men's Shoe Size Guide (New Version)
+const XTEP_CHART: BrandSizeChart = {
+  men: [
+    { uk: "5.5",  us: "6.5",  eu: "39",   cm: "24"   },
+    { uk: "6",    us: "7",    eu: "40",   cm: "24.5" },
+    { uk: "6.5",  us: "7.5",  eu: "40.5", cm: "25"   },
+    { uk: "7",    us: "8",    eu: "41",   cm: "25.5" },
+    { uk: "7.5",  us: "8.5",  eu: "42",   cm: "26"   },
+    { uk: "8",    us: "9",    eu: "42.5", cm: "26.5" },
+    { uk: "8.5",  us: "9.5",  eu: "43",   cm: "27"   },
+    { uk: "9",    us: "10",   eu: "44",   cm: "27.5" },
+    { uk: "9.5",  us: "10.5", eu: "44.5", cm: "28"   },
+    { uk: "10",   us: "11",   eu: "45",   cm: "28.5" },
+    { uk: "10.5", us: "11.5", eu: "46",   cm: "29"   },
+    { uk: "11",   us: "12",   eu: "46.5", cm: "29.5" },
+    { uk: "11.5", us: "12.5", eu: "47",   cm: "30"   },
+    { uk: "12",   us: "13",   eu: "48",   cm: "30.5" },
+  ],
+};
+
+// ─── 361° ──────────────────────────────────────────────────────────────────
+// Source: Official 361° Size Chart
+const THREE_SIXTY_ONE_CHART: BrandSizeChart = {
+  men: [
+    { uk: "2",    us: "3",    eu: "35",   cm: "22"   },
+    { uk: "2.5",  us: "3.5",  eu: "35.5", cm: "22.5" },
+    { uk: "3",    us: "4",    eu: "36",   cm: "23"   },
+    { uk: "3.5",  us: "4.5",  eu: "36.5", cm: "23.5" },
+    { uk: "4",    us: "5",    eu: "37.5", cm: "23.5" },
+    { uk: "4.5",  us: "5.5",  eu: "38",   cm: "24"   },
+    { uk: "5",    us: "6",    eu: "38.5", cm: "24"   },
+    { uk: "5.5",  us: "6.5",  eu: "39",   cm: "24.5" },
+    { uk: "6",    us: "7",    eu: "40",   cm: "25"   },
+    { uk: "6.5",  us: "7.5",  eu: "40.5", cm: "25.5" },
+    { uk: "7",    us: "8",    eu: "41",   cm: "26"   },
+    { uk: "7.5",  us: "8.5",  eu: "42",   cm: "26.5" },
+    { uk: "8",    us: "9",    eu: "42.5", cm: "27"   },
+    { uk: "8.5",  us: "9.5",  eu: "43",   cm: "27.5" },
+    { uk: "9",    us: "10",   eu: "44",   cm: "28"   },
+    { uk: "9.5",  us: "10.5", eu: "44.5", cm: "28.5" },
+    { uk: "10",   us: "11",   eu: "45",   cm: "29"   },
+    { uk: "10.5", us: "11.5", eu: "45.5", cm: "29.5" },
+    { uk: "11",   us: "12",   eu: "46",   cm: "29.5" },
+    { uk: "11.5", us: "12.5", eu: "47",   cm: "30"   },
+    { uk: "12",   us: "13",   eu: "47.5", cm: "30.5" },
+    { uk: "12.5", us: "13.5", eu: "48",   cm: "31"   },
+    { uk: "13",   us: "14",   eu: "48.5", cm: "31.5" },
+    { uk: "13.5", us: "14.5", eu: "49",   cm: "32"   },
+    { uk: "14",   us: "15",   eu: "49.5", cm: "32.5" },
+    { uk: "14.5", us: "15.5", eu: "50",   cm: "33"   },
+  ],
+};
+
 // ─── BRAND → CHART LOOKUP ──────────────────────────────────────────────────
 // Any brand not listed here falls back to NIKE_CHART
 const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
@@ -320,11 +374,33 @@ const BRAND_CHART_MAP: Record<string, BrandSizeChart> = {
   dynafish:      DYNAFISH_CHART,
   "li-ning":     LI_NING_CHART,
   "li ning":     LI_NING_CHART,
+  xtep:          XTEP_CHART,
+  "x-tep":       XTEP_CHART,
+  "361":         THREE_SIXTY_ONE_CHART,
+  "361 degrees": THREE_SIXTY_ONE_CHART,
+  "361°":        THREE_SIXTY_ONE_CHART,
+  "361-degrees": THREE_SIXTY_ONE_CHART,
 };
 
 export function getSizeChart(brand: string): BrandSizeChart {
   const key = brand?.toLowerCase().trim();
   return BRAND_CHART_MAP[key] ?? NIKE_CHART;
+}
+
+/**
+ * Checks if a brand predominantly uses EU sizing as its primary label.
+ */
+export function isEuPrimaryBrand(brand: string | undefined | null): boolean {
+  if (!brand) return false;
+  const key = brand.toLowerCase().trim();
+  return (
+    key === "xtep" ||
+    key === "x-tep" ||
+    key === "361" ||
+    key === "361 degrees" ||
+    key === "361°" ||
+    key === "361-degrees"
+  );
 }
 
 /**
@@ -334,13 +410,33 @@ export function getSizeChart(brand: string): BrandSizeChart {
  */
 export function getEuSizeFromUk(brand: string, ukSize: string): string | null {
   if (!ukSize) return null;
+  const cleanUk = ukSize.replace(/^UK\s*/i, "").trim();
   const chart = getSizeChart(brand);
   const categories: (keyof BrandSizeChart)[] = ["men", "women", "kids"];
   for (const cat of categories) {
     const rows = chart[cat];
     if (!rows) continue;
-    const match = rows.find((row) => row.uk === ukSize);
+    const match = rows.find((row) => row.uk === cleanUk || row.uk === ukSize);
     if (match) return match.eu;
   }
   return null;
+}
+
+/**
+ * Formats a display size label for a product (e.g. "EU 42 (UK 7.5)" for Xtep/361).
+ */
+export function formatDisplaySize(
+  brand: string | undefined | null,
+  sizeValue: string | undefined | null,
+): string {
+  if (!sizeValue) return "";
+  const brandKey = brand?.toLowerCase().trim() ?? "";
+  if (isEuPrimaryBrand(brandKey)) {
+    const eu = getEuSizeFromUk(brandKey, sizeValue);
+    if (eu) {
+      const cleanUk = sizeValue.replace(/^UK\s*/i, "").trim();
+      return `EU ${eu} (UK ${cleanUk})`;
+    }
+  }
+  return sizeValue.toUpperCase();
 }

@@ -9,6 +9,7 @@ import { useCartValidation } from "@/hooks/useCartValidation";
 import { Badge } from "@/components/ui/badge";
 import { APP_CONFIG } from "@/config/app";
 import { LaunchEmailService } from "@/lib/launchEmailService";
+import { formatDisplaySize } from "@/constants/sizeCharts";
 
 interface CartItemsStepProps {
   onNext: () => void;
@@ -155,7 +156,7 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                             </p>
                           )}
                           <p className="text-xs text-gray-700 font-medium uppercase">
-                            {item.size ? `Size: ${item.size}` : "One Size"}
+                            {item.size ? `Size: ${formatDisplaySize(item.brand, item.size)}` : "One Size"}
                           </p>
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
                             <ConditionBadge condition={item.condition} />

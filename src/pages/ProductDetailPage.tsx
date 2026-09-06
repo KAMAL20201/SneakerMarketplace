@@ -33,7 +33,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ProductCard from "@/components/ui/ProductCard";
 import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
-import { getSizeChart, getApparelSizeChart } from "@/constants/sizeCharts";
+import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
 import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1143,10 +1143,19 @@ export default function ProductDetailPage() {
                     )}
 
                     {availableSizes.length > 0 ? (
-                      // ── Multi-size listing: grid of UK sizes with per-size price ──
+                      // ── Multi-size listing: grid of sizes with per-size price ──
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                         {displaySizes.map((s) => {
                           const isSelected = selectedSize === s.size_value;
+                          const brandName = listing?.brand ?? "";
+                          const isEuPrimary = isEuPrimaryBrand(brandName);
+                          const euSize = isEuPrimary
+                            ? getEuSizeFromUk(brandName, s.size_value)
+                            : null;
+                          const ukNum = s.size_value
+                            .replace(/^UK\s*/i, "")
+                            .trim();
+
                           return (
                             <Button
                               key={s.size_value}
@@ -1158,7 +1167,7 @@ export default function ProductDetailPage() {
                                   setSelectedPrice(s.price);
                                 }
                               }}
-                              className={`flex flex-col h-auto py-3 rounded-2xl border-0 font-semibold uppercase gap-0.5 ${
+                              className={`flex flex-col h-auto py-2.5 px-2 rounded-2xl border-0 font-semibold gap-0.5 ${
                                 s.is_sold
                                   ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
                                   : isSelected
@@ -1166,11 +1175,36 @@ export default function ProductDetailPage() {
                                     : "glass-button text-gray-700 hover:bg-white/30"
                               }`}
                             >
-                              <span className="text-sm">
-                                {s.size_value.toUpperCase()}
-                              </span>
+                              {isEuPrimary && euSize ? (
+                                <>
+                                  <span className="text-sm font-bold tracking-tight">
+                                    EU {euSize}
+                                  </span>
+                                  <span
+                                    className={`text-[11px] font-medium tracking-normal ${
+                                      s.is_sold
+                                        ? "text-gray-400"
+                                        : isSelected
+                                          ? "text-white/90"
+                                          : "text-gray-500"
+                                    }`}
+                                  >
+                                    UK {ukNum}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-sm uppercase">
+                                  {s.size_value.toUpperCase()}
+                                </span>
+                              )}
                               <span
-                                className={`text-xs font-normal ${s.is_sold ? "text-gray-400" : isSelected ? "text-white/80" : "text-gray-500"}`}
+                                className={`text-xs font-normal ${
+                                  s.is_sold
+                                    ? "text-gray-400"
+                                    : isSelected
+                                      ? "text-white/80"
+                                      : "text-gray-500"
+                                }`}
                               >
                                 {s.is_sold
                                   ? "Sold Out"
@@ -1196,7 +1230,7 @@ export default function ProductDetailPage() {
                               : "glass-button text-gray-700 hover:bg-white/30"
                           }`}
                         >
-                          {listing?.size_value}
+                          {formatDisplaySize(listing?.brand, listing?.size_value)}
                         </Button>
                       </div>
                     )}
@@ -1228,7 +1262,7 @@ export default function ProductDetailPage() {
                   href={WhatsAppService.generatePreOrderSizeCheckURL(
                     listing?.title,
                     listing?.brand,
-                    selectedSize,
+                    formatDisplaySize(listing?.brand, selectedSize),
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
