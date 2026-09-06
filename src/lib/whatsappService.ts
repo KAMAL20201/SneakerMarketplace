@@ -62,6 +62,29 @@ export class WhatsAppService {
    * @param productTitle  Optional product title to make the message contextual.
    * @param brand         Optional brand name for extra context.
    */
+  /**
+   * Generate a WhatsApp URL pre-filled with a pre-order size availability
+   * confirmation request. Shown on pre-order product pages so the buyer can
+   * verify their size is available before placing an order.
+   */
+  static generatePreOrderSizeCheckURL(
+    productTitle?: string | null,
+    brand?: string | null,
+    size?: string | null,
+  ): string {
+    const productLine = productTitle
+      ? `*${brand ? brand + " " : ""}${productTitle}*`
+      : "a product on The Plug Market";
+
+    const sizeLine = size ? `\n*Size:* ${size}` : "";
+
+    const message =
+      `Hi! 👋 I'd like to pre-order ${productLine}.${sizeLine}\n\n` +
+      `Could you please confirm if this size is available before I place my order? Thank you!`;
+
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  }
+
   static generateQueryURL(productTitle?: string | null, brand?: string | null): string {
     const productLine =
       productTitle
