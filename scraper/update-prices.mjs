@@ -48,6 +48,7 @@ let USD_TO_INR = parseFloat(process.env.USD_TO_INR || "95");
 const DELAY_MS = 400;
 const SEARCH_LIMIT = 3;
 const CONCURRENCY = 5;
+const PRICE_SANITY_CAP = 200000; // ₹2L — log a warning if any size price exceeds this
 
 // ─── Validate ──────────────────────────────────────────────────────────────
 
@@ -420,6 +421,13 @@ async function processListing(page, listing, idx, total) {
 
     if (!newSizeInr) continue;
 
+    // Sanity check: warn about suspiciously high prices
+    if (newSizeInr > PRICE_SANITY_CAP) {
+      console.warn(
+        `${pg} ⚠️  SANITY CHECK: size="${dbSize.size_value}" GOAT price ₹${newSizeInr.toLocaleString()} exceeds ₹${PRICE_SANITY_CAP.toLocaleString()} cap — verify GOAT match is correct`,
+      );
+    }
+
     matchedPricesInr.push(newSizeInr);
 
     // For sold instant-ship sizes we always update (to strip the flag), even
@@ -461,8 +469,24 @@ async function processListing(page, listing, idx, total) {
       console.error(`${pg} ⚠️  size DB update error: ${r.error.message}`),
     );
 
-  const newPriceInr =
-    matchedPricesInr.length > 0 ? Math.min(...matchedPricesInr) : null;
+  // Fetch the actual MIN price across ALL sizes in the DB (not just GOAT-matched
+  // ones). This ensures listing.price reflects the real cheapest available size,
+  // even if the scraper only matched a subset of sizes this run.
+  let newPriceInr = null;
+  if (sizeUpdateCount > 0 || matchedPricesInr.length > 0) {
+    const { data: minRow, error: minErr } = await supabase
+      .from("product_listing_sizes")
+      .select("price")
+      .eq("listing_id", listing.id)
+      .order("price", { ascending: true })
+      .limit(1)
+      .single();
+    if (!minErr && minRow) {
+      newPriceInr = minRow.price;
+      console.log(`${pg} 📊 DB min across all sizes: ₹${newPriceInr}`);
+    }
+  }
+
   const newRetailInr = matchRetailPriceCents
     ? usdToInr(matchRetailPriceCents / 100)
     : null;
