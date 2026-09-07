@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Link } from "react-router";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { compareSizes } from "@/constants/sizeCharts";
 
 interface SizeRow {
   id: string;
@@ -210,10 +211,10 @@ function ProductCard({
 
   const activeSizes = hasVariants
     ? (activeVariant?.product_variant_sizes ?? []).slice().sort((a, b) =>
-        a.size_value.localeCompare(b.size_value, undefined, { numeric: true }),
+        compareSizes(a.size_value, b.size_value),
       )
     : (product.product_listing_sizes ?? []).slice().sort((a, b) =>
-        a.size_value.localeCompare(b.size_value, undefined, { numeric: true }),
+        compareSizes(a.size_value, b.size_value),
       );
 
   return (

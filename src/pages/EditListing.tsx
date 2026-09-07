@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { toast } from "sonner";
+import { compareSizes } from "@/constants/sizeCharts";
 
 // Categories that support per-size availability
 const SIZE_CATEGORIES = ["sneakers", "clothing"];
@@ -132,9 +133,7 @@ const EditListing = () => {
               color_hex: v.color_hex,
               sizes: [...(v.product_variant_sizes || [])].sort(
                 (a: VariantSize, b: VariantSize) =>
-                  a.size_value.localeCompare(b.size_value, undefined, {
-                    numeric: true,
-                  })
+                  compareSizes(a.size_value, b.size_value)
               ),
             }))
           );
@@ -143,9 +142,7 @@ const EditListing = () => {
         if (legacyRes.data) {
           setLegacySizes(
             [...legacyRes.data].sort((a, b) =>
-              a.size_value.localeCompare(b.size_value, undefined, {
-                numeric: true,
-              })
+              compareSizes(a.size_value, b.size_value)
             )
           );
         }

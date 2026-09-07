@@ -143,6 +143,61 @@ export class OrderService {
     }
   }
 
+  /**
+   * For all items in the checkout, checks whether the product belongs to a
+   * pre-order batch. If it does (or if flagged as a pre-order), re-queries the DB
+   * to confirm that an active pre-order window is open (starts_at ≤ now ≤ ends_at).
+   *
+   * Throws a user-friendly error if a pre-order batch exists but is paused/closed,
+   * preventing users from bypassing pre-order restrictions.
+   */
+  private static async validatePreOrderWindows(cartItems: CartItem[]): Promise<void> {
+    if (cartItems.length === 0) return;
+
+    const now = new Date().toISOString();
+
+    for (const item of cartItems) {
+      // Look up the product slug from the listings table (no client trust needed)
+      const { data: listing } = await supabase
+        .from("product_listings")
+        .select("slug")
+        .eq("id", item.productId)
+        .maybeSingle();
+
+      if (!listing?.slug) {
+        if (item.isPreOrder) {
+          throw new Error(
+            `Pre-order validation failed for "${item.productName}". Please refresh and try again.`
+          );
+        }
+        continue;
+      }
+
+      // Check whether this product belongs to any pre-order batch
+      const { data: batchRows } = await supabase
+        .from("pre_order_products")
+        .select("id, pre_order_windows!inner(id, starts_at, ends_at)")
+        .eq("product_slug", listing.slug);
+
+      const hasBatch = (batchRows ?? []).length > 0;
+      if (hasBatch || item.isPreOrder) {
+        const hasActiveWindow = (batchRows ?? []).some((row) => {
+          // Supabase inner join returns single object or array
+          const w = Array.isArray(row.pre_order_windows)
+            ? row.pre_order_windows[0]
+            : (row.pre_order_windows as { starts_at: string; ends_at: string } | null);
+          return w && w.starts_at <= now && w.ends_at >= now;
+        });
+
+        if (!hasActiveWindow) {
+          throw new Error(
+            `Pre-orders for "${item.productName}" are currently paused or closed. This item cannot be purchased right now.`
+          );
+        }
+      }
+    }
+  }
+
   // Get product details for notification
   private static async getSizePriceFromDB(
     productId: string,
@@ -218,6 +273,11 @@ export class OrderService {
     try {
       // CRITICAL: Validate all cart items are still available before processing
       await StockValidationService.validateBeforeCheckout(cartItems);
+
+      // CRITICAL: For pre-order items, confirm the pre-order window is still active.
+      // This prevents orders from being created after a window closes, even if the
+      // user loaded the product page while it was open (stale client state).
+      await this.validatePreOrderWindows(cartItems);
 
       const orders: Order[] = [];
       const failedItems: string[] = [];
@@ -383,6 +443,11 @@ export class OrderService {
     try {
       // Validate all cart items are still available before processing
       await StockValidationService.validateBeforeCheckout(cartItems);
+
+      // For pre-order items, confirm the pre-order window is still active.
+      // This prevents orders from being created after a window closes, even if the
+      // user loaded the product page while it was open (stale client state).
+      await this.validatePreOrderWindows(cartItems);
 
       const orders: Order[] = [];
       const failedItems: string[] = [];

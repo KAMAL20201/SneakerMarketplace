@@ -10,6 +10,10 @@ import {
   Star,
   ChevronDown,
   RotateCcw,
+  Bell,
+  Mail,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
@@ -33,8 +37,9 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ProductCard from "@/components/ui/ProductCard";
 import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
-import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand } from "@/constants/sizeCharts";
+import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand, sortSizes } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
+import { LaunchEmailService } from "@/lib/launchEmailService";
 import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -143,8 +148,13 @@ export async function loader({ params }: Route.LoaderArgs) {
     })),
   );
 
-  const allLegacySizesData = (listingData.product_listing_sizes ?? []).sort(
-    (a, b) => (a.price ?? 0) - (b.price ?? 0),
+  const allLegacySizesData = sortSizes(
+    (listingData.product_listing_sizes ?? []) as Array<{
+      size_value: string;
+      price: number;
+      is_sold: boolean;
+      is_instant_ship: boolean;
+    }>,
   );
   const legacySizes = rawVariants.length === 0 ? allLegacySizesData : [];
 
@@ -209,16 +219,36 @@ export async function loader({ params }: Route.LoaderArgs) {
       .limit(6)
       .then(({ data }) => data ?? [], () => []),
 
-    // Check if this product slug is part of any currently active pre-order window.
-    // A window is active when now() falls between starts_at and ends_at.
+    // Query pre-order batch membership and window dates for this product slug
     ssrSupabase
       .from("pre_order_products")
-      .select("id, pre_order_windows!inner(id, starts_at, ends_at)")
+      .select("id, pre_order_windows!inner(id, name, starts_at, ends_at)")
       .eq("product_slug", param)
-      .lte("pre_order_windows.starts_at", new Date().toISOString())
-      .gte("pre_order_windows.ends_at", new Date().toISOString())
-      .limit(1)
-      .then(({ data }) => (data ?? []).length > 0, () => false),
+      .then(({ data }) => {
+        if (!data || data.length === 0) {
+          return { status: "none" as const, windowName: null as string | null };
+        }
+        const now = new Date().toISOString();
+        const activeWindow = data.find((row) => {
+          const w = Array.isArray(row.pre_order_windows)
+            ? row.pre_order_windows[0]
+            : (row.pre_order_windows as { starts_at: string; ends_at: string; name?: string } | null);
+          return w && w.starts_at <= now && w.ends_at >= now;
+        });
+
+        if (activeWindow) {
+          const w = Array.isArray(activeWindow.pre_order_windows)
+            ? activeWindow.pre_order_windows[0]
+            : (activeWindow.pre_order_windows as { name?: string } | null);
+          return { status: "active" as const, windowName: w?.name ?? null };
+        }
+
+        const firstRow = data[0];
+        const w = Array.isArray(firstRow.pre_order_windows)
+          ? firstRow.pre_order_windows[0]
+          : (firstRow.pre_order_windows as { name?: string } | null);
+        return { status: "paused" as const, windowName: w?.name ?? null };
+      }, () => ({ status: "none" as const, windowName: null as string | null })),
   ]);
 
   return data(
@@ -233,13 +263,16 @@ export async function loader({ params }: Route.LoaderArgs) {
       similarProducts,
       brandSlug: brandConfig?.slug ?? null,
       matchedModel: matchedModel ? { name: matchedModel.name, slug: matchedModel.slug } : null,
+      /** Pre-order batch status: 'active' | 'paused' | 'none' */
+      preOrderStatus: preOrderCheck.status,
+      preOrderWindowName: preOrderCheck.windowName,
       /** True when this product belongs to a currently active pre-order window. */
-      isPreOrder: preOrderCheck,
+      isPreOrder: preOrderCheck.status === "active",
     },
     {
       headers: {
         // Pre-order state changes hourly; don't cache for 5 mins on pre-order products
-        "Cache-Control": preOrderCheck
+        "Cache-Control": preOrderCheck.status !== "none"
           ? "public, s-maxage=60, stale-while-revalidate=120"
           : "public, s-maxage=300, stale-while-revalidate=600",
       },
@@ -328,6 +361,8 @@ export default function ProductDetailPage() {
     brandSlug,
     matchedModel,
     isPreOrder: loaderIsPreOrder,
+    preOrderStatus: loaderPreOrderStatus = "none",
+    preOrderWindowName: loaderPreOrderWindowName = null,
   } = useLoaderData<typeof loader>();
 
   // ── URL params ────────────────────────────────────────────────────────────
@@ -349,6 +384,9 @@ export default function ProductDetailPage() {
         is_sold: vs.is_sold,
         is_instant_ship: vs.is_instant_ship ?? false,
       });
+    }
+    for (const variantId of Object.keys(map)) {
+      map[variantId] = sortSizes(map[variantId]);
     }
     return map;
   };
@@ -527,8 +565,96 @@ export default function ProductDetailPage() {
     return selectedSizeObj ? selectedSizeObj.is_instant_ship : deliveryTab === "instant";
   };
 
-  /** True when this product belongs to a currently active pre-order window (resolved server-side). */
-  const isPreOrderProduct = loaderIsPreOrder;
+  /** Whether this product belongs to an active or paused pre-order batch */
+  const isPreOrderActive = loaderPreOrderStatus === "active" || loaderIsPreOrder;
+  const isPreOrderPaused = loaderPreOrderStatus === "paused";
+  /** True when this product belongs to a currently active pre-order window. */
+  const isPreOrderProduct = isPreOrderActive;
+
+  /** State for pre-order resume email notification */
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifyStatus, setNotifyStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [notifyMessage, setNotifyMessage] = useState("");
+
+  const handlePreOrderNotify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!notifyEmail.trim()) return;
+
+    setNotifyStatus("loading");
+    try {
+      const result = await LaunchEmailService.subscribeEmail({
+        email: notifyEmail,
+        source: `preorder-paused:${listing?.slug ?? "unknown"}`,
+      });
+
+      if (result.success || result.alreadySubscribed) {
+        setNotifyStatus("success");
+        setNotifyMessage(
+          result.alreadySubscribed
+            ? "You're already on the waitlist! We'll notify you as soon as pre-orders resume. 🎉"
+            : "You're on the list! We'll email you the moment pre-orders resume. 🎉"
+        );
+        setNotifyEmail("");
+      } else {
+        setNotifyStatus("error");
+        setNotifyMessage(result.message || "Failed to subscribe. Please try again.");
+      }
+    } catch {
+      setNotifyStatus("error");
+      setNotifyMessage("Something went wrong. Please try again.");
+    }
+  };
+
+  /**
+   * Loading state for the client-side pre-order window re-check.
+   * Prevents double-clicks and gives visual feedback while we query Supabase.
+   */
+  const [isValidatingPreOrder, setIsValidatingPreOrder] = useState(false);
+
+  /**
+   * Async handler for the "Pre-Order Now" button.
+   *
+   * Re-checks with Supabase that the pre-order window is still active before
+   * opening the checkout modal. This is a UX guard (Layer 2); the authoritative
+   * enforcement happens server-side in OrderService.validatePreOrderWindows (Layer 1).
+   */
+  const handlePreOrderClick = async () => {
+    setIsValidatingPreOrder(true);
+    try {
+      const now = new Date().toISOString();
+      const slug = listing?.slug;
+
+      if (!slug) {
+        toast.error("Could not validate pre-order. Please refresh and try again.");
+        return;
+      }
+
+      const { data: activeRows } = await supabase
+        .from("pre_order_products")
+        .select("id, pre_order_windows!inner(id, starts_at, ends_at)")
+        .eq("product_slug", slug)
+        .lte("pre_order_windows.starts_at", now)
+        .gte("pre_order_windows.ends_at", now)
+        .limit(1);
+
+      if (!activeRows || activeRows.length === 0) {
+        toast.error(
+          "This pre-order window has just closed. Orders are no longer being accepted."
+        );
+        return;
+      }
+
+      // Window is still active — proceed to checkout
+      setBuyNowOpen(true);
+    } catch {
+      // Non-fatal: if the check fails we still open the modal.
+      // Layer 1 (server-side) will reject the order if the window is truly closed.
+      setBuyNowOpen(true);
+    } finally {
+      setIsValidatingPreOrder(false);
+    }
+  };
+
 
   const handleAddToCart = (
     seller: { id: number | string; display_name: string; email: string } | null,
@@ -1076,11 +1202,12 @@ export default function ProductDetailPage() {
             const hasInstantSizes = availableSizes.some((s) => s.is_instant_ship);
             const hasStandardSizes = availableSizes.some((s) => !s.is_instant_ship);
             const showTabs = hasInstantSizes && hasStandardSizes;
-            const displaySizes = showTabs
+            const filteredSizes = showTabs
               ? availableSizes.filter((s) =>
                   deliveryTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
                 )
               : availableSizes;
+            const displaySizes = sortSizes(filteredSizes);
 
             return (
               <div className="px-4 pb-6 lg:px-0">
@@ -1107,8 +1234,10 @@ export default function ProductDetailPage() {
                           const nextTab = v as "instant" | "standard";
                           setDeliveryTab(nextTab);
                           // Auto-select the first available size in the new tab
-                          const nextTabSizes = availableSizes.filter((s) =>
-                            nextTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
+                          const nextTabSizes = sortSizes(
+                            availableSizes.filter((s) =>
+                              nextTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
+                            ),
                           );
                           const pick = nextTabSizes.find((s) => !s.is_sold) ?? nextTabSizes[0] ?? null;
                           if (pick) {
@@ -1287,10 +1416,9 @@ export default function ProductDetailPage() {
               )}
               <Button
                 size="lg"
-                onClick={() => {
-                  setBuyNowOpen(true);
-                }}
+                onClick={handlePreOrderClick}
                 disabled={
+                  isValidatingPreOrder ||
                   ((availableSizes.length > 0 || listing?.size_value) &&
                     !selectedSize) ||
                   isSoldOut
@@ -1301,8 +1429,74 @@ export default function ProductDetailPage() {
                     : "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
                 }`}
               >
-                {isSoldOut ? "Sold Out" : "Pre-Order Now"}
+                {isSoldOut
+                  ? "Sold Out"
+                  : isValidatingPreOrder
+                  ? "Checking availability…"
+                  : "Pre-Order Now"}
               </Button>
+            </div>
+          ) : isPreOrderPaused ? (
+            /* ── Pre-order Paused: Notify when resumed with email input ── */
+            <div className="px-4 pb-6 lg:px-0">
+              <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-amber-50/30 p-4 sm:p-5 shadow-sm space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-xl bg-violet-100 text-violet-700 shrink-0 mt-0.5">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 text-violet-800">
+                        {loaderPreOrderWindowName ? `Pre-Order: ${loaderPreOrderWindowName}` : "Pre-Order Batch"}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Currently Paused
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-gray-900 text-sm mt-1.5">
+                      Pre-orders are currently paused
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                      Orders for this pre-order batch are temporarily on hold. Enter your email below to be notified the moment pre-orders reopen.
+                    </p>
+                  </div>
+                </div>
+
+                {notifyStatus === "success" ? (
+                  <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-xs text-emerald-800 font-medium">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span>{notifyMessage}</span>
+                  </div>
+                ) : (
+                  <form onSubmit={handlePreOrderNotify} className="space-y-2 pt-1">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="relative flex-1">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="email"
+                          required
+                          value={notifyEmail}
+                          onChange={(e) => setNotifyEmail(e.target.value)}
+                          placeholder="Enter your email address"
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all shadow-sm"
+                          disabled={notifyStatus === "loading"}
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={notifyStatus === "loading" || !notifyEmail.trim()}
+                        className="w-full sm:w-auto px-5 h-10 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium text-xs sm:text-sm shadow-sm transition-all"
+                      >
+                        {notifyStatus === "loading" ? "Saving..." : "Notify When Resumed"}
+                      </Button>
+                    </div>
+                    {notifyStatus === "error" && (
+                      <p className="text-xs text-red-600 pl-1">{notifyMessage}</p>
+                    )}
+                  </form>
+                )}
+              </div>
             </div>
           ) : (
             /* ── Normal: Add to Cart + Buy Now ── */
@@ -1421,6 +1615,18 @@ export default function ProductDetailPage() {
                     <p>
                       All tracking updates will be shared{" "}
                       <span className="font-medium text-gray-800">via email</span> once your item ships.
+                    </p>
+                  </div>
+                ) : isPreOrderPaused ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-violet-700">
+                      <Clock className="h-4 w-4 flex-shrink-0" />
+                      Pre-Order Batch — Currently Paused
+                    </div>
+                    <p>
+                      This item is part of an international pre-order batch. Ordering is temporarily paused.
+                      Once pre-orders resume, standard delivery timeline is{" "}
+                      <span className="font-medium text-gray-800">28–35 days</span>.
                     </p>
                   </div>
                 ) : listing?.delivery_days &&

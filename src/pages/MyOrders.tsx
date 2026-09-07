@@ -54,7 +54,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { OrderService, type Order as OrderType } from "@/lib/orderService";
 import { supabase, toStorageUrl } from "@/lib/supabase";
-import { getEuSizeFromUk } from "@/constants/sizeCharts";
+import { getEuSizeFromUk, sortSizes } from "@/constants/sizeCharts";
 import { toast } from "sonner";
 import ShipNowModal from "@/components/ShipNowModal";
 import { StockValidationService } from "@/lib/stockValidationService";
@@ -384,7 +384,7 @@ const MyOrders = () => {
 
         if (current) {
           setSelectedVariant(current);
-          const sizes = current.product_variant_sizes || [];
+          const sizes = sortSizes(current.product_variant_sizes || []);
           setAvailableSizes(sizes);
           if (order.ordered_size) {
             const size = sizes.find((s: any) => s.size_value === order.ordered_size);
@@ -1372,7 +1372,7 @@ const MyOrders = () => {
                     const variant = productVariants.find(v => v.id === selectedId);
                     setSelectedVariant(variant || null);
                     if (variant) {
-                      const sizes = variant.product_variant_sizes || [];
+                      const sizes = sortSizes(variant.product_variant_sizes || []);
                       setAvailableSizes(sizes);
                       setSelectedSize(sizes.find((s: any) => !s.is_sold) || sizes[0] || null);
                     } else {

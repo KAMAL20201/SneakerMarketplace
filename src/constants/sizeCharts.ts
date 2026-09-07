@@ -461,3 +461,105 @@ export function formatDisplaySize(
   }
   return sizeValue.toUpperCase();
 }
+
+/**
+ * Extracts numeric value from a size string (e.g., "UK 7.5" -> 7.5, "23" -> 23, "10 1/2" -> 10.5).
+ */
+export function extractSizeNumber(sizeStr: string): number {
+  if (!sizeStr) return NaN;
+  const trimmed = sizeStr.trim();
+  const cleaned = trimmed.replace(/^(uk|us|eu)\s*/i, "").trim();
+
+  // Check for fraction like "10 1/2"
+  const fractionMatch = cleaned.match(/^(\d+)\s*(?:[-/]|&)?\s*1\/2/i);
+  if (fractionMatch) {
+    return parseFloat(fractionMatch[1]) + 0.5;
+  }
+
+  // Match leading number (integer or decimal)
+  const numMatch = cleaned.match(/^(\d+(?:\.\d+)?)/);
+  if (numMatch) {
+    return parseFloat(numMatch[1]);
+  }
+
+  // Fallback: match any number
+  const anyNumMatch = cleaned.match(/(\d+(?:\.\d+)?)/);
+  if (anyNumMatch) {
+    return parseFloat(anyNumMatch[1]);
+  }
+
+  return NaN;
+}
+
+/**
+ * Compares two size strings in ascending order (UK 5, 5.5, 6, 7 ... 23).
+ * Falls back to standard apparel sizing (XS, S, M, L, XL, etc.) or natural string compare.
+ */
+export function compareSizes(sizeA: string, sizeB: string): number {
+  const apparelOrder: Record<string, number> = {
+    xxs: 1,
+    xs: 2,
+    s: 3,
+    m: 4,
+    l: 5,
+    xl: 6,
+    xxl: 7,
+    "2xl": 7,
+    xxxl: 8,
+    "3xl": 8,
+    "4xl": 9,
+    "one size": 99,
+    free: 99,
+  };
+
+  const strA = (sizeA ?? "").trim().toLowerCase();
+  const strB = (sizeB ?? "").trim().toLowerCase();
+
+  const appA = apparelOrder[strA];
+  const appB = apparelOrder[strB];
+
+  if (appA !== undefined && appB !== undefined) {
+    return appA - appB;
+  }
+  if (appA !== undefined) return 1;
+  if (appB !== undefined) return -1;
+
+  const numA = extractSizeNumber(sizeA);
+  const numB = extractSizeNumber(sizeB);
+
+  const hasNumA = !isNaN(numA);
+  const hasNumB = !isNaN(numB);
+
+  if (hasNumA && hasNumB) {
+    if (numA !== numB) return numA - numB;
+    return sizeA.localeCompare(sizeB, undefined, { numeric: true });
+  }
+
+  if (hasNumA && !hasNumB) return -1;
+  if (!hasNumA && hasNumB) return 1;
+
+  return sizeA.localeCompare(sizeB, undefined, { numeric: true });
+}
+
+/**
+ * Sorts sizes list:
+ * - If all sizes have the same price: sorts in ascending order by size (e.g. UK 5, 6, 7, ... 23).
+ * - If sizes have different prices: sorts by price ascending, using size ascending as tiebreaker.
+ */
+export function sortSizes<T extends { size_value: string; price?: number | null }>(
+  sizes: T[],
+): T[] {
+  if (!sizes || sizes.length <= 1) return sizes ? [...sizes] : [];
+  const firstPrice = sizes[0]?.price ?? 0;
+  const allSamePrice = sizes.every((s) => (s.price ?? 0) === firstPrice);
+
+  return [...sizes].sort((a, b) => {
+    if (allSamePrice) {
+      return compareSizes(a.size_value, b.size_value);
+    }
+    const priceDiff = (a.price ?? 0) - (b.price ?? 0);
+    if (priceDiff !== 0) return priceDiff;
+    return compareSizes(a.size_value, b.size_value);
+  });
+}
+
