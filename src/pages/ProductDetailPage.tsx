@@ -397,10 +397,12 @@ export default function ProductDetailPage() {
       const firstVariant = initialVariants[0];
       const sizes = map[firstVariant.id] ?? [];
       if (sizes.length > 0) {
+        const hasInstant = sizes.some((s) => s.is_instant_ship && !s.is_sold);
+        const filtered = hasInstant ? sizes.filter((s) => s.is_instant_ship) : sizes;
         const target = preSelectedSize
           ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
           : null;
-        const pick = target ?? sizes.find((s) => !s.is_sold) ?? sizes[0];
+        const pick = target ?? filtered.find((s) => !s.is_sold) ?? filtered[0] ?? sizes[0];
         return { size: pick.size_value, price: pick.price };
       }
       return {
@@ -565,11 +567,14 @@ export default function ProductDetailPage() {
     return selectedSizeObj ? selectedSizeObj.is_instant_ship : deliveryTab === "instant";
   };
 
+  const isInstantSelected = isCurrentSelectionInstantShip();
+
   /** Whether this product belongs to an active or paused pre-order batch */
-  const isPreOrderActive = loaderPreOrderStatus === "active" || loaderIsPreOrder;
-  const isPreOrderPaused = loaderPreOrderStatus === "paused";
-  /** True when this product belongs to a currently active pre-order window. */
-  const isPreOrderProduct = isPreOrderActive;
+  const isPreOrderBatchActive = loaderPreOrderStatus === "active" || loaderIsPreOrder;
+  const isPreOrderBatchPaused = loaderPreOrderStatus === "paused";
+  /** True when this selection is part of an active pre-order window (and NOT an instant ship size). */
+  const isPreOrderProduct = !isInstantSelected && isPreOrderBatchActive;
+  const isPreOrderPaused = !isInstantSelected && isPreOrderBatchPaused;
 
   /** State for pre-order resume email notification */
   const [notifyEmail, setNotifyEmail] = useState("");
@@ -708,8 +713,31 @@ export default function ProductDetailPage() {
     setSelectedPrice(null);
     const sizes = variantSizesMap[variantId] ?? [];
     setAvailableSizes(sizes);
+
+    const hasInstant = sizes.some((s) => s.is_instant_ship && !s.is_sold);
+    const hasStandard = sizes.some((s) => !s.is_instant_ship && !s.is_sold);
+
+    let activeTab = deliveryTab;
+    if (activeTab === "instant" && !hasInstant && hasStandard) {
+      activeTab = "standard";
+    } else if (activeTab === "standard" && !hasStandard && hasInstant) {
+      activeTab = "instant";
+    }
+    setDeliveryTab(activeTab);
+
     if (sizes.length > 0) {
-      const pick = sizes.find((s) => !s.is_sold) ?? sizes[0];
+      const tabSizes = sizes.filter((s) =>
+        hasInstant && hasStandard
+          ? activeTab === "instant"
+            ? s.is_instant_ship
+            : !s.is_instant_ship
+          : true,
+      );
+      const pick =
+        tabSizes.find((s) => !s.is_sold) ??
+        tabSizes[0] ??
+        sizes.find((s) => !s.is_sold) ??
+        sizes[0];
       setSelectedSize(pick.size_value);
       setSelectedPrice(pick.price);
     } else {
@@ -1258,7 +1286,9 @@ export default function ProductDetailPage() {
                             <Zap className="h-3 w-3" /> Instant Ship
                           </TabsTrigger>
                           <TabsTrigger value="standard" className="rounded-xl">
-                            3–4 Weeks
+                            {isPreOrderBatchActive || isPreOrderBatchPaused
+                              ? "Pre-Order (3–4 Wks)"
+                              : "3–4 Weeks"}
                           </TabsTrigger>
                         </TabsList>
                       </Tabs>
@@ -1368,6 +1398,19 @@ export default function ProductDetailPage() {
               </div>
             );
           })()}
+
+          {/* Instant Ship notice banner */}
+          {isInstantSelected && !isSoldOut && (
+            <div className="mx-4 mb-3 lg:mx-0 flex items-start gap-2 rounded-2xl bg-teal-50 border border-teal-200 px-4 py-3">
+              <Zap className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-teal-800">⚡ Instant Ship — In Stock & Ready to Dispatch</p>
+                <p className="text-xs text-teal-600 mt-0.5">
+                  This size is in-hand and ships within 24–48 hours with verified authenticity. No waiting for pre-order batches.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Pre-Order notice banner */}
           {isPreOrderProduct && !isSoldOut && (
@@ -1601,7 +1644,24 @@ export default function ProductDetailPage() {
             </button>
             {deliveryOpen && (
               <div className="mt-1 px-4 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm text-sm text-gray-600 space-y-3">
-                {isPreOrderProduct ? (
+                {isInstantSelected ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-teal-700">
+                      <Zap className="h-4 w-4 flex-shrink-0" />
+                      Instant Ship — Ships in 24–48 Hours
+                    </div>
+                    <p>
+                      This size is <span className="font-medium text-gray-800">in-hand and ready to ship</span>.
+                      It will be dispatched within{" "}
+                      <span className="font-medium text-gray-800">24–48 hours</span>{" "}
+                      after your order is confirmed. No waiting for pre-order batches.
+                    </p>
+                    <p>
+                      All tracking updates will be shared{" "}
+                      <span className="font-medium text-gray-800">via WhatsApp & email</span> once dispatched.
+                    </p>
+                  </div>
+                ) : isPreOrderProduct ? (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-violet-700">
                       <Truck className="h-4 w-4 flex-shrink-0" />

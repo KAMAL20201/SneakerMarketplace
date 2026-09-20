@@ -157,6 +157,11 @@ export class OrderService {
     const now = new Date().toISOString();
 
     for (const item of cartItems) {
+      // Instant ship items are in-hand stock; bypass pre-order window validation
+      if (item.isInstantShip) {
+        continue;
+      }
+
       // Look up the product slug from the listings table (no client trust needed)
       const { data: listing } = await supabase
         .from("product_listings")
