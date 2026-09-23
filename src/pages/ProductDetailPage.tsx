@@ -36,6 +36,7 @@ import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand, sortSizes } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
+import { formatBatchOpenDate, formatBatchOpenShort } from "@/lib/preOrderUtils";
 import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -222,7 +223,11 @@ export async function loader({ params }: Route.LoaderArgs) {
       .eq("product_slug", param)
       .then(({ data }) => {
         if (!data || data.length === 0) {
-          return { status: "none" as const, windowName: null as string | null };
+          return {
+            status: "none" as const,
+            windowName: null as string | null,
+            startsAt: null as string | null,
+          };
         }
         const now = new Date().toISOString();
         const activeWindow = data.find((row) => {
@@ -235,16 +240,46 @@ export async function loader({ params }: Route.LoaderArgs) {
         if (activeWindow) {
           const w = Array.isArray(activeWindow.pre_order_windows)
             ? activeWindow.pre_order_windows[0]
-            : (activeWindow.pre_order_windows as { name?: string } | null);
-          return { status: "active" as const, windowName: w?.name ?? null };
+            : (activeWindow.pre_order_windows as { name?: string; starts_at?: string } | null);
+          return {
+            status: "active" as const,
+            windowName: w?.name ?? null,
+            startsAt: w?.starts_at ?? null,
+          };
         }
 
-        const firstRow = data[0];
-        const w = Array.isArray(firstRow.pre_order_windows)
-          ? firstRow.pre_order_windows[0]
-          : (firstRow.pre_order_windows as { name?: string } | null);
-        return { status: "paused" as const, windowName: w?.name ?? null };
-      }, () => ({ status: "none" as const, windowName: null as string | null })),
+        // Look for upcoming scheduled window
+        const allWindows = data
+          .map((row) =>
+            Array.isArray(row.pre_order_windows)
+              ? row.pre_order_windows[0]
+              : (row.pre_order_windows as { starts_at: string; ends_at: string; name?: string } | null),
+          )
+          .filter((w): w is { starts_at: string; ends_at: string; name?: string } => Boolean(w));
+
+        const upcomingWindow = allWindows
+          .filter((w) => w.starts_at > now)
+          .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
+
+        if (upcomingWindow) {
+          return {
+            status: "paused" as const,
+            windowName: upcomingWindow.name ?? null,
+            startsAt: upcomingWindow.starts_at,
+          };
+        }
+
+        const latestWindow = allWindows.sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+        return {
+          status: "paused" as const,
+          windowName: latestWindow?.name ?? null,
+          startsAt: latestWindow?.starts_at ?? null,
+        };
+      }, () => ({
+        status: "none" as const,
+        windowName: null as string | null,
+        startsAt: null as string | null,
+      })),
   ]);
 
   return data(
@@ -262,6 +297,7 @@ export async function loader({ params }: Route.LoaderArgs) {
       /** Pre-order batch status: 'active' | 'paused' | 'none' */
       preOrderStatus: preOrderCheck.status,
       preOrderWindowName: preOrderCheck.windowName,
+      preOrderStartsAt: preOrderCheck.startsAt,
       /** True when this product belongs to a currently active pre-order window. */
       isPreOrder: preOrderCheck.status === "active",
     },
@@ -359,6 +395,7 @@ export default function ProductDetailPage() {
     isPreOrder: loaderIsPreOrder,
     preOrderStatus: loaderPreOrderStatus = "none",
     preOrderWindowName: loaderPreOrderWindowName = null,
+    preOrderStartsAt: loaderPreOrderStartsAt = null,
   } = useLoaderData<typeof loader>();
 
   // ── URL params ────────────────────────────────────────────────────────────
@@ -571,6 +608,9 @@ export default function ProductDetailPage() {
   /** True when this selection is part of an active pre-order window (and NOT an instant ship size). */
   const isPreOrderProduct = !isInstantSelected && isPreOrderBatchActive;
   const isPreOrderPaused = !isInstantSelected && isPreOrderBatchPaused;
+
+  const openDateFull = formatBatchOpenDate(loaderPreOrderStartsAt);
+  const openDateShort = formatBatchOpenShort(loaderPreOrderStartsAt);
 
   /**
    * Loading state for the client-side pre-order window re-check.
@@ -1249,9 +1289,9 @@ export default function ProductDetailPage() {
                           </TabsTrigger>
                           <TabsTrigger value="standard" className="rounded-xl">
                             {isPreOrderBatchActive
-                              ? "Pre-Order (3–4 Wks)"
+                              ? "Pre-Order"
                               : isPreOrderBatchPaused
-                                ? "Pre-Order (Opens 27th Sept)"
+                                ? `Pre-Order`
                                 : "3–4 Weeks"}
                           </TabsTrigger>
                         </TabsList>
@@ -1444,7 +1484,7 @@ export default function ProductDetailPage() {
               </Button>
             </div>
           ) : isPreOrderPaused ? (
-            /* ── Pre-order Paused: Opens Sunday, 27th September banner ── */
+            /* ── Pre-order Paused banner ── */
             <div className="px-4 pb-6 lg:px-0">
               <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-amber-50/30 p-4 sm:p-5 shadow-sm space-y-3">
                 <div className="flex items-start gap-3">
@@ -1458,14 +1498,14 @@ export default function ProductDetailPage() {
                       </span>
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Opens Sunday, 27th Sept
+                        Opens {openDateFull}
                       </span>
                     </div>
                     <h4 className="font-bold text-gray-900 text-sm mt-1.5">
-                      Pre-orders open on Sunday, 27th September
+                      Pre-orders open on {openDateFull}
                     </h4>
                     <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                      Pre-orders for this batch open on Sunday, 27th September. Sizing and reservation will be available once the batch goes live.
+                      Pre-orders for this batch open on {openDateFull}. Sizing and reservations will be available once the batch goes live.
                     </p>
                   </div>
                 </div>
@@ -1611,11 +1651,11 @@ export default function ProductDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-violet-700">
                       <Clock className="h-4 w-4 flex-shrink-0" />
-                      Pre-Order — Opens Sunday, 27th September
+                      Pre-Order — Opens {openDateFull}
                     </div>
                     <p>
                       Pre-orders for this batch open on{" "}
-                      <span className="font-medium text-gray-800">Sunday, 27th September</span>.
+                      <span className="font-medium text-gray-800">{openDateFull}</span>.
                       Once pre-orders open, the standard estimated delivery timeline is{" "}
                       <span className="font-medium text-gray-800">28–35 days</span> with updates sent via email.
                     </p>

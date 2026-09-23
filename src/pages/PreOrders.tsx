@@ -10,6 +10,7 @@ import { ROUTE_HELPERS, ROUTE_NAMES } from "@/constants/enums";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { createClient } from "@supabase/supabase-js";
+import { formatBatchOpenDate, formatBatchOpenShort } from "@/lib/preOrderUtils";
 
 interface ActiveWindow {
   id: string;
@@ -229,6 +230,9 @@ export default function PreOrders() {
   const targetDate = isPaused ? upcomingStartsAt : endsAt;
   const countdown = useCountdown(targetDate);
 
+  const openDateFull = formatBatchOpenDate(upcomingStartsAt);
+  const openDateShort = formatBatchOpenShort(upcomingStartsAt);
+
   const hasListings = listings.length > 0;
 
   return (
@@ -248,14 +252,14 @@ export default function PreOrders() {
         <div className="relative mx-auto max-w-xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm">
             <PackageOpen className="h-4 w-4" />
-            {isPaused ? "Pre-Orders Open Sunday, 27th September" : "Limited Pre-Order Window"}
+            {isPaused ? `Pre-Orders Open ${openDateFull}` : "Limited Pre-Order Window"}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">
-            {isPaused ? "Opens Sunday, 27th Sept" : "Pre-Order Now"}
+            {isPaused ? `Opens ${openDateShort}` : "Pre-Order Now"}
           </h1>
           <p className="text-violet-100 text-sm md:text-base leading-relaxed">
             {isPaused
-              ? "Pre-orders for this batch open on Sunday, 27th September. Estimated delivery 28–35 days once open."
+              ? `Pre-orders for this batch open on ${openDateFull}. Estimated delivery 28–35 days once open.`
               : "Reserve your pair before stocks close. Estimated delivery 28–35 days from order placement."}
           </p>
 
@@ -352,7 +356,7 @@ export default function PreOrders() {
                                 : "bg-gradient-to-r from-violet-500 to-purple-600"
                             }`}
                           >
-                            {isPaused ? "Opens 27th Sept" : "Pre-Order"}
+                            {isPaused ? `Opens ${openDateShort}` : "Pre-Order"}
                           </Badge>
                         </div>
                         <div className="p-3 md:p-4">
