@@ -1,85 +1,26 @@
 import React from "react";
-import { Truck, Check } from "lucide-react";
-import {
-  COURIER_OPTIONS,
-  type CourierOption,
-} from "@/contexts/CartContext";
+import { Truck } from "lucide-react";
+import type { CourierOption } from "@/contexts/CartContext";
 
 interface CourierSelectorProps {
-  selected: CourierOption;
-  onChange: (option: CourierOption) => void;
+  selected?: CourierOption;
+  onChange?: (option: CourierOption) => void;
 }
 
 /**
- * Radio-card picker for courier / delivery method.
- * Renders one card per COURIER_OPTIONS entry.
+ * Delivery partner notice displaying shipping method.
+ * Items are shipped via Delhivery or BlueDart based on serviceability.
  */
-export const CourierSelector: React.FC<CourierSelectorProps> = ({
-  selected,
-  onChange,
-}) => {
+export const CourierSelector: React.FC<CourierSelectorProps> = () => {
   return (
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
-        <Truck className="h-4 w-4 text-gray-500" />
-        Delivery Method
-      </h4>
-
-      <div className="space-y-2">
-        {COURIER_OPTIONS.map((option) => {
-          const isActive = selected.id === option.id;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => onChange(option)}
-              className={`
-                w-full flex items-center gap-3 rounded-xl border-2 px-3 py-2.5
-                transition-all duration-150 text-left
-                ${
-                  isActive
-                    ? "border-gray-900 bg-gray-50 shadow-sm"
-                    : "border-gray-200 bg-white hover:border-gray-300"
-                }
-              `}
-            >
-              {/* Radio indicator */}
-              <span
-                className={`
-                  flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2
-                  transition-colors
-                  ${
-                    isActive
-                      ? "border-gray-900 bg-gray-900 text-white"
-                      : "border-gray-300 bg-white"
-                  }
-                `}
-              >
-                {isActive && <Check className="h-3 w-3" strokeWidth={3} />}
-              </span>
-
-              {/* Label + ETA */}
-              <div className="flex-1 min-w-0">
-                <p
-                  className={`text-sm font-medium ${
-                    isActive ? "text-gray-900" : "text-gray-700"
-                  }`}
-                >
-                  {option.label}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Est. {option.eta}
-                </p>
-              </div>
-
-              {/* Price */}
-              <span className="text-sm font-semibold text-gray-900 shrink-0">
-                ₹{option.price}
-              </span>
-            </button>
-          );
-        })}
+    <div className="rounded-2xl border border-gray-200 bg-gray-50/90 p-3.5 shadow-sm">
+      <div className="flex items-center gap-2 font-semibold text-gray-900 text-xs">
+        <Truck className="h-4 w-4 text-purple-600 shrink-0" />
+        Delivery Partner
       </div>
+      <p className="mt-1 text-xs text-gray-600 leading-relaxed pl-6">
+        Your item will be shipped by either <span className="font-semibold text-gray-800">Delhivery</span> or <span className="font-semibold text-gray-800">BlueDart</span> based on serviceability.
+      </p>
     </div>
   );
 };

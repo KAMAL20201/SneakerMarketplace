@@ -154,7 +154,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
             )}
             {shippingFee > 0 && (
               <div className="flex justify-between text-sm text-gray-600">
-                <span>Shipping ({selectedCourier.label})</span>
+                <span>Shipping</span>
                 <span className="font-medium">+₹{shippingFee}</span>
               </div>
             )}

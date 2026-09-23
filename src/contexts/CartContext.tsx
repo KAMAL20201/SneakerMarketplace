@@ -17,12 +17,15 @@ export interface CourierOption {
   eta: string;
 }
 
-/** Available courier options — first entry is the default */
-export const COURIER_OPTIONS: CourierOption[] = [
-  { id: "speed_post_air", label: "Speed Post (Air)", price: 299, eta: "5–7 days" },
-  { id: "dtdc_surface", label: "DTDC Surface", price: 299, eta: "7–10 days" },
-  { id: "delhivery_surface", label: "Delhivery Surface", price: 299, eta: "7–10 days" },
-];
+/** Default courier option */
+export const DEFAULT_COURIER: CourierOption = {
+  id: "standard_delivery",
+  label: "Delhivery / BlueDart",
+  price: 299,
+  eta: "5–7 days",
+};
+
+export const COURIER_OPTIONS: CourierOption[] = [DEFAULT_COURIER];
 
 
 interface CartContextType {
