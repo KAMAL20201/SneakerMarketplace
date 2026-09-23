@@ -248,14 +248,14 @@ export default function PreOrders() {
         <div className="relative mx-auto max-w-xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm">
             <PackageOpen className="h-4 w-4" />
-            {isPaused ? "Pre-Orders Currently Paused" : "Limited Pre-Order Window"}
+            {isPaused ? "Pre-Orders Open Sunday, 27th September" : "Limited Pre-Order Window"}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">
-            {isPaused ? "Pre-Orders Resume Soon" : "Pre-Order Now"}
+            {isPaused ? "Opens Sunday, 27th Sept" : "Pre-Order Now"}
           </h1>
           <p className="text-violet-100 text-sm md:text-base leading-relaxed">
             {isPaused
-              ? "Pre-orders are currently paused while we prepare the next drop batch. Estimated delivery 28–35 days once open."
+              ? "Pre-orders for this batch open on Sunday, 27th September. Estimated delivery 28–35 days once open."
               : "Reserve your pair before stocks close. Estimated delivery 28–35 days from order placement."}
           </p>
 
@@ -352,7 +352,7 @@ export default function PreOrders() {
                                 : "bg-gradient-to-r from-violet-500 to-purple-600"
                             }`}
                           >
-                            {isPaused ? "Opening Soon" : "Pre-Order"}
+                            {isPaused ? "Opens 27th Sept" : "Pre-Order"}
                           </Badge>
                         </div>
                         <div className="p-3 md:p-4">

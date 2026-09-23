@@ -10,9 +10,6 @@ import {
   Star,
   ChevronDown,
   RotateCcw,
-  Bell,
-  Mail,
-  CheckCircle2,
   Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +36,6 @@ import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand, sortSizes } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
-import { LaunchEmailService } from "@/lib/launchEmailService";
 import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -575,40 +571,6 @@ export default function ProductDetailPage() {
   /** True when this selection is part of an active pre-order window (and NOT an instant ship size). */
   const isPreOrderProduct = !isInstantSelected && isPreOrderBatchActive;
   const isPreOrderPaused = !isInstantSelected && isPreOrderBatchPaused;
-
-  /** State for pre-order resume email notification */
-  const [notifyEmail, setNotifyEmail] = useState("");
-  const [notifyStatus, setNotifyStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [notifyMessage, setNotifyMessage] = useState("");
-
-  const handlePreOrderNotify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!notifyEmail.trim()) return;
-
-    setNotifyStatus("loading");
-    try {
-      const result = await LaunchEmailService.subscribeEmail({
-        email: notifyEmail,
-        source: `preorder-paused:${listing?.slug ?? "unknown"}`,
-      });
-
-      if (result.success || result.alreadySubscribed) {
-        setNotifyStatus("success");
-        setNotifyMessage(
-          result.alreadySubscribed
-            ? "You're already on the waitlist! We'll notify you as soon as pre-orders resume. 🎉"
-            : "You're on the list! We'll email you the moment pre-orders resume. 🎉"
-        );
-        setNotifyEmail("");
-      } else {
-        setNotifyStatus("error");
-        setNotifyMessage(result.message || "Failed to subscribe. Please try again.");
-      }
-    } catch {
-      setNotifyStatus("error");
-      setNotifyMessage("Something went wrong. Please try again.");
-    }
-  };
 
   /**
    * Loading state for the client-side pre-order window re-check.
@@ -1286,9 +1248,11 @@ export default function ProductDetailPage() {
                             <Zap className="h-3 w-3" /> Instant Ship
                           </TabsTrigger>
                           <TabsTrigger value="standard" className="rounded-xl">
-                            {isPreOrderBatchActive || isPreOrderBatchPaused
+                            {isPreOrderBatchActive
                               ? "Pre-Order (3–4 Wks)"
-                              : "3–4 Weeks"}
+                              : isPreOrderBatchPaused
+                                ? "Pre-Order (Opens 27th Sept)"
+                                : "3–4 Weeks"}
                           </TabsTrigger>
                         </TabsList>
                       </Tabs>
@@ -1480,12 +1444,12 @@ export default function ProductDetailPage() {
               </Button>
             </div>
           ) : isPreOrderPaused ? (
-            /* ── Pre-order Paused: Notify when resumed with email input ── */
+            /* ── Pre-order Paused: Opens Sunday, 27th September banner ── */
             <div className="px-4 pb-6 lg:px-0">
               <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-amber-50/30 p-4 sm:p-5 shadow-sm space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="p-2.5 rounded-xl bg-violet-100 text-violet-700 shrink-0 mt-0.5">
-                    <Bell className="h-5 w-5" />
+                    <Clock className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -1494,51 +1458,17 @@ export default function ProductDetailPage() {
                       </span>
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Currently Paused
+                        Opens Sunday, 27th Sept
                       </span>
                     </div>
                     <h4 className="font-bold text-gray-900 text-sm mt-1.5">
-                      Pre-orders are currently paused
+                      Pre-orders open on Sunday, 27th September
                     </h4>
                     <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                      Orders for this pre-order batch are temporarily on hold. Enter your email below to be notified the moment pre-orders reopen.
+                      Pre-orders for this batch open on Sunday, 27th September. Sizing and reservation will be available once the batch goes live.
                     </p>
                   </div>
                 </div>
-
-                {notifyStatus === "success" ? (
-                  <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-xs text-emerald-800 font-medium">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span>{notifyMessage}</span>
-                  </div>
-                ) : (
-                  <form onSubmit={handlePreOrderNotify} className="space-y-2 pt-1">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="relative flex-1">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="email"
-                          required
-                          value={notifyEmail}
-                          onChange={(e) => setNotifyEmail(e.target.value)}
-                          placeholder="Enter your email address"
-                          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 bg-white text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all shadow-sm"
-                          disabled={notifyStatus === "loading"}
-                        />
-                      </div>
-                      <Button
-                        type="submit"
-                        disabled={notifyStatus === "loading" || !notifyEmail.trim()}
-                        className="w-full sm:w-auto px-5 h-10 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium text-xs sm:text-sm shadow-sm transition-all"
-                      >
-                        {notifyStatus === "loading" ? "Saving..." : "Notify When Resumed"}
-                      </Button>
-                    </div>
-                    {notifyStatus === "error" && (
-                      <p className="text-xs text-red-600 pl-1">{notifyMessage}</p>
-                    )}
-                  </form>
-                )}
               </div>
             </div>
           ) : (
@@ -1681,12 +1611,13 @@ export default function ProductDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-violet-700">
                       <Clock className="h-4 w-4 flex-shrink-0" />
-                      Pre-Order Batch — Currently Paused
+                      Pre-Order — Opens Sunday, 27th September
                     </div>
                     <p>
-                      This item is part of an international pre-order batch. Ordering is temporarily paused.
-                      Once pre-orders resume, standard delivery timeline is{" "}
-                      <span className="font-medium text-gray-800">28–35 days</span>.
+                      Pre-orders for this batch open on{" "}
+                      <span className="font-medium text-gray-800">Sunday, 27th September</span>.
+                      Once pre-orders open, the standard estimated delivery timeline is{" "}
+                      <span className="font-medium text-gray-800">28–35 days</span> with updates sent via email.
                     </p>
                   </div>
                 ) : listing?.delivery_days &&
