@@ -13,7 +13,7 @@ import { PaymentButton } from "@/components/PaymentButton";
 import { CouponInput } from "@/components/CouponInput";
 import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
-import { SHIPPING_FEE, COURIER_OPTIONS, type CourierOption } from "@/contexts/CartContext";
+import { COURIER_OPTIONS, type CourierOption } from "@/contexts/CartContext";
 import { CourierSelector } from "@/components/checkout/CourierSelector";
 import { formatDisplaySize } from "@/constants/sizeCharts";
 
@@ -37,8 +37,8 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [selectedCourier, setSelectedCourier] = useState<CourierOption>(COURIER_OPTIONS[0]);
 
-  /** flat shipping fee per item */
-  const shippingFee = SHIPPING_FEE;
+  /** per-item shipping charge from the listing */
+  const shippingFee = item.shippingCharges ?? 0;
 
   const discountedAmount = appliedCoupon
     ? Math.max(amount - appliedCoupon.discountAmount, 0) + shippingFee

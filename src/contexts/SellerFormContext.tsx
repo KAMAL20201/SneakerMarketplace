@@ -65,7 +65,7 @@ const DEFAULT_SELLER_FORM_DATA: SellerFormData = {
   description: "",
   category: "sneakers",
   paymentMethodId: "",
-  shippingCharges: "0",
+  shippingCharges: "300",
   deliveryDays: "21-28",
   customDeliveryDays: "",
 };

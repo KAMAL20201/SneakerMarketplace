@@ -229,7 +229,7 @@ Deno.serve(async (req: Request) => {
         retail_price:     row.retail_price ?? null,
         description:      null,
         status:           "active",
-        shipping_charges: 0,
+        shipping_charges: 300,
         delivery_days:    "7-10",
       })
       .select("id")

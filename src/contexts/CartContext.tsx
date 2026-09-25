@@ -4,8 +4,6 @@ import type { CartItem } from "@/lib/orderService";
 import { supabase } from "../lib/supabase";
 import type { AppliedCoupon } from "@/types/coupon";
 
-/** Flat shipping charged per item (in INR) */
-export const SHIPPING_FEE = 299;
 
 /** Unique identifier for each courier option */
 export type CourierOptionId = "speed_post_air" | "dtdc_surface" | "delhivery_surface";
@@ -21,7 +19,7 @@ export interface CourierOption {
 export const DEFAULT_COURIER: CourierOption = {
   id: "standard_delivery",
   label: "Delhivery / BlueDart",
-  price: 299,
+  price: 300,
   eta: "5–7 days",
 };
 
@@ -38,7 +36,7 @@ interface CartContextType {
   toggleCart: () => void;
   clearCart: () => void;
   totalPrice: number;
-  /** ₹299 × number of items in cart */
+  /** Sum of per-item shipping charges from the DB */
   shippingFee: number;
   /** Currently selected courier option */
   selectedCourier: CourierOption;
@@ -152,15 +150,35 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         });
       }
 
+      // Also refresh shipping charges from product_listings
+      const allListingIds = [...new Set(currentItems.map((i) => i.productId))];
+      const shippingMap = new Map<string, number>();
+      if (allListingIds.length > 0) {
+        const { data: listingsData } = await supabase
+          .from("product_listings")
+          .select("id, shipping_charges")
+          .in("id", allListingIds);
+        listingsData?.forEach((row) => {
+          shippingMap.set(row.id, row.shipping_charges ?? 0);
+        });
+      }
+
       let anyChanged = false;
       const updatedItems = currentItems.map((item) => {
         const key = item.variantId
           ? `v:${item.variantId}:${item.size}`
           : `l:${item.productId}:${item.size}`;
         const freshPrice = priceMap.get(key);
-        if (freshPrice !== undefined && freshPrice !== item.price) {
+        const freshShipping = shippingMap.get(item.productId);
+        const priceChanged = freshPrice !== undefined && freshPrice !== item.price;
+        const shippingChanged = freshShipping !== undefined && freshShipping !== item.shippingCharges;
+        if (priceChanged || shippingChanged) {
           anyChanged = true;
-          return { ...item, price: freshPrice };
+          return {
+            ...item,
+            ...(priceChanged ? { price: freshPrice } : {}),
+            ...(shippingChanged ? { shippingCharges: freshShipping } : {}),
+          };
         }
         return item;
       });
@@ -258,10 +276,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [items]);
 
-  /** Flat ₹299 shipping per item in the cart */
+  /** Sum of per-item shipping charges from the DB */
   const shippingFee = useMemo(() => {
     return items.reduce(
-      (sum, item) => sum + SHIPPING_FEE * item.quantity,
+      (sum, item) => sum + (item.shippingCharges ?? 0) * item.quantity,
       0
     );
   }, [items]);

@@ -684,6 +684,7 @@ export default function ProductDetailPage() {
       variantName: selectedVariant?.color_name ?? null,
       isInstantShip: isCurrentSelectionInstantShip(),
       isPreOrder: isPreOrderProduct,
+      shippingCharges: listing?.shipping_charges ?? 0,
     };
 
     const success = addToCart(cartItem);
@@ -1592,6 +1593,7 @@ export default function ProductDetailPage() {
                   variantName: selectedVariant?.color_name ?? null,
                   isInstantShip: isCurrentSelectionInstantShip(),
                   isPreOrder: isPreOrderProduct,
+                  shippingCharges: listing?.shipping_charges ?? 0,
                 };
               })()}
             />

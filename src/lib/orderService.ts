@@ -77,6 +77,8 @@ export interface CartItem {
   isInstantShip?: boolean;
   /** Whether this item is a pre-order (allowed even when ORDERS_PAUSED) */
   isPreOrder?: boolean;
+  /** Per-item shipping charge from the product listing (in INR) */
+  shippingCharges: number;
 }
 
 export class OrderService {
