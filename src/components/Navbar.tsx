@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,13 +15,15 @@ import { CartButton } from "./Cart/CartButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ROUTE_NAMES } from "@/constants/enums";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Search } from "lucide-react";
 import OrdersPausedBanner from "./OrdersPausedBanner";
+import { SearchPanel } from "@/components/ui/SearchPanel";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
   const handleLogout = () => {
     signOut();
     navigate(ROUTE_NAMES.HOME);
@@ -30,28 +33,28 @@ export function Navbar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-full">
       <OrdersPausedBanner />
-      <div className="glass-navbar flex h-16 items-center justify-between px-4">
+      <div className="glass-navbar flex h-16 items-center px-4">
         {/* Left side - Sidebar trigger */}
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0">
           <SidebarTrigger className="-ml-1 glass-button rounded-xl p-2 border-0" />
         </div>
 
-        {/* Center - Logo */}
+        {/* Logo — centered on mobile, inline on desktop */}
         <Link
           to={ROUTE_NAMES.HOME}
           prefetch="intent"
-          className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2"
+          className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:ml-3"
         >
           <div className="relative">
             {/* Main logo container with glass effect */}
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 shadow-lg relative overflow-hidden">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 shadow-lg relative overflow-hidden">
               {/* Animated background gradient */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 opacity-50 animate-pulse"></div>
 
               {/* Logo icon - Electric plug representing "The Plug" */}
               <svg
                 viewBox="0 0 24 24"
-                className="h-7 w-7 text-white relative z-10"
+                className="h-6 w-6 text-white relative z-10"
                 fill="currentColor"
               >
                 <path d="M16.5 3c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v4c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V3zM11 3c0-.83-.67-1.5-1.5-1.5S8 2.17 8 3v4c0 .83.67 1.5 1.5 1.5S11 7.83 11 7V3zM6 8.5C6 7.12 7.12 6 8.5 6h7C16.88 6 18 7.12 18 8.5v2c0 .28-.22.5-.5.5h-1v2c0 2.21-1.79 4-4 4s-4-1.79-4-4v-2h-1c-.28 0-.5-.22-.5-.5v-2zm6 10.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-1.5-.67-1.5-1.5-.67-1.5-1.5-1.5S12 18.17 12 19z" />
@@ -62,19 +65,27 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Brand text */}
-          <div className="hidden sm:block">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold gradient-text">
-                The Plug Market
-              </h1>
-            </div>
-          </div>
+          {/* Brand text — hidden on smaller screens */}
+          <h1 className="hidden lg:block text-lg font-bold gradient-text whitespace-nowrap">
+            The Plug Market
+          </h1>
         </Link>
 
-        {/* Right side - Cart and Profile/Auth */}
-        <div className="flex items-center gap-3">
-          {/* Shopping Cart - only show if authenticated */}
+        {/* Right side - Search toggle + Cart + Profile/Auth */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+
+          {/* Search toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="glass-button border-0 rounded-xl h-10 w-10 text-gray-600 hover:text-purple-600"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Open search"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Shopping Cart */}
           <CartButton />
 
           {/* Notifications - only show if authenticated */}
@@ -165,6 +176,11 @@ export function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Search panel — slides in from right */}
+      <SearchPanel open={searchOpen} onClose={() => setSearchOpen(false)} />
+
     </header>
   );
 }
+

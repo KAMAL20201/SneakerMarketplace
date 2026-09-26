@@ -1,6 +1,5 @@
 import { lazy, useEffect, Suspense } from "react";
 import { Sparkles } from "lucide-react";
-import { SearchDropdown } from "@/components/ui/SearchDropdown";
 import { ROUTE_NAMES } from "@/constants/enums";
 import CategorySection from "@/components/CategorySection";
 import WishlistSection from "@/components/WishlistSection";
@@ -248,81 +247,10 @@ const Home = () => {
           content="https://theplugmarket.in/og-image.jpg"
         />
       </Helmet> */}
-      {/* Hero Section */}
-      <section className="hidden md:block px-4 py-6">
-        <div className="text-center mb-8 float-animation">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Sparkles className="h-6 w-6 text-orange-500" />
-          </div>
-          <h1 className="text-4xl font-bold mb-3">
-            India's Trusted Marketplace for
-            <span className="gradient-text block mt-2">
-              Authentic Sneakers & Streetwear
-            </span>
-          </h1>
-          <p className="text-gray-700 text-lg mb-2">
-            Shop 100% authentic sneakers, streetwear & more — every product
-            quality verified
-          </p>
 
-          {/* Trust badges - ecommerce focused */}
-          <div className="flex flex-wrap justify-center gap-4 mb-6">
-            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-full border border-green-200">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-green-700 text-sm font-medium">
-                Quality Verified
-              </span>
-            </div>
-            {/* [MARKETPLACE REMOVED] Buyer Protection and Secure Payments badges
-               These were marketplace trust signals for multi-seller model.
-            <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-full border border-blue-200">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-blue-700 text-sm font-medium">
-                Buyer Protection
-              </span>
-            </div>
-            <div className="flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-full border border-orange-200">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <span className="text-orange-700 text-sm font-medium">
-                Secure Payments
-              </span>
-            </div>
-            */}
-            <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 rounded-full border border-purple-200">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span className="text-purple-700 text-sm font-medium">
-                100% Authentic
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-2">
-          <SearchDropdown />
-        </div>
-
-        {/* [MARKETPLACE REMOVED] "Sell Now" CTA - only admin can sell in ecommerce model
-        <div className="flex gap-4">
-          <Button
-            asChild
-            className="flex-1 h-12 bg-white text-gray-800 font-semibold border-2 border-gray-800 rounded-2xl hover:bg-gray-800 hover:text-white transition-all duration-300"
-          >
-            <Link to={ROUTE_NAMES.SELL}>
-              <Plus className="h-5 w-5 mr-2" />
-              Sell Now
-            </Link>
-          </Button>
-        </div>
-        */}
-      </section>
 
       {/* Homepage Banners */}
       <HomeBannerCarousel initialBanners={banners} />
-
-      {/* Search bar — mobile only, shown below banner */}
-      <div className="md:hidden mt-6 px-4 pb-4">
-        <SearchDropdown />
-      </div>
 
       {/* Brand Spotlight */}
       <BrandSpotlight />
@@ -353,9 +281,8 @@ const Home = () => {
           </section>
         }
       >
-
-              {/* Wishlist Section - only rendered when user has saved items */}
-      <WishlistSection />
+        {/* Wishlist Section - only rendered when user has saved items */}
+        <WishlistSection />
         <Await resolve={newDrops} errorElement={null}>
           {(drops) => <NewDropsSection initialListings={drops} />}
         </Await>
@@ -395,7 +322,6 @@ const Home = () => {
         </div>
       </section>
       */}
-
 
       {/* Hot Deals Section — streamed */}
       <Suspense fallback={null}>

@@ -84,10 +84,10 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
   };
 
   return (
-    <section className="md:px-4 md:pb-4">
+    <section className="md:pb-4">
       {/* Each slide is absolutely positioned — avoids iOS Safari flex/min-w-full bug */}
       <div
-        className="relative md:rounded-3xl overflow-hidden bg-gray-100 select-none w-full aspect-[9/16] md:aspect-[2/1]"
+        className="relative overflow-hidden bg-gray-100 select-none w-full aspect-[9/16] md:aspect-[2/1]"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >

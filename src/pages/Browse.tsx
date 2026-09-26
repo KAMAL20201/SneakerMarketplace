@@ -663,7 +663,6 @@ const Browse = () => {
             </div>
           </div>
         </div>
-
         {/* Search Bar */}
         <div className="relative flex items-center justify-center border rounded-2xl pl-2 mb-4">
           <Search className="h-5 w-5 text-gray-600" />
@@ -691,6 +690,7 @@ const Browse = () => {
             </button>
           )}
         </div>
+
 
         {/* Search result caption */}
         {searchParams.get("search") && (

@@ -12,7 +12,6 @@ import {
   X,
   SlidersHorizontal,
   SortAsc,
-  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -644,32 +643,8 @@ const BrandPage = () => {
           </div>
         )}
 
-        {/* Search bar — brand page only (model pages have fixed search term) */}
-        {!model && (
-          <div className="relative flex items-center justify-center border rounded-2xl pl-2 mb-4">
-            <Search className="h-5 w-5 text-gray-600" />
-            <Input
-              value={filters.search}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, search: e.target.value }))
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter")
-                  handleImmediateFilterChange("search", filters.search);
-              }}
-              placeholder={`Search ${brandConfig.name}...`}
-              className="h-12 text-gray-700 placeholder:text-gray-500 !border-none !outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            />
-            {filters.search && (
-              <button
-                onClick={() => handleImmediateFilterChange("search", "")}
-                className="absolute right-3 p-1 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-              </button>
-            )}
-          </div>
-        )}
+
+
 
         {/* Controls bar — matches CategoryBrowse exactly */}
         <div className="flex justify-end gap-3 mb-2">

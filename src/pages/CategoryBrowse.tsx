@@ -3,7 +3,6 @@ import { useSearchParams, useLocation, useLoaderData, data } from "react-router"
 import { createClient } from "@supabase/supabase-js";
 import type { Route } from "./+types/CategoryBrowse";
 import {
-  Search,
   Package,
   ChevronDown,
   ChevronUp,
@@ -646,33 +645,7 @@ const CategoryBrowse = () => {
           </div>
         )}
 
-        {/* Search Bar */}
-        <div className="relative flex items-center justify-center border rounded-2xl pl-2 mb-4">
-          <Search className="h-5 w-5 text-gray-600" />
-          <Input
-            value={filters.search}
-            onChange={(e) => handleSearchInputChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSearchExecute();
-            }}
-            placeholder={`Search ${categoryConfig.name.toLowerCase()}...`}
-            className="h-12 text-gray-700 placeholder:text-gray-500 !border-none !outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
-          {filters.search && (
-            <button
-              onClick={() => {
-                handleSearchInputChange("");
-                setSearchParams(
-                  serializeFiltersToURL({ ...filters, search: "" }),
-                  { replace: true },
-                );
-              }}
-              className="absolute right-3 p-1 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-            </button>
-          )}
-        </div>
+
 
         {/* Search result caption */}
         {searchParams.get("search") && (
