@@ -32,8 +32,6 @@
 - Categories:
   - Sneakers: variantLabel="Colorway", hasSize=true, hasColorPicker=true
   - Clothing: variantLabel="Color", hasSize=true, hasColorPicker=true
-  - Electronics: variantLabel="Color", hasSize=false, hasColorPicker=true (price per variant)
-  - Collectibles: variantLabel="Edition / Variant", hasSize=false, hasColorPicker=false (free-text)
 - Sell page Step 4: variant cards (color name + hex picker + sizes or price depending on hasSize)
 - Step 5: only Retail/MRP price (selling prices live in variants now)
 - ProductDetailPage: color swatch row above size grid; clicking swatch updates available sizes + price
@@ -44,4 +42,4 @@
 - MCP is read-only; always use CLI for actual pushes
 
 ## Category IDs
-- sneakers, clothing, electronics, collectibles (from CATEGORY_IDS enum)
+- sneakers, clothing (from CATEGORY_IDS enum)

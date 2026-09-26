@@ -34,7 +34,7 @@ export function meta() {
     {
       property: "og:description",
       content:
-        "India's premier destination for authentic sneakers, streetwear, and collectibles. Learn about our story and commitment to quality.",
+        "India's premier destination for authentic sneakers and streetwear. Learn about our story and commitment to quality.",
     },
   ];
 }
@@ -52,8 +52,8 @@ export default function AboutUs() {
             About The Plug Market
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            India's premier destination for authentic sneakers, streetwear, and
-            collectibles. Where passion meets quality.
+            India's premier destination for authentic sneakers and streetwear.
+            Where passion meets quality.
           </p>
           <Badge variant="secondary" className="mt-4 text-lg px-6 py-2">
             Est. 2025

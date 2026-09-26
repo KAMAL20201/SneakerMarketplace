@@ -140,7 +140,7 @@ export function meta() {
     {
       name: "description",
       content:
-        "Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market. Find the best deals on verified items.",
+        "Browse all authentic sneakers and streetwear on The Plug Market. Find the best deals on verified items.",
     },
     {
       tagName: "link",
@@ -152,7 +152,7 @@ export function meta() {
     {
       property: "og:description",
       content:
-        "Browse all authentic sneakers, streetwear, electronics, and collectibles on The Plug Market.",
+        "Browse all authentic sneakers and streetwear on The Plug Market.",
     },
   ];
 }

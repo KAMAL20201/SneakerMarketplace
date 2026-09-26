@@ -36,7 +36,7 @@ function buildMultiWordSearchFilter(rawQuery: string, columns: string[]): string
 }
 
 export function SearchDropdown({
-  placeholder = "Search sneakers, streetwear, collectibles...",
+  placeholder = "Search sneakers, streetwear...",
   className = "",
   showRecentSearches = true,
 }: SearchDropdownProps) {

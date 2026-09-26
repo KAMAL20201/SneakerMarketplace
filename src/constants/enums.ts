@@ -54,8 +54,6 @@ export const ROUTE_NAMES = {
   RUNNING_SNEAKERS: "/collections/running-sneakers",
   SNEAKERS: "/sneakers",
   APPARELS: "/apparels",
-  ELECTRONICS: "/electronics",
-  COLLECTIBLES: "/collectibles",
   BRANDS: "/brands",
   COLLECTIONS: "/collections",
   SALE_PAGE: "/sale/:slug",
@@ -110,27 +108,6 @@ export const CLOTHING_BRANDS = {
   ESSENTIALS: "essentials",
 } as const;
 
-export const ELECTRONIC_BRANDS = {
-  APPLE: "apple",
-  SAMSUNG: "samsung",
-  SONY: "sony",
-  BOSE: "bose",
-  NINTENDO: "nintendo",
-  PLAYSTATION: "playstation",
-  XBOX: "xbox",
-  GOOGLE: "google",
-} as const;
-
-export const COLLECTIBLE_BRANDS = {
-  FUNKO: "funko",
-  HOT_TOYS: "hot toys",
-  KAWS: "kaws",
-  BEARBRICK: "bearbrick",
-  POKEMON: "pokemon",
-  MARVEL: "marvel",
-  DC_COMICS: "dc comics",
-  DISNEY: "disney",
-} as const;
 
 // Size enums
 export const SNEAKER_SIZES = {
@@ -182,8 +159,6 @@ export type DeliveryTimeline =
 export const CATEGORY_IDS = {
   SNEAKERS: "sneakers",
   CLOTHING: "clothing",
-  ELECTRONICS: "electronics",
-  COLLECTIBLES: "collectibles",
 } as const;
 
 export type CategoryId = (typeof CATEGORY_IDS)[keyof typeof CATEGORY_IDS];

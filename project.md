@@ -2,7 +2,7 @@
 
 ## 🚀 Project Overview
 
-**The Plug Market** is a modern, Indian-focused marketplace platform that connects sneaker enthusiasts and streetwear collectors. The platform enables direct seller-to-buyer transactions for authentic sneakers, clothing, accessories, electronics, gaming gear, and collectibles.
+**The Plug Market** is a modern, Indian-focused marketplace platform that connects sneaker enthusiasts and streetwear collectors. The platform enables direct seller-to-buyer transactions for authentic sneakers, clothing, and accessories.
 
 ### 🎯 Mission
 
@@ -22,7 +22,7 @@
 ### For Sellers
 
 - **Easy Listing**: Simple product listing process with image optimization
-- **Multi-Category Support**: List sneakers, clothing, accessories, electronics, gaming, and collectibles
+- **Multi-Category Support**: List sneakers, clothing, and accessories
 - **Inventory Management**: Track and manage your listings
 - **Direct Shipping**: Ship directly to buyers with flexible delivery timelines
 - **Order Management**: Comprehensive order tracking and management
@@ -135,10 +135,7 @@ src/
 
 - **Sneakers & Shoes**: Nike, Adidas, Jordan, Converse, Vans, New Balance, Puma, Reebok
 - **Clothing & Apparel**: Streetwear brands including Supreme, Off-White, Stone Island
-- **Accessories**: Watches, bags, and luxury accessories
-- **Electronics**: Apple, Samsung, Sony, Bose products
-- **Gaming**: Nintendo, PlayStation, Xbox, and gaming peripherals
-- **Collectibles**: Funko, Hot Toys, KAWS, and limited edition items
+- **Accessories**: Bags and accessories
 
 ### Product Conditions
 

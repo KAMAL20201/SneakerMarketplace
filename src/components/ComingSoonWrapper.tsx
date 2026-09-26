@@ -138,8 +138,8 @@ const ComingSoonWrapper: React.FC<ComingSoonWrapperProps> = ({ children }) => {
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed">
             We're working hard to bring you the best marketplace experience for
-            sneakers, streetwear, and collectibles. Get ready for exclusive
-            drops, authentic products, and seamless transactions.
+            sneakers and streetwear. Get ready for exclusive drops, authentic
+            products, and seamless transactions.
           </p>
         </div>
 

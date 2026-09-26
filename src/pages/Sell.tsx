@@ -821,8 +821,6 @@ export default function SellPage() {
                               ? "Air Jordan 1 Retro High OG"
                               : selectedCategory.id === "clothing"
                               ? "Supreme Box Logo Hoodie"
-                              : selectedCategory.id === "electronics"
-                              ? "iPhone 15 Pro Max"
                               : "Vintage Item"
                           }`
                         : "e.g., Item name and description"
@@ -933,8 +931,6 @@ export default function SellPage() {
                       placeholder={
                         selectedCategory.id === "sneakers"
                           ? "e.g., Dunk Low, Air Force 1"
-                          : selectedCategory.id === "electronics"
-                          ? "e.g., Pro Max, Galaxy S24"
                           : "e.g., Model or style name"
                       }
                       value={formData.model}
@@ -1097,8 +1093,6 @@ export default function SellPage() {
                             placeholder={
                               selectedCategory?.id === "sneakers"
                                 ? "e.g., University Blue, Bred, Chicago"
-                                : selectedCategory?.id === "collectibles"
-                                ? "e.g., Regular, Chase, Glow-in-Dark"
                                 : "e.g., Black, White, Red"
                             }
                             value={variant.color_name}

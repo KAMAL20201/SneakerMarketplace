@@ -109,7 +109,7 @@ function buildPreviewHtml(order: PendingOrder): string {
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
         <tr><td style="background:linear-gradient(135deg,#7c3aed,#db2777);border-radius:16px 16px 0 0;padding:28px 40px;text-align:center;">
           <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;">&#9889; The Plug Market</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:4px;">Hyped Sneakers &middot; Streetwear &middot; Collectibles</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:4px;">Hyped Sneakers &middot; Streetwear</div>
         </td></tr>
         <tr><td style="background:#fff;padding:40px;border-radius:0 0 16px 16px;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
           <h2 style="margin:0 0 4px;font-size:24px;font-weight:800;color:#111827;">You left something behind!</h2>

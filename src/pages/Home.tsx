@@ -261,8 +261,8 @@ const Home = () => {
             </span>
           </h1>
           <p className="text-gray-700 text-lg mb-2">
-            Shop 100% authentic sneakers, streetwear, collectibles & more —
-            every product quality verified
+            Shop 100% authentic sneakers, streetwear & more — every product
+            quality verified
           </p>
 
           {/* Trust badges - ecommerce focused */}
@@ -353,6 +353,9 @@ const Home = () => {
           </section>
         }
       >
+
+              {/* Wishlist Section - only rendered when user has saved items */}
+      <WishlistSection />
         <Await resolve={newDrops} errorElement={null}>
           {(drops) => <NewDropsSection initialListings={drops} />}
         </Await>
@@ -393,8 +396,7 @@ const Home = () => {
       </section>
       */}
 
-      {/* Wishlist Section - only rendered when user has saved items */}
-      <WishlistSection />
+
       {/* Hot Deals Section — streamed */}
       <Suspense fallback={null}>
         <Await resolve={hotDeals} errorElement={null}>

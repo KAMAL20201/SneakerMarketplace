@@ -119,7 +119,7 @@ function baseTemplate(content: string, subject: string): string {
                 ⚡ The Plug Market
               </div>
               <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-top:4px;">
-                Hyped Sneakers · Streetwear · Collectibles
+                Hyped Sneakers · Streetwear
               </div>
             </td>
           </tr>

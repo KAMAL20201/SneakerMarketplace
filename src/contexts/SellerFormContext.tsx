@@ -14,7 +14,7 @@ export interface ProductVariant {
   tempId: string;        // client-side key only, not persisted
   color_name: string;    // "University Blue", "Chase Edition", etc.
   color_hex: string;     // "#4169E1" — empty string when not set
-  price: string;         // used for no-size categories (electronics, collectibles)
+  price: string;         // used for no-size categories
   sizes: VariantSizeEntry[]; // used for size-having categories (sneakers, apparels)
   imageIndex: number | null; // index into the uploaded images[] array for this variant's photo
 }

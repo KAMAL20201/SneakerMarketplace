@@ -93,7 +93,7 @@ export default function TermsOfService() {
           <CardContent className="space-y-4 text-gray-700">
             <p>
               The Plug Market is an online store for sneakers, streetwear,
-              collectibles, and related items. Our platform provides:
+              and related items. Our platform provides:
             </p>
             <div className="mt-4">
               <div className="space-y-3">

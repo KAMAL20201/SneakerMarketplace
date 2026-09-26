@@ -12,8 +12,6 @@ const STATIC_URLS: Array<{
   { loc: `${SITE_URL}/`, changefreq: "daily", priority: "1.0" },
   { loc: `${SITE_URL}/sneakers`, changefreq: "daily", priority: "0.9" },
   { loc: `${SITE_URL}/apparels`, changefreq: "daily", priority: "0.9" },
-  { loc: `${SITE_URL}/electronics`, changefreq: "daily", priority: "0.9" },
-  { loc: `${SITE_URL}/collectibles`, changefreq: "daily", priority: "0.9" },
   { loc: `${SITE_URL}/browse`, changefreq: "daily", priority: "0.8" },
   { loc: `${SITE_URL}/new-arrivals`, changefreq: "daily", priority: "0.8" },
   { loc: `${SITE_URL}/collections`, changefreq: "weekly", priority: "0.8" },

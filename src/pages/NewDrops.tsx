@@ -48,7 +48,7 @@ export function meta(_: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Shop the freshest drops — the latest sneakers, streetwear, electronics and collectibles just added to The Plug Market.",
+        "Shop the freshest drops — the latest sneakers and streetwear just added to The Plug Market.",
     },
     {
       tagName: "link",
@@ -60,7 +60,7 @@ export function meta(_: Route.MetaArgs) {
     {
       property: "og:description",
       content:
-        "Shop the freshest drops — the latest sneakers, streetwear, electronics and collectibles just added to The Plug Market.",
+        "Shop the freshest drops — the latest sneakers and streetwear just added to The Plug Market.",
     },
   ];
 }

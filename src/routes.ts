@@ -7,12 +7,6 @@ export default [
   route("browse", "./pages/Browse.tsx"),
   route("sneakers", "./pages/CategoryBrowse.tsx", { id: "category-sneakers" }),
   route("apparels", "./pages/CategoryBrowse.tsx", { id: "category-apparels" }),
-  route("electronics", "./pages/CategoryBrowse.tsx", {
-    id: "category-electronics",
-  }),
-  route("collectibles", "./pages/CategoryBrowse.tsx", {
-    id: "category-collectibles",
-  }),
   route("new-arrivals", "./pages/NewArrivals.tsx"),
   route("new-drops", "./pages/NewDrops.tsx"),
   route("pre-orders", "./pages/PreOrders.tsx"),

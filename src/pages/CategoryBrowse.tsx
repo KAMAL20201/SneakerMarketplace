@@ -73,8 +73,6 @@ interface FilterState {
 const PATH_TO_CATEGORY: Record<string, string> = {
   sneakers: "sneakers",
   apparels: "clothing",
-  electronics: "electronics",
-  collectibles: "collectibles",
 };
 
 const CATEGORY_META: Record<
@@ -92,18 +90,6 @@ const CATEGORY_META: Record<
     description:
       "Shop authentic streetwear and apparel — Supreme, Off-White, Fear of God, Essentials and more on The Plug Market.",
     path: "/apparels",
-  },
-  electronics: {
-    title: "Buy Electronics | The Plug Market",
-    description:
-      "Shop authentic electronics — Apple, Sony, PlayStation, Nintendo and more on The Plug Market.",
-    path: "/electronics",
-  },
-  collectibles: {
-    title: "Buy Collectibles | The Plug Market",
-    description:
-      "Shop authentic collectibles — KAWS, Bearbrick, Funko, Pokémon and more on The Plug Market.",
-    path: "/collectibles",
   },
 };
 
