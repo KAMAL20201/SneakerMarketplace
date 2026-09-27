@@ -306,6 +306,26 @@ const MyOrders = () => {
   type SortOrder = "newest" | "oldest";
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
 
+  // Loading state when marking order as delivered
+  const [markingDeliveredId, setMarkingDeliveredId] = useState<string | null>(null);
+
+  const handleMarkAsDelivered = async (orderId: string) => {
+    setMarkingDeliveredId(orderId);
+    try {
+      await OrderService.updateOrderStatus(orderId, "delivered");
+      setSellOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status: "delivered" as const } : o,
+        ),
+      );
+      toast.success("Order marked as delivered! Review request sent to buyer.");
+    } catch {
+      toast.error("Failed to mark order as delivered");
+    } finally {
+      setMarkingDeliveredId(null);
+    }
+  };
+
   const saveIntlTracking = useCallback(async (orderId: string, value: string) => {
     setSavingIntlTracking(orderId);
     const { error } = await supabase
@@ -1173,33 +1193,19 @@ const MyOrders = () => {
                                 )}
                               </>
                             )}
-                            {order.status === "shipped" && (
+                            {["confirmed", "shipped"].includes(order.status) && (
                               <Button
                                 variant="outline"
                                 size="sm"
+                                disabled={markingDeliveredId === order.id}
                                 className="bg-purple-600 hover:bg-purple-700 text-white hover:text-white border-gray-200 rounded-2xl"
-                                onClick={async () => {
-                                  try {
-                                    await OrderService.updateOrderStatus(
-                                      order.id,
-                                      "delivered",
-                                    );
-                                    setSellOrders((prev) =>
-                                      prev.map((o) =>
-                                        o.id === order.id
-                                          ? { ...o, status: "delivered" as const }
-                                          : o,
-                                      ),
-                                    );
-                                    toast.success(
-                                      "Order marked as delivered! Review request sent to buyer.",
-                                    );
-                                  } catch {
-                                    toast.error("Failed to mark order as delivered");
-                                  }
-                                }}
+                                onClick={() => handleMarkAsDelivered(order.id)}
                               >
-                                <PackageCheck className="h-4 w-4 mr-2" />
+                                {markingDeliveredId === order.id ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <PackageCheck className="h-4 w-4 mr-2" />
+                                )}
                                 Mark as Delivered
                               </Button>
                             )}
