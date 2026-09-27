@@ -673,6 +673,11 @@ export default function ProductDetailPage() {
   const handleAddToCart = (
     seller: { id: number | string; display_name: string; email: string } | null,
   ) => {
+    if ((availableSizes.length > 0 || listing?.size_value) && !selectedSize) {
+      toast.error("Please select a size first");
+      return;
+    }
+
     const selectedVariant = variants.find((v) => v.id === selectedVariantId);
     const cartItem = {
       id: `${listing?.id}-${selectedVariantId ?? "no-variant"}-${selectedSize}`,
@@ -704,12 +709,12 @@ export default function ProductDetailPage() {
 
   // Check if item is already in cart (for the currently selected variant + size)
   const isItemInCart = () => {
-    if (!listing || !listing.seller_details) return false;
+    if (!listing) return false;
 
     return items.some(
       (cartItem) =>
         cartItem.productId === listing.id &&
-        cartItem.sellerId === listing.seller_details.id?.toString() &&
+        (cartItem.sellerId ?? null) === (listing.seller_details?.id?.toString() ?? null) &&
         cartItem.size === selectedSize &&
         (cartItem.variantId ?? null) === (selectedVariantId ?? null),
     );
@@ -1469,27 +1474,58 @@ export default function ProductDetailPage() {
                   </svg>
                 </a>
               )}
-              <Button
-                size="lg"
-                onClick={handlePreOrderClick}
-                disabled={
-                  isValidatingPreOrder ||
-                  ((availableSizes.length > 0 || listing?.size_value) &&
-                    !selectedSize) ||
-                  isSoldOut
-                }
-                className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
-                  isSoldOut
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
-                }`}
-              >
-                {isSoldOut
-                  ? "Sold Out"
-                  : isValidatingPreOrder
-                  ? "Checking availability…"
-                  : "Pre-Order Now"}
-              </Button>
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => {
+                    handleAddToCart(listing?.seller_details);
+                  }}
+                  disabled={
+                    isItemInCart() ||
+                    isSoldOut ||
+                    ((availableSizes.length > 0 || listing?.size_value) &&
+                      !selectedSize)
+                  }
+                  className={`border-0 rounded-2xl shadow-lg h-12 ${
+                    isItemInCart() ||
+                    isSoldOut ||
+                    ((availableSizes.length > 0 || listing?.size_value) &&
+                      !selectedSize)
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  {isSoldOut
+                    ? "Sold Out"
+                    : isItemInCart()
+                    ? "In Cart"
+                    : "Add to Cart"}
+                </Button>
+
+                <Button
+                  size="lg"
+                  onClick={handlePreOrderClick}
+                  disabled={
+                    isValidatingPreOrder ||
+                    ((availableSizes.length > 0 || listing?.size_value) &&
+                      !selectedSize) ||
+                    isSoldOut
+                  }
+                  className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
+                    isSoldOut
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
+                  }`}
+                >
+                  {isSoldOut
+                    ? "Sold Out"
+                    : isValidatingPreOrder
+                    ? "Checking availability…"
+                    : "Pre-Order Now"}
+                </Button>
+              </div>
             </div>
           ) : isPreOrderPaused ? (
             /* ── Pre-order Paused banner ── */
@@ -1532,9 +1568,17 @@ export default function ProductDetailPage() {
                   }
                   handleAddToCart(listing?.seller_details);
                 }}
-                disabled={isItemInCart() || isSoldOut}
+                disabled={
+                  isItemInCart() ||
+                  isSoldOut ||
+                  ((availableSizes.length > 0 || listing?.size_value) &&
+                    !selectedSize)
+                }
                 className={`border-0 rounded-2xl shadow-lg h-12 ${
-                  isItemInCart() || isSoldOut
+                  isItemInCart() ||
+                  isSoldOut ||
+                  ((availableSizes.length > 0 || listing?.size_value) &&
+                    !selectedSize)
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-white text-gray-700 hover:bg-gray-50"
                 }`}
