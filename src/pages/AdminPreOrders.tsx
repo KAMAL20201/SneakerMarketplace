@@ -87,6 +87,18 @@ function formatDt(iso: string) {
   });
 }
 
+function toLocalDatetimeString(dateInput: string | Date): string {
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 function AdminPreOrders() {
@@ -98,9 +110,7 @@ function AdminPreOrders() {
   // New window form state
   const [formName, setFormName] = useState("");
   const [formStartsAt, setFormStartsAt] = useState(() => {
-    const d = new Date();
-    d.setSeconds(0, 0);
-    return d.toISOString().slice(0, 16);
+    return toLocalDatetimeString(new Date());
   });
   const [formDuration, setFormDuration] = useState("48");
   const [submitting, setSubmitting] = useState(false);
@@ -426,19 +436,19 @@ function WindowCard({
   // ── Edit mode state ──
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(w.name);
-  const [editStartsAt, setEditStartsAt] = useState(
-    new Date(w.starts_at).toISOString().slice(0, 16),
+  const [editStartsAt, setEditStartsAt] = useState(() =>
+    toLocalDatetimeString(w.starts_at),
   );
-  const [editEndsAt, setEditEndsAt] = useState(
-    new Date(w.ends_at).toISOString().slice(0, 16),
+  const [editEndsAt, setEditEndsAt] = useState(() =>
+    toLocalDatetimeString(w.ends_at),
   );
   const [saving, setSaving] = useState(false);
 
   // Sync edit fields when window prop changes (e.g. after save)
   useEffect(() => {
     setEditName(w.name);
-    setEditStartsAt(new Date(w.starts_at).toISOString().slice(0, 16));
-    setEditEndsAt(new Date(w.ends_at).toISOString().slice(0, 16));
+    setEditStartsAt(toLocalDatetimeString(w.starts_at));
+    setEditEndsAt(toLocalDatetimeString(w.ends_at));
   }, [w.name, w.starts_at, w.ends_at]);
 
   const handleSaveEdit = async () => {

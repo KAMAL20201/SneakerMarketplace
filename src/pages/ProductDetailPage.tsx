@@ -36,7 +36,12 @@ import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand, sortSizes } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
-import { formatBatchOpenDate, formatBatchOpenShort } from "@/lib/preOrderUtils";
+import {
+  formatBatchOpenDate,
+  formatBatchOpenShort,
+  formatBatchOpenTime,
+  formatBatchOpenDateTime,
+} from "@/lib/preOrderUtils";
 import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -611,6 +616,8 @@ export default function ProductDetailPage() {
 
   const openDateFull = formatBatchOpenDate(loaderPreOrderStartsAt);
   const openDateShort = formatBatchOpenShort(loaderPreOrderStartsAt);
+  const openTime = formatBatchOpenTime(loaderPreOrderStartsAt);
+  const openDateTime = formatBatchOpenDateTime(loaderPreOrderStartsAt);
 
   /**
    * Loading state for the client-side pre-order window re-check.
@@ -1499,14 +1506,14 @@ export default function ProductDetailPage() {
                       </span>
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
                         <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Opens {openDateFull}
+                        Opens {openDateTime}
                       </span>
                     </div>
                     <h4 className="font-bold text-gray-900 text-sm mt-1.5">
-                      Pre-orders open on {openDateFull}
+                      Pre-orders open on {openDateTime}
                     </h4>
                     <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                      Pre-orders for this batch open on {openDateFull}. Sizing and reservations will be available once the batch goes live.
+                      Pre-orders for this batch open on {openDateTime}. Sizing and reservations will be available once the batch goes live.
                     </p>
                   </div>
                 </div>
@@ -1653,11 +1660,11 @@ export default function ProductDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-violet-700">
                       <Clock className="h-4 w-4 flex-shrink-0" />
-                      Pre-Order — Opens {openDateFull}
+                      Pre-Order — Opens {openDateTime}
                     </div>
                     <p>
                       Pre-orders for this batch open on{" "}
-                      <span className="font-medium text-gray-800">{openDateFull}</span>.
+                      <span className="font-medium text-gray-800">{openDateTime}</span>.
                       Once pre-orders open, the standard estimated delivery timeline is{" "}
                       <span className="font-medium text-gray-800">28–35 days</span> with updates sent via email.
                     </p>
