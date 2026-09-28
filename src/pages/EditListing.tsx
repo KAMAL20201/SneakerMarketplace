@@ -22,8 +22,6 @@ import { ROUTE_NAMES } from "@/constants/enums";
 import { toast } from "sonner";
 import { compareSizes } from "@/constants/sizeCharts";
 
-// Categories that support per-size availability
-const SIZE_CATEGORIES = ["sneakers", "clothing"];
 
 interface VariantSize {
   id: string;
@@ -109,43 +107,41 @@ const EditListing = () => {
         .order("display_order", { ascending: true });
       setImages(imgData || []);
 
-      // Fetch size data only for size-based categories
-      if (SIZE_CATEGORIES.includes(data.category)) {
-        const [variantRes, legacyRes] = await Promise.all([
-          supabase
-            .from("product_variants")
-            .select(
-              "id, color_name, color_hex, display_order, product_variant_sizes(id, size_value, price, is_sold)"
-            )
-            .eq("listing_id", data.id)
-            .order("display_order"),
-          supabase
-            .from("product_listing_sizes")
-            .select("id, size_value, price, is_sold")
-            .eq("listing_id", data.id),
-        ]);
+      // Fetch size data (variants and legacy listing sizes)
+      const [variantRes, legacyRes] = await Promise.all([
+        supabase
+          .from("product_variants")
+          .select(
+            "id, color_name, color_hex, display_order, product_variant_sizes(id, size_value, price, is_sold)"
+          )
+          .eq("listing_id", data.id)
+          .order("display_order"),
+        supabase
+          .from("product_listing_sizes")
+          .select("id, size_value, price, is_sold")
+          .eq("listing_id", data.id),
+      ]);
 
-        if (variantRes.data) {
-          setVariants(
-            variantRes.data.map((v: any) => ({
-              id: v.id,
-              color_name: v.color_name,
-              color_hex: v.color_hex,
-              sizes: [...(v.product_variant_sizes || [])].sort(
-                (a: VariantSize, b: VariantSize) =>
-                  compareSizes(a.size_value, b.size_value)
-              ),
-            }))
-          );
-        }
+      if (variantRes.data) {
+        setVariants(
+          variantRes.data.map((v: any) => ({
+            id: v.id,
+            color_name: v.color_name,
+            color_hex: v.color_hex,
+            sizes: [...(v.product_variant_sizes || [])].sort(
+              (a: VariantSize, b: VariantSize) =>
+                compareSizes(a.size_value, b.size_value)
+            ),
+          }))
+        );
+      }
 
-        if (legacyRes.data) {
-          setLegacySizes(
-            [...legacyRes.data].sort((a, b) =>
-              compareSizes(a.size_value, b.size_value)
-            )
-          );
-        }
+      if (legacyRes.data) {
+        setLegacySizes(
+          [...legacyRes.data].sort((a, b) =>
+            compareSizes(a.size_value, b.size_value)
+          )
+        );
       }
     } catch (err) {
       console.error("Error fetching listing:", err);
@@ -419,7 +415,6 @@ const EditListing = () => {
   }
 
   const canToggleStock = ["active", "sold"].includes(listing?.status);
-  const isSizeCategory = SIZE_CATEGORIES.includes(listing?.category);
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -592,7 +587,7 @@ const EditListing = () => {
             </div>
 
             {/* Overall stock toggle — shown only when there are no sizes */}
-            {!isSizeCategory || !hasSizeData ? (
+            {!hasSizeData ? (
               <div className="space-y-2">
                 <Label className="text-gray-700 font-semibold">
                   Stock Status
@@ -637,8 +632,8 @@ const EditListing = () => {
           </CardContent>
         </Card>
 
-        {/* Size Availability — sneakers / clothing only */}
-        {isSizeCategory && hasSizeData && (
+        {/* Size Availability */}
+        {hasSizeData && (
           <Card className="glass-card border-0 rounded-2xl mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-gray-800 text-lg">
