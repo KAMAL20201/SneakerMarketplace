@@ -78,11 +78,11 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="glass-button border-0 rounded-xl h-10 w-10 text-gray-600 hover:text-purple-600"
+            className="glass-button border-0 rounded-xl h-5 w-5 text-gray-600 hover:text-purple-600"
             onClick={() => setSearchOpen(true)}
             aria-label="Open search"
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-4 w-4" />
           </Button>
 
           {/* Shopping Cart */}
@@ -162,17 +162,18 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button
-              asChild
-              size="icon"
-              variant="ghost"
-              className="glass-button border-0 rounded-xl h-10 w-10 text-gray-500 hover:text-purple-600"
-              title="Admin Login"
-            >
-              <Link to={ROUTE_NAMES.LOGIN}>
-                <ShieldCheck className="h-5 w-5" />
-              </Link>
-            </Button>
+            <span></span>
+            // <Button
+            //   asChild
+            //   size="icon"
+            //   variant="ghost"
+            //   className="glass-button border-0 rounded-xl h-10 w-10 text-gray-500 hover:text-purple-600"
+            //   title="Admin Login"
+            // >
+            //   <Link to={ROUTE_NAMES.LOGIN}>
+            //     <ShieldCheck className="h-5 w-5" />
+            //   </Link>
+            // </Button>
           )}
         </div>
       </div>
