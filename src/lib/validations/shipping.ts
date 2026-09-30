@@ -31,6 +31,14 @@ export const shippingAddressSchema = z.object({
     .min(10, "Phone number must be 10 digits")
     .max(10, "Phone number must be 10 digits"),
 
+  alternate_phone: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || !val.trim() || /^[6-9]\d{9}$/.test(val.trim()),
+      "Please enter a valid 10-digit Indian phone number"
+    ),
+
   pincode: z
     .string()
     .min(6, "Pincode must be 6 digits")

@@ -958,6 +958,15 @@ const MyOrders = () => {
                                     Landmark: {order.shipping_address.landmark}
                                   </p>
                                 )}
+                                {(order.shipping_address.phone ||
+                                  order.shipping_address.alternate_phone) && (
+                                  <p className="text-gray-500 text-xs">
+                                    Phone: {order.shipping_address.phone}
+                                    {order.shipping_address.alternate_phone
+                                      ? ` · Alt: ${order.shipping_address.alternate_phone}`
+                                      : ""}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           )}

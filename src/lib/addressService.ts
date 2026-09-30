@@ -13,6 +13,7 @@ export interface SupabaseAddress {
   label?: string;
   full_name: string;
   phone: string;
+  alternate_phone?: string;
   address_line_1: string;
   address_line_2?: string;
   city: string;
@@ -45,6 +46,7 @@ export const addressService = {
         id: addr.id,
         full_name: addr.full_name,
         phone: addr.phone,
+        alternate_phone: addr.alternate_phone,
         address_line1: addr.address_line_1,
         address_line2: addr.address_line_2,
         city: addr.city,

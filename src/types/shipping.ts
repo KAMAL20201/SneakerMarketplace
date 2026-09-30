@@ -3,6 +3,7 @@ export interface ShippingAddress {
   full_name: string;
   email: string;
   phone: string;
+  alternate_phone?: string;
   address_line1: string;
   address_line2?: string;
   city: string;

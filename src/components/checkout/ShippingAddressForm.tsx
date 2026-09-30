@@ -150,6 +150,22 @@ export const ShippingAddressForm: React.FC<ShippingAddressFormProps> = ({
             <p className="text-sm text-red-500">{errors.phone.message}</p>
           )}
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="alternate_phone">
+            Alternate Phone (Optional)
+          </Label>
+          <Input
+            id="alternate_phone"
+            {...register("alternate_phone")}
+            placeholder="Enter 10-digit alternate number"
+            className={errors.alternate_phone ? "border-red-500" : ""}
+            maxLength={10}
+          />
+          {errors.alternate_phone && (
+            <p className="text-sm text-red-500">{errors.alternate_phone.message}</p>
+          )}
+        </div>
       </div>
 
       {/* Address Line 1 */}

@@ -84,7 +84,10 @@ export const AddressCard: React.FC<AddressCardProps> = ({
           {address.city}, {address.state} - {address.pincode}
         </p>
         {address.landmark && <p>Near: {address.landmark}</p>}
-        <p className="text-gray-500">{address.phone}</p>
+        <p className="text-gray-500">
+          {address.phone}
+          {address.alternate_phone ? ` · Alt: ${address.alternate_phone}` : ""}
+        </p>
       </div>
 
       {/* Action buttons */}

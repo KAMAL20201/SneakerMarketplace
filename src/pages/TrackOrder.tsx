@@ -559,6 +559,14 @@ export default function TrackOrder() {
                       Landmark: {address.landmark}
                     </p>
                   )}
+                  {(address.phone || address.alternate_phone) && (
+                    <p className="text-gray-500 text-xs">
+                      Phone: {address.phone}
+                      {address.alternate_phone
+                        ? ` · Alt: ${address.alternate_phone}`
+                        : ""}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

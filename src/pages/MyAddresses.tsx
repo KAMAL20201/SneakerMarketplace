@@ -180,7 +180,10 @@ export default function MyAddresses() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <p className="font-medium text-gray-900">{address.phone}</p>
+                    <p className="font-medium text-gray-900">
+                      {address.phone}
+                      {address.alternate_phone ? ` · Alt: ${address.alternate_phone}` : ""}
+                    </p>
                     <p>{address.address_line1}</p>
                     {address.address_line2 && <p>{address.address_line2}</p>}
                     <p>
