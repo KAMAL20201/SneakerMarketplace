@@ -36,6 +36,7 @@ import BlogTeaser from "@/components/BlogTeaser";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand, sortSizes } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
+import { StockValidationService } from "@/lib/stockValidationService";
 import {
   formatBatchOpenDate,
   formatBatchOpenShort,
@@ -529,6 +530,7 @@ export default function ProductDetailPage() {
   const { addToCart, items } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [buyNowOpen, setBuyNowOpen] = useState(false);
+  const [isValidatingBuyNow, setIsValidatingBuyNow] = useState(false);
   const [ordersPausedOpen, setOrdersPausedOpen] = useState(false);
   const [similarProducts, setSimilarProducts] = useState(initialSimilarProducts);
   const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([]);
@@ -658,6 +660,37 @@ export default function ProductDetailPage() {
         return;
       }
 
+      // Check live stock if listing ID is present
+      if (listing?.id) {
+        const availability = await StockValidationService.checkProductAvailability(
+          listing.id,
+          selectedSize || undefined,
+          selectedVariantId || null,
+        );
+
+        if (!availability.isAvailable) {
+          toast.error("Sorry, this item is no longer available.");
+          if (selectedSize) {
+            setAvailableSizes((prev) =>
+              prev.map((s) =>
+                s.size_value === selectedSize ? { ...s, is_sold: true } : s,
+              ),
+            );
+            if (selectedVariantId) {
+              setVariantSizesMap((prev) => ({
+                ...prev,
+                [selectedVariantId]: (prev[selectedVariantId] || []).map((s) =>
+                  s.size_value === selectedSize ? { ...s, is_sold: true } : s,
+                ),
+              }));
+            }
+          } else {
+            setListing((prev) => (prev ? { ...prev, status: "sold" } : null));
+          }
+          return;
+        }
+      }
+
       // Window is still active — proceed to checkout
       setBuyNowOpen(true);
     } catch {
@@ -666,6 +699,67 @@ export default function ProductDetailPage() {
       setBuyNowOpen(true);
     } finally {
       setIsValidatingPreOrder(false);
+    }
+  };
+
+  /**
+   * Async handler for the "Buy Now" button.
+   *
+   * Re-checks real-time stock availability with Supabase before opening
+   * the checkout modal to ensure the selected variant / size has not been sold.
+   */
+  const handleBuyNowClick = async () => {
+    if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
+      setOrdersPausedOpen(true);
+      return;
+    }
+
+    if (!listing?.id) return;
+
+    if ((availableSizes.length > 0 || listing.size_value) && !selectedSize) {
+      toast.error("Please select a size first");
+      return;
+    }
+
+    setIsValidatingBuyNow(true);
+    try {
+      const availability = await StockValidationService.checkProductAvailability(
+        listing.id,
+        selectedSize || undefined,
+        selectedVariantId || null,
+      );
+
+      if (!availability.isAvailable) {
+        toast.error("Sorry, this item is no longer available.");
+
+        // Mark size as sold locally so UI reflects "Sold Out" immediately
+        if (selectedSize) {
+          setAvailableSizes((prev) =>
+            prev.map((s) =>
+              s.size_value === selectedSize ? { ...s, is_sold: true } : s,
+            ),
+          );
+          if (selectedVariantId) {
+            setVariantSizesMap((prev) => ({
+              ...prev,
+              [selectedVariantId]: (prev[selectedVariantId] || []).map((s) =>
+                s.size_value === selectedSize ? { ...s, is_sold: true } : s,
+              ),
+            }));
+          }
+        } else {
+          setListing((prev) => (prev ? { ...prev, status: "sold" } : null));
+        }
+        return;
+      }
+
+      setBuyNowOpen(true);
+    } catch (err) {
+      console.error("Error validating stock for Buy Now:", err);
+      // Fallback: proceed to modal, server-side OrderService handles final checkout verification
+      setBuyNowOpen(true);
+    } finally {
+      setIsValidatingBuyNow(false);
     }
   };
 
@@ -1589,14 +1683,9 @@ export default function ProductDetailPage() {
 
               <Button
                 size="lg"
-                onClick={() => {
-                  if (APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
-                    setOrdersPausedOpen(true);
-                    return;
-                  }
-                  setBuyNowOpen(true);
-                }}
+                onClick={handleBuyNowClick}
                 disabled={
+                  isValidatingBuyNow ||
                   ((availableSizes.length > 0 || listing?.size_value) &&
                     !selectedSize) ||
                   isSoldOut
@@ -1607,7 +1696,11 @@ export default function ProductDetailPage() {
                     : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                 }`}
               >
-                {isSoldOut ? "Sold Out" : "Buy Now"}
+                {isSoldOut
+                  ? "Sold Out"
+                  : isValidatingBuyNow
+                  ? "Checking availability…"
+                  : "Buy Now"}
               </Button>
             </div>
           )}
