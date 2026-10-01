@@ -65,7 +65,7 @@ const InstantShipping = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Instant Shipping</h2>
-            <p className="text-xs text-teal-600 font-medium">Delivered in under 10 days</p>
+            <p className="text-xs text-teal-600 font-medium">Delivered in 7–10 days</p>
           </div>
         </div>
         <Button

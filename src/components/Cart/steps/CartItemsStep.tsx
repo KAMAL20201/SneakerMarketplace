@@ -162,7 +162,7 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                             <ConditionBadge condition={item.condition} />
                             {item.isInstantShip && (
                               <Badge className="text-[10px] bg-amber-100 text-amber-900 border-amber-300 px-1.5 py-0.5 font-semibold">
-                                ⚡ Instant Ship
+                                ⚡ Instant Ship · 7–10 days
                               </Badge>
                             )}
                             {item.isPreOrder && (

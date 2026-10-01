@@ -1179,21 +1179,25 @@ export default function ProductDetailPage() {
             )}
 
             {/* Delivery Timeline */}
-            {(availableSizes.some((s) => s.is_instant_ship) ||
+            {/* {(availableSizes.some((s) => s.is_instant_ship) ||
               (listing?.delivery_days &&
                 parseMinDeliveryDays(listing.delivery_days) < 10)) && (
               <div className="mt-3 inline-flex items-center gap-1.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-3 py-1 text-xs font-semibold">
                 <Zap className="h-3 w-3" />
                 Instant Ship
               </div>
-            )}
-            {listing?.delivery_days && (
+            )} */}
+            {(isInstantSelected || isPreOrderProduct || listing?.delivery_days) && (
               <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
                 <Truck className="h-4 w-4 text-purple-400 flex-shrink-0" />
                 <span>
                   Estimated delivery:{" "}
                   <span className="font-semibold text-gray-700">
-                    {listing.delivery_days} days
+                    {isInstantSelected
+                      ? "7–10 days"
+                      : isPreOrderProduct
+                      ? "28–35 days"
+                      : `${listing?.delivery_days} days`}
                   </span>
                 </span>
               </div>
@@ -1515,9 +1519,9 @@ export default function ProductDetailPage() {
             <div className="mx-4 mb-3 lg:mx-0 flex items-start gap-2 rounded-2xl bg-teal-50 border border-teal-200 px-4 py-3">
               <Zap className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-teal-800">⚡ Instant Ship — In Stock & Ready to Dispatch</p>
+                <p className="text-xs font-bold text-teal-800">⚡ Instant Ship — Estimated Delivery: 7–10 days</p>
                 <p className="text-xs text-teal-600 mt-0.5">
-                  This size is in-hand and ships within 24–48 hours with verified authenticity. No waiting for pre-order batches.
+                  This size is in-hand and ships within 24–48 hours with verified authenticity. Expected delivery in 7–10 days.
                 </p>
               </div>
             </div>
@@ -1764,13 +1768,14 @@ export default function ProductDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-teal-700">
                       <Zap className="h-4 w-4 flex-shrink-0" />
-                      Instant Ship — Ships in 24–48 Hours
+                      Instant Ship — Delivery in 7–10 Days
                     </div>
                     <p>
                       This size is <span className="font-medium text-gray-800">in-hand and ready to ship</span>.
                       It will be dispatched within{" "}
                       <span className="font-medium text-gray-800">24–48 hours</span>{" "}
-                      after your order is confirmed. No waiting for pre-order batches.
+                      after your order is confirmed, with an estimated delivery of{" "}
+                      <span className="font-medium text-gray-800">7–10 days</span>. No waiting for pre-order batches.
                     </p>
                     <p>
                       All tracking updates will be shared{" "}
