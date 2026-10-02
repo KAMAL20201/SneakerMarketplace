@@ -41,6 +41,7 @@ interface CouponFormState {
   min_order_amount: string;
   expires_at: string;
   is_active: boolean;
+  instant_ship_only: boolean;
   description: string;
 }
 
@@ -53,6 +54,7 @@ const EMPTY_FORM: CouponFormState = {
   min_order_amount: "",
   expires_at: "",
   is_active: true,
+  instant_ship_only: false,
   description: "",
 };
 
@@ -434,6 +436,18 @@ function CouponForm({
           </button>
         </div>
 
+        <div className="flex items-center gap-3">
+          <Label>Instant Ship Only</Label>
+          <button
+            type="button"
+            onClick={() => setForm((f) => ({ ...f, instant_ship_only: !f.instant_ship_only }))}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.instant_ship_only ? "bg-purple-600" : "bg-gray-300"}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.instant_ship_only ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+          <span className="text-xs text-gray-500">Only applies to sizes marked as instant shipping</span>
+        </div>
+
         <div className="flex gap-2 pt-2">
           <Button onClick={onSave} disabled={saving} className="flex-1">
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
@@ -498,6 +512,7 @@ function AdminCoupons() {
       min_order_amount: coupon.min_order_amount?.toString() ?? "",
       expires_at: coupon.expires_at ? new Date(coupon.expires_at).toISOString().slice(0, 16) : "",
       is_active: coupon.is_active,
+      instant_ship_only: coupon.instant_ship_only ?? false,
       description: coupon.description ?? "",
     });
     setShowForm(true);
@@ -525,6 +540,7 @@ function AdminCoupons() {
       min_order_amount: form.min_order_amount ? parseFloat(form.min_order_amount) : null,
       expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
       is_active: form.is_active,
+      instant_ship_only: form.instant_ship_only,
       description: form.description.trim() || null,
     };
 
@@ -667,6 +683,11 @@ function AdminCoupons() {
                           <Badge variant="secondary" className="text-xs">
                             {coupon.type === "percentage" ? `${coupon.value}% off` : `₹${coupon.value} off`}
                           </Badge>
+                          {coupon.instant_ship_only && (
+                            <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">
+                              ⚡ Instant Ship Only
+                            </Badge>
+                          )}
                           <StatusBadge coupon={coupon} />
                         </div>
                         {coupon.description && (

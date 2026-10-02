@@ -10,6 +10,8 @@ interface CouponInputProps {
   productIds: string[];
   /** Price of each item in productIds (parallel array) — used to compute eligible subtotal */
   itemAmounts: number[];
+  /** Size of each item in productIds (parallel array) — used for size-level instant ship check */
+  sizes?: (string | null | undefined)[];
   appliedCoupon: AppliedCoupon | null;
   onApply: (coupon: AppliedCoupon) => void;
   onRemove: () => void;
@@ -21,8 +23,11 @@ function parseCouponError(rawMessage: string): string {
   if (msg.includes("COUPON_NOT_FOUND")) return "Invalid coupon code.";
   if (msg.includes("COUPON_INACTIVE")) return "This coupon is no longer active.";
   if (msg.includes("COUPON_EXHAUSTED")) return "This coupon has been fully redeemed.";
-  if (msg.includes("COUPON_NOT_APPLICABLE"))
+  if (msg.includes("COUPON_NOT_APPLICABLE")) {
+    const detailMatch = msg.match(/COUPON_NOT_APPLICABLE: (.+)/);
+    if (detailMatch) return detailMatch[1];
     return "This coupon is not valid for the items in your cart.";
+  }
   // COUPON_EXPIRED and COUPON_MIN_ORDER carry useful detail after the prefix
   const detailMatch = msg.match(/COUPON_EXPIRED: (.+)/);
   if (detailMatch) return detailMatch[1];
@@ -35,6 +40,7 @@ export const CouponInput: React.FC<CouponInputProps> = ({
   orderAmount,
   productIds,
   itemAmounts,
+  sizes,
   appliedCoupon,
   onApply,
   onRemove,
@@ -55,6 +61,7 @@ export const CouponInput: React.FC<CouponInputProps> = ({
         p_product_ids: productIds,
         p_item_amounts: itemAmounts,
         p_order_amount: orderAmount,
+        p_sizes: sizes ? sizes.map((s) => s ?? null) : null,
       });
 
       if (rpcError) {

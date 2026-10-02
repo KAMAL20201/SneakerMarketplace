@@ -171,6 +171,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                 orderAmount={amount}
                 productIds={[item.productId]}
                 itemAmounts={[amount]}
+                sizes={[item.size]}
                 appliedCoupon={appliedCoupon}
                 onApply={setAppliedCoupon}
                 onRemove={() => setAppliedCoupon(null)}

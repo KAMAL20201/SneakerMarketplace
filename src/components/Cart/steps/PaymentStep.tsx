@@ -16,10 +16,12 @@ interface PaymentStepProps {
 }
 
 function isItemEligible(item: CartItem, coupon: AppliedCoupon): boolean {
-  return (
+  const productMatches =
     coupon.applicableProductIds === null ||
-    coupon.applicableProductIds.includes(item.productId)
-  );
+    coupon.applicableProductIds.includes(item.productId);
+  if (!productMatches) return false;
+  if (coupon.code.toUpperCase() === "INSTANTSHIP10" && !item.isInstantShip) return false;
+  return true;
 }
 
 function computeLineDiscount(
@@ -54,7 +56,8 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
 
 
   const productIds = items.map((i) => i.productId);
-  const itemAmounts = items.map((i) => i.price);
+  const itemAmounts = items.map((i) => i.price * i.quantity);
+  const sizes = items.map((i) => i.size);
 
   const eligibleSubtotal = appliedCoupon
     ? items
@@ -173,6 +176,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
           orderAmount={totalPrice}
           productIds={productIds}
           itemAmounts={itemAmounts}
+          sizes={sizes}
           appliedCoupon={appliedCoupon}
           onApply={applyDiscount}
           onRemove={removeCoupon}

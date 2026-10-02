@@ -9,6 +9,7 @@ export interface Coupon {
   min_order_amount: number | null;
   expires_at: string | null;
   is_active: boolean;
+  instant_ship_only?: boolean;
   description: string | null;
   created_at: string;
   updated_at: string;
