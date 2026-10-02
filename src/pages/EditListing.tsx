@@ -26,7 +26,7 @@ import { compareSizes } from "@/constants/sizeCharts";
 interface VariantSize {
   id: string;
   size_value: string;
-  price: number;
+  price: number | string;
   is_sold: boolean;
 }
 
@@ -65,9 +65,10 @@ const EditListing = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragIndexRef = useRef<number | null>(null);
 
-  // Size-level availability (sneakers / clothing)
+  // Size-level availability and pricing (sneakers / clothing)
   const [variants, setVariants] = useState<Variant[]>([]);
   const [legacySizes, setLegacySizes] = useState<VariantSize[]>([]);
+  const [bulkPrice, setBulkPrice] = useState("");
 
   const allSizes = [...variants.flatMap((v) => v.sizes), ...legacySizes];
   const hasSizeData = allSizes.length > 0;
@@ -128,19 +129,32 @@ const EditListing = () => {
             id: v.id,
             color_name: v.color_name,
             color_hex: v.color_hex,
-            sizes: [...(v.product_variant_sizes || [])].sort(
-              (a: VariantSize, b: VariantSize) =>
+            sizes: [...(v.product_variant_sizes || [])]
+              .sort((a: any, b: any) =>
                 compareSizes(a.size_value, b.size_value)
-            ),
+              )
+              .map((s: any) => ({
+                id: s.id,
+                size_value: s.size_value,
+                price: s.price != null ? String(s.price) : String(data.price ?? ""),
+                is_sold: !!s.is_sold,
+              })),
           }))
         );
       }
 
       if (legacyRes.data) {
         setLegacySizes(
-          [...legacyRes.data].sort((a, b) =>
-            compareSizes(a.size_value, b.size_value)
-          )
+          [...legacyRes.data]
+            .sort((a: any, b: any) =>
+              compareSizes(a.size_value, b.size_value)
+            )
+            .map((s: any) => ({
+              id: s.id,
+              size_value: s.size_value,
+              price: s.price != null ? String(s.price) : String(data.price ?? ""),
+              is_sold: !!s.is_sold,
+            }))
         );
       }
     } catch (err) {
@@ -170,6 +184,78 @@ const EditListing = () => {
     setLegacySizes((prev) =>
       prev.map((s) => (s.id === sizeId ? { ...s, is_sold: !s.is_sold } : s))
     );
+  };
+
+  const updateVariantSizePrice = (
+    variantId: string,
+    sizeId: string,
+    newPrice: string
+  ) => {
+    setVariants((prev) => {
+      const updated = prev.map((v) =>
+        v.id === variantId
+          ? {
+              ...v,
+              sizes: v.sizes.map((s) =>
+                s.id === sizeId ? { ...s, price: newPrice } : s
+              ),
+            }
+          : v
+      );
+
+      const allPrices = [
+        ...updated.flatMap((v) => v.sizes),
+        ...legacySizes,
+      ]
+        .map((s) => parseFloat(String(s.price)))
+        .filter((p) => !isNaN(p) && p > 0);
+
+      if (allPrices.length > 0) {
+        setPrice(String(Math.min(...allPrices)));
+      }
+
+      return updated;
+    });
+  };
+
+  const updateLegacySizePrice = (sizeId: string, newPrice: string) => {
+    setLegacySizes((prev) => {
+      const updated = prev.map((s) =>
+        s.id === sizeId ? { ...s, price: newPrice } : s
+      );
+
+      const allPrices = [
+        ...variants.flatMap((v) => v.sizes),
+        ...updated,
+      ]
+        .map((s) => parseFloat(String(s.price)))
+        .filter((p) => !isNaN(p) && p > 0);
+
+      if (allPrices.length > 0) {
+        setPrice(String(Math.min(...allPrices)));
+      }
+
+      return updated;
+    });
+  };
+
+  const handleApplyBulkPrice = () => {
+    const parsed = parseFloat(bulkPrice);
+    if (isNaN(parsed) || parsed <= 0) {
+      toast.error("Please enter a valid price to apply to all sizes");
+      return;
+    }
+    setVariants((prev) =>
+      prev.map((v) => ({
+        ...v,
+        sizes: v.sizes.map((s) => ({ ...s, price: bulkPrice })),
+      }))
+    );
+    setLegacySizes((prev) =>
+      prev.map((s) => ({ ...s, price: bulkPrice }))
+    );
+    setPrice(bulkPrice);
+    toast.success(`Updated all sizes to ₹${parsed.toLocaleString("en-IN")}`);
   };
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -306,36 +392,95 @@ const EditListing = () => {
   const handleSave = async () => {
     if (!listing) return;
 
+    // Validate size prices if listing has sizes
+    if (hasSizeData) {
+      for (const v of variants) {
+        for (const s of v.sizes) {
+          const p = parseFloat(String(s.price));
+          if (isNaN(p) || p <= 0) {
+            toast.error(
+              `Please enter a valid price for size ${s.size_value.toUpperCase()}${
+                variants.length > 1 ? ` (${v.color_name})` : ""
+              }`
+            );
+            return;
+          }
+        }
+      }
+
+      for (const s of legacySizes) {
+        const p = parseFloat(String(s.price));
+        if (isNaN(p) || p <= 0) {
+          toast.error(
+            `Please enter a valid price for size ${s.size_value.toUpperCase()}`
+          );
+          return;
+        }
+      }
+    }
+
     const parsedPrice = parseFloat(price);
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+    if (!hasSizeData && (isNaN(parsedPrice) || parsedPrice <= 0)) {
       toast.error("Please enter a valid price");
       return;
     }
 
+    // Determine the minimum size price if sizes exist
+    const allValidPrices = [
+      ...variants.flatMap((v) => v.sizes),
+      ...legacySizes,
+    ]
+      .map((s) => parseFloat(String(s.price)))
+      .filter((p) => !isNaN(p) && p > 0);
+
+    const minSizePrice =
+      allValidPrices.length > 0 ? Math.min(...allValidPrices) : null;
+    const finalPrice =
+      hasSizeData && minSizePrice !== null ? minSizePrice : parsedPrice;
+
     try {
       setSaving(true);
 
-      // Update variant sizes in parallel
+      // Update variant sizes in parallel (both price and is_sold)
       if (variants.length > 0) {
         const updates = variants.flatMap((v) =>
           v.sizes.map((s) =>
             supabase
               .from("product_variant_sizes")
-              .update({ is_sold: s.is_sold })
+              .update({
+                is_sold: s.is_sold,
+                price: parseFloat(String(s.price)),
+              })
               .eq("id", s.id)
           )
         );
         const results = await Promise.all(updates);
         const failed = results.find((r) => r.error);
         if (failed?.error) throw failed.error;
+
+        // Also update product_variants.price with minimum size price per variant
+        const variantPriceUpdates = variants.map((v) => {
+          const vPrices = v.sizes
+            .map((s) => parseFloat(String(s.price)))
+            .filter((p) => !isNaN(p) && p > 0);
+          const vMin = vPrices.length > 0 ? Math.min(...vPrices) : finalPrice;
+          return supabase
+            .from("product_variants")
+            .update({ price: vMin })
+            .eq("id", v.id);
+        });
+        await Promise.all(variantPriceUpdates);
       }
 
-      // Update legacy sizes in parallel
+      // Update legacy sizes in parallel (both price and is_sold)
       if (legacySizes.length > 0) {
         const updates = legacySizes.map((s) =>
           supabase
             .from("product_listing_sizes")
-            .update({ is_sold: s.is_sold })
+            .update({
+              is_sold: s.is_sold,
+              price: parseFloat(String(s.price)),
+            })
             .eq("id", s.id)
         );
         const results = await Promise.all(updates);
@@ -358,7 +503,7 @@ const EditListing = () => {
 
       const { error: listingError } = await supabase
         .from("product_listings")
-        .update({ price: parsedPrice, status: newStatus })
+        .update({ price: finalPrice, status: newStatus })
         .eq("id", listing.id);
 
       if (listingError) throw listingError;
@@ -568,12 +713,19 @@ const EditListing = () => {
           <CardContent className="p-6 pt-2 space-y-6">
             {/* Price */}
             <div className="space-y-2">
-              <Label
-                htmlFor="price"
-                className="text-gray-700 font-semibold"
-              >
-                Price (₹)
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="price"
+                  className="text-gray-700 font-semibold"
+                >
+                  {hasSizeData ? "Starting / Base Price (₹)" : "Price (₹)"}
+                </Label>
+                {hasSizeData && (
+                  <span className="text-xs text-purple-600 font-medium">
+                    Auto-synced with lowest size
+                  </span>
+                )}
+              </div>
               <Input
                 id="price"
                 type="number"
@@ -584,6 +736,11 @@ const EditListing = () => {
                 placeholder="Enter price"
                 className="glass-button border-0 rounded-xl text-gray-700 focus-visible:ring-1 focus-visible:ring-purple-400"
               />
+              {hasSizeData && (
+                <p className="text-xs text-gray-500">
+                  You can set each individual size price below. This starting price will be shown on cards in the marketplace.
+                </p>
+              )}
             </div>
 
             {/* Overall stock toggle — shown only when there are no sizes */}
@@ -632,19 +789,53 @@ const EditListing = () => {
           </CardContent>
         </Card>
 
-        {/* Size Availability */}
+        {/* Sizes & Pricing */}
         {hasSizeData && (
           <Card className="glass-card border-0 rounded-2xl mb-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-gray-800 text-lg">
-                Size Availability
+                Sizes & Pricing
               </CardTitle>
               <p className="text-sm text-gray-500">
-                Toggle individual sizes in or out of stock. The listing will
-                automatically show as sold when all sizes are unavailable.
+                Set individual prices and toggle stock availability for each size.
               </p>
             </CardHeader>
             <CardContent className="p-6 pt-2 space-y-6">
+              {/* Quick apply bulk price */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-purple-50/70 rounded-2xl border border-purple-100">
+                <div>
+                  <p className="text-xs text-purple-900 font-semibold">
+                    Bulk Price Setter
+                  </p>
+                  <p className="text-[11px] text-purple-700/80">
+                    Apply the same price to all sizes at once
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-36">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-semibold pointer-events-none">
+                      ₹
+                    </span>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={bulkPrice}
+                      onChange={(e) => setBulkPrice(e.target.value)}
+                      placeholder="Enter price"
+                      className="pl-6 h-9 text-xs rounded-xl bg-white border border-purple-200 text-gray-800 focus-visible:ring-1 focus-visible:ring-purple-400 font-medium"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleApplyBulkPrice}
+                    className="h-9 px-3.5 text-xs rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium shrink-0"
+                  >
+                    Apply to All
+                  </Button>
+                </div>
+              </div>
+
               {/* Variant-based sizes */}
               {variants.map((variant) =>
                 variant.sizes.length > 0 ? (
@@ -664,14 +855,17 @@ const EditListing = () => {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {variant.sizes.map((size) => (
-                        <SizeToggleButton
+                        <SizeCard
                           key={size.id}
                           size={size}
                           disabled={!canToggleStock}
                           onToggle={() =>
                             toggleVariantSize(variant.id, size.id)
+                          }
+                          onPriceChange={(newPrice) =>
+                            updateVariantSizePrice(variant.id, size.id, newPrice)
                           }
                         />
                       ))}
@@ -682,13 +876,16 @@ const EditListing = () => {
 
               {/* Legacy sizes */}
               {legacySizes.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   {legacySizes.map((size) => (
-                    <SizeToggleButton
+                    <SizeCard
                       key={size.id}
                       size={size}
                       disabled={!canToggleStock}
                       onToggle={() => toggleLegacySize(size.id)}
+                      onPriceChange={(newPrice) =>
+                        updateLegacySizePrice(size.id, newPrice)
+                      }
                     />
                   ))}
                 </div>
@@ -696,7 +893,7 @@ const EditListing = () => {
 
               {!canToggleStock && (
                 <p className="text-sm text-gray-500 bg-gray-50 px-4 py-3 rounded-xl">
-                  Size availability cannot be changed while the listing is{" "}
+                  Stock availability cannot be changed while the listing is{" "}
                   <span className="font-semibold capitalize">
                     {listing.status.replace("_", " ")}
                   </span>
@@ -705,16 +902,33 @@ const EditListing = () => {
               )}
 
               {/* Summary */}
-              {canToggleStock && (
-                <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-                  <Badge className="bg-green-100 text-green-700 border-0 rounded-xl px-3 py-1 text-xs">
-                    {allSizes.filter((s) => !s.is_sold).length} in stock
-                  </Badge>
-                  <Badge className="bg-red-100 text-red-600 border-0 rounded-xl px-3 py-1 text-xs">
-                    {allSizes.filter((s) => s.is_sold).length} out of stock
-                  </Badge>
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
+                {canToggleStock && (
+                  <>
+                    <Badge className="bg-green-100 text-green-700 border-0 rounded-xl px-3 py-1 text-xs">
+                      {allSizes.filter((s) => !s.is_sold).length} in stock
+                    </Badge>
+                    <Badge className="bg-red-100 text-red-600 border-0 rounded-xl px-3 py-1 text-xs">
+                      {allSizes.filter((s) => s.is_sold).length} out of stock
+                    </Badge>
+                  </>
+                )}
+                {(() => {
+                  const validPrices = allSizes
+                    .map((s) => parseFloat(String(s.price)))
+                    .filter((p) => !isNaN(p) && p > 0);
+                  if (validPrices.length === 0) return null;
+                  const minP = Math.min(...validPrices);
+                  const maxP = Math.max(...validPrices);
+                  return (
+                    <Badge className="bg-purple-100 text-purple-700 border-0 rounded-xl px-3 py-1 text-xs font-semibold">
+                      Price Range: {minP === maxP
+                        ? `₹${minP.toLocaleString("en-IN")}`
+                        : `₹${minP.toLocaleString("en-IN")} – ₹${maxP.toLocaleString("en-IN")}`}
+                    </Badge>
+                  );
+                })()}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -737,42 +951,97 @@ const EditListing = () => {
   );
 };
 
-// ── Small reusable size toggle button ─────────────────────────────────────────
+// ── Size Card Component ──────────────────────────────────────────────────────
 
-interface SizeToggleButtonProps {
+interface SizeCardProps {
   size: VariantSize;
   disabled: boolean;
   onToggle: () => void;
+  onPriceChange: (newPrice: string) => void;
 }
 
-const SizeToggleButton = ({ size, disabled, onToggle }: SizeToggleButtonProps) => {
+const SizeCard = ({
+  size,
+  disabled,
+  onToggle,
+  onPriceChange,
+}: SizeCardProps) => {
   const inStock = !size.is_sold;
+  const numPrice = parseFloat(String(size.price));
+
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      disabled={disabled}
-      className={`flex flex-col items-center gap-1 px-3 py-3 rounded-xl border-0 transition-all duration-150 text-left w-full disabled:opacity-50 disabled:cursor-not-allowed ${
+    <div
+      className={`flex flex-col justify-between p-3.5 rounded-2xl border transition-all duration-150 ${
         inStock
-          ? "bg-green-50 text-green-700 hover:bg-green-100"
-          : "bg-red-50 text-red-500 hover:bg-red-100"
+          ? "bg-white/80 border-gray-200/80 shadow-sm"
+          : "bg-gray-50/70 border-gray-200/60 opacity-80"
       }`}
     >
-      <div className="flex items-center justify-between w-full">
-        <span className="font-bold text-sm uppercase">{size.size_value}</span>
-        {inStock ? (
-          <ToggleRight className="h-4 w-4 flex-shrink-0" />
-        ) : (
-          <ToggleLeft className="h-4 w-4 flex-shrink-0" />
-        )}
+      {/* Top Header: Size name & Stock toggle */}
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-bold text-sm text-gray-800 uppercase px-2.5 py-0.5 rounded-lg bg-gray-100">
+            {size.size_value}
+          </span>
+          <span
+            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+              inStock
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-600"
+            }`}
+          >
+            {inStock ? "In Stock" : "Sold Out"}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onToggle}
+          className={`min-h-[44px] min-w-[44px] -mr-1.5 -my-1 flex items-center justify-center rounded-xl transition-colors ${
+            disabled
+              ? "opacity-50 cursor-not-allowed"
+              : inStock
+              ? "text-green-600 hover:bg-green-50"
+              : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+          }`}
+          title={inStock ? "Mark as Sold Out" : "Mark as In Stock"}
+          aria-label={`Toggle availability for size ${size.size_value}`}
+        >
+          {inStock ? (
+            <ToggleRight className="h-6 w-6" />
+          ) : (
+            <ToggleLeft className="h-6 w-6" />
+          )}
+        </button>
       </div>
-      <div className="flex items-center justify-between w-full">
-        <span className="text-xs opacity-70">₹{size.price.toLocaleString()}</span>
-        <span className="text-xs font-medium">
-          {inStock ? "In Stock" : "Sold Out"}
-        </span>
+
+      {/* Price input */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium">
+          <span>Price (₹)</span>
+          {!isNaN(numPrice) && numPrice > 0 && (
+            <span className="text-gray-400">
+              ₹{numPrice.toLocaleString("en-IN")}
+            </span>
+          )}
+        </div>
+        <div className="relative">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-semibold pointer-events-none">
+            ₹
+          </span>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={size.price}
+            onChange={(e) => onPriceChange(e.target.value)}
+            placeholder="Enter price"
+            className="pl-6 h-9 text-sm rounded-xl bg-white border border-gray-200 text-gray-800 font-medium focus-visible:ring-1 focus-visible:ring-purple-400"
+          />
+        </div>
       </div>
-    </button>
+    </div>
   );
 };
 
