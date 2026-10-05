@@ -36,7 +36,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
-import ConditionBadge from "@/components/ui/ConditionBadge";
+import ProductPrice from "@/components/ui/ProductPrice";
 import {
   ROUTE_HELPERS,
   PRODUCT_CONDITIONS,
@@ -906,16 +906,12 @@ const CollectionPage = () => {
                             </h3>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                          <span className="font-bold text-gray-800 text-base md:text-lg">
-                            ₹
-                            {(
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 md:mb-3">
+                          <ProductPrice
+                            price={
                               listing.matched_size_price ?? listing.min_price ?? listing.price
-                            ).toLocaleString()}
-                          </span>
-                          <ConditionBadge
-                            condition={listing.condition}
-                            className="text-xs"
+                            }
+                            retailPrice={listing.retail_price}
                           />
                         </div>
                         <div className="flex items-center justify-between">

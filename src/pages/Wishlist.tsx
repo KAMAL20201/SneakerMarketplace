@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { ROUTE_HELPERS, ROUTE_NAMES } from "@/constants/enums";
-import ConditionBadge from "@/components/ui/ConditionBadge";
+import ProductPrice from "@/components/ui/ProductPrice";
 
 export function meta() {
   return [
@@ -89,13 +89,10 @@ const Wishlist = () => {
                         <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
                           {item.title}
                         </h3>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-gray-800 text-base md:text-lg">
-                            ₹{item.price.toLocaleString()}
-                          </span>
-                          <ConditionBadge
-                            condition={item.condition}
-                            className="text-xs"
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                          <ProductPrice
+                            price={item.price}
+                            retailPrice={item.retail_price}
                           />
                         </div>
                         <div className="flex items-center justify-between">

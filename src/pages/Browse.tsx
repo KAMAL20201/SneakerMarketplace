@@ -46,7 +46,7 @@ import {
 } from "@/constants/enums";
 import { categories } from "@/constants/sellConstants";
 
-import ConditionBadge from "@/components/ui/ConditionBadge";
+import ProductPrice from "@/components/ui/ProductPrice";
 
 interface Listing {
   id: string;
@@ -1301,18 +1301,14 @@ const Browse = () => {
                             </h3>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                          <span className="font-bold text-gray-800 text-base md:text-lg">
-                            ₹
-                            {(
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 md:mb-3">
+                          <ProductPrice
+                            price={
                               sizePriceMap?.get(listing.id) ??
                               listing.min_price ??
                               listing.price
-                            ).toLocaleString()}
-                          </span>
-                          <ConditionBadge
-                            condition={listing.condition}
-                            className="text-xs"
+                            }
+                            retailPrice={listing.retail_price}
                           />
                         </div>
                         <div className="flex items-center justify-between">

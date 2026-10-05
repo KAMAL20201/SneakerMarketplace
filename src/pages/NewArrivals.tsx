@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_HELPERS, ROUTE_NAMES } from "@/constants/enums";
-import ConditionBadge from "@/components/ui/ConditionBadge";
+import ProductPrice from "@/components/ui/ProductPrice";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { createClient } from "@supabase/supabase-js";
 
@@ -15,6 +15,7 @@ interface Listing {
   slug: string;
   title: string;
   price: number;
+  retail_price: number | null;
   brand: string;
   size_value: string;
   condition: string;
@@ -30,7 +31,7 @@ export async function loader(_: Route.LoaderArgs) {
   const { data: rows } = await supabase
     .from("listings_with_images")
     .select(
-      "id, slug, title, price, brand, size_value, condition, image_url, created_at",
+      "id, slug, title, price, retail_price, brand, size_value, condition, image_url, created_at",
     )
     .eq("status", "active")
     .order("created_at", { ascending: false })
@@ -132,13 +133,10 @@ const NewArrivals = () => {
                             </h3>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between mb-2 md:mb-3">
-                          <span className="font-bold text-gray-800 text-base md:text-lg">
-                            ₹{listing.price.toLocaleString()}
-                          </span>
-                          <ConditionBadge
-                            condition={listing.condition}
-                            className="text-xs"
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2 md:mb-3">
+                          <ProductPrice
+                            price={listing.price}
+                            retailPrice={listing.retail_price}
                           />
                         </div>
                         <div className="flex items-center justify-between">
@@ -159,6 +157,7 @@ const NewArrivals = () => {
                       title: listing.title,
                       brand: listing.brand,
                       price: listing.price,
+                        retail_price: listing.retail_price,
                       image_url: listing.image_url,
                       condition: listing.condition,
                       size_value: listing.size_value,

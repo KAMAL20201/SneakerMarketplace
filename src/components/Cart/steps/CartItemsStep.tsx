@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
-import ConditionBadge from "@/components/ui/ConditionBadge";
 import { Trash2, ShoppingBag, RefreshCw, TrendingUp, X, Bell, CheckCircle2, Loader2 } from "lucide-react";
 import { useCartValidation } from "@/hooks/useCartValidation";
 import { Badge } from "@/components/ui/badge";
@@ -158,8 +157,7 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                           <p className="text-xs text-gray-700 font-medium uppercase">
                             {item.size ? `Size: ${formatDisplaySize(item.brand, item.size)}` : "One Size"}
                           </p>
-                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                            <ConditionBadge condition={item.condition} />
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1 empty:hidden">
                             {item.isInstantShip && (
                               <Badge className="text-[10px] bg-amber-100 text-amber-900 border-amber-300 px-1.5 py-0.5 font-semibold">
                                 ⚡ Instant Ship · 7–10 days

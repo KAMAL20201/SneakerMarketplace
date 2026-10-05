@@ -35,7 +35,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { CardImage } from "@/components/ui/OptimizedImage";
-import ConditionBadge from "@/components/ui/ConditionBadge";
 
 interface Listing {
   id: string;
@@ -447,13 +446,8 @@ const MyListings = () => {
                         )}
                       </div>
 
-                      {/* Condition and Date */}
+                      {/* Listing date */}
                       <div className="flex items-center justify-between mb-4">
-                        <ConditionBadge
-                          condition={listing.condition}
-                          // variant="glass"
-                          className="text-xs"
-                        />
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                           <Calendar className="h-3 w-3" />
                           {formatDate(listing.created_at)}

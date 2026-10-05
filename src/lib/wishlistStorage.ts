@@ -5,6 +5,7 @@ export interface WishlistItem {
   title: string;
   brand: string;
   price: number;
+  retail_price?: number | null;
   image_url: string;
   condition: string;
   size_value: string;

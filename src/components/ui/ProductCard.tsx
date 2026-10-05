@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductImage, CardImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_HELPERS } from "@/constants/enums";
-import ConditionBadge from "@/components/ui/ConditionBadge";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toStorageUrl } from "@/lib/supabase";
+import ProductPrice from "@/components/ui/ProductPrice";
 
 interface ProductCardProps {
   product: {
@@ -37,6 +37,7 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
       title: product.title,
       brand: product.brand,
       price: product.price,
+      retail_price: product.retail_price ?? product.originalPrice,
       image_url: product.image_url,
       condition: product.condition,
       size_value: product.size_value,
@@ -84,24 +85,12 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                     </h3>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mb-3 mt-auto">
-                  <ConditionBadge
-                    condition={product.condition}
-                    className="text-xs"
+                <div className="flex flex-wrap items-center justify-between gap-2 mt-auto">
+                  <ProductPrice
+                    price={product.min_price ?? product.price}
+                    retailPrice={product.retail_price ?? product.originalPrice}
+                    priceClassName="text-lg"
                   />
-                </div>
-                <div className="flex items-center justify-between ">
-                  <>
-                    <span className="font-bold text-gray-800 text-lg">
-                      ₹ {product?.min_price ?? product.price}
-                    </span>
-                    {product.originalPrice &&
-                      product.originalPrice > product.price && (
-                        <span className="text-sm text-gray-500 line-through ml-2">
-                          ₹ {product.originalPrice}
-                        </span>
-                      )}
-                  </>
                   <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
                     {product.size_value?.split(" / ")[0]}
                   </Badge>
@@ -150,25 +139,12 @@ const ProductCard = ({ product, variant = "horizontal" }: ProductCardProps) => {
                     </h3>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <ConditionBadge
-                    condition={product.condition}
-                    variant="glass"
-                    className="text-xs ml-auto"
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <ProductPrice
+                    price={product.price}
+                    retailPrice={product.retail_price ?? product.originalPrice}
+                    priceClassName="text-lg"
                   />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-gray-800 text-lg">
-                      ₹ {product.price}
-                    </span>
-                    {product.originalPrice &&
-                      product.originalPrice > product.price && (
-                        <span className="text-sm text-gray-500 line-through ml-2">
-                          ₹ {product.originalPrice}
-                        </span>
-                      )}
-                  </div>
                   <Badge className="glass-button border-0 text-gray-700 rounded-xl uppercase">
                     {product.size_value}
                   </Badge>

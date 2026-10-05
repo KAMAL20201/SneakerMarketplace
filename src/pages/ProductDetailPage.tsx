@@ -1144,6 +1144,7 @@ export default function ProductDetailPage() {
                       title: listing.title,
                       brand: listing.brand,
                       price: selectedPrice ?? listing.price,
+                      retail_price: listing.retail_price,
                       image_url: images?.[0]?.image_url ?? "",
                       condition: listing.condition,
                       size_value: selectedSize ?? listing.size_value ?? "",

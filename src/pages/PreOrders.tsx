@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_HELPERS, ROUTE_NAMES } from "@/constants/enums";
-import ConditionBadge from "@/components/ui/ConditionBadge";
+import ProductPrice from "@/components/ui/ProductPrice";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { createClient } from "@supabase/supabase-js";
 import { formatBatchOpenDate, formatBatchOpenShort } from "@/lib/preOrderUtils";
@@ -23,6 +23,7 @@ interface PreOrderListing {
   slug: string;
   title: string;
   price: number;
+  retail_price: number | null;
   brand: string;
   size_value: string;
   condition: string;
@@ -74,7 +75,7 @@ export async function loader(_: Route.LoaderArgs) {
       if (slugs.length > 0) {
         const { data: listingRows } = await ssrSupabase
           .from("listings_with_images")
-          .select("id, slug, title, price, brand, size_value, condition, image_url, created_at")
+          .select("id, slug, title, price, retail_price, brand, size_value, condition, image_url, created_at")
           .in("slug", slugs)
           .eq("status", "active");
 
@@ -142,7 +143,7 @@ export async function loader(_: Route.LoaderArgs) {
   // Fetch listing details for all slugs
   const { data: listingRows } = await ssrSupabase
     .from("listings_with_images")
-    .select("id, slug, title, price, brand, size_value, condition, image_url, created_at")
+    .select("id, slug, title, price, retail_price, brand, size_value, condition, image_url, created_at")
     .in("slug", slugs)
     .eq("status", "active");
 
@@ -366,11 +367,11 @@ export default function PreOrders() {
                           <h3 className="font-bold text-gray-800 text-sm line-clamp-2 mb-2">
                             {listing.title}
                           </h3>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-gray-800 text-base md:text-lg">
-                              ₹{listing.price.toLocaleString("en-IN")}
-                            </span>
-                            <ConditionBadge condition={listing.condition} className="text-xs" />
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <ProductPrice
+                              price={listing.price}
+                              retailPrice={listing.retail_price}
+                            />
                           </div>
                           <div className="flex items-center justify-between">
                             <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
@@ -396,6 +397,7 @@ export default function PreOrders() {
                         title: listing.title,
                         brand: listing.brand,
                         price: listing.price,
+                        retail_price: listing.retail_price,
                         image_url: listing.image_url ?? "",
                         condition: listing.condition,
                         size_value: listing.size_value,
