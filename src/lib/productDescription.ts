@@ -33,20 +33,32 @@ const SPECIFICATION_LABELS = new Set([
   "outsole", "anti-torsion torque", "primary use", "heel drop", "stack height",
 ]);
 
-/** Format existing plain text without generating or discarding product claims. */
+export function stripDescriptionFormatting(text: string): string {
+  return text.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/__([^_]+)__/g, "$1");
+}
+
+/** Format existing plain text and Markdown without changing product claims. */
 export function parseProductDescription(description: string): ProductDescription {
   const sections: ProductDescriptionSection[] = [];
   let currentSection: ProductDescriptionSection = { title: "Overview", blocks: [] };
+  let introSection = currentSection;
   sections.push(currentSection);
   let intro = "";
 
   for (const rawLine of description.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
-    const headingKey = line.replace(/:$/, "").toLowerCase();
-    const heading = Object.hasOwn(SECTION_TITLES, headingKey) ? SECTION_TITLES[headingKey] : undefined;
+    const markdownHeading = line.match(/^#{1,6}\s+(.+?)(?:\s+#+)?$/);
+    const headingText = stripDescriptionFormatting(markdownHeading?.[1] ?? line).replace(/:$/, "");
+    const headingKey = headingText.toLowerCase();
+    const heading = Object.hasOwn(SECTION_TITLES, headingKey)
+      ? SECTION_TITLES[headingKey]
+      : markdownHeading ? headingText : undefined;
     if (heading) {
       currentSection = { title: heading, blocks: [] };
+      if (markdownHeading && sections.length === 1 && sections[0].blocks.length === 0 && !Object.hasOwn(SECTION_TITLES, headingKey)) {
+        introSection = currentSection;
+      }
       sections.push(currentSection);
       continue;
     }
@@ -59,20 +71,25 @@ export function parseProductDescription(description: string): ProductDescription
       continue;
     }
 
-    const specification = line.match(/^([^:]{1,48}):\s+(.+)$/);
-    if (specification && (currentSection.title === "Specifications" || SPECIFICATION_LABELS.has(specification[1].toLowerCase()))) {
+    const specification = line.match(/^([^:]{1,48}):(?:\*\*|__)?\s+(.+)$/);
+    const specificationLabel = specification
+      ? stripDescriptionFormatting(specification[1]).replace(/^(?:\*\*|__)|(?:\*\*|__)$/g, "").trim()
+      : "";
+    if (specification && (currentSection.title === "Specifications" || SPECIFICATION_LABELS.has(specificationLabel.toLowerCase()))) {
       if (currentSection.title !== "Specifications") {
         currentSection = { title: "Specifications", blocks: [] };
         sections.push(currentSection);
       }
-      const item = { label: specification[1], value: specification[2] };
+      const item = { label: specificationLabel, value: specification[2] };
       const previousBlock = currentSection.blocks.at(-1);
       if (previousBlock?.type === "specifications") previousBlock.items.push(item);
       else currentSection.blocks.push({ type: "specifications", items: [item] });
       continue;
     }
 
-    if (!intro && currentSection.title === "Overview") intro = line;
+    if (!intro && currentSection === introSection) {
+      intro = stripDescriptionFormatting(line);
+    }
     currentSection.blocks.push({ type: "paragraph", text: line });
   }
 
