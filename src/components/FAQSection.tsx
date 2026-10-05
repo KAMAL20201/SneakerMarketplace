@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { WHATSAPP_NUMBER } from "@/lib/whatsappService";
 
 interface FAQItem {
   question: string;
@@ -416,7 +417,7 @@ export default function FAQSection({
           </div>
           <div className="flex gap-2 shrink-0">
             <a
-              href="https://wa.me/919XXXXXXXXX"
+              href={`https://wa.me/${WHATSAPP_NUMBER}`}
               target="_blank"
               rel="noopener noreferrer"
               id="faq-whatsapp-support"

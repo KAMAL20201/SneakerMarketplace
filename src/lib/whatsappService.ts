@@ -1,7 +1,7 @@
 // WhatsApp business number (with country code, no + sign)
 // Update this with your WhatsApp number via VITE_WHATSAPP_NUMBER env variable
 export const WHATSAPP_NUMBER =
-  import.meta.env.VITE_WHATSAPP_NUMBER || "919999999999";
+  import.meta.env.VITE_WHATSAPP_NUMBER || "917888527970";
 
 export class WhatsAppService {
   /**

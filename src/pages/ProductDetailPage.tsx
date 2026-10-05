@@ -37,12 +37,6 @@ import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand, sortSizes } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
 import { StockValidationService } from "@/lib/stockValidationService";
-import {
-  formatBatchOpenDate,
-  formatBatchOpenShort,
-  formatBatchOpenTime,
-  formatBatchOpenDateTime,
-} from "@/lib/preOrderUtils";
 import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -397,7 +391,6 @@ export default function ProductDetailPage() {
     aggregateRating,
     similarProducts: initialSimilarProducts,
     brandSlug,
-    matchedModel,
     isPreOrder: loaderIsPreOrder,
     preOrderStatus: loaderPreOrderStatus = "none",
     preOrderWindowName: loaderPreOrderWindowName = null,
@@ -436,13 +429,13 @@ export default function ProductDetailPage() {
       const firstVariant = initialVariants[0];
       const sizes = map[firstVariant.id] ?? [];
       if (sizes.length > 0) {
-        const hasInstant = sizes.some((s) => s.is_instant_ship && !s.is_sold);
-        const filtered = hasInstant ? sizes.filter((s) => s.is_instant_ship) : sizes;
         const target = preSelectedSize
           ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
           : null;
-        const pick = target ?? filtered.find((s) => !s.is_sold) ?? filtered[0] ?? sizes[0];
-        return { size: pick.size_value, price: pick.price };
+        const pick = target
+          ?? sizes.find((size) => size.is_instant_ship && !size.is_sold)
+          ?? sizes.find((size) => !size.is_sold);
+        return { size: pick?.size_value ?? null, price: pick?.price ?? null };
       }
       return {
         size: null,
@@ -455,9 +448,10 @@ export default function ProductDetailPage() {
             (s) => s.size_value === preSelectedSize && !s.is_sold,
           )
         : null;
-      const pick =
-        target ?? legacySizes.find((s) => !s.is_sold) ?? legacySizes[0];
-      return { size: pick.size_value, price: pick.price };
+      const pick = target
+        ?? legacySizes.find((size) => size.is_instant_ship && !size.is_sold)
+        ?? legacySizes.find((size) => !size.is_sold);
+      return { size: pick?.size_value ?? null, price: pick?.price ?? null };
     }
     if (initialListing?.size_value) {
       return {
@@ -517,11 +511,13 @@ export default function ProductDetailPage() {
     setSelectedImageIndex(0);
     setSimilarProducts(initialSimilarProducts);
     setDescExpanded(false);
+    const resetSizes = initialVariants.length > 0
+      ? (newMap[initialVariants[0]?.id] ?? [])
+      : legacySizes;
     setDeliveryTab(
-      (initialVariants.length > 0
-        ? (newMap[initialVariants[0]?.id] ?? [])
-        : legacySizes
-      ).some((s) => s.is_instant_ship && !s.is_sold)
+      (size
+        ? resetSizes.find((entry) => entry.size_value === size)?.is_instant_ship
+        : resetSizes.some((entry) => entry.is_instant_ship && !entry.is_sold))
         ? "instant"
         : "standard",
     );
@@ -537,7 +533,11 @@ export default function ProductDetailPage() {
   const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [deliveryTab, setDeliveryTab] = useState<"instant" | "standard">(() =>
-    availableSizes.some((s) => s.is_instant_ship && !s.is_sold) ? "instant" : "standard",
+    (initSize
+      ? availableSizes.find((entry) => entry.size_value === initSize)?.is_instant_ship
+      : availableSizes.some((entry) => entry.is_instant_ship && !entry.is_sold))
+      ? "instant"
+      : "standard",
   );
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [returnsOpen, setReturnsOpen] = useState(false);
@@ -616,10 +616,20 @@ export default function ProductDetailPage() {
   const isPreOrderProduct = !isInstantSelected && isPreOrderBatchActive;
   const isPreOrderPaused = !isInstantSelected && isPreOrderBatchPaused;
 
-  const openDateFull = formatBatchOpenDate(loaderPreOrderStartsAt);
-  const openDateShort = formatBatchOpenShort(loaderPreOrderStartsAt);
-  const openTime = formatBatchOpenTime(loaderPreOrderStartsAt);
-  const openDateTime = formatBatchOpenDateTime(loaderPreOrderStartsAt);
+  const preOrderOpeningDate = loaderPreOrderStartsAt
+    ? new Date(loaderPreOrderStartsAt)
+    : null;
+  const openDateTime = preOrderOpeningDate && !Number.isNaN(preOrderOpeningDate.getTime())
+    ? `${new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      }).format(preOrderOpeningDate)} IST`
+    : null;
 
   /**
    * Loading state for the client-side pre-order window re-check.
@@ -822,6 +832,9 @@ export default function ProductDetailPage() {
     setSelectedPrice(null);
     const sizes = variantSizesMap[variantId] ?? [];
     setAvailableSizes(sizes);
+    if (sizes.length === 0) {
+      setSelectedPrice(variant.price ?? listing?.price ?? null);
+    }
 
     const hasInstant = sizes.some((s) => s.is_instant_ship && !s.is_sold);
     const hasStandard = sizes.some((s) => !s.is_instant_ship && !s.is_sold);
@@ -834,24 +847,17 @@ export default function ProductDetailPage() {
     }
     setDeliveryTab(activeTab);
 
-    if (sizes.length > 0) {
-      const tabSizes = sizes.filter((s) =>
-        hasInstant && hasStandard
-          ? activeTab === "instant"
-            ? s.is_instant_ship
-            : !s.is_instant_ship
-          : true,
-      );
-      const pick =
-        tabSizes.find((s) => !s.is_sold) ??
-        tabSizes[0] ??
-        sizes.find((s) => !s.is_sold) ??
-        sizes[0];
+    const tabSizes = sizes.filter((size) =>
+      hasInstant && hasStandard
+        ? activeTab === "instant" ? size.is_instant_ship : !size.is_instant_ship
+        : true,
+    );
+    const pick = tabSizes.find((size) => !size.is_sold);
+    if (pick) {
       setSelectedSize(pick.size_value);
       setSelectedPrice(pick.price);
-    } else {
-      setSelectedPrice(variant.price ?? listing?.price ?? null);
     }
+
     // Jump carousel to this variant's image if it has one
     if (variant.image_url) {
       const normalised = toStorageUrl(variant.image_url);
@@ -861,14 +867,6 @@ export default function ProductDetailPage() {
       if (imgIdx !== -1) setSelectedImageIndex(imgIdx);
     }
   };
-
-  // Data is always present — provided by the server loader
-  const currentPrice = selectedPrice ?? listing?.price ?? 0;
-  const retailInr: number | null = listing?.retail_price ?? null;
-  const pctOff =
-    retailInr && retailInr > currentPrice
-      ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
-      : null;
 
   // Sizes visible in the currently-active delivery tab
   const activeTabSizes = (() => {
@@ -880,6 +878,20 @@ export default function ProductDetailPage() {
       deliveryTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
     );
   })();
+
+  const purchasableSizes = activeTabSizes.filter((size) => !size.is_sold);
+  const pricedSizes = purchasableSizes.length > 0 ? purchasableSizes : activeTabSizes;
+  const hasDifferentSizePrices = new Set(activeTabSizes.map((size) => size.price)).size > 1;
+  const startingPrice = pricedSizes.length > 0
+    ? Math.min(...pricedSizes.map((size) => size.price))
+    : variants.find((variant) => variant.id === selectedVariantId)?.price ?? listing?.price ?? 0;
+  const currentPrice = selectedPrice ?? startingPrice;
+  const showStartingPrice = !selectedSize && hasDifferentSizePrices;
+  const retailInr: number | null = listing?.retail_price ?? null;
+  const pctOff =
+    retailInr && retailInr > currentPrice
+      ? Math.round(((retailInr - currentPrice) / retailInr) * 100)
+      : null;
 
   // Determine if the currently selected size is sold out in the ACTIVE tab
   const isSoldOut = (() => {
@@ -1059,26 +1071,44 @@ export default function ProductDetailPage() {
 
         {/* Product Details - Right side on desktop, below images on mobile */}
         <div className="lg:w-[40%] lg:pt-6">
-          <div className="px-4 pt-3 flex items-center justify-between lg:px-0 lg:py-0 lg:mb-1">
+          <div className="px-4 pt-3 lg:px-0 lg:pt-0">
+            {brandSlug ? (
+              <Link
+                to={`/brands/${brandSlug}`}
+                prefetch="intent"
+                className="inline-flex min-h-11 items-center text-sm font-medium text-gray-500 uppercase hover:text-purple-600 transition-colors"
+              >
+                {listing?.brand}
+              </Link>
+            ) : (
+              <p className="text-sm font-medium text-gray-500 uppercase">
+                {listing?.brand}
+              </p>
+            )}
+            <h1 className="mt-1 text-2xl sm:text-3xl font-bold leading-tight tracking-tight text-gray-900 break-words uppercase">
+              {listing?.title}
+            </h1>
+          </div>
+          <div className="px-4 mt-4 flex flex-wrap items-center justify-between gap-3 lg:px-0">
             {/* Price block with optional % off badge + strikethrough retail */}
-            {(() => {
-              return (
-                <div className="flex flex-col lg:px-0 px-4">
-                  <div className="flex items-baseline gap-2 relative">
-                    <h2 className="text-2xl font-bold text-gray-800">
-                      ₹{currentPrice.toLocaleString("en-IN")}
-                    </h2>{" "}
-                    {retailInr && retailInr > currentPrice && (
-                      <p className="text-sm text-gray-400 mt-0.5">
-                        <span className="line-through">
-                          ₹{retailInr.toLocaleString("en-IN")}
-                        </span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-2xl font-bold text-gray-800">
+                {showStartingPrice && <span className="mr-1 text-sm font-medium text-gray-500">From</span>}
+                ₹{currentPrice.toLocaleString("en-IN")}
+              </p>
+              {retailInr && retailInr > currentPrice && (
+                <p className="text-sm text-gray-400 mt-0.5">
+                  <span className="line-through">
+                    ₹{retailInr.toLocaleString("en-IN")}
+                  </span>
+                </p>
+              )}
+              {pctOff && (
+                <span className="text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-1 rounded-lg">
+                  {pctOff}% off
+                </span>
+              )}
+            </div>
 
             <div className="flex items-center gap-3">
               <div className="flex items-center">
@@ -1106,7 +1136,7 @@ export default function ProductDetailPage() {
                       size_value: selectedSize ?? listing.size_value ?? "",
                     })
                   }
-                  className="rounded-full p-2 bg-white/80 hover:bg-white shadow transition-colors"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white/80 hover:bg-white shadow transition-colors"
                 >
                   <Heart
                     className={`h-5 w-5 transition-colors ${
@@ -1119,11 +1149,6 @@ export default function ProductDetailPage() {
               )}
             </div>
           </div>
-          {pctOff && (
-            <span className="mb-[20px] mx-[30px] lg:mx-0 text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 px-2 py-0.5 rounded-lg">
-              {pctOff}% off
-            </span>
-          )}
 
           {/* Price increase countdown — only for Dynafish Xiaonian 5403ef */}
           {listing?.slug === "dynafish-xiaonian-5403ef" && (
@@ -1134,24 +1159,26 @@ export default function ProductDetailPage() {
             />
           )}
 
-          <div className="mt-3 px-8 pb-5 lg:px-0 lg:pb-6">
-            {brandSlug ? (
-              <Link
-                to={`/brands/${brandSlug}`}
-                prefetch="intent"
-                className="text-2xl font-bold text-gray-600 capitalize hover:text-purple-600 transition-colors"
-              >
-                {listing?.brand}
-              </Link>
-            ) : (
-              <h1 className="text-2xl font-bold text-gray-600 capitalize">
-                {listing?.brand}
-              </h1>
+          <div className="mt-3 px-4 pb-5 lg:px-0 lg:pb-6">
+            {isPreOrderPaused && (
+              <div className="mt-3 flex items-start gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3">
+                <Clock className="mt-0.5 h-5 w-5 shrink-0 text-violet-600" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-violet-700">
+                    {loaderPreOrderWindowName
+                      ? `Upcoming pre-order · ${loaderPreOrderWindowName}`
+                      : "Upcoming pre-order"}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-gray-900">
+                    {openDateTime ? `Opens ${openDateTime}` : "Opening date to be announced"}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                    Preview colours and sizes below. Ordering and reservations will be available when the batch opens.
+                  </p>
+                </div>
+              </div>
             )}
-            <h2 className="text-md text-gray-800 capitalize">
-              {listing?.title}
-            </h2>
-            {brandSlug && matchedModel && (
+            {/* {brandSlug && matchedModel && (
               <Link
                 to={`/brands/${brandSlug}/${matchedModel.slug}`}
                 prefetch="intent"
@@ -1159,7 +1186,7 @@ export default function ProductDetailPage() {
               >
                 Browse all {matchedModel.name} →
               </Link>
-            )}
+            )} */}
             {listing?.description && (
               <div className="mt-2">
                 <p
@@ -1274,63 +1301,59 @@ export default function ProductDetailPage() {
           {/* Color / Edition variant swatches */}
           {variants.length > 0 && (
             <div className="px-4 pb-4 lg:px-0">
-              <p className="text-xs text-gray-500 mb-2 font-medium">
-                {variants.find((v) => v.id === selectedVariantId)?.color_name ||
-                  "Select variant"}
+              <p className="text-sm text-gray-800 mb-2.5 font-semibold">
+                Colour:{" "}
+                <span className="font-normal text-gray-600">
+                  {variants.find((v) => v.id === selectedVariantId)?.color_name ||
+                    "Select"}
+                </span>
               </p>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 {variants.map((variant) => {
                   const isSelected = selectedVariantId === variant.id;
-                  // Show image thumbnail if variant has a bound image, otherwise color circle
-                  if (variant.image_url) {
-                    return (
-                      <button
-                        key={variant.id}
-                        type="button"
-                        title={variant.color_name}
-                        onClick={() => handleVariantSelect(variant.id)}
-                        className={`relative w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all ${
-                          isSelected
-                            ? "border-purple-500 scale-105 shadow-md"
-                            : "border-gray-200 hover:border-gray-400"
-                        }`}
-                      >
+                  // Detect dark colors so we can add a visible border
+                  const isDarkColor = (() => {
+                    if (!variant.color_hex) return false;
+                    const hex = variant.color_hex.replace("#", "");
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    // Perceived luminance — below 60 is very dark
+                    return (r * 299 + g * 587 + b * 114) / 1000 < 60;
+                  })();
+                  // Circular color swatch — uses color_hex if available, else a compact initial badge
+                  return (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      aria-label={variant.color_name}
+                      title={variant.color_name}
+                      onClick={() => handleVariantSelect(variant.id)}
+                      className={`relative h-10 w-10 rounded-full border-2 transition-all flex items-center justify-center overflow-hidden ${
+                        isSelected
+                          ? "border-purple-500 scale-110 shadow-lg ring-2 ring-purple-500 ring-offset-2"
+                          : isDarkColor
+                            ? "border-gray-300 hover:border-gray-400 hover:scale-105"
+                            : "border-gray-200 hover:border-gray-400 hover:scale-105"
+                      }`}
+                      style={
+                        variant.color_hex
+                          ? { backgroundColor: variant.color_hex }
+                          : undefined
+                      }
+                    >
+                      {/* Always show image if available; color_hex serves as fallback bg */}
+                      {variant.image_url ? (
                         <img
                           src={toStorageUrl(variant.image_url) ?? undefined}
                           alt={variant.color_name}
                           className="w-full h-full object-cover"
                         />
-                        {isSelected && (
-                          <span className="absolute inset-0 rounded-2xl ring-2 ring-purple-500 ring-offset-1 pointer-events-none" />
-                        )}
-                      </button>
-                    );
-                  }
-                  return (
-                    <button
-                      key={variant.id}
-                      type="button"
-                      title={variant.color_name}
-                      onClick={() => handleVariantSelect(variant.id)}
-                      className={`relative h-9 w-9 rounded-full border-2 transition-all flex items-center justify-center ${
-                        isSelected
-                          ? "border-purple-500 scale-110 shadow-md"
-                          : "border-gray-200 hover:border-gray-400"
-                      }`}
-                      style={
-                        variant.color_hex
-                          ? { backgroundColor: variant.color_hex }
-                          : { backgroundColor: "#e5e7eb" }
-                      }
-                    >
-                      {!variant.color_hex && (
-                        <span className="text-[9px] font-bold text-gray-600 leading-tight text-center px-0.5">
+                      ) : !variant.color_hex ? (
+                        <span className="text-[10px] font-bold text-gray-600 leading-tight text-center">
                           {variant.color_name.slice(0, 2).toUpperCase()}
                         </span>
-                      )}
-                      {isSelected && (
-                        <span className="absolute inset-0 rounded-full ring-2 ring-purple-500 ring-offset-1 pointer-events-none" />
-                      )}
+                      ) : null}
                     </button>
                   );
                 })}
@@ -1356,7 +1379,7 @@ export default function ProductDetailPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-bold text-gray-800">
-                        Available Sizes
+                        {isPreOrderPaused ? "Preview sizes" : "Available Sizes"}
                       </h3>
                       <button
                         onClick={() => setSizeGuideOpen(true)}
@@ -1367,6 +1390,14 @@ export default function ProductDetailPage() {
                       </button>
                     </div>
 
+                    <p className="mb-4 text-sm text-gray-500" aria-live="polite">
+                      {selectedSize
+                        ? `Selected size: ${formatDisplaySize(listing?.brand, selectedSize)}`
+                        : isPreOrderPaused
+                          ? "Select a size to preview. Ordering opens with the batch."
+                          : "Select a size to continue."}
+                    </p>
+
                     {/* Delivery tabs — only when product has BOTH instant and standard sizes */}
                     {showTabs && (
                       <Tabs
@@ -1374,20 +1405,12 @@ export default function ProductDetailPage() {
                         onValueChange={(v) => {
                           const nextTab = v as "instant" | "standard";
                           setDeliveryTab(nextTab);
-                          // Auto-select the first available size in the new tab
-                          const nextTabSizes = sortSizes(
-                            availableSizes.filter((s) =>
-                              nextTab === "instant" ? s.is_instant_ship : !s.is_instant_ship,
-                            ),
-                          );
-                          const pick = nextTabSizes.find((s) => !s.is_sold) ?? nextTabSizes[0] ?? null;
-                          if (pick) {
-                            setSelectedSize(pick.size_value);
-                            setSelectedPrice(pick.price);
-                          } else {
-                            setSelectedSize(null);
-                            setSelectedPrice(null);
-                          }
+                          const nextTabSizes = sortSizes(availableSizes.filter((size) =>
+                            nextTab === "instant" ? size.is_instant_ship : !size.is_instant_ship,
+                          ));
+                          const pick = nextTabSizes.find((size) => !size.is_sold);
+                          setSelectedSize(pick?.size_value ?? null);
+                          setSelectedPrice(pick?.price ?? null);
                         }}
                         className="mb-4"
                       >
@@ -1417,7 +1440,7 @@ export default function ProductDetailPage() {
                     )}
 
                     {availableSizes.length > 0 ? (
-                      // ── Multi-size listing: grid of sizes with per-size price ──
+                      // ── Multi-size listing: show tile prices only when they differ ──
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                         {displaySizes.map((s) => {
                           const isSelected = selectedSize === s.size_value;
@@ -1435,13 +1458,14 @@ export default function ProductDetailPage() {
                               key={s.size_value}
                               variant={isSelected ? "default" : "outline"}
                               disabled={s.is_sold}
+                              aria-pressed={isSelected}
                               onClick={() => {
                                 if (!s.is_sold) {
                                   setSelectedSize(s.size_value);
                                   setSelectedPrice(s.price);
                                 }
                               }}
-                              className={`flex flex-col h-auto py-2.5 px-2 rounded-2xl border-0 font-semibold gap-0.5 ${
+                              className={`flex flex-col min-h-11 h-auto py-2.5 px-2 rounded-2xl border-0 font-semibold gap-0.5 ${
                                 s.is_sold
                                   ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
                                   : isSelected
@@ -1471,19 +1495,21 @@ export default function ProductDetailPage() {
                                   {s.size_value.toUpperCase()}
                                 </span>
                               )}
-                              <span
-                                className={`text-xs font-normal ${
-                                  s.is_sold
-                                    ? "text-gray-400"
-                                    : isSelected
-                                      ? "text-white/80"
-                                      : "text-gray-500"
-                                }`}
-                              >
-                                {s.is_sold
-                                  ? "Sold Out"
-                                  : `₹${s.price.toLocaleString("en-IN")}`}
-                              </span>
+                              {(s.is_sold || hasDifferentSizePrices) && (
+                                <span
+                                  className={`text-xs font-normal ${
+                                    s.is_sold
+                                      ? "text-gray-400"
+                                      : isSelected
+                                        ? "text-white/80"
+                                        : "text-gray-500"
+                                  }`}
+                                >
+                                  {s.is_sold
+                                    ? "Sold Out"
+                                    : `₹${s.price.toLocaleString("en-IN")}`}
+                                </span>
+                              )}
                             </Button>
                           );
                         })}
@@ -1497,7 +1523,11 @@ export default function ProductDetailPage() {
                               ? "default"
                               : "outline"
                           }
-                          onClick={() => setSelectedSize(listing?.size_value)}
+                          aria-pressed={selectedSize === listing?.size_value}
+                          onClick={() => {
+                            setSelectedSize(listing?.size_value);
+                            setSelectedPrice(listing?.price ?? null);
+                          }}
                           className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
                             selectedSize === listing?.size_value
                               ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
@@ -1625,35 +1655,7 @@ export default function ProductDetailPage() {
                 </Button>
               </div>
             </div>
-          ) : isPreOrderPaused ? (
-            /* ── Pre-order Paused banner ── */
-            <div className="px-4 pb-6 lg:px-0">
-              <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-amber-50/30 p-4 sm:p-5 shadow-sm space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-xl bg-violet-100 text-violet-700 shrink-0 mt-0.5">
-                    <Clock className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 text-violet-800">
-                        {loaderPreOrderWindowName ? `Pre-Order: ${loaderPreOrderWindowName}` : "Pre-Order Batch"}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        Opens {openDateTime}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-gray-900 text-sm mt-1.5">
-                      Pre-orders open on {openDateTime}
-                    </h4>
-                    <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                      Pre-orders for this batch open on {openDateTime}. Sizing and reservations will be available once the batch goes live.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
+          ) : isPreOrderPaused ? null : (
             /* ── Normal: Add to Cart + Buy Now ── */
             <div className="px-4 pb-6 grid grid-cols-2 gap-4 lg:px-0">
               <Button
@@ -1802,12 +1804,10 @@ export default function ProductDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 font-semibold text-violet-700">
                       <Clock className="h-4 w-4 flex-shrink-0" />
-                      Pre-Order — Opens {openDateTime}
+                      Upcoming Pre-Order
                     </div>
                     <p>
-                      Pre-orders for this batch open on{" "}
-                      <span className="font-medium text-gray-800">{openDateTime}</span>.
-                      Once pre-orders open, the standard estimated delivery timeline is{" "}
+                      Once the batch opens and your order is confirmed, the standard estimated delivery timeline is{" "}
                       <span className="font-medium text-gray-800">28–35 days</span> with updates sent via email.
                     </p>
                   </div>
@@ -1946,6 +1946,7 @@ export default function ProductDetailPage() {
               </svg>
             </a>
           </div>
+
 
           {/* Size Guide Modal */}
           <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
@@ -2151,31 +2152,24 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Buyer Reviews */}
-      <section className="px-4 py-6 lg:px-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">Buyer Reviews</h2>
-          {aggregateRating && aggregateRating.review_count > 0 && (
-            <div className="flex items-center gap-2">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span className="font-bold text-gray-900">
-                {aggregateRating.average_rating.toFixed(1)}
-              </span>
-              <span className="text-gray-400 text-sm">
-                ({aggregateRating.review_count})
-              </span>
-            </div>
-          )}
-        </div>
-
-        {reviews.length === 0 ? (
-          <div className="bg-gray-50 rounded-3xl p-8 text-center">
-            <Star className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 text-sm">
-              No reviews yet — be the first verified buyer to review this item.
-            </p>
+      {/* Buyer Reviews — shown first when reviews exist */}
+      {reviews.length > 0 && (
+        <section className="px-4 py-6 lg:px-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Buyer Reviews</h2>
+            {aggregateRating && aggregateRating.review_count > 0 && (
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                <span className="font-bold text-gray-900">
+                  {aggregateRating.average_rating.toFixed(1)}
+                </span>
+                <span className="text-gray-400 text-sm">
+                  ({aggregateRating.review_count})
+                </span>
+              </div>
+            )}
           </div>
-        ) : (
+
           <div className="space-y-4">
             {(showAllReviews ? reviews : reviews.slice(0, 2)).map((review) => (
               <div
@@ -2226,10 +2220,10 @@ export default function ProductDetailPage() {
               </button>
             )}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* Review Screenshots — global social proof strip */}
+      {/* What Buyers Are Saying — customer screenshots strip */}
       <Suspense fallback={null}>
         <ReviewScreenshots />
       </Suspense>
