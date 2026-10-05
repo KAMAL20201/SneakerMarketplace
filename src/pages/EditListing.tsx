@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import {
   ArrowLeft,
+  ArrowRight,
+  GripVertical,
   ImagePlus,
   Loader2,
   Save,
@@ -62,6 +64,7 @@ const EditListing = () => {
   const [images, setImages] = useState<ListingImage[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragIndexRef = useRef<number | null>(null);
 
@@ -358,13 +361,20 @@ const EditListing = () => {
   };
 
   const handleDragStart = (index: number) => {
+    if (savingOrder || uploadingImage) return;
     dragIndexRef.current = index;
+    setDraggedImageIndex(index);
   };
 
-  const handleDrop = async (dropIndex: number) => {
-    const dragIndex = dragIndexRef.current;
-    if (dragIndex === null || dragIndex === dropIndex) return;
+  const handleDragEnd = () => {
     dragIndexRef.current = null;
+    setDraggedImageIndex(null);
+  };
+
+  const handleMoveImage = async (dragIndex: number, dropIndex: number) => {
+    if (savingOrder || uploadingImage || dragIndex === dropIndex ||
+      dragIndex < 0 || dragIndex >= images.length ||
+      dropIndex < 0 || dropIndex >= images.length) return;
 
     // Reorder locally
     const reordered = [...images];
@@ -376,16 +386,35 @@ const EditListing = () => {
     // Persist to DB
     try {
       setSavingOrder(true);
-      await Promise.all(
+      const results = await Promise.all(
         withNewOrder.map((img) =>
           supabase.from("product_images").update({ display_order: img.display_order }).eq("id", img.id)
         )
       );
+      const failed = results.find((result) => result.error);
+      if (failed?.error) throw failed.error;
     } catch (err) {
+      setImages(images);
       console.error("Error saving order:", err);
       toast.error("Failed to save image order");
     } finally {
       setSavingOrder(false);
+    }
+  };
+
+  const handleDrop = (dropIndex: number) => {
+    const dragIndex = dragIndexRef.current;
+    handleDragEnd();
+    if (dragIndex !== null) void handleMoveImage(dragIndex, dropIndex);
+  };
+
+  const handlePointerDrop = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const target = document.elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>("[data-listing-image-index]");
+    if (target?.dataset.listingImageIndex !== undefined) {
+      handleDrop(Number(target.dataset.listingImageIndex));
+    } else {
+      handleDragEnd();
     }
   };
 
@@ -629,52 +658,114 @@ const EditListing = () => {
               className="hidden"
               onChange={handleAddImages}
             />
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {images.map((img, index) => (
                 <div
                   key={img.id}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => e.preventDefault()}
+                  data-listing-image-index={index}
+                  onDragOver={(event) => event.preventDefault()}
                   onDrop={() => handleDrop(index)}
-                  className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-grab active:cursor-grabbing"
+                  className={`rounded-xl overflow-hidden bg-gray-100 ${draggedImageIndex === index ? "ring-2 ring-purple-500 opacity-60" : ""}`}
                 >
-                  <img
-                    src={img.image_url}
-                    alt="Listing"
-                    className="w-full h-full object-cover pointer-events-none"
-                  />
-                  {/* Order badge */}
-                  <span className="absolute top-1 right-1 bg-black/50 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                    {index + 1}
-                  </span>
-                  {/* Poster badge */}
-                  {img.is_poster_image && (
-                    <span className="absolute top-1 left-1 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                      <Star className="h-2.5 w-2.5 fill-current" />
-                      Main
+                  <div
+                    draggable={!savingOrder && !uploadingImage}
+                    onDragStart={(event) => {
+                      if ((event.target as HTMLElement).closest("button")) {
+                        event.preventDefault();
+                        return;
+                      }
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", img.id);
+                      handleDragStart(index);
+                    }}
+                    onDragEnd={handleDragEnd}
+                    className="relative aspect-square cursor-grab active:cursor-grabbing"
+                  >
+                    <img
+                      src={img.image_url}
+                      alt={`Listing photo ${index + 1}`}
+                      draggable={false}
+                      className="w-full h-full object-cover pointer-events-none"
+                    />
+                    <span className="absolute top-1 right-1 bg-black/50 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center">
+                      {index + 1}
                     </span>
-                  )}
-                  {/* Overlay actions */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    {!img.is_poster_image && (
-                      <button
-                        type="button"
-                        onClick={() => handleSetPoster(img)}
-                        className="bg-white/90 text-yellow-600 rounded-full p-1.5 hover:bg-white"
-                        title="Set as main photo"
-                      >
-                        <Star className="h-3.5 w-3.5" />
-                      </button>
+                    {img.is_poster_image && (
+                      <span className="absolute top-1 left-1 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                        <Star className="h-2.5 w-2.5 fill-current" />
+                        Main
+                      </span>
                     )}
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
+                      size="icon"
+                      disabled={savingOrder || uploadingImage || images.length < 2}
+                      aria-label={`Drag photo ${index + 1} to reorder, or use the move buttons below`}
+                      title="Drag to reorder"
+                      className="absolute bottom-1 right-1 h-11 w-11 touch-none select-none bg-white/90 cursor-grab active:cursor-grabbing"
+                      onPointerDown={(event) => {
+                        if (!event.isPrimary || event.button !== 0) return;
+                        event.preventDefault();
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        handleDragStart(index);
+                      }}
+                      onPointerUp={handlePointerDrop}
+                      onPointerCancel={handleDragEnd}
+                      onLostPointerCapture={handleDragEnd}
+                    >
+                      <GripVertical />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 p-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-full min-w-11"
+                      disabled={index === 0 || savingOrder || uploadingImage}
+                      onClick={() => handleMoveImage(index, index - 1)}
+                      aria-label={`Move photo ${index + 1} earlier`}
+                      title="Move earlier"
+                    >
+                      <ArrowLeft />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-full min-w-11"
+                      disabled={index === images.length - 1 || savingOrder || uploadingImage}
+                      onClick={() => handleMoveImage(index, index + 1)}
+                      aria-label={`Move photo ${index + 1} later`}
+                      title="Move later"
+                    >
+                      <ArrowRight />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-full min-w-11 text-yellow-600"
+                      disabled={img.is_poster_image || savingOrder || uploadingImage}
+                      onClick={() => handleSetPoster(img)}
+                      aria-label={img.is_poster_image ? `Photo ${index + 1} is the main photo` : `Set photo ${index + 1} as main photo`}
+                      title={img.is_poster_image ? "Main photo" : "Set as main photo"}
+                    >
+                      <Star className={img.is_poster_image ? "fill-current" : ""} />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-full min-w-11 text-red-500"
+                      disabled={savingOrder || uploadingImage}
                       onClick={() => handleRemoveImage(img)}
-                      className="bg-white/90 text-red-500 rounded-full p-1.5 hover:bg-white"
+                      aria-label={`Remove photo ${index + 1}`}
                       title="Remove photo"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                      <Trash2 />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -683,7 +774,7 @@ const EditListing = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingImage}
+                  disabled={uploadingImage || savingOrder}
                   className="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-purple-400 hover:bg-purple-50/50 transition-colors flex flex-col items-center justify-center gap-1 text-gray-400 hover:text-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploadingImage ? (
@@ -698,7 +789,7 @@ const EditListing = () => {
               )}
             </div>
             <p className="text-xs text-gray-400 mt-3">
-              Drag photos to reorder. Hover to set main photo or remove. Max 8 photos.
+              Drag the grip or use the arrows to reorder. Tap the star to set the main photo or the bin to remove. Max 8 photos.
             </p>
           </CardContent>
         </Card>
