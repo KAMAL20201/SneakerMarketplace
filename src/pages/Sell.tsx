@@ -318,6 +318,8 @@ export default function SellPage() {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isLoading) return;
+
     const newFiles = e.target.files;
     if (newFiles) {
       // Early return if already at maximum
@@ -344,20 +346,13 @@ export default function SellPage() {
           return;
         }
 
-        // Compress images using smart compression
-        const compressionResults = await smartCompressImages(filesArray);
-
-        // Create preview URLs for compressed images
-        const newImages = compressionResults.map((result) =>
-          URL.createObjectURL(result.compressedFile)
-        );
-
-        // Update state with compressed files
-        setImages([...images, ...newImages]);
-        setFiles([
-          ...files,
-          ...compressionResults.map((result) => result.compressedFile),
-        ]);
+        // Add each photo as it finishes, preserving the file picker's order.
+        for (const file of filesArray) {
+          const [result] = await smartCompressImages([file]);
+          const previewUrl = URL.createObjectURL(result.compressedFile);
+          setImages((previousImages) => [...previousImages, previewUrl]);
+          setFiles((previousFiles) => [...previousFiles, result.compressedFile]);
+        }
 
         toast.success(`${filesArray.length} photo(s) added! `);
       } catch (error) {
@@ -365,12 +360,26 @@ export default function SellPage() {
         toast.error("Failed to compress images. Please try again.");
       } finally {
         setIsLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
       }
     }
   };
 
   const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+    setImages((previousImages) => previousImages.filter((_, imageIndex) => imageIndex !== index));
+    setFiles((previousFiles) => previousFiles.filter((_, fileIndex) => fileIndex !== index));
+    setFormData((previousFormData) => ({
+      ...previousFormData,
+      variants: previousFormData.variants.map((variant) => ({
+        ...variant,
+        imageIndex:
+          variant.imageIndex === null || variant.imageIndex < index
+            ? variant.imageIndex
+            : variant.imageIndex === index
+              ? null
+              : variant.imageIndex - 1,
+      })),
+    }));
     toast.success("Photo removed");
   };
 
@@ -741,6 +750,7 @@ export default function SellPage() {
                         variant="ghost"
                         className="absolute top-2 right-2 h-6 w-6 md:h-8 md:w-8 p-0 glass-button border-0 rounded-2xl opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
                         onClick={() => removeImage(index)}
+                        disabled={isLoading}
                       >
                         <X className="h-3 w-3 md:h-4 md:w-4 text-red-500" />
                       </Button>
@@ -753,7 +763,7 @@ export default function SellPage() {
                     ref={fileInputRef}
                     multiple
                     accept="image/*"
-                    disabled={images.length >= 8}
+                    disabled={isLoading || images.length >= 8}
                   />
                   {images.length === 0 && (
                     <Button
@@ -761,6 +771,7 @@ export default function SellPage() {
                       variant="outline"
                       className="h-max glass-button border-2 border-dashed border-white/40 hover:border-purple-400 bg-transparent rounded-2xl hover:bg-white/20 transition-all duration-300"
                       onClick={() => fileInputRef.current?.click()}
+                      disabled={isLoading}
                     >
                       <div className="flex flex-col items-center gap-2">
                         <div className="p-2 md:p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl">
@@ -778,10 +789,12 @@ export default function SellPage() {
                   variant="outline"
                   className="w-full glass-button border-0 rounded-2xl bg-transparent hover:bg-white/20 text-gray-700"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={images.length === 8}
+                  disabled={isLoading || images.length >= 8}
                 >
                   <Upload className="h-5 w-5 mr-3" />
-                  {images.length === 8
+                  {isLoading
+                    ? "Adding photos..."
+                    : images.length >= 8
                     ? "Maximum 8 photos reached"
                     : `Upload from Gallery`}
                 </Button>
@@ -1854,7 +1867,7 @@ export default function SellPage() {
               type="button"
               variant="outline"
               onClick={prevStep}
-              disabled={currentStep === 1}
+              disabled={isLoading || currentStep === 1}
               className="glass-button border-0 rounded-2xl px-4 md:px-6 py-2 md:py-3 text-gray-700 hover:bg-white/30 bg-transparent disabled:opacity-50"
             >
               <ArrowLeft className="h-4 w-4 md:h-5 md:w-5 mr-2" />
@@ -1866,7 +1879,7 @@ export default function SellPage() {
               <Button
                 type="button"
                 onClick={nextStep}
-                disabled={!validateStep(currentStep)}
+                disabled={isLoading || !validateStep(currentStep)}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl px-4 md:px-6 py-2 md:py-3 disabled:opacity-50"
               >
                 <span className="hidden sm:inline">Next</span>
