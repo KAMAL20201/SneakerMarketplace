@@ -67,9 +67,9 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(o) : handleClose())}
     >
-      <DialogContent className="max-w-md w-[calc(100%-1rem)] p-0 rounded-3xl overflow-hidden">
+      <DialogContent className="top-[50dvh] max-w-md w-[calc(100%-1rem)] p-0 rounded-3xl overflow-hidden">
         {step === "shipping" ? (
-          <div className="flex flex-col h-[90vh] sm:h-[80vh]">
+          <div className="flex flex-col h-[calc(100dvh-3rem)] sm:h-[80dvh]">
             <div className="px-4 pt-4">
               <DialogHeader>
                 <DialogTitle>Select Shipping Address</DialogTitle>
@@ -80,7 +80,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col h-[80vh] w-full min-w-0 overflow-x-hidden">
+          <div className="flex flex-col h-[calc(100dvh-3rem)] sm:h-[80dvh] w-full min-w-0 overflow-x-hidden">
             <div className="px-4 pt-4">
               <DialogHeader>
                 <DialogTitle>Confirm & Order</DialogTitle>

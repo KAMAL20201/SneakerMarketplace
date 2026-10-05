@@ -114,7 +114,7 @@ export default function MyAddresses() {
                 <Plus className="h-4 w-4" /> Add New Address
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="top-[50dvh] max-w-2xl max-h-[calc(100dvh-3rem)] overflow-y-auto sm:max-h-[90dvh]">
               <DialogHeader>
                 <DialogTitle>Add New Address</DialogTitle>
               </DialogHeader>
