@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import {
   ShoppingCart,
   ZoomIn,
@@ -30,9 +30,11 @@ import { createClient } from "@supabase/supabase-js";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ProductCard from "@/components/ui/ProductCard";
 import BlogTeaser from "@/components/BlogTeaser";
+import ProductDescriptionDetails from "@/components/ProductDescriptionDetails";
+import { parseProductDescription } from "@/lib/productDescription";
 import type { BlogPostSummary } from "@/components/BlogTeaser";
 import { getSizeChart, getApparelSizeChart, getEuSizeFromUk, formatDisplaySize, isEuPrimaryBrand, sortSizes } from "@/constants/sizeCharts";
 import { WhatsAppService } from "@/lib/whatsappService";
@@ -510,7 +512,7 @@ export default function ProductDetailPage() {
     setSelectedPrice(price);
     setSelectedImageIndex(0);
     setSimilarProducts(initialSimilarProducts);
-    setDescExpanded(false);
+    setProductDetailsOpen(false);
     const resetSizes = initialVariants.length > 0
       ? (newMap[initialVariants[0]?.id] ?? [])
       : legacySizes;
@@ -530,8 +532,10 @@ export default function ProductDetailPage() {
   const [ordersPausedOpen, setOrdersPausedOpen] = useState(false);
   const [similarProducts, setSimilarProducts] = useState(initialSimilarProducts);
   const [blogPosts, setBlogPosts] = useState<BlogPostSummary[]>([]);
-  const [descExpanded, setDescExpanded] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [productDetailsOpen, setProductDetailsOpen] = useState(false);
+  const productDetailsTriggerRef = useRef<HTMLButtonElement>(null);
+  const sizeSelectionRef = useRef<HTMLDivElement>(null);
   const [deliveryTab, setDeliveryTab] = useState<"instant" | "standard">(() =>
     (initSize
       ? availableSizes.find((entry) => entry.size_value === initSize)?.is_instant_ship
@@ -898,7 +902,7 @@ export default function ProductDetailPage() {
     if (listing?.status === "sold") return true;
 
     if (availableSizes.length > 0) {
-      if (!selectedSize) return false;
+      if (!selectedSize) return activeTabSizes.length > 0 && activeTabSizes.every((size) => size.is_sold);
       // Check only in the sizes currently shown (respects active delivery tab)
       const sizeObj = activeTabSizes.find((s) => s.size_value === selectedSize);
       // If the size doesn't exist in this tab, treat as not-selected (not sold out)
@@ -912,14 +916,21 @@ export default function ProductDetailPage() {
 
     return false;
   })();
+  const needsSizeSelection = Boolean((availableSizes.length > 0 || listing?.size_value) && !selectedSize);
+  const isCheckingPurchase = isValidatingBuyNow || isValidatingPreOrder;
+  const scrollToSizes = () => {
+    sizeSelectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    sizeSelectionRef.current?.focus({ preventScroll: true });
+  };
   // pageDescription is used in the JSON-LD structured data below
   const pageDescription = listing
     ? `Buy authentic ${listing.title}${listing.brand ? " by " + listing.brand : ""} in India for ₹${listing.price?.toLocaleString("en-IN")}. Fast delivery across India, 100% verified authenticity, no customs hassle. Shop on The Plug Market.`
     : "Shop 100% authentic sneakers and streetwear on The Plug Market.";
   const canonicalUrl = `https://theplugmarket.in/product/${productId}`;
+  const productDescription = parseProductDescription(listing?.description ?? "");
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-[calc(10rem+env(safe-area-inset-bottom))] lg:pb-0">
       {/* JSON-LD Product structured data — title/og/twitter handled by meta() export */}
       {listing && (
         <script
@@ -992,15 +1003,15 @@ export default function ProductDetailPage() {
       <div className="lg:flex lg:gap-8 lg:p-8">
         {/* Image Gallery - Left side on desktop, full width on mobile */}
         <div
-          className={`lg:w-[60%] lg:max-w-2xl px-4 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5 ${images.length <= 1 ? "pt-6 pb-2" : "py-6"}`}
+          className={`lg:w-[60%] lg:max-w-2xl px-4 lg:p-0 lg:flex lg:flex-row-reverse lg:gap-5 ${images.length <= 1 ? "pt-3 pb-2" : "py-3"}`}
         >
-          <div className="mb-4 lg:w-[80%]">
+          <div className="mb-2 lg:mb-4 lg:w-[80%]">
             <Carousel
-              className="lg:max-w-lg lg:mx-auto bg-gray-200 rounded-3xl"
+              className="lg:max-w-lg lg:mx-auto bg-gray-100 rounded-2xl"
               opts={{ loop: (images?.length || 0) > 1 }}
               setApi={setEmblaApi}
             >
-              <CarouselContent className="-ml-0 relative aspect-square rounded-none shadow-2xl">
+              <CarouselContent className="-ml-0 relative aspect-square rounded-none">
                 {images?.length ? (
                   images.map((image, index) => (
                     <CarouselItem key={image.id} className="relative pl-0">
@@ -1009,7 +1020,7 @@ export default function ProductDetailPage() {
                         type="button"
                         aria-label="Zoom in"
                         onClick={() => setZoomOpen(true)}
-                        className="absolute top-3 right-3 z-10 rounded-xl p-2 bg-white/80 hover:bg-white transition-colors shadow-md"
+                        className="absolute top-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-xl bg-white/80 hover:bg-white transition-colors shadow-md"
                       >
                         <ZoomIn className="h-5 w-5 text-gray-700" />
                       </button>
@@ -1052,8 +1063,10 @@ export default function ProductDetailPage() {
             {images?.map((image, index) => (
               <button
                 key={image.id}
+                type="button"
+                aria-pressed={selectedImageIndex === index}
                 onClick={() => setSelectedImageIndex(index)}
-                className={`relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 ${
+                className={`relative w-12 h-12 lg:w-20 lg:h-20 rounded-xl lg:rounded-2xl overflow-hidden flex-shrink-0 transition-all duration-300 ${
                   selectedImageIndex === index
                     ? "ring-3 ring-purple-500 scale-105"
                     : "glass-button border-0 hover:scale-105"
@@ -1187,20 +1200,15 @@ export default function ProductDetailPage() {
                 Browse all {matchedModel.name} →
               </Link>
             )} */}
-            {listing?.description && (
-              <div className="mt-2">
-                <p
-                  className={`text-sm text-gray-500 leading-relaxed whitespace-pre-line ${
-                    descExpanded ? "" : "line-clamp-2"
-                  }`}
-                >
-                  {listing.description}
-                </p>
-                <button
-                  onClick={() => setDescExpanded(!descExpanded)}
-                  className="text-purple-600 text-xs font-medium mt-1 hover:underline"
-                >
-                  {descExpanded ? "View less" : "View more"}
+            {productDescription.sections.length > 0 && (
+              <div className="mt-3">
+                {productDescription.intro && (
+                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
+                    {productDescription.intro}
+                  </p>
+                )}
+                <button ref={productDetailsTriggerRef} type="button" onClick={() => setProductDetailsOpen(true)} className="inline-flex min-h-11 items-center text-sm font-medium text-purple-700 hover:underline">
+                  View product details
                 </button>
               </div>
             )}
@@ -1331,7 +1339,7 @@ export default function ProductDetailPage() {
                       onClick={() => handleVariantSelect(variant.id)}
                       className={`relative h-10 w-10 rounded-full border-2 transition-all flex items-center justify-center overflow-hidden ${
                         isSelected
-                          ? "border-purple-500 scale-110 shadow-lg ring-2 ring-purple-500 ring-offset-2"
+                          ? "border-purple-500 scale-110 shadow-sm ring-2 ring-purple-500 ring-offset-2"
                           : isDarkColor
                             ? "border-gray-300 hover:border-gray-400 hover:scale-105"
                             : "border-gray-200 hover:border-gray-400 hover:scale-105"
@@ -1374,9 +1382,9 @@ export default function ProductDetailPage() {
             const displaySizes = sortSizes(filteredSizes);
 
             return (
-              <div className="px-4 pb-6 lg:px-0">
-                <Card className="glass-card border-0 rounded-3xl">
-                  <CardContent className="p-6">
+              <div ref={sizeSelectionRef} tabIndex={-1} aria-label="Size selection" className="px-4 pb-6 scroll-mt-24 focus:outline-none lg:px-0">
+                <Card className="bg-white border border-gray-200 rounded-2xl shadow-none">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-xl font-bold text-gray-800">
                         {isPreOrderPaused ? "Preview sizes" : "Available Sizes"}
@@ -1465,12 +1473,12 @@ export default function ProductDetailPage() {
                                   setSelectedPrice(s.price);
                                 }
                               }}
-                              className={`flex flex-col min-h-11 h-auto py-2.5 px-2 rounded-2xl border-0 font-semibold gap-0.5 ${
+                              className={`flex flex-col min-h-11 h-auto py-2.5 px-2 rounded-xl border font-semibold gap-0.5 ${
                                 s.is_sold
                                   ? "opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 line-through"
                                   : isSelected
-                                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                                    : "glass-button text-gray-700 hover:bg-white/30"
+                                    ? "border-purple-500 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm"
+                                    : "border-gray-200 bg-white text-gray-700 hover:border-purple-300 hover:bg-purple-50"
                               }`}
                             >
                               {isEuPrimary && euSize ? (
@@ -1530,8 +1538,8 @@ export default function ProductDetailPage() {
                           }}
                           className={`w-max h-14 rounded-2xl border-0 font-semibold uppercase ${
                             selectedSize === listing?.size_value
-                              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
-                              : "glass-button text-gray-700 hover:bg-white/30"
+                              ? "border-purple-500 bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-purple-300 hover:bg-purple-50"
                           }`}
                         >
                           {formatDisplaySize(listing?.brand, listing?.size_value)}
@@ -1602,7 +1610,7 @@ export default function ProductDetailPage() {
                   </svg>
                 </a>
               )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="hidden lg:grid grid-cols-2 gap-4">
                 <Button
                   size="lg"
                   variant="outline"
@@ -1615,7 +1623,7 @@ export default function ProductDetailPage() {
                     ((availableSizes.length > 0 || listing?.size_value) &&
                       !selectedSize)
                   }
-                  className={`border-0 rounded-2xl shadow-lg h-12 ${
+                  className={`border-0 rounded-xl shadow-sm h-12 ${
                     isItemInCart() ||
                     isSoldOut ||
                     ((availableSizes.length > 0 || listing?.size_value) &&
@@ -1641,7 +1649,7 @@ export default function ProductDetailPage() {
                       !selectedSize) ||
                     isSoldOut
                   }
-                  className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
+                  className={`w-full border-0 rounded-xl shadow-sm h-12 ${
                     isSoldOut
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
@@ -1657,7 +1665,7 @@ export default function ProductDetailPage() {
             </div>
           ) : isPreOrderPaused ? null : (
             /* ── Normal: Add to Cart + Buy Now ── */
-            <div className="px-4 pb-6 grid grid-cols-2 gap-4 lg:px-0">
+            <div className="hidden px-4 pb-6 lg:grid grid-cols-2 gap-4 lg:px-0">
               <Button
                 size="lg"
                 variant="outline"
@@ -1674,7 +1682,7 @@ export default function ProductDetailPage() {
                   ((availableSizes.length > 0 || listing?.size_value) &&
                     !selectedSize)
                 }
-                className={`border-0 rounded-2xl shadow-lg h-12 ${
+                className={`border-0 rounded-xl shadow-sm h-12 ${
                   isItemInCart() ||
                   isSoldOut ||
                   ((availableSizes.length > 0 || listing?.size_value) &&
@@ -1696,7 +1704,7 @@ export default function ProductDetailPage() {
                     !selectedSize) ||
                   isSoldOut
                 }
-                className={`w-full border-0 rounded-2xl shadow-lg h-12 ${
+                className={`w-full border-0 rounded-xl shadow-sm h-12 ${
                   isSoldOut
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
@@ -2152,6 +2160,35 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      <Dialog open={productDetailsOpen} onOpenChange={setProductDetailsOpen}>
+        <DialogContent
+          showCloseButton={false}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            productDetailsTriggerRef.current?.focus({ preventScroll: true });
+          }}
+          className="flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-3xl flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl"
+        >
+          <button type="button" aria-label="Close product details" onClick={() => setProductDetailsOpen(false)} className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div className="shrink-0 border-b border-gray-200 px-4 py-4 pr-12 sm:px-6 sm:pr-12">
+            <DialogTitle className="text-xl font-bold text-gray-900">Product details</DialogTitle>
+            <DialogDescription className="mt-1 text-sm text-gray-600">
+              {listing?.title}
+            </DialogDescription>
+          </div>
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
+            <ProductDescriptionDetails sections={productDescription.sections} />
+          </div>
+          <div className="shrink-0 border-t border-gray-200 px-4 py-3 sm:px-6">
+            <Button variant="outline" onClick={() => setProductDetailsOpen(false)} className="h-11 w-full rounded-xl">
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Buyer Reviews — shown first when reviews exist */}
       {reviews.length > 0 && (
         <section className="px-4 py-6 lg:px-8">
@@ -2255,6 +2292,72 @@ export default function ProductDetailPage() {
       {/* Blog Teaser — internal linking for SEO */}
       <BlogTeaser posts={blogPosts} heading="Read From The Plug Journal" />
 
+      <aside
+        aria-label="Product purchase options"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)] lg:hidden"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="shrink-0 text-xl font-bold text-gray-900">
+            {showStartingPrice && <span className="mr-1 text-xs font-medium text-gray-500">From</span>}
+            ₹{currentPrice.toLocaleString("en-IN")}
+          </p>
+          {(availableSizes.length > 0 || listing?.size_value) && (
+            <button
+              type="button"
+              onClick={scrollToSizes}
+              aria-label={selectedSize ? `Change size, currently ${formatDisplaySize(listing?.brand, selectedSize)}` : "Select size"}
+              className="min-h-11 min-w-11 text-right text-xs font-medium text-purple-700 underline underline-offset-4"
+            >
+              {selectedSize ? formatDisplaySize(listing?.brand, selectedSize) : "Select size"}
+            </button>
+          )}
+        </div>
+        {isPreOrderPaused ? (
+          <div className="mt-1 flex items-start gap-2 rounded-xl bg-violet-50 px-3 py-2 text-xs text-violet-800">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <p>{openDateTime ? `Pre-orders open ${openDateTime}` : "Pre-order opening date to be announced"}</p>
+          </div>
+        ) : (
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              disabled={isSoldOut || isItemInCart() || needsSizeSelection || isCheckingPurchase}
+              onClick={() => {
+                if (!isPreOrderProduct && APP_CONFIG.ORDERS_PAUSED && !isCurrentSelectionInstantShip()) {
+                  setOrdersPausedOpen(true);
+                  return;
+                }
+                handleAddToCart(listing?.seller_details);
+              }}
+              className="h-12 rounded-xl text-sm"
+            >
+              <ShoppingCart className="h-4 w-4" aria-hidden="true" />
+              {isSoldOut ? "Sold out" : isItemInCart() ? "In cart" : "Add to cart"}
+            </Button>
+            <Button
+              disabled={isSoldOut || isCheckingPurchase}
+              onClick={() => {
+                if (needsSizeSelection) {
+                  scrollToSizes();
+                } else if (isPreOrderProduct) {
+                  handlePreOrderClick();
+                } else {
+                  handleBuyNowClick();
+                }
+              }}
+              className="h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-sm text-white"
+            >
+              {isSoldOut
+                ? "Sold out"
+                : isCheckingPurchase
+                  ? "Checking…"
+                  : needsSizeSelection
+                    ? "Select size"
+                    : isPreOrderProduct ? "Pre-order now" : "Buy now"}
+            </Button>
+          </div>
+        )}
+      </aside>
 
       {/* Bottom spacing */}
       <div className="h-8"></div>
