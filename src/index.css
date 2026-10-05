@@ -4,6 +4,14 @@
 
 /* Theme configuration */
 @theme {
+  /* Site-wide typography: lighter UI emphasis with readable headings. */
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-weight-semibold: 500;
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 600;
+  --font-weight-black: 600;
+
   /* Container settings */
   --container-center: true;
   --container-padding: 2rem;
