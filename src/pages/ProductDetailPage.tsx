@@ -426,11 +426,33 @@ export default function ProductDetailPage() {
     return map;
   };
 
+  const initialVariantSizesMap = buildVariantSizesMap();
+  const initialVariant = (preSelectedSize
+    ? initialVariants.find((variant) =>
+        initialVariantSizesMap[variant.id]?.some(
+          (size) => size.size_value === preSelectedSize && !size.is_sold,
+        ),
+      )
+    : undefined)
+    ?? initialVariants.find((variant) =>
+      initialVariantSizesMap[variant.id]?.some(
+        (size) => size.is_instant_ship && !size.is_sold,
+      ),
+    )
+    ?? initialVariants[0];
+  const initialAvailableSizes = initialVariant
+    ? initialVariantSizesMap[initialVariant.id] ?? []
+    : legacySizes;
+  const initialVariantImageIndex = initialVariant?.image_url
+    ? initialImages.findIndex(
+        (image) => toStorageUrl(image.image_url) === toStorageUrl(initialVariant.image_url),
+      )
+    : -1;
+  const initialImageIndex = Math.max(0, initialVariantImageIndex);
+
   const getInitialSizeAndPrice = () => {
-    if (initialVariants.length > 0) {
-      const map = buildVariantSizesMap();
-      const firstVariant = initialVariants[0];
-      const sizes = map[firstVariant.id] ?? [];
+    if (initialVariant) {
+      const sizes = initialAvailableSizes;
       if (sizes.length > 0) {
         const target = preSelectedSize
           ? sizes.find((s) => s.size_value === preSelectedSize && !s.is_sold)
@@ -442,7 +464,7 @@ export default function ProductDetailPage() {
       }
       return {
         size: null,
-        price: firstVariant.price ?? initialListing?.price ?? null,
+        price: initialVariant.price ?? initialListing?.price ?? null,
       };
     }
     if (legacySizes.length > 0) {
@@ -475,48 +497,33 @@ export default function ProductDetailPage() {
   const [images, setImages] = useState(initialImages);
   const [variants, setVariants] = useState(initialVariants);
   const [variantSizesMap, setVariantSizesMap] = useState(() =>
-    buildVariantSizesMap(),
+    initialVariantSizesMap,
   );
   const [availableSizes, setAvailableSizes] = useState<
     { size_value: string; price: number; is_sold: boolean; is_instant_ship: boolean }[]
-  >(() => {
-    if (initialVariants.length > 0) {
-      const map = buildVariantSizesMap();
-      return map[initialVariants[0]?.id] ?? [];
-    }
-    return legacySizes;
-  });
+  >(initialAvailableSizes);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    initialVariants.length > 0 ? initialVariants[0].id : null,
+    initialVariant?.id ?? null,
   );
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(initialImageIndex);
 
   // ── Reset all loader-derived state when product ID changes ───────────────
   // useState ignores updated initialValues after first mount, so we must
   // manually sync whenever the loader provides fresh data for a new product.
   useEffect(() => {
-    const newMap = buildVariantSizesMap();
     const { size, price } = getInitialSizeAndPrice();
     setListing(initialListing);
     setImages(initialImages);
     setVariants(initialVariants);
-    setVariantSizesMap(newMap);
-    setAvailableSizes(
-      initialVariants.length > 0
-        ? (newMap[initialVariants[0]?.id] ?? [])
-        : legacySizes,
-    );
-    setSelectedVariantId(
-      initialVariants.length > 0 ? initialVariants[0].id : null,
-    );
+    setVariantSizesMap(initialVariantSizesMap);
+    setAvailableSizes(initialAvailableSizes);
+    setSelectedVariantId(initialVariant?.id ?? null);
     setSelectedSize(size);
     setSelectedPrice(price);
-    setSelectedImageIndex(0);
+    setSelectedImageIndex(initialImageIndex);
     setSimilarProducts(initialSimilarProducts);
     setProductDetailsOpen(false);
-    const resetSizes = initialVariants.length > 0
-      ? (newMap[initialVariants[0]?.id] ?? [])
-      : legacySizes;
+    const resetSizes = initialAvailableSizes;
     setDeliveryTab(
       (size
         ? resetSizes.find((entry) => entry.size_value === size)?.is_instant_ship
@@ -1009,7 +1016,7 @@ export default function ProductDetailPage() {
           <div className="mb-2 lg:mb-4 lg:w-[80%]">
             <Carousel
               className="lg:max-w-lg lg:mx-auto bg-gray-100 rounded-2xl"
-              opts={{ loop: (images?.length || 0) > 1 }}
+              opts={{ loop: (images?.length || 0) > 1, startIndex: initialImageIndex }}
               setApi={setEmblaApi}
             >
               <CarouselContent className="-ml-0 relative aspect-square rounded-none">
@@ -1030,7 +1037,7 @@ export default function ProductDetailPage() {
                           toStorageUrl(image?.image_url) || "/placeholder.svg"
                         }
                         alt={`${listing?.title} - Image ${index + 1}`}
-                        priority={index === 0}
+                        priority={index === initialImageIndex}
                         className="w-full object-contain rounded-none"
                         onClick={() => {
                           setZoomOpen(true);
