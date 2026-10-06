@@ -36,11 +36,11 @@ export default function BlogTeaser({
 
   return (
     <section className="px-4 py-6">
-      <div className={centerHeading ? "relative mb-4 flex flex-col items-center gap-3 text-center sm:px-24" : "flex items-center justify-between mb-4"}>
+      <div className={centerHeading ? "relative mb-4 flex items-center justify-between gap-3 text-left sm:flex-col sm:text-center sm:px-24" : "flex items-center justify-between mb-4"}>
         <h2 className="text-xl font-bold text-gray-800">{heading}</h2>
         <Link
           to="/blog"
-          className={`text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1 ${centerHeading ? "min-h-11 sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2" : ""}`}
+          className={`text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1 ${centerHeading ? "min-h-11 shrink-0 sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2" : ""}`}
         >
           All posts <ArrowRight className="h-3.5 w-3.5" />
         </Link>

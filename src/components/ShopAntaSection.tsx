@@ -16,7 +16,7 @@ export default function ShopAntaSection({ listings }: ShopAntaSectionProps) {
 
   return (
     <section aria-labelledby="shop-anta-heading" className="px-4 py-6">
-      <div className="relative mb-6 flex flex-col items-center gap-3 text-center sm:px-24">
+      <div className="relative mb-6 flex items-center justify-between gap-3 text-left sm:flex-col sm:text-center sm:px-24">
         <div>
           <h2 id="shop-anta-heading" className="text-3xl font-bold text-gray-800 sm:text-4xl">Anta Running</h2>
           <p className="text-xs font-medium text-purple-600">{BRANDS_CONFIG.anta.tagline}</p>

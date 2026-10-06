@@ -58,7 +58,7 @@ const CategorySection = ({ categoryId, title, viewAllUrl }: Props) => {
 
   return (
     <section className="px-4 py-6">
-      <div className="relative mb-6 flex flex-col items-center gap-3 text-center sm:px-24">
+      <div className="relative mb-6 flex items-center justify-between gap-3 text-left sm:flex-col sm:text-center sm:px-24">
         <h2 className={`font-bold text-gray-800 ${categoryId === CATEGORY_IDS.SNEAKERS ? "text-3xl sm:text-4xl" : "text-2xl"}`}>{title}</h2>
         <Button
           asChild

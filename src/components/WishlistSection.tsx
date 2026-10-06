@@ -11,8 +11,8 @@ const WishlistSection = () => {
 
   return (
     <section className="px-4 py-6">
-      <div className="relative mb-6 flex flex-col items-center gap-3 text-center sm:px-24">
-        <div className="flex flex-col items-center gap-2">
+      <div className="relative mb-6 flex items-center justify-between gap-3 text-left sm:flex-col sm:text-center sm:px-24">
+        <div className="flex min-w-0 flex-col items-start gap-2 sm:items-center">
           <h2 className="text-2xl font-bold text-gray-800">Your Wishlist</h2>
         </div>
         <Button
