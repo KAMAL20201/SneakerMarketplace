@@ -25,12 +25,13 @@ import {
   Link,
 } from "react-router";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { supabase, toStorageUrl } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ProductCard from "@/components/ui/ProductCard";
 import BlogTeaser from "@/components/BlogTeaser";
 import ProductDescriptionDetails from "@/components/ProductDescriptionDetails";
@@ -1201,18 +1202,22 @@ export default function ProductDetailPage() {
                 Browse all {matchedModel.name} →
               </Link>
             )} */}
-            {productDescription.sections.length > 0 && (
+            {/* {productDescription.sections.length > 0 && (
               <div className="mt-3">
                 {productDescription.intro && (
                   <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
                     {productDescription.intro}
                   </p>
                 )}
-                <button ref={productDetailsTriggerRef} type="button" onClick={() => setProductDetailsOpen(true)} className="inline-flex min-h-11 items-center text-sm font-medium text-purple-700 hover:underline">
+                <button type="button" aria-controls="product-details-content" onClick={() => {
+                  setProductDetailsOpen(true);
+                  productDetailsTriggerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  productDetailsTriggerRef.current?.focus({ preventScroll: true });
+                }} className="inline-flex min-h-11 items-center text-sm font-medium text-purple-700 hover:underline">
                   View product details
                 </button>
               </div>
-            )}
+            )} */}
 
             {/* Delivery Timeline */}
             {/* {(availableSizes.some((s) => s.is_instant_ship) ||
@@ -2161,36 +2166,24 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      <Dialog open={productDetailsOpen} onOpenChange={setProductDetailsOpen}>
-        <DialogContent
-          showCloseButton={false}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault();
-            productDetailsTriggerRef.current?.focus({ preventScroll: true });
-          }}
-          className="flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-3xl flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl"
-        >
-          <button type="button" aria-label="Close product details" onClick={() => setProductDetailsOpen(false)} className="absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-xl text-gray-600 hover:bg-gray-100">
-            <X className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <div className="shrink-0 border-b border-gray-200 px-4 py-4 pr-12 sm:px-6 sm:pr-12">
-            <DialogTitle className="text-xl font-bold text-gray-900">Product details</DialogTitle>
-            <DialogDescription className="mt-1 text-sm text-gray-600">
-              {listing?.title}
-            </DialogDescription>
-          </div>
-          <div className="min-h-0 overflow-y-auto overscroll-contain">
-            <ProductDescriptionDetails sections={productDescription.sections} />
-          </div>
-          <div className="shrink-0 border-t border-gray-200 px-4 py-3 sm:px-6">
-            <Button variant="outline" onClick={() => setProductDetailsOpen(false)} className="h-11 w-full rounded-xl">
-              Done
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {productDescription.sections.length > 0 && (
+        <section aria-labelledby="product-details-heading" className="px-4 py-6 lg:px-8">
+          <Collapsible open={productDetailsOpen} onOpenChange={setProductDetailsOpen} className="border-y border-gray-200">
+            <h2 id="product-details-heading">
+              <CollapsibleTrigger ref={productDetailsTriggerRef} aria-controls="product-details-content" className="flex min-h-14 w-full scroll-mt-24 items-center justify-between gap-4 py-4 text-left text-lg font-bold uppercase text-gray-800 transition-colors hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 sm:text-xl">
+                Product Details
+                <ChevronDown className={`h-5 w-5 shrink-0 text-gray-600 transition-transform duration-200 ${productDetailsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+              </CollapsibleTrigger>
+            </h2>
+            {/* Keep the complete description in SSR HTML even while collapsed. */}
+            <CollapsibleContent forceMount id="product-details-content" className="data-[state=closed]:hidden">
+              <ProductDescriptionDetails sections={productDescription.sections} />
+            </CollapsibleContent>
+          </Collapsible>
+        </section>
+      )}
 
-      {/* Buyer Reviews — shown first when reviews exist */}
+      {/* Buyer Reviews */}
       {reviews.length > 0 && (
         <section className="px-4 py-6 lg:px-8">
           <div className="flex items-center justify-between mb-4">

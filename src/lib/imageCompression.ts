@@ -170,6 +170,46 @@ export async function smartCompressImages(
   return results;
 }
 
+/** Convert to high-quality WebP without resizing or repeatedly compressing. */
+export async function convertImageToWebP(file: File): Promise<File> {
+  const imageUrl = URL.createObjectURL(file);
+  const canvas = document.createElement("canvas");
+
+  try {
+    const image = new Image();
+    image.src = imageUrl;
+    await image.decode();
+
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Unable to prepare the image for WebP conversion.");
+    }
+    context.drawImage(image, 0, 0);
+
+    const webpBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob || blob.type !== "image/webp") {
+          reject(new Error("Unable to convert this image to WebP."));
+          return;
+        }
+        resolve(blob);
+      }, "image/webp", 0.95);
+    });
+
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    return new File([webpBlob], `${baseName}.webp`, {
+      type: "image/webp",
+      lastModified: file.lastModified,
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+}
+
 /**
  * Create custom compression options
  */

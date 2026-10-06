@@ -32,7 +32,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { supabase } from "@/lib/supabase";
 import { categories } from "@/constants/sellConstants";
-import { smartCompressImages } from "@/lib/imageCompression";
+import { convertImageToWebP } from "@/lib/imageCompression";
 import { ProductImage } from "@/components/ui/OptimizedImage";
 // import { PaymentMethodsService } from "@/lib/paymentMethodsService";
 // import type { PaymentMethod } from "@/lib/encryptionService";
@@ -348,16 +348,16 @@ export default function SellPage() {
 
         // Add each photo as it finishes, preserving the file picker's order.
         for (const file of filesArray) {
-          const [result] = await smartCompressImages([file]);
-          const previewUrl = URL.createObjectURL(result.compressedFile);
+          const webpFile = await convertImageToWebP(file);
+          const previewUrl = URL.createObjectURL(webpFile);
           setImages((previousImages) => [...previousImages, previewUrl]);
-          setFiles((previousFiles) => [...previousFiles, result.compressedFile]);
+          setFiles((previousFiles) => [...previousFiles, webpFile]);
         }
 
         toast.success(`${filesArray.length} photo(s) added! `);
       } catch (error) {
         console.error("Image compression failed:", error);
-        toast.error("Failed to compress images. Please try again.");
+        toast.error("Failed to convert images to WebP. Please try again.");
       } finally {
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -415,7 +415,7 @@ export default function SellPage() {
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("product-images")
-        .upload(filePath, file);
+        .upload(filePath, file, { contentType: file.type });
 
       if (uploadError) throw uploadError;
 
