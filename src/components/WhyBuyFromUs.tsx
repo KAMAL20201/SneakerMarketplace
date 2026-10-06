@@ -38,7 +38,7 @@ const TRUST_POINTS = [
 const WhyBuyFromUs = () => {
   return (
     <section className="px-4 py-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Why Buy From Us</h2>
+      <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">Why Buy From Us</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {TRUST_POINTS.map((point) => {
           const Icon = point.icon;

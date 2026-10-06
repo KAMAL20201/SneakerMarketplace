@@ -174,15 +174,12 @@ const InstagramFeed = () => {
 
   return (
     <section className="px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-purple-100">
-            <Instagram className="h-4 w-4 text-purple-600" />
-          </div>
+      <div className="relative mb-4 flex flex-col items-center gap-3 text-center sm:px-24">
+        <div className="flex flex-col items-center gap-2">
           <div>
-            <p className="font-bold text-sm text-gray-800 leading-tight">
+            <h2 className="font-bold text-sm text-gray-800 leading-tight">
               Follow us on Instagram
-            </p>
+            </h2>
             <p className="text-xs text-gray-500">@the.plugmarket</p>
           </div>
         </div>
@@ -190,7 +187,7 @@ const InstagramFeed = () => {
           href="https://instagram.com/the.plugmarket"
           target="_blank"
           rel="noopener noreferrer"
-          className="px-3 py-1.5 rounded-full border border-purple-300 bg-white text-purple-600 text-xs font-semibold hover:bg-purple-600 hover:text-white transition-colors duration-200"
+          className="flex min-h-11 items-center rounded-full border border-purple-300 bg-white px-3 py-1.5 text-xs font-semibold text-purple-600 transition-colors duration-200 hover:bg-purple-600 hover:text-white sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2"
         >
           Follow
         </a>

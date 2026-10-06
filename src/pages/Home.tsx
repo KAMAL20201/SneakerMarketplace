@@ -6,7 +6,8 @@ import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 import BlogTeaser from "@/components/BlogTeaser";
-import HotDeals from "@/components/HotDeals";
+import ShopAntaSection, { type AntaListing } from "@/components/ShopAntaSection";
+import { BRANDS_CONFIG } from "@/constants/brandsConfig";
 import InstantShipping from "@/components/InstantShipping";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
@@ -88,11 +89,15 @@ export async function loader(_: Route.LoaderArgs) {
     .order("sort_order", { ascending: true })
     .then((r) => r.data ?? []);
 
-  const hotDealsPromise = ssrSupabase
-    .from("hot_deals_with_images")
-    .select("*")
+  const antaProductsPromise = ssrSupabase
+    .from("listings_with_images")
+    .select("id, slug, title, brand, price, min_price, retail_price, condition, size_value, image_url")
+    .eq("status", "active")
+    .ilike("brand", BRANDS_CONFIG.anta.dbValue)
     .order("created_at", { ascending: false })
-    .limit(10)
+    .order("id", { ascending: false })
+    .range(0, 7)
+    .returns<AntaListing[]>()
     .then((r) => r.data ?? []);
 
   // Reduced from 30 → 8: only ~4-6 cards are visible in the initial viewport.
@@ -130,7 +135,7 @@ export async function loader(_: Route.LoaderArgs) {
     {
       banners,
       // Unawaited promises — React Router v7 streams these as they resolve.
-      hotDeals: hotDealsPromise,
+      antaProducts: antaProductsPromise,
       newDrops: newDropsPromise,
       blogPosts: blogPostsPromise,
     },
@@ -149,7 +154,7 @@ export function shouldRevalidate() {
 }
 
 const Home = () => {
-  const { banners, hotDeals, newDrops, blogPosts } =
+  const { banners, antaProducts, newDrops, blogPosts } =
     useLoaderData<typeof loader>();
   useEffect(() => {
     // Only run the auth callback flow when opened as a popup (e.g. Google OAuth redirect).
@@ -207,7 +212,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen [&_section_h2]:uppercase">
       {/* <Helmet>
         <title>
           The Plug Market - Authentic Sneakers & Streetwear Marketplace
@@ -262,7 +267,7 @@ const Home = () => {
       <Suspense
         fallback={
           <section className="px-4 py-6">
-            <div className="h-8 w-40 bg-gray-200 rounded animate-pulse mb-4" />
+            <div className="mx-auto h-8 w-40 bg-gray-200 rounded animate-pulse mb-4" />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
@@ -323,10 +328,10 @@ const Home = () => {
       </section>
       */}
 
-      {/* Hot Deals Section — streamed */}
+      {/* Shop Anta Section — streamed */}
       <Suspense fallback={null}>
-        <Await resolve={hotDeals} errorElement={null}>
-          {(deals) => <HotDeals initialDeals={deals} />}
+        <Await resolve={antaProducts} errorElement={null}>
+          {(listings: AntaListing[]) => <ShopAntaSection listings={listings} />}
         </Await>
       </Suspense>
 
@@ -440,7 +445,7 @@ const Home = () => {
       {/* Blog Teaser — streamed, bottom of page */}
       <Suspense fallback={null}>
         <Await resolve={blogPosts} errorElement={null}>
-          {(posts) => <BlogTeaser posts={posts} />}
+          {(posts) => <BlogTeaser posts={posts} centerHeading />}
         </Await>
       </Suspense>
 
@@ -448,7 +453,7 @@ const Home = () => {
       {/* <HowItWorks /> */}
 
       {/* FAQ Section */}
-      <FAQSection />
+      <FAQSection centerHeading />
 
       {/* Bottom spacing */}
       <div className="h-8"></div>

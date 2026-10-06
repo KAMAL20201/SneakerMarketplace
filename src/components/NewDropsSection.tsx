@@ -1,5 +1,4 @@
 import { Link } from "react-router";
-import { Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -51,17 +50,14 @@ const NewDropsSection = ({
 
   return (
     <section className="px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-2xl bg-gradient-to-br from-orange-500 to-pink-500">
-            <Zap className="h-5 w-5 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800">New Drops</h2>
+      <div className="relative mb-6 flex flex-col items-center gap-3 text-center sm:px-24">
+        <div className="flex flex-col items-center gap-2">
+          <h2 className="text-3xl font-bold text-gray-800 sm:text-4xl">New Drops</h2>
         </div>
         <Button
           asChild
           variant="ghost"
-          className="text-purple-600 hover:text-purple-700 font-semibold"
+          className="min-h-11 font-semibold text-purple-600 hover:text-purple-700 sm:absolute sm:right-0 sm:top-1/2 sm:-translate-y-1/2"
         >
           <Link to={ROUTE_NAMES.NEW_DROPS}>View All</Link>
         </Button>

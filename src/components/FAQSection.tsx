@@ -244,6 +244,7 @@ interface FAQSectionProps {
   heading?: string;
   /** Show the category filter chips */
   showFilter?: boolean;
+  centerHeading?: boolean;
 }
 
 function FAQAccordion({
@@ -312,6 +313,7 @@ export default function FAQSection({
   categories,
   heading = "Frequently Asked Questions",
   showFilter = true,
+  centerHeading = false,
 }: Omit<FAQSectionProps, "limit">) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [activeFilter, setActiveFilter] = useState<string>("all");
@@ -343,10 +345,12 @@ export default function FAQSection({
   return (
     <section className="px-4 py-10 lg:px-8">
         {/* Heading */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 shadow">
-            <HelpCircle className="h-5 w-5 text-white" />
-          </div>
+        <div className={centerHeading ? "mb-6 flex flex-col items-center gap-2 text-center" : "flex items-center gap-3 mb-6"}>
+          {!centerHeading && (
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 shadow">
+              <HelpCircle className="h-5 w-5 text-white" />
+            </div>
+          )}
           <h2 className="text-2xl font-bold text-gray-900">{heading}</h2>
         </div>
 

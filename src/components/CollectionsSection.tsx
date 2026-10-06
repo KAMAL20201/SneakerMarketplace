@@ -15,7 +15,7 @@ const gradients = [
 const CollectionsSection = () => {
   return (
     <section className="px-4 py-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 text-center">
         <h2 className="text-2xl font-bold text-gray-800">Shop by Collection</h2>
       </div>
 

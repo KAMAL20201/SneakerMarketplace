@@ -131,7 +131,7 @@ const BrandChip = ({ brand }: { brand: SpotlightBrand }) => {
 const BrandSpotlight = () => {
   return (
     <section className="px-4 py-4">
-      <h2 className="text-lg font-bold mb-3 text-gray-800">Shop by Brand</h2>
+      <h2 className="mb-3 text-center text-lg font-bold text-gray-800">Shop by Brand</h2>
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {SPOTLIGHT_BRANDS.map((brand) => (
           <BrandChip key={brand.href} brand={brand} />
