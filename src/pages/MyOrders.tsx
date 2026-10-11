@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -121,6 +122,24 @@ const formatDate = (dateString: string) => {
     month: "short",
     day: "numeric",
   });
+};
+
+const isOrderInDateRange = (createdAt: string, fromDate: string, toDate: string): boolean => {
+  if (!fromDate && !toDate) return true;
+
+  const orderTime = new Date(createdAt).getTime();
+  if (!Number.isFinite(orderTime)) return false;
+
+  if (fromDate && orderTime < new Date(`${fromDate}T00:00:00`).getTime()) return false;
+
+  if (toDate) {
+    // Use the next local midnight to include the whole end day, including DST changes.
+    const endExclusive = new Date(`${toDate}T00:00:00`);
+    endExclusive.setDate(endExclusive.getDate() + 1);
+    if (orderTime >= endExclusive.getTime()) return false;
+  }
+
+  return true;
 };
 
 const formatPrice = (price: number) => {
@@ -273,6 +292,8 @@ const MyOrders = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabStatus>("all");
   const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
 
   // Ship Now modal state
   const [shipModalOpen, setShipModalOpen] = useState(false);
@@ -599,7 +620,11 @@ const MyOrders = () => {
       })
     : intlFilteredOrders;
 
-  const filteredOrders = [...searchFilteredOrders].sort((a, b) => {
+  const dateFilteredOrders = searchFilteredOrders.filter((order) =>
+    isOrderInDateRange(order.created_at, fromDate, toDate)
+  );
+
+  const filteredOrders = [...dateFilteredOrders].sort((a, b) => {
     const aTime = new Date(a.created_at ?? 0).getTime();
     const bTime = new Date(b.created_at ?? 0).getTime();
     return sortOrder === "newest" ? bTime - aTime : aTime - bTime;
@@ -632,6 +657,18 @@ const MyOrders = () => {
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
+    setSellCurrentPage(1);
+  };
+
+  const handleDateChange = (field: "from" | "to", value: string): void => {
+    const nextFrom = field === "from" ? value : fromDate;
+    const nextTo = field === "to" ? value : toDate;
+    if (nextFrom && nextTo && nextFrom > nextTo) {
+      toast.error("From date must be on or before To date.");
+      return;
+    }
+    if (field === "from") setFromDate(value);
+    else setToDate(value);
     setSellCurrentPage(1);
   };
 
@@ -696,6 +733,44 @@ const MyOrders = () => {
               </>
             )}
           </button>
+        </div>
+
+        <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-end">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <Label htmlFor="orders-from-date">From date</Label>
+            <Input
+              id="orders-from-date"
+              type="date"
+              value={fromDate}
+              max={toDate || undefined}
+              onChange={(event) => handleDateChange("from", event.target.value)}
+              className="h-11 w-full min-w-0 rounded-2xl bg-white/60 border-gray-200 focus:border-purple-400"
+            />
+          </div>
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <Label htmlFor="orders-to-date">To date</Label>
+            <Input
+              id="orders-to-date"
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(event) => handleDateChange("to", event.target.value)}
+              className="h-11 w-full min-w-0 rounded-2xl bg-white/60 border-gray-200 focus:border-purple-400"
+            />
+          </div>
+          {(fromDate || toDate) && (
+            <Button
+              variant="outline"
+              className="h-11 rounded-2xl"
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+                setSellCurrentPage(1);
+              }}
+            >
+              Clear dates
+            </Button>
+          )}
         </div>
 
         {/* Status Tabs */}
@@ -768,7 +843,12 @@ const MyOrders = () => {
         {/* Sell Orders */}
         <div className="space-y-6">
           {filteredOrders.length === 0 ? (
-            <EmptyOrdersState />
+            sellOrders.length === 0 ? <EmptyOrdersState /> : (
+              <div className="glass-card rounded-3xl p-8 text-center" role="status">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">No matching orders</h3>
+                <p className="text-gray-600">Try adjusting your dates, search, or status filters.</p>
+              </div>
+            )
           ) : (
             <>
               <div className="space-y-6">

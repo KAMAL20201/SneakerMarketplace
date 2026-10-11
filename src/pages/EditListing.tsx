@@ -11,6 +11,7 @@ import {
   Trash2,
   ToggleLeft,
   ToggleRight,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ interface VariantSize {
   size_value: string;
   price: number | string;
   is_sold: boolean;
+  is_instant_ship: boolean;
 }
 
 interface Variant {
@@ -116,13 +118,13 @@ const EditListing = () => {
         supabase
           .from("product_variants")
           .select(
-            "id, color_name, color_hex, display_order, product_variant_sizes(id, size_value, price, is_sold)"
+            "id, color_name, color_hex, display_order, product_variant_sizes(id, size_value, price, is_sold, is_instant_ship)"
           )
           .eq("listing_id", data.id)
           .order("display_order"),
         supabase
           .from("product_listing_sizes")
-          .select("id, size_value, price, is_sold")
+          .select("id, size_value, price, is_sold, is_instant_ship")
           .eq("listing_id", data.id),
       ]);
 
@@ -141,6 +143,7 @@ const EditListing = () => {
                 size_value: s.size_value,
                 price: s.price != null ? String(s.price) : String(data.price ?? ""),
                 is_sold: !!s.is_sold,
+                is_instant_ship: s.is_instant_ship === true,
               })),
           }))
         );
@@ -157,6 +160,7 @@ const EditListing = () => {
               size_value: s.size_value,
               price: s.price != null ? String(s.price) : String(data.price ?? ""),
               is_sold: !!s.is_sold,
+              is_instant_ship: s.is_instant_ship === true,
             }))
         );
       }
@@ -1083,6 +1087,12 @@ const SizeCard = ({
           >
             {inStock ? "In Stock" : "Sold Out"}
           </span>
+          {size.is_instant_ship && (
+            <Badge className="gap-1 bg-amber-100 text-amber-800 border-amber-200 text-[11px] whitespace-nowrap">
+              <Zap className="h-3 w-3" aria-hidden="true" />
+              Instant Ship
+            </Badge>
+          )}
         </div>
 
         <button
