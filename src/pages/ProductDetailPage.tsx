@@ -1411,6 +1411,24 @@ export default function ProductDetailPage() {
                       </button>
                     </div>
 
+                    {listing?.slug === "dynafish-xiaonian-5403ef" && (
+                      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:p-4">
+                        <p className="text-sm font-semibold text-amber-900">
+                          Sizing note
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-amber-900">
+                          UK 7 and UK 9 are not available in this model. If you
+                          usually wear either size, choose half a size up: UK 7.5
+                          or UK 9.5, respectively.
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-amber-900">
+                          For the best fit, use the centimetre (cm) measurements
+                          in the Size Guide to choose your size, rather than
+                          relying on UK sizing alone.
+                        </p>
+                      </div>
+                    )}
+
                     <p className="mb-4 text-sm text-gray-500" aria-live="polite">
                       {selectedSize
                         ? `Selected size: ${formatDisplaySize(listing?.brand, selectedSize)}`
