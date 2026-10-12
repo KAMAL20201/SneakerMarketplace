@@ -6,6 +6,8 @@ import {
   GripVertical,
   ImagePlus,
   Loader2,
+  Minus,
+  Plus,
   Save,
   Star,
   Trash2,
@@ -24,6 +26,10 @@ import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { toast } from "sonner";
 import { compareSizes } from "@/constants/sizeCharts";
+import { useAdmin } from "@/hooks/useAdmin";
+import { adjustSizeQuantity } from "@/lib/inventoryService";
+import { parseStockQuantity, toggleStockQuantity } from "@/lib/inventoryQuantity";
+import type { InventoryTable } from "@/types/inventory";
 
 
 interface VariantSize {
@@ -32,6 +38,24 @@ interface VariantSize {
   price: number | string;
   is_sold: boolean;
   is_instant_ship: boolean;
+  quantity: string;
+  initialQuantity: number;
+}
+
+interface StoredVariantSize {
+  id: string;
+  size_value: string;
+  price: number | null;
+  is_sold: boolean;
+  is_instant_ship: boolean;
+  quantity?: number;
+}
+
+interface StoredVariant {
+  id: string;
+  color_name: string;
+  color_hex: string | null;
+  product_variant_sizes: StoredVariantSize[];
 }
 
 interface Variant {
@@ -52,6 +76,7 @@ interface ListingImage {
 const EditListing = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -74,6 +99,7 @@ const EditListing = () => {
   const [variants, setVariants] = useState<Variant[]>([]);
   const [legacySizes, setLegacySizes] = useState<VariantSize[]>([]);
   const [bulkPrice, setBulkPrice] = useState("");
+  const [inventoryReady, setInventoryReady] = useState(false);
 
   const allSizes = [...variants.flatMap((v) => v.sizes), ...legacySizes];
   const hasSizeData = allSizes.length > 0;
@@ -87,6 +113,7 @@ const EditListing = () => {
   const fetchListing = async () => {
     try {
       setLoading(true);
+      setError(null);
 
       const { data, error } = await supabase
         .from("listings_with_images")
@@ -118,32 +145,41 @@ const EditListing = () => {
         supabase
           .from("product_variants")
           .select(
-            "id, color_name, color_hex, display_order, product_variant_sizes(id, size_value, price, is_sold, is_instant_ship)"
+            "id, color_name, color_hex, display_order, product_variant_sizes(*)"
           )
           .eq("listing_id", data.id)
           .order("display_order"),
         supabase
           .from("product_listing_sizes")
-          .select("id, size_value, price, is_sold, is_instant_ship")
+          .select("*")
           .eq("listing_id", data.id),
       ]);
 
+      if (variantRes.error) throw new Error(variantRes.error.message);
+      if (legacyRes.error) throw new Error(legacyRes.error.message);
+      const storedVariants = (variantRes.data ?? []) as unknown as StoredVariant[];
+      const storedLegacySizes = (legacyRes.data ?? []) as unknown as StoredVariantSize[];
+      const storedSizes = [...storedVariants.flatMap((variant) => variant.product_variant_sizes), ...storedLegacySizes];
+      setInventoryReady(storedSizes.length > 0 && storedSizes.every((size) => typeof size.quantity === "number"));
+
       if (variantRes.data) {
         setVariants(
-          variantRes.data.map((v: any) => ({
+          storedVariants.map((v) => ({
             id: v.id,
             color_name: v.color_name,
             color_hex: v.color_hex,
             sizes: [...(v.product_variant_sizes || [])]
-              .sort((a: any, b: any) =>
+              .sort((a, b) =>
                 compareSizes(a.size_value, b.size_value)
               )
-              .map((s: any) => ({
+              .map((s) => ({
                 id: s.id,
                 size_value: s.size_value,
                 price: s.price != null ? String(s.price) : String(data.price ?? ""),
                 is_sold: !!s.is_sold,
                 is_instant_ship: s.is_instant_ship === true,
+                quantity: s.quantity === undefined ? "" : String(s.quantity),
+                initialQuantity: s.quantity ?? 0,
               })),
           }))
         );
@@ -151,46 +187,52 @@ const EditListing = () => {
 
       if (legacyRes.data) {
         setLegacySizes(
-          [...legacyRes.data]
-            .sort((a: any, b: any) =>
+          [...storedLegacySizes]
+            .sort((a, b) =>
               compareSizes(a.size_value, b.size_value)
             )
-            .map((s: any) => ({
+            .map((s) => ({
               id: s.id,
               size_value: s.size_value,
               price: s.price != null ? String(s.price) : String(data.price ?? ""),
               is_sold: !!s.is_sold,
               is_instant_ship: s.is_instant_ship === true,
+              quantity: s.quantity === undefined ? "" : String(s.quantity),
+              initialQuantity: s.quantity ?? 0,
             }))
         );
       }
     } catch (err) {
       console.error("Error fetching listing:", err);
-      setError("Failed to load listing");
+      setError(err instanceof Error ? err.message : "Failed to load listing");
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleVariantSize = (variantId: string, sizeId: string) => {
-    setVariants((prev) =>
-      prev.map((v) =>
-        v.id === variantId
-          ? {
-              ...v,
-              sizes: v.sizes.map((s) =>
-                s.id === sizeId ? { ...s, is_sold: !s.is_sold } : s
-              ),
-            }
-          : v
-      )
-    );
+  const updateSizeQuantity = (sizeId: string, quantity: string) => {
+    const updateSize = (size: VariantSize): VariantSize => size.id === sizeId
+      ? { ...size, quantity, is_sold: parseStockQuantity(quantity) === 0 }
+      : size;
+    setVariants((previous) => previous.map((variant) => ({
+      ...variant, sizes: variant.sizes.map(updateSize),
+    })));
+    setLegacySizes((previous) => previous.map(updateSize));
   };
 
-  const toggleLegacySize = (sizeId: string) => {
-    setLegacySizes((prev) =>
-      prev.map((s) => (s.id === sizeId ? { ...s, is_sold: !s.is_sold } : s))
-    );
+  const saveSizeQuantity = async (table: InventoryTable, size: VariantSize) => {
+    const quantity = parseStockQuantity(size.quantity);
+    if (quantity === null) throw new Error(`Enter a valid whole-number quantity for ${size.size_value}`);
+    if (quantity === size.initialQuantity) return;
+    const savedQuantity = await adjustSizeQuantity(table, size.id, quantity - size.initialQuantity, size.initialQuantity);
+    const updateSize = (current: VariantSize): VariantSize => current.id === size.id
+      ? { ...current, initialQuantity: savedQuantity }
+      : current;
+    // Keep successful adjustments as the baseline if a later size fails to save.
+    setVariants((previous) => previous.map((variant) => ({
+      ...variant, sizes: variant.sizes.map(updateSize),
+    })));
+    setLegacySizes((previous) => previous.map(updateSize));
   };
 
   const updateVariantSizePrice = (
@@ -474,14 +516,24 @@ const EditListing = () => {
     try {
       setSaving(true);
 
-      // Update variant sizes in parallel (both price and is_sold)
+      if (inventoryReady && allSizes.some((size) => parseStockQuantity(size.quantity) === null)) {
+        throw new Error("Enter whole-number quantities between 0 and 2147483647");
+      }
+      // Save only edited quantities, checking the loaded count to protect concurrent sales.
+      if (inventoryReady) {
+        for (const variant of variants) {
+          for (const size of variant.sizes) await saveSizeQuantity("product_variant_sizes", size);
+        }
+        for (const size of legacySizes) await saveSizeQuantity("product_listing_sizes", size);
+      }
+
+      // Price updates must not overwrite stock changed by another admin or order.
       if (variants.length > 0) {
         const updates = variants.flatMap((v) =>
           v.sizes.map((s) =>
             supabase
               .from("product_variant_sizes")
               .update({
-                is_sold: s.is_sold,
                 price: parseFloat(String(s.price)),
               })
               .eq("id", s.id)
@@ -505,13 +557,12 @@ const EditListing = () => {
         await Promise.all(variantPriceUpdates);
       }
 
-      // Update legacy sizes in parallel (both price and is_sold)
+      // Update legacy size prices.
       if (legacySizes.length > 0) {
         const updates = legacySizes.map((s) =>
           supabase
             .from("product_listing_sizes")
             .update({
-              is_sold: s.is_sold,
               price: parseFloat(String(s.price)),
             })
             .eq("id", s.id)
@@ -521,22 +572,15 @@ const EditListing = () => {
         if (failed?.error) throw failed.error;
       }
 
-      // Derive listing status
-      const canToggleStock = ["active", "sold"].includes(listing.status);
-      let newStatus = listing.status;
-      if (canToggleStock) {
-        if (hasSizeData) {
-          // If every size is sold → mark listing as sold; otherwise keep active
-          const allSold = allSizes.every((s) => s.is_sold);
-          newStatus = allSold ? "sold" : "active";
-        } else {
-          newStatus = isInStock ? "active" : "sold";
-        }
+      const listingUpdates: { price: number; status?: string } = { price: finalPrice };
+      // Size inventory RPCs maintain listing status using current database stock.
+      if (!hasSizeData && ["active", "sold"].includes(listing.status)) {
+        listingUpdates.status = isInStock ? "active" : "sold";
       }
 
       const { error: listingError } = await supabase
         .from("product_listings")
-        .update({ price: finalPrice, status: newStatus })
+        .update(listingUpdates)
         .eq("id", listing.id);
 
       if (listingError) throw listingError;
@@ -545,7 +589,7 @@ const EditListing = () => {
       await fetchListing();
     } catch (err) {
       console.error("Error updating listing:", err);
-      toast.error("Failed to update listing");
+      toast.error(err instanceof Error ? err.message : "Failed to update listing");
     } finally {
       setSaving(false);
     }
@@ -592,7 +636,7 @@ const EditListing = () => {
     );
   }
 
-  const canToggleStock = ["active", "sold"].includes(listing?.status);
+  const canToggleStock = isAdmin && ["active", "sold"].includes(listing?.status);
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -892,10 +936,16 @@ const EditListing = () => {
                 Sizes & Pricing
               </CardTitle>
               <p className="text-sm text-gray-500">
-                Set individual prices and toggle stock availability for each size.
+                Set individual prices and stock quantities for each size. Changes are saved with Save Changes.
               </p>
             </CardHeader>
             <CardContent className="p-6 pt-2 space-y-6">
+              {!inventoryReady && (
+                <p role="status" className="text-sm text-amber-800 bg-amber-50 px-4 py-3 rounded-xl">
+                  Quantity setup is pending. Your variants, sizes, and prices are available;
+                  stock changes will be enabled after the inventory migration is applied.
+                </p>
+              )}
               {/* Quick apply bulk price */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-purple-50/70 rounded-2xl border border-purple-100">
                 <div>
@@ -955,10 +1005,11 @@ const EditListing = () => {
                         <SizeCard
                           key={size.id}
                           size={size}
-                          disabled={!canToggleStock}
+                          disabled={!inventoryReady || !canToggleStock || saving}
                           onToggle={() =>
-                            toggleVariantSize(variant.id, size.id)
+                            updateSizeQuantity(size.id, toggleStockQuantity(size.quantity, size.initialQuantity))
                           }
+                          onQuantityChange={(quantity) => updateSizeQuantity(size.id, quantity)}
                           onPriceChange={(newPrice) =>
                             updateVariantSizePrice(variant.id, size.id, newPrice)
                           }
@@ -976,8 +1027,9 @@ const EditListing = () => {
                     <SizeCard
                       key={size.id}
                       size={size}
-                      disabled={!canToggleStock}
-                      onToggle={() => toggleLegacySize(size.id)}
+                      disabled={!inventoryReady || !canToggleStock || saving}
+                      onToggle={() => updateSizeQuantity(size.id, toggleStockQuantity(size.quantity, size.initialQuantity))}
+                      onQuantityChange={(quantity) => updateSizeQuantity(size.id, quantity)}
                       onPriceChange={(newPrice) =>
                         updateLegacySizePrice(size.id, newPrice)
                       }
@@ -988,7 +1040,7 @@ const EditListing = () => {
 
               {!canToggleStock && (
                 <p className="text-sm text-gray-500 bg-gray-50 px-4 py-3 rounded-xl">
-                  Stock availability cannot be changed while the listing is{" "}
+                  {!isAdmin ? "Only admins can change stock quantities. Listing status: " : "Stock availability cannot be changed while the listing is "}
                   <span className="font-semibold capitalize">
                     {listing.status.replace("_", " ")}
                   </span>
@@ -998,13 +1050,13 @@ const EditListing = () => {
 
               {/* Summary */}
               <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
-                {canToggleStock && (
+                {canToggleStock && inventoryReady && (
                   <>
                     <Badge className="bg-green-100 text-green-700 border-0 rounded-xl px-3 py-1 text-xs">
-                      {allSizes.filter((s) => !s.is_sold).length} in stock
+                      {allSizes.reduce((total, size) => total + (parseStockQuantity(size.quantity) ?? 0), 0)} units in stock
                     </Badge>
                     <Badge className="bg-red-100 text-red-600 border-0 rounded-xl px-3 py-1 text-xs">
-                      {allSizes.filter((s) => s.is_sold).length} out of stock
+                      {allSizes.filter((s) => s.is_sold).length} sizes out of stock
                     </Badge>
                   </>
                 )}
@@ -1053,6 +1105,7 @@ interface SizeCardProps {
   disabled: boolean;
   onToggle: () => void;
   onPriceChange: (newPrice: string) => void;
+  onQuantityChange: (quantity: string) => void;
 }
 
 const SizeCard = ({
@@ -1060,9 +1113,11 @@ const SizeCard = ({
   disabled,
   onToggle,
   onPriceChange,
+  onQuantityChange,
 }: SizeCardProps) => {
   const inStock = !size.is_sold;
   const numPrice = parseFloat(String(size.price));
+  const quantity = parseStockQuantity(size.quantity);
 
   return (
     <div
@@ -1115,6 +1170,39 @@ const SizeCard = ({
             <ToggleLeft className="h-6 w-6" />
           )}
         </button>
+      </div>
+
+      <div className="space-y-1 mb-3">
+        <Label htmlFor={`quantity-${size.id}`} className="text-[11px] text-gray-500 font-medium">
+          Quantity
+        </Label>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button" variant="outline"
+            className="h-11 w-11 shrink-0 p-0 rounded-xl"
+            aria-label={`Decrease quantity for ${size.size_value}`}
+            disabled={disabled || quantity === null || quantity === 0}
+            onClick={() => onQuantityChange(String(Math.max(0, (quantity ?? 0) - 1)))}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <Input
+            id={`quantity-${size.id}`} type="number" inputMode="numeric"
+            min={0} max={2147483647} step={1} value={size.quantity}
+            aria-invalid={quantity === null} disabled={disabled}
+            onChange={(event) => onQuantityChange(event.target.value)}
+            className="h-11 min-w-0 text-center rounded-xl bg-white border-gray-200"
+          />
+          <Button
+            type="button" variant="outline"
+            className="h-11 w-11 shrink-0 p-0 rounded-xl"
+            aria-label={`Increase quantity for ${size.size_value}`}
+            disabled={disabled || quantity === 2147483647}
+            onClick={() => onQuantityChange(String(Math.min(2147483647, (quantity ?? 0) + 1)))}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Price input */}

@@ -115,9 +115,9 @@ export async function loader({ params }: Route.LoaderArgs) {
       product_images (id, image_url, is_poster_image, display_order),
       product_variants (
         id, color_name, color_hex, price, display_order, image_url,
-        product_variant_sizes (variant_id, size_value, price, is_sold, is_instant_ship)
+        product_variant_sizes (variant_id, size_value, price, is_sold, is_instant_ship, quantity)
       ),
-      product_listing_sizes (size_value, price, is_sold, is_instant_ship),
+      product_listing_sizes (size_value, price, is_sold, is_instant_ship, quantity),
       reviews (id, rating, comment, reviewer_name, verified_purchase, created_at, is_approved)`,
     )
     .eq("slug", param)
@@ -154,6 +154,7 @@ export async function loader({ params }: Route.LoaderArgs) {
       price: number;
       is_sold: boolean;
       is_instant_ship: boolean;
+      quantity: number;
     }>,
   );
   const legacySizes = rawVariants.length === 0 ? allLegacySizesData : [];
@@ -409,7 +410,7 @@ export default function ProductDetailPage() {
   const buildVariantSizesMap = () => {
     const map: Record<
       string,
-      { size_value: string; price: number; is_sold: boolean; is_instant_ship: boolean }[]
+      { size_value: string; price: number; is_sold: boolean; is_instant_ship: boolean; quantity: number }[]
     > = {};
     for (const vs of variantSizesData) {
       if (!map[vs.variant_id]) map[vs.variant_id] = [];
@@ -418,6 +419,7 @@ export default function ProductDetailPage() {
         price: vs.price,
         is_sold: vs.is_sold,
         is_instant_ship: vs.is_instant_ship ?? false,
+        quantity: vs.quantity,
       });
     }
     for (const variantId of Object.keys(map)) {
@@ -500,7 +502,7 @@ export default function ProductDetailPage() {
     initialVariantSizesMap,
   );
   const [availableSizes, setAvailableSizes] = useState<
-    { size_value: string; price: number; is_sold: boolean; is_instant_ship: boolean }[]
+    { size_value: string; price: number; is_sold: boolean; is_instant_ship: boolean; quantity: number }[]
   >(initialAvailableSizes);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     initialVariant?.id ?? null,
@@ -1532,6 +1534,11 @@ export default function ProductDetailPage() {
                               ) : (
                                 <span className="text-sm uppercase">
                                   {s.size_value.toUpperCase()}
+                                </span>
+                              )}
+                              {!s.is_sold && (
+                                <span className={`text-[11px] font-medium ${isSelected ? "text-white/90" : "text-amber-700"}`}>
+                                  Only {s.quantity} left
                                 </span>
                               )}
                               {(s.is_sold || hasDifferentSizePrices) && (

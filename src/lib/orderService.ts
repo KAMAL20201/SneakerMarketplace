@@ -316,22 +316,6 @@ export class OrderService {
           continue;
         }
 
-        // Mark the specific size (or whole product for single-size) as sold
-        // This prevents race conditions where multiple users try to buy the same item
-        const markedAsSold = await StockValidationService.markSizeAsSold(
-          item.productId,
-          item.size,
-          item.variantId
-        );
-
-        if (!markedAsSold) {
-          logger.error(
-            `Failed to mark product ${item.productName} (size ${item.size}) as sold - already sold or unavailable`
-          );
-          failedItems.push(item.productName);
-          continue;
-        }
-
         // Use the server-side price for the specific ordered size from the DB.
         const verifiedPrice: number = await this.getSizePriceFromDB(
           item.productId,
@@ -348,6 +332,7 @@ export class OrderService {
           payment_id: paymentId,
           razorpay_order_id: razorpayOrderId,
           amount: verifiedPrice,
+          status: "pending_payment",
           shipping_address: shippingAddress || undefined,
           // [GUEST CHECKOUT] Store guest buyer contact info on each order
           buyer_email: buyerDetails.email,
@@ -628,6 +613,13 @@ export class OrderService {
       console.error("Error fetching seller orders:", error);
       throw error;
     }
+  }
+
+  // Confirmation and stock deduction happen in one database transaction.
+  static async confirmPayment(orderId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc("confirm_order_payment", { p_order_id: orderId });
+    if (error) throw new Error(error.message);
+    return data === true;
   }
 
   // Update order status

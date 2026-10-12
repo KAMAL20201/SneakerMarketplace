@@ -58,7 +58,6 @@ import { supabase, toStorageUrl } from "@/lib/supabase";
 import { getEuSizeFromUk, sortSizes } from "@/constants/sizeCharts";
 import { toast } from "sonner";
 import ShipNowModal from "@/components/ShipNowModal";
-import { StockValidationService } from "@/lib/stockValidationService";
 import { EmailService, type OrderEmailData } from "@/lib/emailService";
 
 // Use the OrderType from orderService, but extend it with product details
@@ -451,29 +450,9 @@ const MyOrders = () => {
     try {
       const isConfirmedOrder = variantOrder.status === "confirmed";
 
-      // 1. Release old size/variant stock if the order is confirmed
-      if (isConfirmedOrder && variantOrder.ordered_size) {
-        await StockValidationService.releaseSize(
-          variantOrder.product_id,
-          variantOrder.ordered_size,
-          variantOrder.variant_id
-        );
-      }
-
-      // 2. Reserve new size/variant stock if the order is confirmed
-      if (isConfirmedOrder) {
-        const markedAsSold = await StockValidationService.markSizeAsSold(
-          variantOrder.product_id,
-          selectedSize.size_value,
-          selectedVariant?.id
-        );
-        if (!markedAsSold) {
-          toast.warning("Note: Failed to mark new variant size as sold in stock. It might be already sold out.");
-        }
-      }
-
+      // The database transfers stock atomically when a confirmed order changes size.
       // 3. Update order in database
-      const updateFields: Record<string, any> = {
+      const updateFields: Record<string, unknown> = {
         variant_id: selectedVariant?.id || null,
         variant_name: selectedVariant?.id ? selectedVariant.color_name : (selectedVariant ? "Default" : null),
         ordered_size: selectedSize.size_value,
@@ -1074,16 +1053,11 @@ const MyOrders = () => {
                                 className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white border-gray-200 rounded-2xl"
                                 onClick={async () => {
                                   try {
-                                    // Mark the ordered size (or whole product for single-size) as sold
-                                    await StockValidationService.markSizeAsSold(
-                                      order.product_id,
-                                      order.ordered_size || "",
-                                      order.variant_id,
-                                    );
-                                    await OrderService.updateOrderStatus(
-                                      order.id,
-                                      "confirmed",
-                                    );
+                                    const confirmed = await OrderService.confirmPayment(order.id);
+                                    if (!confirmed) {
+                                      toast.info("This order has already been processed. Refresh orders to see its current status.");
+                                      return;
+                                    }
 
                                     // Redeem the coupon now that payment is confirmed.
                                     // finalize_coupon_redemption is a no-op if no coupon is
@@ -1191,8 +1165,8 @@ const MyOrders = () => {
                                     toast.success(
                                       "Payment confirmed! Order is now ready to ship.",
                                     );
-                                  } catch {
-                                    toast.error("Failed to confirm payment");
+                                  } catch (error: unknown) {
+                                    toast.error(error instanceof Error ? error.message : "Failed to confirm payment. Check available stock and retry.");
                                   }
                                 }}
                               >
