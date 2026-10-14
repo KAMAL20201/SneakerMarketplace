@@ -21,7 +21,6 @@ export const ROUTE_NAMES = {
   ADMIN_NEW_DROPS: "/admin/new-drops",
   ADMIN_HOT_DEALS: "/admin/hot-deals",
   ADMIN_RUNNING_SNEAKERS: "/admin/running-sneakers",
-  ADMIN_INSTANT_SHIP: "/admin/instant-ship",
   ADMIN_MESSAGES: "/admin/messages",
   ADMIN_ORDERS: "/admin/orders",
   ADMIN_PENDING_PAYMENTS: "/admin/pending-payments",

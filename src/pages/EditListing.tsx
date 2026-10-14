@@ -38,6 +38,7 @@ interface VariantSize {
   price: number | string;
   is_sold: boolean;
   is_instant_ship: boolean;
+  initialInstantShip: boolean;
   quantity: string;
   initialQuantity: number;
 }
@@ -178,6 +179,7 @@ const EditListing = () => {
                 price: s.price != null ? String(s.price) : String(data.price ?? ""),
                 is_sold: !!s.is_sold,
                 is_instant_ship: s.is_instant_ship === true,
+                initialInstantShip: s.is_instant_ship === true,
                 quantity: s.quantity === undefined ? "" : String(s.quantity),
                 initialQuantity: s.quantity ?? 0,
               })),
@@ -197,6 +199,7 @@ const EditListing = () => {
               price: s.price != null ? String(s.price) : String(data.price ?? ""),
               is_sold: !!s.is_sold,
               is_instant_ship: s.is_instant_ship === true,
+              initialInstantShip: s.is_instant_ship === true,
               quantity: s.quantity === undefined ? "" : String(s.quantity),
               initialQuantity: s.quantity ?? 0,
             }))
@@ -214,6 +217,18 @@ const EditListing = () => {
     const updateSize = (size: VariantSize): VariantSize => size.id === sizeId
       ? { ...size, quantity, is_sold: parseStockQuantity(quantity) === 0 }
       : size;
+    setVariants((previous) => previous.map((variant) => ({
+      ...variant, sizes: variant.sizes.map(updateSize),
+    })));
+    setLegacySizes((previous) => previous.map(updateSize));
+  };
+
+  const updateSizeInstantShip = (sizeId: string, instantShip: boolean) => {
+    if (!isAdmin || saving) return;
+    const updateSize = (size: VariantSize): VariantSize =>
+      size.id === sizeId && (!size.is_sold || size.is_instant_ship)
+        ? { ...size, is_instant_ship: instantShip }
+        : size;
     setVariants((previous) => previous.map((variant) => ({
       ...variant, sizes: variant.sizes.map(updateSize),
     })));
@@ -535,8 +550,13 @@ const EditListing = () => {
               .from("product_variant_sizes")
               .update({
                 price: parseFloat(String(s.price)),
+                ...(isAdmin && s.is_instant_ship !== s.initialInstantShip
+                  ? { is_instant_ship: s.is_instant_ship }
+                  : {}),
               })
               .eq("id", s.id)
+              .select("id")
+              .single()
           )
         );
         const results = await Promise.all(updates);
@@ -564,8 +584,13 @@ const EditListing = () => {
             .from("product_listing_sizes")
             .update({
               price: parseFloat(String(s.price)),
+              ...(isAdmin && s.is_instant_ship !== s.initialInstantShip
+                ? { is_instant_ship: s.is_instant_ship }
+                : {}),
             })
             .eq("id", s.id)
+            .select("id")
+            .single()
         );
         const results = await Promise.all(updates);
         const failed = results.find((r) => r.error);
@@ -1006,6 +1031,8 @@ const EditListing = () => {
                           key={size.id}
                           size={size}
                           disabled={!inventoryReady || !canToggleStock || saving}
+                          onInstantShipChange={isAdmin ? (instantShip) => updateSizeInstantShip(size.id, instantShip) : undefined}
+                          instantShipDisabled={saving}
                           onToggle={() =>
                             updateSizeQuantity(size.id, toggleStockQuantity(size.quantity, size.initialQuantity))
                           }
@@ -1028,6 +1055,8 @@ const EditListing = () => {
                       key={size.id}
                       size={size}
                       disabled={!inventoryReady || !canToggleStock || saving}
+                      onInstantShipChange={isAdmin ? (instantShip) => updateSizeInstantShip(size.id, instantShip) : undefined}
+                      instantShipDisabled={saving}
                       onToggle={() => updateSizeQuantity(size.id, toggleStockQuantity(size.quantity, size.initialQuantity))}
                       onQuantityChange={(quantity) => updateSizeQuantity(size.id, quantity)}
                       onPriceChange={(newPrice) =>
@@ -1106,6 +1135,8 @@ interface SizeCardProps {
   onToggle: () => void;
   onPriceChange: (newPrice: string) => void;
   onQuantityChange: (quantity: string) => void;
+  onInstantShipChange?: (instantShip: boolean) => void;
+  instantShipDisabled: boolean;
 }
 
 const SizeCard = ({
@@ -1114,6 +1145,8 @@ const SizeCard = ({
   onToggle,
   onPriceChange,
   onQuantityChange,
+  onInstantShipChange,
+  instantShipDisabled,
 }: SizeCardProps) => {
   const inStock = !size.is_sold;
   const numPrice = parseFloat(String(size.price));
@@ -1171,6 +1204,31 @@ const SizeCard = ({
           )}
         </button>
       </div>
+
+      {onInstantShipChange && (
+        <Button
+          type="button"
+          variant="outline"
+          role="switch"
+          aria-checked={size.is_instant_ship}
+          aria-label={`Instant Ship for size ${size.size_value}`}
+          disabled={instantShipDisabled || (size.is_sold && !size.is_instant_ship)}
+          onClick={() => onInstantShipChange(!size.is_instant_ship)}
+          className={`min-h-[44px] mb-3 w-full justify-between rounded-xl ${
+            size.is_instant_ship ? "border-amber-200 bg-amber-50 text-amber-800" : "text-gray-500"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Zap className="h-4 w-4" aria-hidden="true" />
+            Instant Ship
+          </span>
+          {size.is_instant_ship ? (
+            <ToggleRight className="h-6 w-6" aria-hidden="true" />
+          ) : (
+            <ToggleLeft className="h-6 w-6" aria-hidden="true" />
+          )}
+        </Button>
+      )}
 
       <div className="space-y-1 mb-3">
         <Label htmlFor={`quantity-${size.id}`} className="text-[11px] text-gray-500 font-medium">
