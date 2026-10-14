@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useId, useState } from "react";
 import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
+import { ROUTE_NAMES } from "@/constants/enums";
 import { usePayment } from "../contexts/PaymentContext";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 // [GUEST CHECKOUT] toast import commented out - no login error toast needed
 // import { toast } from "sonner";
 // [GUEST CHECKOUT] Auth imports commented out - guests can pay without login
@@ -48,7 +51,12 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   shippingAddress,
 }) => {
   const { initiatePayment, isLoading, error } = usePayment();
+  const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState<boolean>(false);
+  const policyCheckboxId = useId();
+
   const handlePayment = async () => {
+    if (!hasAcceptedPolicies || disabled || isLoading) return;
+
     try {
       await initiatePayment(currency, metadata, items, shippingAddress, amount, couponCode);
     } catch (err) {
@@ -58,9 +66,44 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
 
   return (
     <div className="space-y-2">
+      <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2">
+        <Checkbox
+          id={policyCheckboxId}
+          checked={hasAcceptedPolicies}
+          onCheckedChange={(checked) => setHasAcceptedPolicies(checked === true)}
+          disabled={isLoading}
+          required
+          className="size-5"
+        />
+        <Label
+          htmlFor={policyCheckboxId}
+          className="block min-h-11 flex-1 cursor-pointer whitespace-nowrap py-3 text-[11px] font-normal leading-5 text-gray-700 sm:text-xs"
+        >
+          I’ve read &amp; agree to{" "}
+          <a
+            href={ROUTE_NAMES.SHIPPING_POLICY}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-700 underline underline-offset-2"
+            aria-label="Shipping Policy"
+          >
+            Shipping
+          </a>{" "}
+          &amp;{" "}
+          <a
+            href={ROUTE_NAMES.RETURNS}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-700 underline underline-offset-2"
+            aria-label="Returns Policy"
+          >
+            Returns
+          </a>.
+        </Label>
+      </div>
       <Button
         onClick={handlePayment}
-        disabled={disabled || isLoading}
+        disabled={!hasAcceptedPolicies || disabled || isLoading}
         variant={variant}
         size={size}
         className={`${className} ${isLoading ? "cursor-not-allowed" : ""}`}

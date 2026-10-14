@@ -86,7 +86,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                 <DialogTitle>Confirm & Order</DialogTitle>
               </DialogHeader>
             </div>
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-4">
               {/* Courier Selector */}
               <CourierSelector selected={selectedCourier} onChange={setSelectedCourier} />
 
@@ -179,7 +179,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
             </div>
 
             {/* Footer with Payment */}
-            <div className="border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
+            <div className="shrink-0 border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
               <PaymentButton
                 amount={discountedAmount}
                 couponCode={appliedCoupon?.code ?? null}

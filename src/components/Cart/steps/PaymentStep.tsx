@@ -68,7 +68,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Content */}
-      <div className="h-[70%] overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {/* Courier Selector */}
         <CourierSelector selected={selectedCourier} onChange={setSelectedCourier} />
 
@@ -184,7 +184,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
       </div>
 
       {/* Payment Button */}
-      <div className="fixed bottom-2 w-full border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
+      <div className="shrink-0 w-full border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
         <PaymentButton
           amount={discountedTotal}
           couponCode={appliedCoupon?.code ?? null}
