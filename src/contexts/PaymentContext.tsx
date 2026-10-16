@@ -26,6 +26,11 @@ import type { CartItem } from "../lib/orderService";
 
 import type { ShippingAddress } from "@/types/shipping";
 import { WhatsAppService, WHATSAPP_NUMBER } from "@/lib/whatsappService";
+import {
+  DEFAULT_SHIPPING_MODE,
+  SHIPPING_METHODS,
+  type ShippingMode,
+} from "@/constants/shipping";
 
 const UPI_ID = import.meta.env.VITE_UPI_ID || "";
 
@@ -42,6 +47,17 @@ interface UpiPaymentState {
   amount: number;
   couponCode?: string | null;
   discountAmount?: number;
+  shippingMode: ShippingMode;
+  codAmount: number;
+}
+
+/** Delivery and discount details chosen at checkout */
+export interface CheckoutDetails {
+  shippingMode: ShippingMode;
+  /** Collected by the courier on delivery (Air only) */
+  codAmount: number;
+  /** Coupon discount already applied to the totals */
+  couponDiscountAmount: number;
 }
 
 interface PaymentContextType {
@@ -53,7 +69,8 @@ interface PaymentContextType {
     items?: CartItem[],
     shippingAddress?: ShippingAddress,
     amount?: number,
-    couponCode?: string | null
+    couponCode?: string | null,
+    checkoutDetails?: CheckoutDetails
   ) => Promise<void>;
   clearError: () => void;
 }
@@ -83,7 +100,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   // [GUEST CHECKOUT] user may be null for guest checkout — that's expected
   const { user } = useAuth();
-  const { toggleCart, isOpen, clearCart, selectedCourier } = useCart();
+  const { toggleCart, isOpen, clearCart } = useCart();
   const navigate = useNavigate();
   const clearError = useCallback(() => {
     setError(null);
@@ -96,7 +113,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
       items: CartItem[] = [],
       shippingAddress?: ShippingAddress,
       amount?: number,
-      couponCode?: string | null
+      couponCode?: string | null,
+      checkoutDetails?: CheckoutDetails
     ) => {
       try {
         setIsLoading(true);
@@ -113,12 +131,12 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         // Process checkout - create orders with pending_payment status
         // Returns the created orders so we can use their real DB IDs in the WhatsApp message
         if (metadata.type === "cart_checkout" && items.length > 0) {
-          // Calculate the coupon discount amount from the difference between the
-          // undiscounted cart total (client prices) and the discounted amount the
-          // user is being charged. This is the pre-validated discount from validate_coupon.
-          const clientTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-          const couponDiscountAmount =
-            couponCode && amount != null ? Math.max(clientTotal - amount, 0) : 0;
+          // Pre-validated discount from validate_coupon, passed in by the checkout UI.
+          const couponDiscountAmount = couponCode
+            ? checkoutDetails?.couponDiscountAmount ?? 0
+            : 0;
+          const shippingMode = checkoutDetails?.shippingMode ?? DEFAULT_SHIPPING_MODE;
+          const codAmount = checkoutDetails?.codAmount ?? 0;
 
           const createdOrders = await OrderService.processWhatsAppCheckout(
             items,
@@ -133,17 +151,22 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             },
             shippingAddress,
             couponCode ?? null,
-            couponDiscountAmount
+            couponDiscountAmount,
+            shippingMode
           );
 
           // Build WhatsApp URL using the real DB order IDs so they match the dashboard
           const orderIds = createdOrders.map((o) => o.id);
           const discountAmount = couponDiscountAmount > 0 ? couponDiscountAmount : undefined;
+          const method = SHIPPING_METHODS[shippingMode];
+          const deliveryLabel =
+            `${method.label} (${method.courier})` +
+            (codAmount > 0 ? ` · ₹${codAmount} cash on delivery` : "");
           const whatsappURL = WhatsAppService.generateWhatsAppURL(
             orderIds,
             couponCode ?? null,
             discountAmount,
-            selectedCourier.label
+            deliveryLabel
           );
 
           // Always show the payment dialog
@@ -153,6 +176,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             amount: amount || 0,
             couponCode,
             discountAmount,
+            shippingMode,
+            codAmount,
           });
         }
       } catch (error) {
@@ -165,7 +190,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setIsLoading(false);
       }
     },
-    [user, selectedCourier]
+    [user]
   );
 
   const handleWhatsAppConfirm = useCallback(() => {
@@ -238,7 +263,15 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             <p className="text-3xl font-extrabold text-gray-900">
               ₹{upiPaymentState?.amount}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">Amount to pay</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {upiPaymentState && upiPaymentState.codAmount > 0 ? "Amount to pay now" : "Amount to pay"}
+            </p>
+            {upiPaymentState && upiPaymentState.codAmount > 0 && (
+              <p className="text-xs text-amber-700 font-medium mt-1">
+                + ₹{upiPaymentState.codAmount} cash on delivery to{" "}
+                {SHIPPING_METHODS[upiPaymentState.shippingMode].courier}
+              </p>
+            )}
             {upiPaymentState?.couponCode && (
               <p className="text-xs text-green-600 font-medium mt-1">
                 Coupon {upiPaymentState.couponCode} applied (−₹{upiPaymentState.discountAmount})

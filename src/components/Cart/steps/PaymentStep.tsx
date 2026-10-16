@@ -7,7 +7,11 @@ import type { ShippingAddress } from "@/types/shipping";
 import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
 import { ArrowLeft, Tag } from "lucide-react";
-import { CourierSelector } from "@/components/checkout/CourierSelector";
+import {
+  PaymentSplitRows,
+  ShippingMethodSelector,
+} from "@/components/checkout/ShippingMethodSelector";
+import { computeCheckoutTotals, type ShippingMode } from "@/constants/shipping";
 import { formatDisplaySize } from "@/constants/sizeCharts";
 
 interface PaymentStepProps {
@@ -46,13 +50,22 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
     items,
     totalPrice,
     shippingFee,
-    selectedCourier,
-    setSelectedCourier,
+    shippingMode,
+    setShippingMode,
+    codAmount,
+    payNowAmount,
     appliedCoupon,
     applyDiscount,
     removeCoupon,
     discountedTotal,
   } = useCart();
+
+  const discountAmount = appliedCoupon?.discountAmount ?? 0;
+  const shippingFeesByMode: Record<ShippingMode, number> = {
+    surface: computeCheckoutTotals(items, "surface", discountAmount).shippingFee,
+    air: computeCheckoutTotals(items, "air", discountAmount).shippingFee,
+  };
+  const itemCount = items.reduce((count, item) => count + item.quantity, 0);
 
 
   const productIds = items.map((i) => i.productId);
@@ -69,8 +82,12 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
     <div className="flex flex-col h-full">
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        {/* Courier Selector */}
-        <CourierSelector selected={selectedCourier} onChange={setSelectedCourier} />
+        <ShippingMethodSelector
+          selected={shippingMode}
+          onChange={setShippingMode}
+          shippingFees={shippingFeesByMode}
+          itemCount={itemCount}
+        />
 
         {/* Order Summary */}
         <div className="bg-gray-50 rounded-lg p-4">
@@ -166,6 +183,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
                 <span>Total</span>
                 <span>₹{discountedTotal}</span>
               </div>
+              <PaymentSplitRows codAmount={codAmount} payNowAmount={payNowAmount} />
             </div>
           </div>
 
@@ -186,8 +204,13 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({
       {/* Payment Button */}
       <div className="shrink-0 w-full border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
         <PaymentButton
-          amount={discountedTotal}
+          amount={payNowAmount}
           couponCode={appliedCoupon?.code ?? null}
+          checkoutDetails={{
+            shippingMode,
+            codAmount,
+            couponDiscountAmount: discountAmount,
+          }}
           metadata={{
             cart_items: items.map((item) => item.id).join(","),
             item_count: items.length.toString(),

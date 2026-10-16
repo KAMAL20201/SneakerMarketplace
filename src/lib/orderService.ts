@@ -3,6 +3,12 @@ import { EmailService, type OrderEmailData } from "./emailService";
 import { logger } from "@/components/ui/Logger";
 import type { ShippingAddress } from "@/types/shipping";
 import { StockValidationService } from "./stockValidationService";
+import {
+  DEFAULT_SHIPPING_MODE,
+  getItemCodAmount,
+  getItemShippingFee,
+  type ShippingMode,
+} from "@/constants/shipping";
 
 export interface Order {
   id: string;
@@ -34,6 +40,11 @@ export interface Order {
   is_deleted?: boolean;
   /** Admin-only international tracking reference — not shown to customers */
   intl_tracking_number?: string | null;
+  shipping_mode?: ShippingMode;
+  /** Shipping charged for this order row */
+  shipping_fee?: number;
+  /** Amount the courier collects on delivery (Air only) */
+  cod_amount?: number;
   created_at: string;
   updated_at: string;
 }
@@ -54,6 +65,9 @@ export interface CreateOrderRequest {
   ordered_size?: string;
   variant_id?: string | null;
   variant_name?: string | null;
+  shipping_mode?: ShippingMode;
+  shipping_fee?: number;
+  cod_amount?: number;
 }
 
 export interface CartItem {
@@ -103,6 +117,9 @@ export class OrderService {
           p_ordered_size: orderData.ordered_size || null,
           p_variant_id: orderData.variant_id || null,
           p_variant_name: orderData.variant_name || null,
+          p_shipping_mode: orderData.shipping_mode ?? DEFAULT_SHIPPING_MODE,
+          p_shipping_fee: orderData.shipping_fee ?? 0,
+          p_cod_amount: orderData.cod_amount ?? 0,
         });
 
         if (error) throw error;
@@ -126,6 +143,9 @@ export class OrderService {
         ordered_size: orderData.ordered_size || null,
         variant_id: orderData.variant_id || null,
         variant_name: orderData.variant_name || null,
+        shipping_mode: orderData.shipping_mode ?? DEFAULT_SHIPPING_MODE,
+        shipping_fee: orderData.shipping_fee ?? 0,
+        cod_amount: orderData.cod_amount ?? 0,
       };
       if (orderData.payment_id) {
         insertData.payment_id = orderData.payment_id;
@@ -250,6 +270,7 @@ export class OrderService {
           price,
           brand,
           user_id,
+          shipping_charges,
           product_images (
             image_url,
             is_poster_image
@@ -430,7 +451,8 @@ export class OrderService {
     buyerDetails: { full_name: string; email: string; phone?: string },
     shippingAddress?: ShippingAddress,
     couponCode?: string | null,
-    couponDiscountAmount?: number
+    couponDiscountAmount?: number,
+    shippingMode: ShippingMode = DEFAULT_SHIPPING_MODE
   ): Promise<Order[]> {
     try {
       // Validate all cart items are still available before processing
@@ -478,6 +500,11 @@ export class OrderService {
           productDetails.price
         );
 
+        const shippingFee = getItemShippingFee(
+          shippingMode,
+          productDetails.shipping_charges ?? undefined
+        );
+
         // Create order with pending_payment status
         const order = await this.createOrder({
           buyer_id: buyerId,
@@ -492,6 +519,9 @@ export class OrderService {
           ordered_size: item.size,
           variant_id: item.variantId || null,
           variant_name: item.variantName || null,
+          shipping_mode: shippingMode,
+          shipping_fee: shippingFee,
+          cod_amount: getItemCodAmount(shippingMode, verifiedPrice, shippingFee),
         });
 
         orders.push(order);

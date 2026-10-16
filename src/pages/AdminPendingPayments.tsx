@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/lib/supabase";
 import { EmailService, type OrderEmailData } from "@/lib/emailService";
+import type { ShippingMode } from "@/constants/shipping";
 import { toast } from "sonner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -41,6 +42,9 @@ interface PendingOrder {
   status: string;
   ordered_size: string | null;
   variant_name: string | null;
+  shipping_mode: ShippingMode;
+  shipping_fee: number;
+  cod_amount: number;
   created_at: string;
   product_listings: {
     title: string;
@@ -208,7 +212,7 @@ function AdminPendingPayments() {
       .select(`
         id, product_id, buyer_email, buyer_name, buyer_phone,
         amount, original_amount, discount_amount, status,
-        ordered_size, variant_name, created_at,
+        ordered_size, variant_name, shipping_mode, shipping_fee, cod_amount, created_at,
         product_listings (
           title, brand, slug,
           product_images ( image_url, is_poster_image )
@@ -803,6 +807,20 @@ function AdminPendingPayments() {
                         {order.original_amount != null && order.original_amount > order.amount && (
                           <p className="text-xs text-gray-400 line-through">
                             {formatINR(order.original_amount)}
+                          </p>
+                        )}
+                        {order.shipping_mode === "air" ? (
+                          <>
+                            <Badge className="bg-sky-100 text-sky-700 border-sky-200 text-[10px] mt-0.5">
+                              Air · {formatINR(order.cod_amount)} COD
+                            </Badge>
+                            <p className="text-[11px] text-gray-500 mt-0.5">
+                              Prepaid {formatINR(Math.max(order.amount + order.shipping_fee - order.cod_amount, 0))}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Surface · +{formatINR(order.shipping_fee)} ship
                           </p>
                         )}
                       </div>

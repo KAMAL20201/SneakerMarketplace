@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
 import { ROUTE_NAMES } from "@/constants/enums";
-import { usePayment } from "../contexts/PaymentContext";
+import { usePayment, type CheckoutDetails } from "../contexts/PaymentContext";
 import { Loader2 } from "lucide-react";
 // [GUEST CHECKOUT] toast import commented out - no login error toast needed
 // import { toast } from "sonner";
@@ -26,6 +26,8 @@ interface PaymentButtonProps {
   className?: string;
   buttonText?: string;
   couponCode?: string | null;
+  /** Delivery method, COD and coupon discount chosen at checkout */
+  checkoutDetails?: CheckoutDetails;
   variant?:
     | "default"
     | "destructive"
@@ -44,6 +46,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   className = "",
   buttonText,
   couponCode = null,
+  checkoutDetails,
   variant = "default",
   size = "default",
   disabled = false,
@@ -58,7 +61,15 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
     if (!hasAcceptedPolicies || disabled || isLoading) return;
 
     try {
-      await initiatePayment(currency, metadata, items, shippingAddress, amount, couponCode);
+      await initiatePayment(
+        currency,
+        metadata,
+        items,
+        shippingAddress,
+        amount,
+        couponCode,
+        checkoutDetails
+      );
     } catch (err) {
       console.error("Order failed:", err);
     }
@@ -116,7 +127,10 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
         ) : (
           <>
             {/* <MessageCircle className="mr-2 h-4 w-4" /> */}
-            {buttonText || `Checkout Now -  ₹${amount}`}
+            {buttonText ||
+              (checkoutDetails && checkoutDetails.codAmount > 0
+                ? `Pay ₹${amount} now`
+                : `Checkout Now -  ₹${amount}`)}
           </>
         )}
       </Button>

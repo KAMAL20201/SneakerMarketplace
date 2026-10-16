@@ -21,7 +21,7 @@ export class WhatsAppService {
         ? `\n*Coupon:* ${couponCode}${discountAmount ? ` (−₹${discountAmount})` : ""}`
         : "";
     const courierLine = courierLabel
-      ? `\n*Courier:* ${courierLabel}`
+      ? `\n*Delivery:* ${courierLabel}`
       : "";
 
     if (shortIds.length === 1) {

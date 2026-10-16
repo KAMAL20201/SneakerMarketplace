@@ -3,27 +3,11 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import type { CartItem } from "@/lib/orderService";
 import { supabase } from "../lib/supabase";
 import type { AppliedCoupon } from "@/types/coupon";
-
-
-/** Unique identifier for each courier option */
-export type CourierOptionId = "speed_post_air" | "dtdc_surface" | "delhivery_surface";
-
-export interface CourierOption {
-  id: CourierOptionId;
-  label: string;
-  price: number;
-  eta: string;
-}
-
-/** Default courier option */
-export const DEFAULT_COURIER: CourierOption = {
-  id: "standard_delivery",
-  label: "Delhivery / BlueDart",
-  price: 300,
-  eta: "5–7 days",
-};
-
-export const COURIER_OPTIONS: CourierOption[] = [DEFAULT_COURIER];
+import {
+  DEFAULT_SHIPPING_MODE,
+  computeCheckoutTotals,
+  type ShippingMode,
+} from "@/constants/shipping";
 
 
 interface CartContextType {
@@ -36,11 +20,15 @@ interface CartContextType {
   toggleCart: () => void;
   clearCart: () => void;
   totalPrice: number;
-  /** Sum of per-item shipping charges from the DB */
+  /** Sum of per-item shipping charges for the selected delivery method */
   shippingFee: number;
-  /** Currently selected courier option */
-  selectedCourier: CourierOption;
-  setSelectedCourier: (courier: CourierOption) => void;
+  /** Delivery method chosen at checkout (Surface = prepaid, Air = partial COD) */
+  shippingMode: ShippingMode;
+  setShippingMode: (mode: ShippingMode) => void;
+  /** Amount collected by the courier on delivery (Air only) */
+  codAmount: number;
+  /** Amount the buyer pays now via UPI / bank transfer */
+  payNowAmount: number;
   pricesUpdated: boolean;
   dismissPriceUpdate: () => void;
   appliedCoupon: AppliedCoupon | null;
@@ -61,8 +49,10 @@ export const CartContext = createContext<CartContextType>({
   clearCart: () => {},
   totalPrice: 0,
   shippingFee: 0,
-  selectedCourier: COURIER_OPTIONS[0],
-  setSelectedCourier: () => {},
+  shippingMode: DEFAULT_SHIPPING_MODE,
+  setShippingMode: () => {},
+  codAmount: 0,
+  payNowAmount: 0,
   pricesUpdated: false,
   dismissPriceUpdate: () => {},
   appliedCoupon: null,
@@ -77,7 +67,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [pricesUpdated, setPricesUpdated] = useState(false);
-  const [selectedCourier, setSelectedCourier] = useState<CourierOption>(COURIER_OPTIONS[0]);
+  const [shippingMode, setShippingMode] = useState<ShippingMode>(DEFAULT_SHIPPING_MODE);
 
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const { debouncedSave, immediateSave, load, clear } = useCartStorage();
@@ -276,19 +266,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [items]);
 
-  /** Sum of per-item shipping charges from the DB */
-  const shippingFee = useMemo(() => {
-    return items.reduce(
-      (sum, item) => sum + (item.shippingCharges ?? 0) * item.quantity,
-      0
-    );
-  }, [items]);
-
-  const discountedTotal = useMemo(() => {
-    if (!appliedCoupon) return totalPrice + shippingFee;
-    return Math.max(totalPrice - appliedCoupon.discountAmount, 0) + shippingFee;
-  }, [totalPrice, shippingFee, appliedCoupon]);
-
+  const checkoutTotals = useMemo(
+    () => computeCheckoutTotals(items, shippingMode, appliedCoupon?.discountAmount ?? 0),
+    [items, shippingMode, appliedCoupon]
+  );
+  const shippingFee = checkoutTotals.shippingFee;
+  const discountedTotal = checkoutTotals.total;
 
   return (
     <CartContext.Provider
@@ -303,8 +286,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         clearCart,
         totalPrice,
         shippingFee,
-        selectedCourier,
-        setSelectedCourier,
+        shippingMode,
+        setShippingMode,
+        codAmount: checkoutTotals.codAmount,
+        payNowAmount: checkoutTotals.payNowAmount,
         pricesUpdated,
         dismissPriceUpdate,
         appliedCoupon,
