@@ -11,7 +11,9 @@ product, enter the new price, and choose its effective date/time in **IST**.
 One pending change is allowed per product. Use **Edit** in its history row to
 change its new price or effective time. Applied, cancelled and failed rows are read-only.
 Editing preserves the original price snapshot used for conflict detection.
-The Dynafish product strip follows the saved schedule automatically.
+Every product's price-increase strip follows its saved schedule automatically.
+It uses the saved old/new prices and effective time, hides for price decreases
+or unchanged prices, and disappears when the schedule is cancelled or fails.
 Refresh the history to see the current outcome.
 
 Each change sets the same selling price across the product, all size rows,

@@ -10,6 +10,7 @@ export function parseScheduledPriceNotice(value: unknown): ScheduledPriceNotice 
   if (typeof value.previous_price !== "number" || !Number.isFinite(value.previous_price)
     || typeof value.new_price !== "number" || !Number.isFinite(value.new_price)
     || typeof value.effective_at !== "string" || !Number.isFinite(Date.parse(value.effective_at))) return null;
+  if (value.previous_price < 0 || value.new_price <= value.previous_price) return null;
   return { previous_price: value.previous_price, new_price: value.new_price, effective_at: value.effective_at };
 }
 
