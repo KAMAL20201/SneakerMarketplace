@@ -52,7 +52,8 @@ import {
 import type { EmblaCarouselType } from "embla-carousel";
 import type { Route } from "./+types/ProductDetailPage";
 import FAQSection from "@/components/FAQSection";
-import PriceCountdownBanner from "@/components/PriceCountdownBanner";
+import PriceUpdateBanner from "@/components/PriceUpdateBanner";
+import { formatPriceNoticeDate, parseScheduledPriceNotice } from "@/lib/priceNotice";
 import { APP_CONFIG } from "@/config/app";
 import OrdersPausedModal from "@/components/OrdersPausedModal";
 const ReviewScreenshots = lazy(
@@ -938,6 +939,7 @@ export default function ProductDetailPage() {
     : "Shop 100% authentic sneakers and streetwear on The Plug Market.";
   const canonicalUrl = `https://theplugmarket.in/product/${productId}`;
   const productDescription = parseProductDescription(listing?.description ?? "");
+  const priceNotice = parseScheduledPriceNotice(listing?.scheduled_price_notice);
 
   return (
     <div className="min-h-screen pb-[calc(10rem+env(safe-area-inset-bottom))] lg:pb-0">
@@ -1008,6 +1010,13 @@ export default function ProductDetailPage() {
               },
             }),
           }}
+        />
+      )}
+      {listing?.slug === "dynafish-xiaonian-5403ef" && priceNotice && (
+        <PriceUpdateBanner
+          effectiveDate={formatPriceNoticeDate(priceNotice.effective_at)}
+          previousPrice={priceNotice.previous_price}
+          newPrice={priceNotice.new_price}
         />
       )}
       <div className="lg:flex lg:gap-8 lg:p-8">
@@ -1173,15 +1182,6 @@ export default function ProductDetailPage() {
               )}
             </div>
           </div>
-
-          {/* Price increase countdown — only for Dynafish Xiaonian 5403ef */}
-          {listing?.slug === "dynafish-xiaonian-5403ef" && (
-            <PriceCountdownBanner
-              deadline="2026-07-25T21:25:00+05:30"
-              currentPrice={9999}
-              newPrice={10499}
-            />
-          )}
 
           <div className="mt-3 px-4 pb-5 lg:px-0 lg:pb-6">
             {isPreOrderPaused && (

@@ -62,6 +62,7 @@ export default [
   route("admin/pending-payments", "./pages/AdminPendingPayments.tsx"),
   route("admin/sale-products/:bannerId", "./pages/AdminSaleProducts.tsx"),
   route("admin/pre-orders", "./pages/AdminPreOrders.tsx"),
+  route("admin/price-schedules", "./pages/AdminPriceSchedules.tsx"),
 
   // API resource routes (server-side only, no UI component)
   route("api/generate-description", "./api/generate-description.ts"),

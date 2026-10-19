@@ -58,6 +58,7 @@ export const ROUTE_NAMES = {
   SALE_PAGE: "/sale/:slug",
   ADMIN_SALE_PRODUCTS: "/admin/sale-products/:bannerId",
   ADMIN_PRE_ORDERS: "/admin/pre-orders",
+  ADMIN_PRICE_SCHEDULES: "/admin/price-schedules",
 } as const;
 
 // Helper functions for dynamic routes
@@ -173,6 +174,7 @@ export type PaymentMethodType =
 
 // Listing status
 export const LISTING_STATUS = {
+  ACTIVE: "active",
   DRAFT: "draft",
   UNDER_REVIEW: "under_review",
   APPROVED: "approved",
@@ -183,3 +185,10 @@ export const LISTING_STATUS = {
 
 export type ListingStatus =
   (typeof LISTING_STATUS)[keyof typeof LISTING_STATUS];
+
+export const PRICE_SCHEDULE_STATUSES = {
+  PENDING: "pending",
+  APPLIED: "applied",
+  CANCELLED: "cancelled",
+  FAILED: "failed",
+} as const;

@@ -16,9 +16,17 @@ import {
   Activity,
   Mail,
   PackageOpen,
+  CalendarClock,
 } from "lucide-react";
 
 const ADMIN_SECTIONS = [
+  {
+    title: "Scheduled Prices",
+    description: "Schedule future price changes and track their status",
+    url: ROUTE_NAMES.ADMIN_PRICE_SCHEDULES,
+    icon: CalendarClock,
+    color: "from-purple-500 to-pink-500",
+  },
   {
     title: "Review Listings",
     description: "Approve or reject submitted product listings",
