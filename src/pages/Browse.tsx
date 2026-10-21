@@ -36,6 +36,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { supabase } from "@/lib/supabase";
+import { fetchInstantShipSizes } from "@/lib/instantShipSizes";
 import { toast } from "sonner";
 import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
@@ -66,6 +67,7 @@ interface Listing {
   views: number;
   user_id: string;
   category: string;
+  instant_ship_sizes?: string[];
 }
 
 interface FilterState {
@@ -184,7 +186,7 @@ export function meta() {
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
-  const isDiwaliSale = url.pathname === ROUTE_NAMES.DIWALI_SALE;
+  const isDiwaliSale = url.pathname.replace(/\/+$/, "") === ROUTE_NAMES.DIWALI_SALE;
   const filters = {
     ...getDefaultFilters(isDiwaliSale),
     ...parseFiltersFromURL(url.searchParams, isDiwaliSale ? null : 100000),
@@ -214,11 +216,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     total_count: number;
   };
   const rows = (rpcData ?? []) as RpcRow[];
+  const instantShipSizes = isDiwaliSale
+    ? await fetchInstantShipSizes(ssrSupabase, rows.map((row) => row.id), request.signal)
+    : {};
   const listings: Listing[] = rows.map((row) => {
     const { matched_size_price, total_count, ...listing } = row;
     void matched_size_price;
     void total_count;
-    return listing;
+    return isDiwaliSale
+      ? { ...listing, instant_ship_sizes: instantShipSizes[row.id] ?? [] }
+      : listing;
   });
   const sizePrices: [string, number][] = rows
     .filter((row) => row.matched_size_price != null)
@@ -395,13 +402,19 @@ export const BrowseCatalog = ({ variant = "default" }: BrowseProps) => {
           total_count: number;
         };
         const rows = (data ?? []) as RpcRow[];
+        const instantShipSizes = isDiwaliSale
+          ? await fetchInstantShipSizes(supabase, rows.map((row) => row.id), controller.signal)
+          : {};
+        if (controller.signal.aborted) return;
 
         // Strip RPC-only fields before storing in listings state
         const newListings: Listing[] = rows.map((row) => {
           const { matched_size_price, total_count, ...rest } = row;
           void matched_size_price;
           void total_count;
-          return rest as Listing;
+          return isDiwaliSale
+            ? { ...rest, instant_ship_sizes: instantShipSizes[row.id] ?? [] }
+            : rest;
         });
 
         if (rows.length > 0) setTotalCount(Number(rows[0].total_count));
@@ -460,7 +473,8 @@ export const BrowseCatalog = ({ variant = "default" }: BrowseProps) => {
       const saved = savedBrowseStateRef.current;
       if (saved) {
         const state = JSON.parse(saved);
-        if (state.locationKey === location.key && state.listings?.length > 0) {
+        if (state.locationKey === location.key && state.listings?.length > 0 &&
+            (!isDiwaliSale || state.listings.every((listing: Listing) => Array.isArray(listing.instant_ship_sizes)))) {
           skipInitialFetchRef.current = true;
           setListings(state.listings);
           setOffset(state.offset);
@@ -1366,11 +1380,25 @@ export const BrowseCatalog = ({ variant = "default" }: BrowseProps) => {
                             retailPrice={listing.retail_price}
                           />
                         </div>
-                        <div className="flex items-center justify-between">
-                          <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
-                            {listing.size_value || "Multiple sizes"}
-                          </Badge>
-                        </div>
+                        {isDiwaliSale ? (
+                          <div className="flex flex-wrap gap-1">
+                            {listing.instant_ship_sizes?.length ? (
+                              listing.instant_ship_sizes.map((size) => (
+                                <Badge key={size} className="glass-button border-0 text-gray-700 rounded-xl text-xs">
+                                  {size}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-600">View availability</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <Badge className="glass-button border-0 text-gray-700 rounded-xl text-xs uppercase">
+                              {listing.size_value || "Multiple sizes"}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>

@@ -25,7 +25,7 @@ const BANNER_STORAGE_KEY = "orders-paused-banner-dismissed";
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
-  const isDiwaliSale = useLocation().pathname === ROUTE_NAMES.DIWALI_SALE;
+  const isDiwaliSale = useLocation().pathname.replace(/\/+$/, "") === ROUTE_NAMES.DIWALI_SALE;
 
   const [bannerVisible, setBannerVisible] = useState(() => {
     if (!APP_CONFIG.ORDERS_PAUSED) return false;

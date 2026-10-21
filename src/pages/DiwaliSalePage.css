@@ -31,6 +31,7 @@
 .diwali-catalog [class*="bg-gray-50"] { background: #ffffff05; }
 
 .diwali-catalog .glass-card { background: #fff5e5; border: 1px solid #e7bc7880; box-shadow: 0 8px 30px #10091435; }
+.diwali-catalog .glass-card .text-gray-500,
 .diwali-catalog .glass-card .text-gray-600 { color: #8f4e30; }
 .diwali-catalog .glass-card .text-gray-800,
 .diwali-catalog .glass-card .text-gray-900 { color: #382032; }
