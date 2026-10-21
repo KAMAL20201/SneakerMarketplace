@@ -2,15 +2,15 @@ import { useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router";
 
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const navigationType = useNavigationType();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // POP = back/forward button — let <ScrollRestoration /> handle position
-    if (navigationType === "POP") return;
+    // Let ScrollRestoration handle history positions and section links.
+    if (navigationType === "POP" || hash) return;
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-  }, [pathname, navigationType]);
+  }, [pathname, hash, navigationType]);
 
   return null;
 };

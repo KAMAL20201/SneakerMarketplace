@@ -5,6 +5,7 @@ export default [
   index("./pages/Home.tsx"),
   route("product/:id", "./pages/ProductDetailPage.tsx"),
   route("browse", "./pages/Browse.tsx"),
+  route("sale/diwali-sale", "./pages/DiwaliSalePage.tsx"),
   route("sneakers", "./pages/CategoryBrowse.tsx", { id: "category-sneakers" }),
   route("apparels", "./pages/CategoryBrowse.tsx", { id: "category-apparels" }),
   route("new-arrivals", "./pages/NewArrivals.tsx"),

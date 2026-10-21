@@ -10,6 +10,7 @@ export const ROUTE_NAMES = {
   CHECKOUT: "/checkout",
   PAYMENT_METHODS: "/payment-methods",
   BROWSE: "/browse",
+  DIWALI_SALE: "/sale/diwali-sale",
   EDIT_LISTING: "/edit-listing/:id",
   ADMIN_DASHBOARD: "/admin",
   ADMIN_REVIEW: "/admin/review",

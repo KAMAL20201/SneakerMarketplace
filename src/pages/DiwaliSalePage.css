@@ -1,0 +1,55 @@
+.diwali-sale-page {
+  color: #fff5df;
+  background:
+    radial-gradient(ellipse at 0 55%, #71374b35, transparent 55%),
+    radial-gradient(ellipse at 100% 90%, #8c563029, transparent 50%),
+    #241326;
+}
+.diwali-sale-page #diwali-products { border-top: 1px solid #f6c77f30; }
+.diwali-sale-divider { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; color: #f6c77f; }
+.diwali-sale-divider::before, .diwali-sale-divider::after { content: ""; width: 70px; height: 1px; background: linear-gradient(90deg, transparent, #f6c77f70, transparent); }
+.diwali-sale-eyebrow { color: #e8bc80; font-size: 10px; letter-spacing: .2em; }
+
+.diwali-catalog .gradient-text,
+.diwali-storefront header .gradient-text,
+.diwali-storefront footer .gradient-text { background: none; color: #f6c77f; -webkit-text-fill-color: #f6c77f; }
+.diwali-catalog .text-gray-600,
+.diwali-catalog .text-gray-700,
+.diwali-catalog .text-gray-900 { color: #e0c9b2; }
+.diwali-catalog .text-gray-400, .diwali-catalog .text-gray-500 { color: #d3af8c; }
+.diwali-catalog .text-blue-600, .diwali-catalog .text-red-600 { color: #f6c77f; }
+.diwali-catalog [class*="from-blue-500"] { background: #f6c77f; color: #301b2d; }
+.diwali-catalog .border { border-color: #f6c77f40; }
+.diwali-catalog input { color: #fff5df; background: transparent; border-color: #f6c77f40; }
+.diwali-catalog input::placeholder { color: #d3af8c; }
+.diwali-catalog .glass-button { color: #f6c77f; background: #f6c77f12; }
+.diwali-catalog button:not([role="checkbox"]) { min-height: 44px; min-width: 44px; }
+.diwali-catalog button[aria-label="Scroll to top"] { color: #301b2d; background: #f6c77f; }
+.diwali-catalog :is(.bg-green-50, .bg-blue-50, .bg-orange-50) { color: #f6c77f; background: #f6c77f12; border-color: #f6c77f30; }
+.diwali-catalog :is(.text-green-700, .text-blue-700, .text-orange-700) { color: #f6c77f; }
+.diwali-catalog :is(.bg-blue-100, .bg-purple-100, .bg-indigo-100, .bg-green-100) { background: #f6c77f20; color: #f6c77f; }
+.diwali-catalog [class*="bg-gray-50"] { background: #ffffff05; }
+
+.diwali-catalog .glass-card { background: #fff5e5; border: 1px solid #e7bc7880; box-shadow: 0 8px 30px #10091435; }
+.diwali-catalog .glass-card .text-gray-600 { color: #8f4e30; }
+.diwali-catalog .glass-card .text-gray-800,
+.diwali-catalog .glass-card .text-gray-900 { color: #382032; }
+.diwali-catalog .glass-card .glass-button { color: #6d4134; background: #efdbbd; }
+.diwali-product-grid .bg-gray-100 { background: #f2e6d3; }
+.diwali-product-grid [class*="from-green-500"] { background: #9b4b2e; }
+
+/* The filter drawer and sort popover render in Radix portals. */
+.diwali-catalog-menu { color: #382032; background: #fff5e5; border-color: #d6b48b; }
+.diwali-catalog-menu .glass-button { background: #efdbbd; color: #6d4134; }
+.diwali-catalog-menu button:not([role="checkbox"]) { min-height: 44px; }
+.diwali-catalog-menu [class*="from-blue-500"] { background: #f6c77f; color: #301b2d; }
+.diwali-catalog-menu :is(.bg-blue-100, .bg-blue-500) { background: #f6c77f; color: #301b2d; }
+.diwali-catalog-menu [class*="hover:bg-gray-50"]:hover { background: #efdbbd70; }
+.diwali-catalog-menu input { min-height: 44px; background: #fffaf2; border-color: #d6b48b; }
+
+.diwali-storefront .glass-navbar { color: #fff5df; background: #241326f2; border-bottom-color: #f6c77f30; }
+.diwali-storefront header .glass-button,
+.diwali-storefront header .glass-button svg { color: #fff5df; }
+.diwali-storefront header .glass-button { background: #f6c77f12; }
+.diwali-storefront footer { background: linear-gradient(135deg, #241326, #3a2038); border-top: 1px solid #f6c77f30; }
+.diwali-storefront footer a:hover { color: #f6c77f; }

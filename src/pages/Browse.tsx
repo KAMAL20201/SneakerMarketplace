@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams, useLocation, useLoaderData, data } from "react-router";
+import { useSearchParams, useLocation, useNavigationType, useLoaderData, data } from "react-router";
 import { createClient } from "@supabase/supabase-js";
-import type { Route } from "./+types/Browse";
+import type { LoaderFunctionArgs } from "react-router";
 import {
   Search,
   Package,
@@ -41,6 +41,7 @@ import { CardImage } from "@/components/ui/OptimizedImage";
 import { ProductCardSkeletonGrid } from "@/components/ui/ProductCardSkeleton";
 import {
   ROUTE_HELPERS,
+  ROUTE_NAMES,
   SNEAKER_SIZES,
   CLOTHING_SIZES,
 } from "@/constants/enums";
@@ -73,7 +74,7 @@ interface FilterState {
   brand: string[];
   category: string[];
   size: string[];
-  priceRange: [number, number];
+  priceRange: [number, number | null];
   sortBy: string;
   deals: boolean;
   instantShipping: boolean;
@@ -81,10 +82,24 @@ interface FilterState {
 
 const PAGE_SIZE = 12;
 const BROWSE_STATE_KEY = "browse_page_state";
+// The database RPC requires a numeric upper bound, even for an uncapped sale.
+const UNBOUNDED_PRICE_MAX = 1000000000000;
+
+interface BrowseProps {
+  variant?: "default" | "diwali-sale";
+}
+
+const getDefaultFilters = (instantShipping: boolean): FilterState => ({
+  search: "", condition: [], brand: [], category: [], size: [],
+  priceRange: [0, instantShipping ? null : 100000], sortBy: "newest", deals: false, instantShipping,
+});
 
 // ── URL helpers ───────────────────────────────────────────────────────────────
 
-const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
+const serializeFiltersToURL = (
+  filters: FilterState,
+  defaultMaxPrice: number | null = 100000,
+): URLSearchParams => {
   const params = new URLSearchParams();
   if (filters.search?.trim()) params.set("search", filters.search.trim());
   if (filters.condition.length > 0)
@@ -93,9 +108,11 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
   if (filters.category.length > 0)
     params.set("category", filters.category.join(","));
   if (filters.size.length > 0) params.set("size", filters.size.join(","));
-  if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) {
+  if (filters.priceRange[0] > 0 || filters.priceRange[1] !== defaultMaxPrice) {
     params.set("priceMin", filters.priceRange[0].toString());
-    params.set("priceMax", filters.priceRange[1].toString());
+    if (filters.priceRange[1] !== null) {
+      params.set("priceMax", filters.priceRange[1].toString());
+    }
   }
   if (filters.sortBy !== "newest") params.set("sortBy", filters.sortBy);
   if (filters.deals) params.set("deals", "true");
@@ -105,6 +122,7 @@ const serializeFiltersToURL = (filters: FilterState): URLSearchParams => {
 
 const parseFiltersFromURL = (
   searchParams: URLSearchParams,
+  defaultMaxPrice: number | null = 100000,
 ): Partial<FilterState> => {
   const filters: Partial<FilterState> = {};
   const search = searchParams.get("search");
@@ -122,8 +140,8 @@ const parseFiltersFromURL = (
   if (priceMin || priceMax) {
     filters.priceRange = [
       priceMin ? parseInt(priceMin) : 0,
-      priceMax ? parseInt(priceMax) : 100000,
-    ] as [number, number];
+      priceMax ? parseInt(priceMax) : defaultMaxPrice,
+    ];
   }
   const sortBy = searchParams.get("sortBy");
   if (sortBy) filters.sortBy = sortBy;
@@ -134,6 +152,8 @@ const parseFiltersFromURL = (
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+// React Router route modules also export loaders and metadata.
+// eslint-disable-next-line react-refresh/only-export-components
 export function meta() {
   return [
     { title: "Browse All Products | The Plug Market" },
@@ -158,64 +178,83 @@ export function meta() {
 }
 
 // ── Server Loader ─────────────────────────────────────────────────────────────
-// Fetches the first page with default filters so bots and first paint
+// Fetches the first page with URL filters so bots and first paint
 // get real product HTML immediately. The component takes over for all
 // subsequent pages and filtered queries via client-side fetchPage().
-export async function loader(_: Route.LoaderArgs) {
+// eslint-disable-next-line react-refresh/only-export-components
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const isDiwaliSale = url.pathname === ROUTE_NAMES.DIWALI_SALE;
+  const filters = {
+    ...getDefaultFilters(isDiwaliSale),
+    ...parseFiltersFromURL(url.searchParams, isDiwaliSale ? null : 100000),
+  };
   const ssrSupabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
   );
 
-  const { data: rpcData } = await ssrSupabase.rpc("browse_all_listings", {
-    p_categories: null,
-    p_sizes: null,
-    p_brands: null,
-    p_conditions: null,
-    p_price_min: 0,
-    p_price_max: 100000,
-    p_search: null,
-    p_sort: "newest",
+  const { data: rpcData, error } = await ssrSupabase.rpc("browse_all_listings", {
+    p_categories: filters.category.length ? filters.category : null,
+    p_sizes: filters.size.length ? filters.size : null,
+    p_brands: filters.brand.length ? filters.brand.map((brand) => brand.toLowerCase()) : null,
+    p_conditions: filters.condition.length ? filters.condition : null,
+    p_price_min: filters.priceRange[0],
+    p_price_max: filters.priceRange[1] ?? UNBOUNDED_PRICE_MAX,
+    p_search: filters.search.trim() || null,
+    p_sort: filters.sortBy,
     p_limit: PAGE_SIZE,
     p_offset: 0,
-    p_deals: false,
-  });
+    p_deals: filters.deals,
+    p_instant_shipping: isDiwaliSale || filters.instantShipping,
+  }).abortSignal(request.signal);
 
   type RpcRow = Listing & {
     matched_size_price: number | null;
     total_count: number;
   };
   const rows = (rpcData ?? []) as RpcRow[];
-  const listings: Listing[] = rows.map(
-    ({ matched_size_price: _m, total_count: _t, ...rest }) => rest as Listing,
-  );
+  const listings: Listing[] = rows.map((row) => {
+    const { matched_size_price, total_count, ...listing } = row;
+    void matched_size_price;
+    void total_count;
+    return listing;
+  });
+  const sizePrices: [string, number][] = rows
+    .filter((row) => row.matched_size_price != null)
+    .map((row) => [row.id, row.matched_size_price as number]);
   const totalCount = rows.length > 0 ? rows[0].total_count : 0;
 
   return data(
-    { listings, totalCount },
+    { listings, totalCount, sizePrices, filterKey: url.searchParams.toString(), seeded: !error },
     { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" } },
   );
 }
 
-const Browse = () => {
+// Filtering and infinite scrolling fetch on the client after the initial loader.
+// eslint-disable-next-line react-refresh/only-export-components
+export function shouldRevalidate() {
+  return false;
+}
+
+export const BrowseCatalog = ({ variant = "default" }: BrowseProps) => {
+  const isDiwaliSale = variant === "diwali-sale";
+  const browseStateKey = isDiwaliSale ? "diwali_sale_page_state" : BROWSE_STATE_KEY;
   // Seed initial listings from SSR loader — bots see real product HTML on first response
   const loaderData = useLoaderData<typeof loader>();
   // const { toggleWishlist, isInWishlist } = useWishlist();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const defaultFilters: FilterState = {
-    search: "",
-    condition: [],
-    brand: [],
-    category: [],
-    size: [],
-    priceRange: [0, 100000],
-    sortBy: "newest",
-    deals: false,
-    instantShipping: false,
+  const defaultFilters = getDefaultFilters(isDiwaliSale);
+  const hasPriceFilter = (currentFilters: FilterState): boolean =>
+    currentFilters.priceRange[0] > 0 || currentFilters.priceRange[1] !== defaultFilters.priceRange[1];
+  const serializePageFilters = (currentFilters: FilterState): URLSearchParams => {
+    const params = serializeFiltersToURL(currentFilters, defaultFilters.priceRange[1]);
+    if (isDiwaliSale) params.delete("instantShipping");
+    return params;
   };
 
-  const urlFilters = parseFiltersFromURL(searchParams);
+  const urlFilters = parseFiltersFromURL(searchParams, defaultFilters.priceRange[1]);
   const initialFilters: FilterState = { ...defaultFilters, ...urlFilters };
 
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -232,33 +271,20 @@ const Browse = () => {
 
   // ── Infinite scroll state ─────────────────────────────────────────────────
   // Seed from SSR loader — bots see real product HTML; client hydrates from this
-  const hasUrlFilters = Array.from(searchParams.keys()).some((k) =>
-    [
-      "search",
-      "condition",
-      "brand",
-      "category",
-      "size",
-      "priceMin",
-      "priceMax",
-      "sortBy",
-      "deals",
-      "instantShipping",
-    ].includes(k),
-  );
-  const ssrListings = !hasUrlFilters ? (loaderData?.listings ?? []) : [];
-  const ssrTotal = !hasUrlFilters ? (loaderData?.totalCount ?? 0) : 0;
+  const canUseLoaderData = loaderData?.seeded && loaderData.filterKey === searchParams.toString();
+  const ssrListings = canUseLoaderData ? loaderData.listings : [];
+  const ssrTotal = canUseLoaderData ? loaderData.totalCount : 0;
 
   const [listings, setListings] = useState<Listing[]>(ssrListings);
   const [offset, setOffset] = useState(ssrListings.length);
-  const [hasMore, setHasMore] = useState(ssrListings.length === PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(ssrListings.length < ssrTotal);
   const [loadingInitial, setLoadingInitial] = useState(
-    ssrListings.length === 0,
+    !canUseLoaderData,
   );
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(ssrTotal);
   const [sizePriceMap, setSizePriceMap] = useState<Map<string, number> | null>(
-    null,
+    canUseLoaderData && loaderData.sizePrices.length ? new Map(loaderData.sizePrices) : null,
   );
 
   // ── Scroll-to-top visibility ──────────────────────────────────────────────
@@ -272,7 +298,12 @@ const Browse = () => {
 
   // ── Scroll restoration refs ────────────────────────────────────────────────
   const location = useLocation();
-  const skipInitialFetchRef = useRef(false);
+  const navigationType = useNavigationType();
+  const locationKeyRef = useRef(location.key);
+  locationKeyRef.current = location.key;
+  const skipInitialFetchRef = useRef(Boolean(canUseLoaderData));
+  const requestRef = useRef<AbortController | null>(null);
+  const savedBrowseStateRef = useRef<string | null | undefined>(undefined);
   const listingsRef = useRef<Listing[]>([]);
   const offsetRef = useRef(0);
   const hasMoreRef = useRef(true);
@@ -317,6 +348,10 @@ const Browse = () => {
       currentFilters: FilterState,
       replace: boolean,
     ) => {
+      if (!replace && requestRef.current) return;
+      requestRef.current?.abort();
+      const controller = new AbortController();
+      requestRef.current = controller;
       if (replace) setLoadingInitial(true);
       else setLoadingMore(true);
 
@@ -334,7 +369,7 @@ const Browse = () => {
               ? currentFilters.condition
               : null,
           p_price_min: currentFilters.priceRange[0],
-          p_price_max: currentFilters.priceRange[1],
+          p_price_max: currentFilters.priceRange[1] ?? UNBOUNDED_PRICE_MAX,
           p_search: currentFilters.search?.trim() || null,
           p_sort: currentFilters.sortBy,
           p_limit: PAGE_SIZE,
@@ -343,13 +378,15 @@ const Browse = () => {
         };
         // Only include p_instant_shipping when true — the DB function must
         // have the updated signature (migration 20260418000001) for this to work.
-        if (currentFilters.instantShipping) {
+        if (isDiwaliSale || currentFilters.instantShipping) {
           rpcParams.p_instant_shipping = true;
         }
         const { data, error } = await supabase.rpc(
           "browse_all_listings",
           rpcParams,
-        );
+        ).abortSignal(controller.signal);
+
+        if (controller.signal.aborted) return;
 
         if (error) throw error;
 
@@ -367,13 +404,14 @@ const Browse = () => {
           return rest as Listing;
         });
 
-        if (replace) setTotalCount(rows.length > 0 ? rows[0].total_count : 0);
+        if (rows.length > 0) setTotalCount(Number(rows[0].total_count));
+        else if (replace) setTotalCount(0);
 
         setListings((prev) =>
           replace ? newListings : [...prev, ...newListings],
         );
         setOffset(fromOffset + newListings.length);
-        setHasMore(newListings.length === PAGE_SIZE);
+        setHasMore(newListings.length === PAGE_SIZE && fromOffset + newListings.length < Number(rows[0]?.total_count ?? 0));
 
         // Build sizePriceMap from matched_size_price returned per row
         if (currentFilters.size.length > 0) {
@@ -393,20 +431,33 @@ const Browse = () => {
           setSizePriceMap(null);
         }
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error("Error fetching listings:", err);
         toast.error("Failed to load listings");
       } finally {
-        setLoadingInitial(false);
-        setLoadingMore(false);
+        if (requestRef.current === controller) {
+          requestRef.current = null;
+          setLoadingInitial(false);
+          setLoadingMore(false);
+        }
       }
     },
-    [],
+    [isDiwaliSale],
   );
+
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   // ── Restore scroll position when navigating back from a product page ───────
   useEffect(() => {
+    // Fresh section links take priority; history navigation restores the saved catalog.
+    if (isDiwaliSale && location.hash === "#diwali-products" && navigationType !== "POP") return;
     try {
-      const saved = sessionStorage.getItem(BROWSE_STATE_KEY);
+      // StrictMode replays effects and their cleanup. Keep the original snapshot
+      // so the replay cannot restore the initial page saved by cleanup instead.
+      if (savedBrowseStateRef.current === undefined) {
+        savedBrowseStateRef.current = sessionStorage.getItem(browseStateKey);
+      }
+      const saved = savedBrowseStateRef.current;
       if (saved) {
         const state = JSON.parse(saved);
         if (state.locationKey === location.key && state.listings?.length > 0) {
@@ -427,7 +478,9 @@ const Browse = () => {
           });
         }
       }
-    } catch {}
+    } catch {
+      // Ignore an unavailable or outdated session snapshot.
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -437,7 +490,7 @@ const Browse = () => {
       skipInitialFetchRef.current = false;
       return;
     }
-    const urlParsed = parseFiltersFromURL(searchParams);
+    const urlParsed = parseFiltersFromURL(searchParams, defaultFilters.priceRange[1]);
     const merged: FilterState = { ...defaultFilters, ...urlParsed };
     setFilters(merged);
     setTempFilters(merged);
@@ -502,14 +555,14 @@ const Browse = () => {
   useEffect(() => {
     return () => {
       sessionStorage.setItem(
-        BROWSE_STATE_KEY,
+        browseStateKey,
         JSON.stringify({
           listings: listingsRef.current,
           offset: offsetRef.current,
           hasMore: hasMoreRef.current,
           totalCount: totalCountRef.current,
           scrollY: scrollYRef.current,
-          locationKey: location.key,
+          locationKey: locationKeyRef.current,
           sizePriceMap: sizePriceMapRef.current
             ? Array.from(sizePriceMapRef.current.entries())
             : null,
@@ -525,7 +578,7 @@ const Browse = () => {
   const applyFilters = () => {
     setFilters(tempFilters);
     setFilterSheetOpen(false);
-    const newParams = serializeFiltersToURL(tempFilters);
+    const newParams = serializePageFilters(tempFilters);
     setSearchParams(newParams, { replace: true });
   };
 
@@ -533,7 +586,7 @@ const Browse = () => {
     const cleared: FilterState = { ...defaultFilters };
     setFilters(cleared);
     setTempFilters(cleared);
-    setSearchParams(serializeFiltersToURL(cleared), { replace: true });
+    setSearchParams(serializePageFilters(cleared), { replace: true });
   };
 
   const handleImmediateFilterChange = (
@@ -542,7 +595,7 @@ const Browse = () => {
   ) => {
     const updated = { ...filters, [key]: value };
     setFilters(updated);
-    setSearchParams(serializeFiltersToURL(updated), { replace: true });
+    setSearchParams(serializePageFilters(updated), { replace: true });
   };
 
   const handleSearchInputChange = (value: string) => {
@@ -550,7 +603,7 @@ const Browse = () => {
   };
 
   const handleSearchExecute = () => {
-    setSearchParams(serializeFiltersToURL(filters), { replace: true });
+    setSearchParams(serializePageFilters(filters), { replace: true });
   };
 
   const handleTempFilterChange = (key: keyof FilterState, value: unknown) => {
@@ -592,7 +645,7 @@ const Browse = () => {
     if (filters.brand.length > 0) n++;
     if (filters.category.length > 0) n++;
     if (filters.size.length > 0) n++;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) n++;
+    if (hasPriceFilter(filters)) n++;
     return n;
   };
 
@@ -601,14 +654,14 @@ const Browse = () => {
     if (tempFilters.brand.length > 0) n++;
     if (tempFilters.category.length > 0) n++;
     if (tempFilters.size.length > 0) n++;
-    if (tempFilters.priceRange[0] > 0 || tempFilters.priceRange[1] < 100000)
+    if (hasPriceFilter(tempFilters))
       n++;
     return n;
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen px-4 py-6">
+    <div id={isDiwaliSale ? "diwali-products" : undefined} className={`${isDiwaliSale ? "diwali-catalog scroll-mt-16" : ""} min-h-screen px-4 py-6`}>
       {/* ItemList structured data — helps Google understand this is a product collection */}
       {listings.length > 0 && (
         <script
@@ -617,8 +670,8 @@ const Browse = () => {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "ItemList",
-              name: "Browse All Products | The Plug Market",
-              url: "https://theplugmarket.in/browse",
+              name: isDiwaliSale ? "Diwali Sale | The Plug Market" : "Browse All Products | The Plug Market",
+              url: `https://theplugmarket.in${isDiwaliSale ? ROUTE_NAMES.DIWALI_SALE : ROUTE_NAMES.BROWSE}`,
               itemListElement: listings.map((listing, index) => ({
                 "@type": "ListItem",
                 position: index + 1,
@@ -632,11 +685,14 @@ const Browse = () => {
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-6 flex flex-col items-center text-center">
+          {isDiwaliSale && <><div className="diwali-sale-divider" aria-hidden="true"><span>✦</span></div><p className="diwali-sale-eyebrow mb-3">THE FESTIVAL OF FRESH KICKS</p></>}
           <h1 className="text-2xl md:text-3xl font-bold gradient-text mb-2">
-            {filters.deals ? "🔥 Hot Deals" : filters.instantShipping ? "⚡ Instant Shipping" : "Browse Items"}
+            {isDiwaliSale ? "The Diwali Sale" : filters.deals ? "🔥 Hot Deals" : filters.instantShipping ? "⚡ Instant Shipping" : "Browse Items"}
           </h1>
           <p className="text-gray-600 text-sm md:text-base mb-3">
-            {filters.deals
+            {isDiwaliSale
+              ? "Festive picks. Instant shipping. Delivered in 7–10 days."
+              : filters.deals
               ? "Listings with huge discounts on retail price"
               : filters.instantShipping
               ? "Listings delivered in under 10 days"
@@ -680,7 +736,7 @@ const Browse = () => {
               onClick={() => {
                 handleSearchInputChange("");
                 setSearchParams(
-                  serializeFiltersToURL({ ...filters, search: "" }),
+                  serializePageFilters({ ...filters, search: "" }),
                   { replace: true },
                 );
               }}
@@ -725,7 +781,7 @@ const Browse = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-56 border-0 rounded-2xl p-4"
+                className={`${isDiwaliSale ? "diwali-catalog-menu" : ""} w-56 border-0 rounded-2xl p-4`}
                 align="end"
               >
                 <div className="space-y-2">
@@ -771,7 +827,7 @@ const Browse = () => {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-full sm:w-96 md:w-[400px] p-0"
+                className={`${isDiwaliSale ? "diwali-catalog-menu" : ""} w-full sm:w-96 md:w-[400px] p-0`}
               >
                 <SheetHeader className="px-6 py-4 border-b border-gray-200">
                   <SheetTitle className="text-lg font-semibold text-gray-800">
@@ -846,8 +902,7 @@ const Browse = () => {
                     >
                       <Label className="text-sm font-medium text-gray-700 cursor-pointer">
                         Price Range
-                        {(tempFilters.priceRange[0] > 0 ||
-                          tempFilters.priceRange[1] < 100000) && (
+                        {hasPriceFilter(tempFilters) && (
                           <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
                             Active
                           </span>
@@ -879,12 +934,12 @@ const Browse = () => {
                           </div>
                           <Input
                             type="number"
-                            placeholder="Max Price"
-                            value={tempFilters.priceRange[1]}
+                            placeholder={isDiwaliSale ? "No maximum" : "Max Price"}
+                            value={tempFilters.priceRange[1] ?? ""}
                             onChange={(e) =>
                               handleTempFilterChange("priceRange", [
                                 tempFilters.priceRange[0],
-                                parseInt(e.target.value) || 100000,
+                                e.target.value === "" ? defaultFilters.priceRange[1] : Number(e.target.value),
                               ])
                             }
                             className="glass-input border-0 rounded-xl text-sm h-11"
@@ -1095,8 +1150,7 @@ const Browse = () => {
         {(filters.brand.length > 0 ||
           filters.category.length > 0 ||
           filters.size.length > 0 ||
-          filters.priceRange[0] > 0 ||
-          filters.priceRange[1] < 100000) && (
+          hasPriceFilter(filters)) && (
           <div className="flex flex-wrap items-center gap-2 mb-4 py-4 bg-gray-50/50">
             {filters.category.map((categoryId) => (
               <Badge
@@ -1114,7 +1168,7 @@ const Browse = () => {
                     };
                     setFilters(u);
                     setTempFilters(u);
-                    setSearchParams(serializeFiltersToURL(u), {
+                    setSearchParams(serializePageFilters(u), {
                       replace: true,
                     });
                   }}
@@ -1138,7 +1192,7 @@ const Browse = () => {
                     };
                     setFilters(u);
                     setTempFilters(u);
-                    setSearchParams(serializeFiltersToURL(u), {
+                    setSearchParams(serializePageFilters(u), {
                       replace: true,
                     });
                   }}
@@ -1162,7 +1216,7 @@ const Browse = () => {
                     };
                     setFilters(u);
                     setTempFilters(u);
-                    setSearchParams(serializeFiltersToURL(u), {
+                    setSearchParams(serializePageFilters(u), {
                       replace: true,
                     });
                   }}
@@ -1172,19 +1226,20 @@ const Browse = () => {
                 </button>
               </Badge>
             ))}
-            {(filters.priceRange[0] > 0 || filters.priceRange[1] < 100000) && (
+            {hasPriceFilter(filters) && (
               <Badge className="bg-green-100 text-green-700 border-0 rounded-xl text-xs font-medium flex items-center gap-1 pr-1">
-                ₹{filters.priceRange[0].toLocaleString()} - ₹
-                {filters.priceRange[1].toLocaleString()}
+                ₹{filters.priceRange[0].toLocaleString()} - {filters.priceRange[1] === null
+                  ? "No maximum"
+                  : `₹${filters.priceRange[1].toLocaleString()}`}
                 <button
                   onClick={() => {
-                    const u = {
+                    const u: FilterState = {
                       ...filters,
-                      priceRange: [0, 100000] as [number, number],
+                      priceRange: [...defaultFilters.priceRange],
                     };
                     setFilters(u);
                     setTempFilters(u);
-                    setSearchParams(serializeFiltersToURL(u), {
+                    setSearchParams(serializePageFilters(u), {
                       replace: true,
                     });
                   }}
@@ -1250,7 +1305,7 @@ const Browse = () => {
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+            <div className={`${isDiwaliSale ? "diwali-product-grid" : ""} grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6`}>
               {" "}
               {listings.map((listing) => (
                 <Link
@@ -1354,5 +1409,7 @@ const Browse = () => {
     </div>
   );
 };
+
+const Browse = () => <BrowseCatalog />;
 
 export default Browse;
