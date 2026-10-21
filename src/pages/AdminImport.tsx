@@ -577,7 +577,8 @@ function AdminImport() {
             </div>
             <p className="text-xs text-gray-500 text-center">
               All imports set to <strong>active</strong>, condition{" "}
-              <strong>new</strong>, category <strong>sneakers</strong>.
+              <strong>new</strong>, category <strong>sneakers</strong>, with{" "}
+              <strong>₹300 shipping per product</strong> automatically applied.
             </p>
           </CardContent>
         </Card>
