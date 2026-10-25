@@ -266,16 +266,21 @@ export default function PreOrders() {
 
           {/* Live countdown */}
           {countdown && (
-            <div className="mt-6 inline-flex items-center gap-3">
+            <div className="mt-6 inline-flex flex-wrap items-center justify-center gap-3">
               <Clock className="h-4 w-4 text-violet-200 shrink-0" />
               <span className="text-xs text-violet-200 font-medium">
                 {isPaused ? "Resumes in" : "Closes in"}
               </span>
               <div className="flex items-center gap-2">
                 {[
-                  { label: "h", val: countdown.h },
+                  ...(isPaused && countdown.h >= 24
+                    ? [{ label: "d", val: Math.floor(countdown.h / 24) }]
+                    : []),
+                  { label: "h", val: isPaused ? countdown.h % 24 : countdown.h },
                   { label: "m", val: countdown.m },
-                  { label: "s", val: countdown.s },
+                  ...(!isPaused || countdown.h < 24
+                    ? [{ label: "s", val: countdown.s }]
+                    : []),
                 ].map(({ label, val }) => (
                   <div key={label} className="flex flex-col items-center">
                     <span className="text-2xl font-bold font-mono w-12 text-center bg-white/20 rounded-xl py-1">
