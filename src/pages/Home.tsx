@@ -1,5 +1,4 @@
 import { lazy, useEffect, Suspense } from "react";
-import { Sparkles } from "lucide-react";
 import { ROUTE_NAMES } from "@/constants/enums";
 import CategorySection from "@/components/CategorySection";
 import WishlistSection from "@/components/WishlistSection";
@@ -15,25 +14,27 @@ import NewDropsSection from "@/components/NewDropsSection";
 import CollectionsSection from "@/components/CollectionsSection";
 import { useLoaderData, data, Await } from "react-router";
 import { createClient } from "@supabase/supabase-js";
-import type { Route } from "./+types/Home";
 import FAQSection from "@/components/FAQSection";
 
 // Lazy-loaded: JS chunk + 3MB video assets deferred until component mounts
 const InstagramFeed = lazy(() => import("@/components/InstagramFeed"));
 
-export function links(args?: { data?: { banners?: { image_url: string }[] } }) {
-  const firstBanner = args?.data?.banners?.[0]?.image_url;
-  if (!firstBanner) return [];
+// React Router route modules also export metadata and loaders.
+// eslint-disable-next-line react-refresh/only-export-components
+export function links() {
   return [
     {
       rel: "preload",
       as: "image",
-      href: firstBanner,
+      href: "/images/diwali/neptune.webp",
+      imageSrcSet: "/images/diwali/neptune-small.webp 400w, /images/diwali/neptune.webp 800w",
+      imageSizes: "(max-width: 767px) 65vw, 34vw",
       fetchpriority: "high",
     },
   ];
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function meta() {
   return [
     {
@@ -61,11 +62,10 @@ export function meta() {
 }
 
 // ── Server Loader ─────────────────────────────────────────────────────────────
-// Streaming strategy: banners are awaited (critical, above-the-fold LCP).
-// Everything else starts in parallel but is returned as unawaited promises —
-// React Router streams them to the client as they resolve, so the browser
-// paints the banner + hero immediately without waiting for all DB queries.
-export async function loader(_: Route.LoaderArgs) {
+// The first banner uses local assets. Stream every database query so it cannot
+// delay the initial HTML, including the remaining promotional slides.
+// eslint-disable-next-line react-refresh/only-export-components
+export async function loader() {
   const ssrSupabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -80,60 +80,59 @@ export async function loader(_: Route.LoaderArgs) {
   const today = new Date().toISOString().split("T")[0];
 
   // Kick off all queries simultaneously so they run in parallel on the DB.
-  const bannersPromise = ssrSupabase
-    .from("banners")
-    .select("id, image_url, mobile_image_url, cta_url")
-    .eq("is_active", true)
-    .or(`start_date.is.null,start_date.lte.${today}`)
-    .or(`end_date.is.null,end_date.gte.${today}`)
-    .order("sort_order", { ascending: true })
-    .then((r) => r.data ?? []);
+  const bannersPromise = Promise.resolve(
+    ssrSupabase
+      .from("banners")
+      .select("id, image_url, mobile_image_url, cta_url")
+      .eq("is_active", true)
+      .or(`start_date.is.null,start_date.lte.${today}`)
+      .or(`end_date.is.null,end_date.gte.${today}`)
+      .order("sort_order", { ascending: true })
+      .then((r) => r.data ?? []),
+  ).catch(() => []);
 
-  const antaProductsPromise = ssrSupabase
-    .from("listings_with_images")
-    .select("id, slug, title, brand, price, min_price, retail_price, condition, size_value, image_url")
-    .eq("status", "active")
-    .ilike("brand", BRANDS_CONFIG.anta.dbValue)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .range(0, 7)
-    .returns<AntaListing[]>()
-    .then((r) => r.data ?? []);
+  const antaProductsPromise = Promise.resolve(
+    ssrSupabase
+      .from("listings_with_images")
+      .select("id, slug, title, brand, price, min_price, retail_price, condition, size_value, image_url")
+      .eq("status", "active")
+      .ilike("brand", BRANDS_CONFIG.anta.dbValue)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(0, 7)
+      .returns<AntaListing[]>()
+      .then((r) => r.data ?? []),
+  );
 
   // Reduced from 30 → 8: only ~4-6 cards are visible in the initial viewport.
-  const newDropsPromise = ssrSupabase
-    .from("listings_with_images")
-    .select(
-      "id, title, brand, price, min_price, retail_price, condition, size_value, image_url",
-    )
-    .eq("status", "active")
-    .eq("is_new_drop", true)
-    .order("created_at", { ascending: false })
-    .limit(8)
-    .then((r) => r.data ?? []);
+  const newDropsPromise = Promise.resolve(
+    ssrSupabase
+      .from("listings_with_images")
+      .select(
+        "id, title, brand, price, min_price, retail_price, condition, size_value, image_url",
+      )
+      .eq("status", "active")
+      .eq("is_new_drop", true)
+      .order("created_at", { ascending: false })
+      .limit(8)
+      .then((r) => r.data ?? []),
+  );
 
-  const blogPostsPromise = ssrSupabase
-    .from("blog_posts")
-    .select(
-      "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
-    )
-    .eq("is_published", true)
-    .order("published_at", { ascending: false })
-    .limit(3)
-    .then((r) => r.data ?? []);
-
-  // Await only the banner — it's the LCP element and must be in the first HTML flush.
-  // If it times out, the carousel renders empty and the rest still streams in.
-  let banners: Awaited<typeof bannersPromise> = [];
-  try {
-    banners = await bannersPromise;
-  } catch {
-    // Banner carousel handles empty gracefully; deferred sections stream independently.
-  }
+  const blogPostsPromise = Promise.resolve(
+    ssrSupabase
+      .from("blog_posts")
+      .select(
+        "id, title, slug, excerpt, cover_image_url, tags, published_at, read_time_minutes",
+      )
+      .eq("is_published", true)
+      .order("published_at", { ascending: false })
+      .limit(3)
+      .then((r) => r.data ?? []),
+  );
 
   return data(
     {
-      banners,
+      banners: bannersPromise,
       // Unawaited promises — React Router v7 streams these as they resolve.
       antaProducts: antaProductsPromise,
       newDrops: newDropsPromise,
@@ -149,6 +148,7 @@ export async function loader(_: Route.LoaderArgs) {
 
 // Don't re-fetch home data on every client-side navigation —
 // the loader result is cached for the lifetime of the SPA session.
+// eslint-disable-next-line react-refresh/only-export-components
 export function shouldRevalidate() {
   return false;
 }
