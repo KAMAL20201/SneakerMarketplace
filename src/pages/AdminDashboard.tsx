@@ -21,6 +21,13 @@ import {
 
 const ADMIN_SECTIONS = [
   {
+    title: "Home Brand Sections",
+    description: "Add a brand to automatically feature its products on the home page",
+    url: ROUTE_NAMES.ADMIN_BRAND_SECTIONS,
+    icon: Tag,
+    color: "from-purple-500 to-indigo-500",
+  },
+  {
     title: "Scheduled Prices",
     description: "Schedule future price changes and track their status",
     url: ROUTE_NAMES.ADMIN_PRICE_SCHEDULES,

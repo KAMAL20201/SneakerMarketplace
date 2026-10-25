@@ -5,8 +5,8 @@ import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
 import WhyBuyFromUs from "@/components/WhyBuyFromUs";
 import BlogTeaser from "@/components/BlogTeaser";
-import ShopAntaSection, { type AntaListing } from "@/components/ShopAntaSection";
-import { BRANDS_CONFIG } from "@/constants/brandsConfig";
+import HomeBrandSections from "@/components/HomeBrandSections";
+import { fetchBrandPreviews } from "@/lib/homeBrandSections";
 import InstantShipping from "@/components/InstantShipping";
 import { supabase } from "@/lib/supabase";
 import HomeBannerCarousel from "@/components/HomeBannerCarousel";
@@ -91,18 +91,7 @@ export async function loader() {
       .then((r) => r.data ?? []),
   ).catch(() => []);
 
-  const antaProductsPromise = Promise.resolve(
-    ssrSupabase
-      .from("listings_with_images")
-      .select("id, slug, title, brand, price, min_price, retail_price, condition, size_value, image_url")
-      .eq("status", "active")
-      .ilike("brand", BRANDS_CONFIG.anta.dbValue)
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .range(0, 7)
-      .returns<AntaListing[]>()
-      .then((r) => r.data ?? []),
-  );
+  const brandSectionsPromise = fetchBrandPreviews(ssrSupabase);
 
   // Reduced from 30 → 8: only ~4-6 cards are visible in the initial viewport.
   const newDropsPromise = Promise.resolve(
@@ -134,7 +123,7 @@ export async function loader() {
     {
       banners: bannersPromise,
       // Unawaited promises — React Router v7 streams these as they resolve.
-      antaProducts: antaProductsPromise,
+      brandSections: brandSectionsPromise,
       newDrops: newDropsPromise,
       blogPosts: blogPostsPromise,
     },
@@ -147,14 +136,14 @@ export async function loader() {
 }
 
 // Don't re-fetch home data on every client-side navigation —
-// the loader result is cached for the lifetime of the SPA session.
+// the loader result is cached until the next navigation to the home page.
 // eslint-disable-next-line react-refresh/only-export-components
-export function shouldRevalidate() {
-  return false;
+export function shouldRevalidate({ currentUrl, nextUrl }: { currentUrl: URL; nextUrl: URL }) {
+  return currentUrl.pathname !== nextUrl.pathname;
 }
 
 const Home = () => {
-  const { banners, antaProducts, newDrops, blogPosts } =
+  const { banners, brandSections, newDrops, blogPosts } =
     useLoaderData<typeof loader>();
   useEffect(() => {
     // Only run the auth callback flow when opened as a popup (e.g. Google OAuth redirect).
@@ -328,10 +317,10 @@ const Home = () => {
       </section>
       */}
 
-      {/* Shop Anta Section — streamed */}
+      {/* Brand sections — streamed */}
       <Suspense fallback={null}>
-        <Await resolve={antaProducts} errorElement={null}>
-          {(listings: AntaListing[]) => <ShopAntaSection listings={listings} />}
+        <Await resolve={brandSections} errorElement={null}>
+          {(sections: Awaited<ReturnType<typeof fetchBrandPreviews>>) => <HomeBrandSections initialData={sections} />}
         </Await>
       </Suspense>
 

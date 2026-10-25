@@ -55,6 +55,7 @@ export default [
   route("admin/blog", "./pages/AdminBlog.tsx"),
   route("admin/descriptions", "./pages/AdminDescriptions.tsx"),
   route("admin/coupons", "./pages/AdminCoupons.tsx"),
+  route("admin/brand-sections", "./pages/AdminBrandSections.tsx"),
   route("admin/new-drops", "./pages/AdminNewDrops.tsx"),
   route("admin/hot-deals", "./pages/AdminHotDeals.tsx"),
   route("admin/running-sneakers", "./pages/AdminRunningSneakers.tsx"),
