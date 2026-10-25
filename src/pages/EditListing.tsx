@@ -25,7 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
 import { ROUTE_NAMES } from "@/constants/enums";
 import { toast } from "sonner";
-import { compareSizes } from "@/constants/sizeCharts";
+import { compareSizes, getEuSizeFromUk } from "@/constants/sizeCharts";
 import { useAdmin } from "@/hooks/useAdmin";
 import { adjustSizeQuantity } from "@/lib/inventoryService";
 import { parseStockQuantity, toggleStockQuantity } from "@/lib/inventoryQuantity";
@@ -73,6 +73,13 @@ interface ListingImage {
   is_poster_image: boolean;
   display_order: number;
 }
+
+const formatEditSize = (brand: string, sizeValue: string): string => {
+  if (!/^UK\s*\d+(?:\.\d+)?$/i.test(sizeValue.trim())) return sizeValue;
+  const euSize = getEuSizeFromUk(brand, sizeValue.trim());
+  const ukSize = sizeValue.replace(/^UK\s*/i, "").trim();
+  return euSize ? `EU ${euSize} (UK ${ukSize})` : sizeValue;
+};
 
 const EditListing = () => {
   const { id } = useParams();
@@ -701,7 +708,7 @@ const EditListing = () => {
                 </h3>
                 <p className="text-gray-500 text-sm capitalize mb-2">
                   {listing.brand}
-                  {listing.size_value ? ` · Size ${listing.size_value}` : ""}
+                  {listing.size_value ? ` · Size ${formatEditSize(listing.brand ?? "", listing.size_value)}` : ""}
                 </p>
                 <p className="text-gray-500 text-sm capitalize">
                   Condition: {listing.condition}
@@ -1030,6 +1037,7 @@ const EditListing = () => {
                         <SizeCard
                           key={size.id}
                           size={size}
+                          displaySize={formatEditSize(listing.brand ?? "", size.size_value)}
                           disabled={!inventoryReady || !canToggleStock || saving}
                           onInstantShipChange={isAdmin ? (instantShip) => updateSizeInstantShip(size.id, instantShip) : undefined}
                           instantShipDisabled={saving}
@@ -1054,6 +1062,7 @@ const EditListing = () => {
                     <SizeCard
                       key={size.id}
                       size={size}
+                      displaySize={formatEditSize(listing.brand ?? "", size.size_value)}
                       disabled={!inventoryReady || !canToggleStock || saving}
                       onInstantShipChange={isAdmin ? (instantShip) => updateSizeInstantShip(size.id, instantShip) : undefined}
                       instantShipDisabled={saving}
@@ -1131,6 +1140,7 @@ const EditListing = () => {
 
 interface SizeCardProps {
   size: VariantSize;
+  displaySize: string;
   disabled: boolean;
   onToggle: () => void;
   onPriceChange: (newPrice: string) => void;
@@ -1141,6 +1151,7 @@ interface SizeCardProps {
 
 const SizeCard = ({
   size,
+  displaySize,
   disabled,
   onToggle,
   onPriceChange,
@@ -1164,7 +1175,7 @@ const SizeCard = ({
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-bold text-sm text-gray-800 uppercase px-2.5 py-0.5 rounded-lg bg-gray-100">
-            {size.size_value}
+            {displaySize}
           </span>
           <span
             className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
