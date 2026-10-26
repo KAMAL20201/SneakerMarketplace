@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { PARTIAL_COD_FEE, formatPaymentAmount } from "@/lib/orderPayment";
 
-const message = `Partial COD now available · Pay 70% now, 30% on delivery · ${formatPaymentAmount(PARTIAL_COD_FEE)} extra, included before the split · Full prepaid also available`;
+const message = `Partial COD now live · Pay 70% online, 30% in cash on delivery · Flat ${formatPaymentAmount(PARTIAL_COD_FEE)} COD fee per order · No fee when you pay in full`;
 
 export function PartialCodAnnouncement() {
   const [paused, setPaused] = useState(false);
