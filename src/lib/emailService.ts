@@ -1,6 +1,9 @@
 import { supabase } from "./supabase";
 import { logger } from "@/components/ui/Logger";
 import type { ShippingAddress } from "@/types/shipping";
+import type { OrderPaymentFields } from "@/types/orderPayment";
+import { PAYMENT_TYPES, type PaymentType } from "@/constants/enums";
+import { getOrderPaymentBreakdown } from "./orderPayment";
 
 const BASE_URL =
   typeof window !== "undefined" && !window.location.origin.includes("localhost")
@@ -39,6 +42,31 @@ export interface OrderEmailData {
   custom_message?: string;
   similar_products?: SimilarProduct[];
   tracking_url?: string;
+  // Partial COD split (per order row). Absent for prepaid orders.
+  payment_type?: PaymentType;
+  payment_total?: number;
+  advance_amount?: number;
+  cod_amount?: number;
+  cod_fee?: number;
+}
+
+type PaymentEmailFields = Pick<OrderEmailData, "payment_type" | "payment_total" | "advance_amount" | "cod_amount" | "cod_fee">;
+
+/** Saved partial COD split for email templates; empty for prepaid or incomplete rows. */
+export function getPaymentEmailFields(order: OrderPaymentFields & { amount: number }): PaymentEmailFields {
+  if (order.payment_type !== PAYMENT_TYPES.PARTIAL_COD) return {};
+  try {
+    const payment = getOrderPaymentBreakdown(order);
+    return {
+      payment_type: payment.paymentType,
+      payment_total: payment.totalAmount,
+      advance_amount: payment.advanceAmount,
+      cod_amount: payment.codAmount,
+      cod_fee: payment.codFee,
+    };
+  } catch {
+    return {};
+  }
 }
 
 export interface EmailNotificationRequest {

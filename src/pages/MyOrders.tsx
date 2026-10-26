@@ -60,7 +60,7 @@ import { supabase, toStorageUrl } from "@/lib/supabase";
 import { getEuSizeFromUk, sortSizes } from "@/constants/sizeCharts";
 import { toast } from "sonner";
 import ShipNowModal from "@/components/ShipNowModal";
-import { EmailService, type OrderEmailData } from "@/lib/emailService";
+import { EmailService, getPaymentEmailFields, type OrderEmailData } from "@/lib/emailService";
 
 // Use the OrderType from orderService, but extend it with product details
 interface Order extends OrderType {
@@ -521,6 +521,7 @@ const MyOrders = () => {
           variant_name: selectedVariant?.id ? selectedVariant.color_name : undefined,
           ordered_size: selectedSize.size_value,
           custom_message: "We have updated your order to a different variant as agreed, because the originally ordered variant is no longer available. Below are the updated details of your order.",
+          ...getPaymentEmailFields(variantOrder),
         };
 
         const { error: mailError } = await supabase.functions.invoke("send-order-email", {
@@ -1170,9 +1171,7 @@ const MyOrders = () => {
                                       product_title: productTitle,
                                       product_image: productImage,
                                       amount: confirmedOrder.payment_type === PAYMENT_TYPES.PARTIAL_COD ? confirmedOrder.advance_amount ?? 0 : confirmedOrder.amount,
-                                      custom_message: confirmedOrder.payment_type === PAYMENT_TYPES.PARTIAL_COD
-                                        ? `Partial COD: Order total ${formatPaymentAmount(confirmedOrder.payment_total ?? 0)}. Advance received ${formatPaymentAmount(confirmedOrder.advance_amount ?? 0)}. Balance due on delivery ${formatPaymentAmount(confirmedOrder.cod_amount ?? 0)}.`
-                                        : undefined,
+                                      ...getPaymentEmailFields(confirmedOrder),
                                       currency: "INR",
                                       buyer_name: order.buyer_name,
                                       buyer_email: order.buyer_email,
@@ -1464,6 +1463,7 @@ const MyOrders = () => {
                 courier_name: deliveryCompany,
                 product_id: selectedOrder.product_id,
                 brand: selectedOrder.product_listings?.brand ?? undefined,
+                ...getPaymentEmailFields(selectedOrder),
               };
 
               // Include tracking URL if a token was previously generated

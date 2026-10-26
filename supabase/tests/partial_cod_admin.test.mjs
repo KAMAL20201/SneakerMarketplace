@@ -16,6 +16,9 @@ function load(relativePath, modules = {}, globals = {}, suffix = "") {
 }
 const enums = load("../../src/constants/enums.ts");
 const helpers = load("../../src/lib/orderPayment.ts", { "../constants/enums": enums });
+const { getPaymentEmailFields } = load("../../src/lib/emailService.ts", {
+  "./supabase": { supabase: {} }, "@/components/ui/Logger": { logger: {} }, "@/constants/enums": enums, "./orderPayment": helpers,
+}, { window: { location: { origin: "https://test.example.invalid" } } });
 const { OrderPaymentSummary } = load("../../src/components/orders/OrderPaymentSummary.tsx", { "@/constants/enums": enums, "@/lib/orderPayment": helpers });
 const fixture = {
   id: "order-123456789", buyer_id: null, seller_id: "seller", product_id: "product", amount: 10000,
@@ -64,7 +67,7 @@ function pageHarness(orders, failure = false) {
     "@/constants/sizeCharts": { getEuSizeFromUk() {}, sortSizes: sizes => sizes },
     sonner: { toast: Object.fromEntries(["success", "info", "error", "warning"].map(name => [name, message => toasts.push({ name, message })])) },
     "@/components/ShipNowModal": { default: "ship-modal" },
-    "@/lib/emailService": { EmailService: { async sendOrderConfirmationToBuyer(_email, _name, data) { emails.push(data); } } },
+    "@/lib/emailService": { getPaymentEmailFields, EmailService: { async sendOrderConfirmationToBuyer(_email, _name, data) { emails.push(data); } } },
   };
   const module = load("../../src/pages/MyOrders.tsx", modules, { window: { location: { origin: "https://test.example.invalid" } } }, "\nexport { MyOrders };\n");
   return { render() { cursor = 0; refCursor = 0; return module.MyOrders(); }, slots, calls, emails, toasts };
@@ -109,7 +112,9 @@ test("advance confirmation uses the atomic receipt RPC and emails only the advan
   assert.equal(page.slots[0].value[0].status, "confirmed");
   assert.equal(page.slots[0].value[0].cod_collected_at, null);
   assert.equal(page.emails[0].amount, 7070);
-  assert.ok(page.emails[0].custom_message.includes("₹3,030"));
+  assert.equal(page.emails[0].payment_type, "partial_cod");
+  assert.equal(page.emails[0].payment_total, 10100);
+  assert.equal(page.emails[0].cod_amount, 3030);
 });
 
 test("COD collection is a separate action and updates the saved receipt", async () => {

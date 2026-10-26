@@ -24,12 +24,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/lib/supabase";
-import { EmailService, type OrderEmailData } from "@/lib/emailService";
+import { EmailService, getPaymentEmailFields, type OrderEmailData } from "@/lib/emailService";
+import type { OrderPaymentFields } from "@/types/orderPayment";
 import { toast } from "sonner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface PendingOrder {
+interface PendingOrder extends OrderPaymentFields {
   id: string;
   product_id: string;
   buyer_email: string | null;
@@ -209,6 +210,7 @@ function AdminPendingPayments() {
         id, product_id, buyer_email, buyer_name, buyer_phone,
         amount, original_amount, discount_amount, status,
         ordered_size, variant_name, created_at,
+        payment_type, payment_total, cod_fee, advance_amount, cod_amount,
         product_listings (
           title, brand, slug,
           product_images ( image_url, is_poster_image )
@@ -318,6 +320,7 @@ function AdminPendingPayments() {
         variant_name: order.variant_name ?? undefined,
         ordered_size: order.ordered_size ?? undefined,
         order_status: "pending_payment",
+        ...getPaymentEmailFields(order),
       };
       const sent = emailTemplate === "preorder_live"
         ? await EmailService.sendPreOrderLiveEmail(order.buyer_email, order.buyer_name ?? "Customer", orderData)
@@ -374,6 +377,7 @@ function AdminPendingPayments() {
           variant_name: order.variant_name ?? undefined,
           ordered_size: order.ordered_size ?? undefined,
           order_status: "pending_payment",
+          ...getPaymentEmailFields(order),
         };
         const sent = emailTemplate === "preorder_live"
           ? await EmailService.sendPreOrderLiveEmail(order.buyer_email!, order.buyer_name ?? "Customer", orderData)
