@@ -24,9 +24,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const isDiwaliSale = useLocation().pathname.replace(/\/+$/, "") === ROUTE_NAMES.DIWALI_SALE;
 
-  return () => window.removeEventListener("orders-paused-dismissed", handler);
-  }, []);
-
   return (
     <ComingSoonWrapper>
       <SidebarProvider defaultOpen={false}>
