@@ -1,5 +1,4 @@
 import { Wallet } from "lucide-react";
-import { PARTIAL_COD_FEE, formatPaymentAmount } from "@/lib/orderPayment";
 
 export function PartialCodNotice() {
   return (
@@ -9,7 +8,7 @@ export function PartialCodNotice() {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-purple-900">Partial COD now available</p>
           <p className="mt-1 text-sm font-medium text-gray-900">Pay 70% now · 30% on delivery</p>
-          <p className="mt-1 text-xs leading-relaxed text-gray-600">{formatPaymentAmount(PARTIAL_COD_FEE)} extra per checkout, added before the split. Choose partial COD or full prepaid at checkout.</p>
+          <p className="mt-1 text-xs leading-relaxed text-gray-600">Choose partial COD or full prepaid at checkout.</p>
         </div>
       </div>
     </aside>
