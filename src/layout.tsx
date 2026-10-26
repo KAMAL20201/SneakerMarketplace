@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect } from "react";
+import React, { lazy, Suspense } from "react";
 import { useLocation } from "react-router";
 import { SidebarProvider, SidebarInset } from "./components/ui/sidebar";
 import { Navbar } from "./components/Navbar";
@@ -7,7 +7,6 @@ import { Toaster } from "sonner";
 import { Footer } from "./components/Footer";
 import { useIsMobile } from "./hooks/use-mobile";
 import ComingSoonWrapper from "./components/ComingSoonWrapper";
-import { APP_CONFIG } from "./config/app";
 import { ROUTE_NAMES } from "./constants/enums";
 
 // Lazy load CartSidebar since it's only needed when cart is opened
@@ -21,25 +20,11 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const BANNER_STORAGE_KEY = "orders-paused-banner-dismissed";
-
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const isDiwaliSale = useLocation().pathname.replace(/\/+$/, "") === ROUTE_NAMES.DIWALI_SALE;
 
-  const [bannerVisible, setBannerVisible] = useState(() => {
-    if (!APP_CONFIG.ORDERS_PAUSED) return false;
-    try {
-      return sessionStorage.getItem(BANNER_STORAGE_KEY) !== "1";
-    } catch {
-      return true;
-    }
-  });
-
-  useEffect(() => {
-    const handler = () => setBannerVisible(false);
-    window.addEventListener("orders-paused-dismissed", handler);
-    return () => window.removeEventListener("orders-paused-dismissed", handler);
+  return () => window.removeEventListener("orders-paused-dismissed", handler);
   }, []);
 
   return (
@@ -48,7 +33,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <AppSidebar />
         <SidebarInset className={isDiwaliSale ? "diwali-storefront" : undefined}>
           <Navbar />
-          <main className={`flex-1 ${bannerVisible ? "pt-[104px] sm:pt-[88px]" : "pt-16"}`}>{children}</main>
+          <main className="flex-1 pt-[var(--store-header-height,108px)]">{children}</main>
           <Footer />
         </SidebarInset>
         <Suspense fallback={null}>

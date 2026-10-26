@@ -20,6 +20,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { PAYMENT_TYPES } from "@/constants/enums";
+import { OrderPaymentSummary } from "@/components/orders/OrderPaymentSummary";
+import type { OrderPaymentFields } from "@/types/orderPayment";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,12 +34,13 @@ interface ShippingAddress {
   state?: string;
   pincode?: string;
   phone?: string;
+  alternate_phone?: string;
   landmark?: string;
 }
 
-interface TrackedOrder {
+interface TrackedOrder extends OrderPaymentFields {
   order_id: string;
-  order_status: "confirmed" | "shipped" | "delivered";
+  order_status: "pending_payment" | "confirmed" | "shipped" | "delivered";
   product_title: string;
   product_brand: string | null;
   product_image: string | null;
@@ -69,6 +73,7 @@ const formatPrice = (price: number): string =>
 // ── Status Stepper ───────────────────────────────────────────────────────────
 
 const STEPS = [
+  { key: "pending_payment", label: "Payment", icon: Calendar },
   { key: "confirmed", label: "Confirmed", icon: CheckCircle },
   { key: "shipped", label: "Shipped", icon: Truck },
   { key: "delivered", label: "Delivered", icon: Package },
@@ -281,13 +286,13 @@ export default function TrackOrder() {
       setLoading(true);
       setErrorMessage(null);
       const { data, error } = await supabase.rpc(
-        "get_order_by_tracking_token",
+        "get_order_tracking_details",
         { p_token: currentToken },
       );
 
       if (error || !data || (Array.isArray(data) && data.length === 0)) {
         setOrder(null);
-        setErrorMessage("Order not found or not yet confirmed. Please verify your order details.");
+        setErrorMessage("Order not found. Please verify your tracking link or order details.");
       } else {
         const row = Array.isArray(data) ? data[0] : data;
         setOrder(row as TrackedOrder);
@@ -324,13 +329,13 @@ export default function TrackOrder() {
 
       if (error || !foundToken) {
         setErrorMessage(
-          "No confirmed order found matching that Order ID and Email address. Please check your order details or wait until payment is confirmed.",
+          "No order found matching that Order ID and Email address. Please check your details. Prepaid orders become trackable after payment confirmation.",
         );
         toast.error("Order not found");
       } else {
         // Update URL with token param & load order
         setSearchParams({ token: foundToken });
-        fetchOrderByToken(foundToken);
+        // The token effect loads the order once after navigation.
       }
     } catch {
       setErrorMessage("Failed to look up order. Please try again.");
@@ -377,7 +382,7 @@ export default function TrackOrder() {
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         {/* Top Header & Actions */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 transition-colors"
@@ -391,7 +396,7 @@ export default function TrackOrder() {
               setSearchParams({});
               setOrder(null);
             }}
-            className="text-xs font-semibold text-purple-600 hover:text-purple-800 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-100 transition-colors flex items-center gap-1"
+            className="min-h-11 text-xs font-semibold text-purple-600 hover:text-purple-800 bg-purple-50 px-3 py-1.5 rounded-xl border border-purple-100 transition-colors flex items-center gap-1"
           >
             <Search className="h-3.5 w-3.5" />
             Track Another Order
@@ -470,7 +475,7 @@ export default function TrackOrder() {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-500">Amount</span>
               <span className="text-base font-bold text-gray-900">
-                {formatPrice(order.amount)}
+                {formatPrice(order.payment_type === PAYMENT_TYPES.PARTIAL_COD ? order.payment_total ?? order.amount : order.amount)}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -501,10 +506,20 @@ export default function TrackOrder() {
                 {order.order_status === "delivered" && (
                   <Package className="h-3.5 w-3.5" />
                 )}
-                {order.order_status}
+                {order.order_status.replaceAll("_", " ")}
               </span>
             </div>
           </div>
+
+          {order.payment_type === PAYMENT_TYPES.PARTIAL_COD && (
+            <section className="border-t border-gray-100 px-4 py-4 sm:px-6" aria-label="Payment details">
+              <span className="mb-3 inline-flex rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-800">Partial COD</span>
+              <OrderPaymentSummary order={order} />
+              <p className="mt-3 text-xs text-gray-600">The ₹100 partial COD fee is included before the 70% advance / 30% delivery split. For multiple items, the fee and payments are shared across items.</p>
+              {!order.advance_received_at && <p className="mt-2 text-sm text-amber-800">Already transferred your advance? Please allow us to verify it. Your order will be confirmed once payment is verified.</p>}
+              {order.advance_received_at && !order.cod_collected_at && (order.cod_amount ?? 0) > 0 && <p className="mt-2 text-sm text-gray-600">Payment remains outstanding until COD collection is recorded, even if the order is marked delivered.</p>}
+            </section>
+          )}
 
           {/* Tracking Number */}
           {order.tracking_number && (
@@ -592,6 +607,8 @@ export default function TrackOrder() {
                       : "text-blue-800"
                 }`}
               >
+                {order.order_status === "pending_payment" &&
+                  "Your order is awaiting advance payment verification."}
                 {order.order_status === "confirmed" &&
                   "Your order has been confirmed and is being prepared for shipping. We'll email you when it ships!"}
                 {order.order_status === "shipped" &&

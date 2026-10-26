@@ -2,7 +2,7 @@ import React, { useId, useState } from "react";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
-import { ROUTE_NAMES } from "@/constants/enums";
+import { PAYMENT_TYPES, ROUTE_NAMES, type PaymentType } from "@/constants/enums";
 import { usePayment } from "../contexts/PaymentContext";
 import { Loader2 } from "lucide-react";
 // [GUEST CHECKOUT] toast import commented out - no login error toast needed
@@ -26,6 +26,9 @@ interface PaymentButtonProps {
   className?: string;
   buttonText?: string;
   couponCode?: string | null;
+  paymentType?: PaymentType;
+  couponDiscountAmount?: number;
+  courierLabel?: string;
   variant?:
     | "default"
     | "destructive"
@@ -44,6 +47,9 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
   className = "",
   buttonText,
   couponCode = null,
+  paymentType = PAYMENT_TYPES.PREPAID,
+  couponDiscountAmount = 0,
+  courierLabel,
   variant = "default",
   size = "default",
   disabled = false,
@@ -58,7 +64,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
     if (!hasAcceptedPolicies || disabled || isLoading) return;
 
     try {
-      await initiatePayment(currency, metadata, items, shippingAddress, amount, couponCode);
+      await initiatePayment(currency, metadata, items, shippingAddress, amount, couponCode, paymentType, couponDiscountAmount, courierLabel);
     } catch (err) {
       console.error("Order failed:", err);
     }
@@ -77,7 +83,7 @@ export const PaymentButton: React.FC<PaymentButtonProps> = ({
         />
         <Label
           htmlFor={policyCheckboxId}
-          className="block min-h-11 flex-1 cursor-pointer whitespace-nowrap py-3 text-[11px] font-normal leading-5 text-gray-700 sm:text-xs"
+          className="block min-h-11 flex-1 cursor-pointer py-3 text-[11px] font-normal leading-5 text-gray-700 sm:text-xs"
         >
           I’ve read &amp; agree to{" "}
           <a
