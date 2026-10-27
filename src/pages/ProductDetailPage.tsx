@@ -30,6 +30,7 @@ import { supabase, toStorageUrl } from "@/lib/supabase";
 import { createClient } from "@supabase/supabase-js";
 import { ProductImage, ThumbnailImage } from "@/components/ui/OptimizedImage";
 import ConditionBadge from "@/components/ui/ConditionBadge";
+import { PartialCodNotice } from "@/components/checkout/PartialCodNotice";
 import { BuyNowModal } from "@/components/checkout/BuyNowModal";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ProductCard from "@/components/ui/ProductCard";
@@ -1178,6 +1179,12 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
+          {!isSoldOut && !isPreOrderPaused && (
+            <div className="mt-3 px-4 lg:px-0">
+              <PartialCodNotice />
+            </div>
+          )}
+
           <div className="mt-3 px-4 pb-5 lg:px-0 lg:pb-6">
             {isPreOrderPaused && (
               <div className="mt-3 flex items-start gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3">
@@ -1392,7 +1399,7 @@ export default function ProductDetailPage() {
             const displaySizes = sortSizes(filteredSizes);
 
             return (
-              <div ref={sizeSelectionRef} tabIndex={-1} aria-label="Size selection" className="px-4 pb-6 scroll-mt-24 focus:outline-none lg:px-0">
+              <div ref={sizeSelectionRef} tabIndex={-1} aria-label="Size selection" className="px-4 pb-6 scroll-mt-[calc(var(--store-header-height,108px)+16px)] focus:outline-none lg:px-0">
                 <Card className="bg-white border border-gray-200 rounded-2xl shadow-none">
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -2197,7 +2204,7 @@ export default function ProductDetailPage() {
         <section aria-labelledby="product-details-heading" className="px-4 py-6 lg:px-8">
           <Collapsible open={productDetailsOpen} onOpenChange={setProductDetailsOpen} className="border-y border-gray-200">
             <h2 id="product-details-heading">
-              <CollapsibleTrigger ref={productDetailsTriggerRef} aria-controls="product-details-content" className="flex min-h-14 w-full scroll-mt-24 items-center justify-between gap-4 py-4 text-left text-lg font-bold uppercase text-gray-800 transition-colors hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 sm:text-xl">
+              <CollapsibleTrigger ref={productDetailsTriggerRef} aria-controls="product-details-content" className="flex min-h-14 w-full scroll-mt-[calc(var(--store-header-height,108px)+16px)] items-center justify-between gap-4 py-4 text-left text-lg font-bold uppercase text-gray-800 transition-colors hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 sm:text-xl">
                 Product Details
                 <ChevronDown className={`h-5 w-5 shrink-0 text-gray-600 transition-transform duration-200 ${productDetailsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </CollapsibleTrigger>

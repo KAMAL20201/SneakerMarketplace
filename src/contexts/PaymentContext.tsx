@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import { QRCodeSVG } from "qrcode.react";
@@ -20,7 +21,9 @@ import { OrderService } from "../lib/orderService";
 import { useAuth } from "./AuthContext";
 import { useCart } from "./CartContext";
 import { toast } from "sonner";
-import { ROUTE_NAMES } from "@/constants/enums";
+import { PAYMENT_TYPES, ROUTE_NAMES, type PaymentType } from "@/constants/enums";
+import { calculatePaymentBreakdown, getOrderPaymentBreakdown, formatPaymentAmount } from "@/lib/orderPayment";
+import type { PaymentBreakdown } from "@/types/orderPayment";
 import { useNavigate } from "react-router";
 import type { CartItem } from "../lib/orderService";
 
@@ -40,6 +43,7 @@ interface UpiPaymentState {
   orderIds: string[];
   whatsappURL: string;
   amount: number;
+  payment: PaymentBreakdown;
   couponCode?: string | null;
   discountAmount?: number;
 }
@@ -53,7 +57,10 @@ interface PaymentContextType {
     items?: CartItem[],
     shippingAddress?: ShippingAddress,
     amount?: number,
-    couponCode?: string | null
+    couponCode?: string | null,
+    paymentType?: PaymentType,
+    couponDiscountAmount?: number,
+    courierLabel?: string
   ) => Promise<void>;
   clearError: () => void;
 }
@@ -79,6 +86,9 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [popupBlockedUrl, setPopupBlockedUrl] = useState<string | null>(null);
   const [upiPaymentState, setUpiPaymentState] = useState<UpiPaymentState | null>(null);
+  const pendingCheckout = useRef<{ signature: string; state: UpiPaymentState } | null>(null);
+  const checkoutRequest = useRef<{ signature: string; id: string } | null>(null);
+  const paymentInProgress = useRef(false);
   const [copied, setCopied] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   // [GUEST CHECKOUT] user may be null for guest checkout — that's expected
@@ -96,8 +106,13 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
       items: CartItem[] = [],
       shippingAddress?: ShippingAddress,
       amount?: number,
-      couponCode?: string | null
+      couponCode?: string | null,
+      paymentType: PaymentType = PAYMENT_TYPES.PREPAID,
+      couponDiscountAmount = 0,
+      courierLabel?: string
     ) => {
+      if (paymentInProgress.current) return;
+      paymentInProgress.current = true;
       try {
         setIsLoading(true);
         setError(null);
@@ -113,14 +128,19 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         // Process checkout - create orders with pending_payment status
         // Returns the created orders so we can use their real DB IDs in the WhatsApp message
         if (metadata.type === "cart_checkout" && items.length > 0) {
-          // Calculate the coupon discount amount from the difference between the
-          // undiscounted cart total (client prices) and the discounted amount the
-          // user is being charged. This is the pre-validated discount from validate_coupon.
-          const clientTotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-          const couponDiscountAmount =
-            couponCode && amount != null ? Math.max(clientTotal - amount, 0) : 0;
+          if (amount == null) throw new Error("Order amount is required");
+          const signature = JSON.stringify({ items, shippingAddress, amount, couponCode, paymentType, couponDiscountAmount, courierLabel, buyerId: user?.id });
+          if (pendingCheckout.current?.signature === signature) {
+            setUpiPaymentState(pendingCheckout.current.state);
+            return;
+          }
+          if (checkoutRequest.current?.signature !== signature) {
+            checkoutRequest.current = { signature, id: crypto.randomUUID() };
+          }
 
-          const createdOrders = await OrderService.processWhatsAppCheckout(
+          const createdOrders = paymentType === PAYMENT_TYPES.PARTIAL_COD
+            ? await OrderService.processPartialCodCheckout(items, shippingAddress, amount, checkoutRequest.current.id, couponCode)
+            : await OrderService.processWhatsAppCheckout(
             items,
             user?.id || "",
             {
@@ -136,6 +156,15 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             couponDiscountAmount
           );
 
+          // Use the saved server split for partial COD, never the client preview.
+          let payment = calculatePaymentBreakdown(amount, paymentType);
+          if (paymentType === PAYMENT_TYPES.PARTIAL_COD) {
+            const allocations = createdOrders.map(getOrderPaymentBreakdown);
+            const sumPaise = (field: "totalAmount" | "advanceAmount" | "codAmount" | "codFee") =>
+              allocations.reduce((sum, allocation) => sum + Math.round(allocation[field] * 100), 0) / 100;
+            payment = { paymentType, totalAmount: sumPaise("totalAmount"), advanceAmount: sumPaise("advanceAmount"), codAmount: sumPaise("codAmount"), codFee: sumPaise("codFee"), orderAmount: amount };
+          }
+
           // Build WhatsApp URL using the real DB order IDs so they match the dashboard
           const orderIds = createdOrders.map((o) => o.id);
           const discountAmount = couponDiscountAmount > 0 ? couponDiscountAmount : undefined;
@@ -143,17 +172,21 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             orderIds,
             couponCode ?? null,
             discountAmount,
-            selectedCourier.label
+            courierLabel ?? selectedCourier.label,
+            payment
           );
 
           // Always show the payment dialog
-          setUpiPaymentState({
+          const state: UpiPaymentState = {
             orderIds,
             whatsappURL,
-            amount: amount || 0,
+            amount: payment.advanceAmount,
+            payment,
             couponCode,
             discountAmount,
-          });
+          };
+          pendingCheckout.current = { signature, state };
+          setUpiPaymentState(state);
         }
       } catch (error) {
         console.error("Order error:", error);
@@ -162,6 +195,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         setError(message);
         toast.error(message);
       } finally {
+        paymentInProgress.current = false;
         setIsLoading(false);
       }
     },
@@ -177,6 +211,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
     }
 
     setUpiPaymentState(null);
+    pendingCheckout.current = null;
+    checkoutRequest.current = null;
     if (isOpen) toggleCart();
     clearCart();
     navigate(ROUTE_NAMES.TRACK_ORDER);
@@ -226,7 +262,7 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
         <DialogContent className="max-w-sm rounded-3xl p-6 overflow-y-auto max-h-[90vh]">
           <DialogHeader className="text-center">
             <DialogTitle className="text-lg font-bold text-gray-900">
-              Pay to Complete Order
+              {upiPaymentState?.payment.paymentType === PAYMENT_TYPES.PARTIAL_COD ? "Pay Your 70% Advance" : "Pay to Complete Order"}
             </DialogTitle>
             <p className="text-xs text-gray-400 mt-1">
               Order #{upiPaymentState?.orderIds[0]?.slice(0, 8).toUpperCase()}
@@ -238,7 +274,13 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({
             <p className="text-3xl font-extrabold text-gray-900">
               ₹{upiPaymentState?.amount}
             </p>
-            <p className="text-xs text-gray-500 mt-0.5">Amount to pay</p>
+            <p className="text-xs text-gray-500 mt-0.5">Amount to pay now · awaiting payment verification</p>
+            {upiPaymentState?.payment.paymentType === PAYMENT_TYPES.PARTIAL_COD && (
+              <div className="mt-3 space-y-1 rounded-xl bg-purple-50 p-3 text-sm text-gray-700">
+                <p>Total: {formatPaymentAmount(upiPaymentState.payment.totalAmount)} (includes ₹100 COD fee)</p>
+                <p className="font-semibold">{formatPaymentAmount(upiPaymentState.payment.codAmount)} due on delivery</p>
+              </div>
+            )}
             {upiPaymentState?.couponCode && (
               <p className="text-xs text-green-600 font-medium mt-1">
                 Coupon {upiPaymentState.couponCode} applied (−₹{upiPaymentState.discountAmount})

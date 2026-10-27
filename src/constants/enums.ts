@@ -1,3 +1,10 @@
+export const PAYMENT_TYPES = {
+  PREPAID: "prepaid",
+  PARTIAL_COD: "partial_cod",
+} as const;
+
+export type PaymentType = (typeof PAYMENT_TYPES)[keyof typeof PAYMENT_TYPES];
+
 export const ROUTE_NAMES = {
   LOGIN: "/login",
   SIGNUP: "/signup",

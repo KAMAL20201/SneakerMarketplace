@@ -479,3 +479,37 @@ body.cart-open {
 .review-marquee-wrapper:hover .review-marquee-track {
   animation-play-state: paused;
 }
+
+/* Partial COD announcement: duplicated visually, read once by assistive tech. */
+@keyframes cod-announcement-scroll {
+  to { transform: translateX(-50%); }
+}
+.cod-announcement-track {
+  animation: cod-announcement-scroll 28s linear infinite;
+}
+.cod-announcement-copy {
+  min-width: 100vw;
+  white-space: nowrap;
+  text-align: center;
+}
+.cod-announcement:hover .cod-announcement-track,
+.cod-announcement:focus-within .cod-announcement-track {
+  animation-play-state: paused;
+}
+.cod-announcement[data-paused="true"] .cod-announcement-track {
+  animation: none;
+  width: 100%;
+}
+.cod-announcement[data-paused="true"] .cod-announcement-copy {
+  min-width: 0;
+  width: 100%;
+  white-space: normal;
+}
+.cod-announcement[data-paused="true"] .cod-announcement-copy + .cod-announcement-copy {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cod-announcement-track { animation: none; width: 100%; }
+  .cod-announcement-copy { min-width: 0; width: 100%; white-space: normal; }
+  .cod-announcement-copy + .cod-announcement-copy { display: none; }
+}

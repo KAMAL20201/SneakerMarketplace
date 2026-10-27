@@ -65,6 +65,12 @@ interface OrderEmailData {
   custom_message?: string;
   similar_products?: SimilarProduct[];
   tracking_url?: string;
+  // Partial COD split (per order row). Absent for prepaid orders.
+  payment_type?: "prepaid" | "partial_cod";
+  payment_total?: number;
+  advance_amount?: number;
+  cod_amount?: number;
+  cod_fee?: number;
 }
 
 interface EmailRequest {
@@ -168,6 +174,30 @@ function orderSummaryRow(label: string, value: string): string {
 
 const BASE_URL = "https://theplugmarket.in";
 
+function isPartialCod(order: OrderEmailData): boolean {
+  return order.payment_type === "partial_cod"
+    && order.payment_total != null && order.advance_amount != null && order.cod_amount != null;
+}
+
+function partialCodTotalRow(order: OrderEmailData): string {
+  const fee = order.cod_fee ? ` (incl. ${formatAmount(order.cod_fee, order.currency)} COD fee)` : "";
+  return orderSummaryRow(`Order Total${fee}`, formatAmount(order.payment_total ?? 0, order.currency));
+}
+
+function partialCodRows(order: OrderEmailData, advanceLabel: string): string {
+  return `
+      ${partialCodTotalRow(order)}
+      ${orderSummaryRow(advanceLabel, formatAmount(order.advance_amount ?? 0, order.currency))}
+      ${orderSummaryRow("Pay on Delivery (cash)", formatAmount(order.cod_amount ?? 0, order.currency))}`;
+}
+
+function codDueNotice(order: OrderEmailData): string {
+  if (!isPartialCod(order) || !order.cod_amount) return "";
+  return `<div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:12px;padding:16px;margin-top:24px;">
+      <p style="margin:0;color:#5b21b6;font-size:14px;line-height:1.5;">💵 Please keep <strong>${formatAmount(order.cod_amount, order.currency)}</strong> ready in cash to pay the delivery partner when your order arrives.</p>
+    </div>`;
+}
+
 function addressBlock(address: ShippingAddress): string {
   const parts = [
     address.full_name,
@@ -255,9 +285,10 @@ function buildOrderConfirmed(
 
     <table width="100%" cellpadding="0" cellspacing="0">
       ${orderSummaryRow("Order ID", `#${order.order_id.slice(0, 8).toUpperCase()}`)}
-      ${orderSummaryRow("Amount Paid", formatAmount(order.amount, order.currency))}
+      ${isPartialCod(order) ? partialCodRows(order, "Advance Paid") : orderSummaryRow("Amount Paid", formatAmount(order.amount, order.currency))}
       ${order.estimated_delivery ? orderSummaryRow("Estimated Delivery", order.estimated_delivery) : ""}
     </table>
+    ${codDueNotice(order)}
 
     ${order.shipping_address ? `
     <div style="margin-top:24px;background:#f9fafb;border-radius:12px;padding:20px;">
@@ -342,7 +373,9 @@ function buildOrderShipped(
       ${order.courier_name ? orderSummaryRow("Courier", order.courier_name) : ""}
       ${order.tracking_number ? orderSummaryRow("Tracking Number", order.tracking_number) : ""}
       ${order.estimated_delivery ? orderSummaryRow("Expected Delivery", order.estimated_delivery) : ""}
+      ${isPartialCod(order) && order.cod_amount ? orderSummaryRow("Pay on Delivery (cash)", formatAmount(order.cod_amount, order.currency)) : ""}
     </table>
+    ${codDueNotice(order)}
 
     ${order.tracking_url ? ctaButton("Track Your Order", order.tracking_url) : ""}
     ${ctaButton("Contact Support", actionUrl)}
@@ -436,7 +469,7 @@ function buildOrderDelivered(
 
     <table width="100%" cellpadding="0" cellspacing="0">
       ${orderSummaryRow("Order ID", `#${order.order_id.slice(0, 8).toUpperCase()}`)}
-      ${orderSummaryRow("Amount", formatAmount(order.amount, order.currency))}
+      ${orderSummaryRow("Amount", formatAmount(isPartialCod(order) ? order.payment_total ?? 0 : order.amount, order.currency))}
     </table>
 
     ${order.tracking_url ? ctaButton("View Order Details", order.tracking_url) : ""}
@@ -532,7 +565,7 @@ function buildPaymentReminder(
     : "";
 
   const originalAmountHtml =
-    order.original_amount && order.original_amount !== order.amount
+    !isPartialCod(order) && order.original_amount && order.original_amount !== order.amount
       ? `<tr>
           <td style="padding:8px 0;border-bottom:1px solid #f3f4f6;color:#6b7280;font-size:14px;">Original Price</td>
           <td style="padding:8px 0;border-bottom:1px solid #f3f4f6;color:#6b7280;font-size:14px;font-weight:500;text-align:right;text-decoration:line-through;">${formatAmount(order.original_amount, order.currency)}</td>
@@ -566,9 +599,12 @@ function buildPaymentReminder(
     <!-- Price breakdown -->
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
       ${originalAmountHtml}
+      ${isPartialCod(order) ? `
+      ${partialCodTotalRow(order)}
+      ${orderSummaryRow("Pay on Delivery (cash)", formatAmount(order.cod_amount ?? 0, order.currency))}` : ""}
       <tr>
-        <td style="padding:10px 0;color:#111827;font-size:16px;font-weight:700;">Total to Pay</td>
-        <td style="padding:10px 0;color:#7c3aed;font-size:20px;font-weight:900;text-align:right;">${formatAmount(order.amount, order.currency)}</td>
+        <td style="padding:10px 0;color:#111827;font-size:16px;font-weight:700;">${isPartialCod(order) ? "Advance to Pay Now" : "Total to Pay"}</td>
+        <td style="padding:10px 0;color:#7c3aed;font-size:20px;font-weight:900;text-align:right;">${formatAmount(isPartialCod(order) ? order.advance_amount ?? 0 : order.amount, order.currency)}</td>
       </tr>
     </table>
 

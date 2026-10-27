@@ -1,3 +1,6 @@
+import type { PaymentBreakdown } from "@/types/orderPayment";
+import { PAYMENT_TYPES } from "@/constants/enums";
+
 // WhatsApp business number (with country code, no + sign)
 // Update this with your WhatsApp number via VITE_WHATSAPP_NUMBER env variable
 export const WHATSAPP_NUMBER =
@@ -13,7 +16,8 @@ export class WhatsAppService {
     orderIds: string[],
     couponCode?: string | null,
     discountAmount?: number,
-    courierLabel?: string | null
+    courierLabel?: string | null,
+    payment?: PaymentBreakdown
   ): string {
     const shortIds = orderIds.map((id) => `#${id.slice(0, 8)}`);
     const couponLine =
@@ -23,22 +27,28 @@ export class WhatsAppService {
     const courierLine = courierLabel
       ? `\n*Courier:* ${courierLabel}`
       : "";
+    const partial = payment?.paymentType === PAYMENT_TYPES.PARTIAL_COD;
+    const paymentLine = partial
+      ? `\n*Payment:* Partial COD\n*Total:* ₹${payment.totalAmount} (includes ₹${payment.codFee} COD fee)\n*Advance to verify:* ₹${payment.advanceAmount}\n*Due on delivery:* ₹${payment.codAmount}`
+      : "";
 
     if (shortIds.length === 1) {
       return (
-        `Hi! I've completed my payment for my order on The Plug Market.\n\n` +
+        `Hi! I've transferred ${partial ? "the 70% advance" : "my payment"} for my order on The Plug Market.\n\n` +
         `*Order ID:* ${shortIds[0]}` +
         couponLine +
         courierLine +
+        paymentLine +
         `\n\nPlease confirm once you've received the payment. Thank you!`
       );
     }
 
     return (
-      `Hi! I've completed my payment for my orders on The Plug Market.\n\n` +
+      `Hi! I've transferred ${partial ? "the 70% advance" : "my payment"} for my orders on The Plug Market.\n\n` +
       `*Order IDs:*\n${shortIds.join("\n")}` +
       couponLine +
       courierLine +
+      paymentLine +
       `\n\nPlease confirm once you've received the payment. Thank you!`
     );
   }
@@ -50,9 +60,10 @@ export class WhatsAppService {
     orderIds: string[],
     couponCode?: string | null,
     discountAmount?: number,
-    courierLabel?: string | null
+    courierLabel?: string | null,
+    payment?: PaymentBreakdown
   ): string {
-    const message = this.formatOrderMessage(orderIds, couponCode, discountAmount, courierLabel);
+    const message = this.formatOrderMessage(orderIds, couponCode, discountAmount, courierLabel, payment);
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
   }

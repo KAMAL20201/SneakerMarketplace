@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,22 @@ import { ShieldCheck, Search } from "lucide-react";
 import OrdersPausedBanner from "./OrdersPausedBanner";
 import { SearchPanel } from "@/components/ui/SearchPanel";
 
+import { PartialCodAnnouncement } from "./PartialCodAnnouncement";
+
 export function Navbar() {
+  const headerRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const updateHeight = () => document.documentElement.style.setProperty("--store-header-height", `${header.getBoundingClientRect().height}px`);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--store-header-height");
+    };
+  }, []);
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const navigate = useNavigate();
@@ -31,7 +46,8 @@ export function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full">
+    <header ref={headerRef} className="fixed top-0 left-0 right-0 z-50 w-full">
+      <PartialCodAnnouncement />
       <OrdersPausedBanner />
       <div className="glass-navbar flex h-16 items-center px-4">
         {/* Left side - Sidebar trigger */}

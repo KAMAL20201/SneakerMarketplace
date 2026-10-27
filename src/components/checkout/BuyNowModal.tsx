@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { PAYMENT_TYPES, type PaymentType } from "@/constants/enums";
+import { calculatePaymentBreakdown, formatPaymentAmount } from "@/lib/orderPayment";
+import { PaymentOptions } from "./PaymentOptions";
 import {
   Dialog,
   DialogContent,
@@ -7,14 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { ShippingStep } from "@/components/Cart/steps/ShippingStep";
 import { Button } from "@/components/ui/button";
-import { Tag } from "lucide-react";
+import { ChevronDown, Tag } from "lucide-react";
 import type { ShippingAddress } from "@/types/shipping";
 import { PaymentButton } from "@/components/PaymentButton";
 import { CouponInput } from "@/components/CouponInput";
 import type { CartItem } from "@/lib/orderService";
 import type { AppliedCoupon } from "@/types/coupon";
 import { COURIER_OPTIONS, type CourierOption } from "@/contexts/CartContext";
-import { CourierSelector } from "@/components/checkout/CourierSelector";
 import { formatDisplaySize } from "@/constants/sizeCharts";
 
 
@@ -35,7 +37,8 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
   const [shippingAddress, setShippingAddress] =
     useState<ShippingAddress | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
-  const [selectedCourier, setSelectedCourier] = useState<CourierOption>(COURIER_OPTIONS[0]);
+  const selectedCourier: CourierOption = COURIER_OPTIONS[0];
+  const [paymentType, setPaymentType] = useState<PaymentType>(PAYMENT_TYPES.PREPAID);
 
   /** per-item shipping charge from the listing */
   const shippingFee = item.shippingCharges ?? 0;
@@ -43,7 +46,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
   const discountedAmount = appliedCoupon
     ? Math.max(amount - appliedCoupon.discountAmount, 0) + shippingFee
     : amount + shippingFee;
-
+  const payment = calculatePaymentBreakdown(discountedAmount, paymentType);
 
   const handleShippingNext = (address: ShippingAddress) => {
     setShippingAddress(address);
@@ -58,7 +61,7 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
     setStep("shipping");
     setShippingAddress(null);
     setAppliedCoupon(null);
-    setSelectedCourier(COURIER_OPTIONS[0]);
+    setPaymentType(PAYMENT_TYPES.PREPAID);
     onOpenChange(false);
   };
 
@@ -87,14 +90,12 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
               </DialogHeader>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-4">
-              {/* Courier Selector */}
-              <CourierSelector selected={selectedCourier} onChange={setSelectedCourier} />
-
               {/* Order Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">
+              <details className="group rounded-lg bg-gray-50 p-4">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-medium text-gray-900 group-open:mb-3 [&::-webkit-details-marker]:hidden">
                   Order Summary
-                </h4>
+                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
 
                 {/* Item row */}
                 <div className="mb-3 pb-3 border-b border-gray-200">
@@ -158,13 +159,15 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
                   </div>
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-semibold text-lg">
-                      <span>Total</span>
+                      <span>Order amount</span>
                       <span>₹{discountedAmount}</span>
                     </div>
                   </div>
                 </div>
 
-              </div>
+              </details>
+
+              <PaymentOptions amount={discountedAmount} value={paymentType} onChange={setPaymentType} />
 
               {/* Coupon Input */}
               <CouponInput
@@ -180,8 +183,13 @@ export const BuyNowModal: React.FC<BuyNowModalProps> = ({
 
             {/* Footer with Payment */}
             <div className="shrink-0 border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
+              {paymentType === PAYMENT_TYPES.PARTIAL_COD && <p className="mb-2 text-center text-sm text-gray-600">{formatPaymentAmount(payment.codAmount)} due on delivery</p>}
               <PaymentButton
                 amount={discountedAmount}
+                paymentType={paymentType}
+                couponDiscountAmount={appliedCoupon?.discountAmount ?? 0}
+                courierLabel={selectedCourier.label}
+                buttonText={`Pay ${formatPaymentAmount(payment.advanceAmount)} now`}
                 couponCode={appliedCoupon?.code ?? null}
                 metadata={{
                   cart_items: item.id,

@@ -1,7 +1,9 @@
 import { AdminRoute } from "@/components/AdminRoute";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
-import { ROUTE_HELPERS } from "@/constants/enums";
+import { PAYMENT_TYPES, ROUTE_HELPERS, type PaymentType } from "@/constants/enums";
+import { formatPaymentAmount } from "@/lib/orderPayment";
+import { OrderPaymentSummary } from "@/components/orders/OrderPaymentSummary";
 import {
   Package,
   Clock,
@@ -58,7 +60,7 @@ import { supabase, toStorageUrl } from "@/lib/supabase";
 import { getEuSizeFromUk, sortSizes } from "@/constants/sizeCharts";
 import { toast } from "sonner";
 import ShipNowModal from "@/components/ShipNowModal";
-import { EmailService, type OrderEmailData } from "@/lib/emailService";
+import { EmailService, getPaymentEmailFields, type OrderEmailData } from "@/lib/emailService";
 
 // Use the OrderType from orderService, but extend it with product details
 interface Order extends OrderType {
@@ -293,6 +295,35 @@ const MyOrders = () => {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | PaymentType>("all");
+  const [recordingPayments, setRecordingPayments] = useState<Record<string, boolean>>({});
+  const paymentRequests = useRef(new Set<string>());
+
+  const beginPaymentAction = (orderId: string): boolean => {
+    if (paymentRequests.current.has(orderId)) return false;
+    paymentRequests.current.add(orderId);
+    setRecordingPayments((previous) => ({ ...previous, [orderId]: true }));
+    return true;
+  };
+
+  const finishPaymentAction = (orderId: string): void => {
+    paymentRequests.current.delete(orderId);
+    setRecordingPayments((previous) => ({ ...previous, [orderId]: false }));
+  };
+
+  const handleCodCollected = async (orderId: string): Promise<void> => {
+    if (!beginPaymentAction(orderId)) return;
+    try {
+      const result = await OrderService.recordPartialCodPayment(orderId, "cod");
+      setSellOrders((previous) => previous.map((order) => order.id === orderId ? { ...order, ...result.order } : order));
+      if (result.recorded) toast.success("COD collection recorded. This order is fully paid.");
+      else toast.info("COD collection was already recorded.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to record COD collection.");
+    } finally {
+      finishPaymentAction(orderId);
+    }
+  };
 
   // Ship Now modal state
   const [shipModalOpen, setShipModalOpen] = useState(false);
@@ -490,6 +521,7 @@ const MyOrders = () => {
           variant_name: selectedVariant?.id ? selectedVariant.color_name : undefined,
           ordered_size: selectedSize.size_value,
           custom_message: "We have updated your order to a different variant as agreed, because the originally ordered variant is no longer available. Below are the updated details of your order.",
+          ...getPaymentEmailFields(variantOrder),
         };
 
         const { error: mailError } = await supabase.functions.invoke("send-order-email", {
@@ -600,7 +632,8 @@ const MyOrders = () => {
     : intlFilteredOrders;
 
   const dateFilteredOrders = searchFilteredOrders.filter((order) =>
-    isOrderInDateRange(order.created_at, fromDate, toDate)
+    isOrderInDateRange(order.created_at, fromDate, toDate) &&
+    (paymentFilter === "all" || (order.payment_type ?? PAYMENT_TYPES.PREPAID) === paymentFilter)
   );
 
   const filteredOrders = [...dateFilteredOrders].sort((a, b) => {
@@ -712,6 +745,26 @@ const MyOrders = () => {
               </>
             )}
           </button>
+        </div>
+
+        <div className="mb-5 space-y-1.5">
+          <Label htmlFor="orders-payment-type">Payment type</Label>
+          <select
+            id="orders-payment-type"
+            value={paymentFilter}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "all" || value === PAYMENT_TYPES.PREPAID || value === PAYMENT_TYPES.PARTIAL_COD) {
+                setPaymentFilter(value);
+                setSellCurrentPage(1);
+              }
+            }}
+            className="h-11 w-full rounded-2xl border border-gray-200 bg-white px-3 text-sm sm:w-56"
+          >
+            <option value="all">All payment types</option>
+            <option value={PAYMENT_TYPES.PREPAID}>Full prepaid</option>
+            <option value={PAYMENT_TYPES.PARTIAL_COD}>Partial COD</option>
+          </select>
         </div>
 
         <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-end">
@@ -924,7 +977,7 @@ const MyOrders = () => {
                                 </div>
                                 <div className="text-right">
                                   <p className="text-lg font-bold text-gray-900">
-                                    {formatPrice(order.amount)}
+                                    {formatPrice(order.payment_type === PAYMENT_TYPES.PARTIAL_COD ? order.payment_total ?? order.amount : order.amount)}
                                   </p>
                                 </div>
                               </div>
@@ -946,6 +999,13 @@ const MyOrders = () => {
                               </div>
                             </div>
                           </div>
+
+                          {order.payment_type === PAYMENT_TYPES.PARTIAL_COD && (
+                            <div className="space-y-2">
+                              <Badge className="rounded-xl border-purple-200 bg-purple-100 text-purple-800">Partial COD</Badge>
+                              <OrderPaymentSummary order={order} />
+                            </div>
+                          )}
 
                           {/* [GUEST CHECKOUT] Buyer Contact Info */}
                           {(order.buyer_name ||
@@ -1050,44 +1110,39 @@ const MyOrders = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="bg-blue-600 hover:bg-blue-700 text-white hover:text-white border-gray-200 rounded-2xl"
+                                className="min-h-11 bg-blue-600 hover:bg-blue-700 text-white hover:text-white border-gray-200 rounded-2xl"
+                                disabled={recordingPayments[order.id]}
                                 onClick={async () => {
+                                  if (!beginPaymentAction(order.id)) return;
                                   try {
-                                    const confirmed = await OrderService.confirmPayment(order.id);
-                                    if (!confirmed) {
-                                      toast.info("This order has already been processed. Refresh orders to see its current status.");
-                                      return;
-                                    }
-
-                                    // Redeem the coupon now that payment is confirmed.
-                                    // finalize_coupon_redemption is a no-op if no coupon is
-                                    // attached or it was already redeemed.
-                                    let finalAmount = order.amount;
-                                    if (order.coupon_id && (order.discount_amount ?? 0) > 0 && order.original_amount == null) {
-                                      const { data: redeemResult, error: redeemErr } =
-                                        await supabase.rpc("finalize_coupon_redemption", {
+                                    let confirmedOrder: Order;
+                                    if (order.payment_type === PAYMENT_TYPES.PARTIAL_COD) {
+                                      const result = await OrderService.recordPartialCodPayment(order.id, "advance");
+                                      if (!result.recorded) {
+                                        setSellOrders((previous) => previous.map((current) => current.id === order.id ? { ...current, ...result.order } : current));
+                                        toast.info("This advance has already been recorded.");
+                                        return;
+                                      }
+                                      confirmedOrder = { ...order, ...result.order };
+                                    } else {
+                                      const confirmed = await OrderService.confirmPayment(order.id);
+                                      if (!confirmed) {
+                                        toast.info("This order has already been processed. Refresh orders to see its current status.");
+                                        return;
+                                      }
+                                      let finalAmount = order.amount;
+                                      if (order.coupon_id && (order.discount_amount ?? 0) > 0 && order.original_amount == null) {
+                                        const { data: redeemResult, error: redeemErr } = await supabase.rpc("finalize_coupon_redemption", {
                                           p_order_id: order.id,
                                           p_user_email: order.buyer_email || "",
                                         });
-                                      if (redeemErr) {
-                                        toast.warning(`Coupon could not be redeemed: ${redeemErr.message}`);
-                                      } else if (redeemResult > 0) {
-                                        finalAmount = Math.max(order.amount - redeemResult, 0);
+                                        if (redeemErr) toast.warning(`Coupon could not be redeemed: ${redeemErr.message}`);
+                                        else if (redeemResult > 0) finalAmount = Math.max(order.amount - redeemResult, 0);
                                       }
+                                      confirmedOrder = { ...order, status: "confirmed", amount: finalAmount, original_amount: order.coupon_id ? order.amount : null };
                                     }
-
-                                    setSellOrders((prev) =>
-                                      prev.map((o) =>
-                                        o.id === order.id
-                                          ? {
-                                              ...o,
-                                              status: "confirmed" as const,
-                                              amount: finalAmount,
-                                              original_amount: order.coupon_id ? order.amount : null,
-                                            }
-                                          : o,
-                                      ),
-                                    );
+                                    setSellOrders((previous) => previous.map((current) => current.id === order.id ? { ...current, ...confirmedOrder } : current));
+                                    if (activeTab === "pending_payment") setSellCurrentPage(1);
 
                                     // Send order confirmation emails now that payment is confirmed
                                     const productTitle =
@@ -1107,7 +1162,7 @@ const MyOrders = () => {
                                         .eq("id", order.variant_id)
                                         .maybeSingle();
                                       if (varData?.image_url) {
-                                        productImage = toStorageUrl(varData.image_url);
+                                        productImage = toStorageUrl(varData.image_url) ?? undefined;
                                       }
                                     }
 
@@ -1115,7 +1170,8 @@ const MyOrders = () => {
                                       order_id: order.id,
                                       product_title: productTitle,
                                       product_image: productImage,
-                                      amount: order.amount,
+                                      amount: confirmedOrder.payment_type === PAYMENT_TYPES.PARTIAL_COD ? confirmedOrder.advance_amount ?? 0 : confirmedOrder.amount,
+                                      ...getPaymentEmailFields(confirmedOrder),
                                       currency: "INR",
                                       buyer_name: order.buyer_name,
                                       buyer_email: order.buyer_email,
@@ -1163,16 +1219,41 @@ const MyOrders = () => {
                                     }
 
                                     toast.success(
-                                      "Payment confirmed! Order is now ready to ship.",
+                                      order.payment_type === PAYMENT_TYPES.PARTIAL_COD
+                                        ? "Advance received. Order confirmed; COD balance remains due."
+                                        : "Payment confirmed! Order is now ready to ship.",
                                     );
                                   } catch (error: unknown) {
                                     toast.error(error instanceof Error ? error.message : "Failed to confirm payment. Check available stock and retry.");
+                                  } finally {
+                                    finishPaymentAction(order.id);
                                   }
                                 }}
                               >
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                Confirm Payment
+                                {recordingPayments[order.id] ? "Recording…" : order.payment_type === PAYMENT_TYPES.PARTIAL_COD ? "Confirm advance received" : "Confirm Payment"}
                               </Button>
+                            )}
+                            {order.payment_type === PAYMENT_TYPES.PARTIAL_COD && order.advance_received_at && !order.cod_collected_at && (order.cod_amount ?? 0) > 0 && ["shipped", "delivered"].includes(order.status) && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm" disabled={recordingPayments[order.id]} className="min-h-11 rounded-2xl border-green-200 text-green-800">
+                                    {recordingPayments[order.id] ? "Recording…" : "Mark COD collected"}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Record COD collection?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Confirm that {formatPaymentAmount(order.cod_amount ?? 0)} has been collected for order #{order.id.slice(0, 8)}. Delivery status alone does not confirm payment.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction disabled={recordingPayments[order.id]} onClick={() => handleCodCollected(order.id)}>Confirm collection</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
                             {["pending_payment", "confirmed"].includes(order.status) && (
                               <Button
@@ -1382,6 +1463,7 @@ const MyOrders = () => {
                 courier_name: deliveryCompany,
                 product_id: selectedOrder.product_id,
                 brand: selectedOrder.product_listings?.brand ?? undefined,
+                ...getPaymentEmailFields(selectedOrder),
               };
 
               // Include tracking URL if a token was previously generated

@@ -3,8 +3,9 @@ import { EmailService, type OrderEmailData } from "./emailService";
 import { logger } from "@/components/ui/Logger";
 import type { ShippingAddress } from "@/types/shipping";
 import { StockValidationService } from "./stockValidationService";
+import type { OrderPaymentFields } from "@/types/orderPayment";
 
-export interface Order {
+export interface Order extends OrderPaymentFields {
   id: string;
   // [GUEST CHECKOUT] buyer_id is nullable for guest orders
   buyer_id: string | null;
@@ -81,7 +82,37 @@ export interface CartItem {
   shippingCharges: number;
 }
 
+export interface PartialCodPaymentResult {
+  order: Order;
+  recorded: boolean;
+}
+
 export class OrderService {
+  /** Atomic server-priced checkout. Do not fall back to prepaid on failure. */
+  static async processPartialCodCheckout(
+    items: CartItem[],
+    shippingAddress: ShippingAddress,
+    expectedOrderAmount: number,
+    checkoutId: string,
+    couponCode?: string | null
+  ): Promise<Order[]> {
+    const { data, error } = await supabase.rpc("create_partial_cod_checkout", {
+      p_checkout_id: checkoutId,
+      p_items: items.map((item) => ({ product_id: item.productId, variant_id: item.variantId ?? null, size: item.size, quantity: item.quantity })),
+      p_shipping_address: shippingAddress,
+      p_expected_amount: expectedOrderAmount,
+      p_coupon_code: couponCode ?? null,
+    });
+    if (error) {
+      if (error.code === "PGRST202" || error.code === "42703") {
+        throw new Error("Partial COD is not ready yet. Please choose Pay in full or try again later.");
+      }
+      throw new Error(error.message);
+    }
+    if (!Array.isArray(data) || data.length === 0) throw new Error("No orders were created. Please try again.");
+    return data;
+  }
+
   // Create a new order
   static async createOrder(orderData: CreateOrderRequest): Promise<Order> {
     try {
@@ -620,6 +651,21 @@ export class OrderService {
     const { data, error } = await supabase.rpc("confirm_order_payment", { p_order_id: orderId });
     if (error) throw new Error(error.message);
     return data === true;
+  }
+
+  static async recordPartialCodPayment(
+    orderId: string,
+    stage: "advance" | "cod"
+  ): Promise<PartialCodPaymentResult> {
+    const { data, error } = await supabase.rpc("record_partial_cod_payment", {
+      p_order_id: orderId,
+      p_stage: stage,
+    });
+    if (error) throw new Error(error.message);
+    if (!data?.order || typeof data.recorded !== "boolean") {
+      throw new Error("Payment receipt could not be verified. Refresh orders before retrying.");
+    }
+    return data as PartialCodPaymentResult;
   }
 
   // Update order status
