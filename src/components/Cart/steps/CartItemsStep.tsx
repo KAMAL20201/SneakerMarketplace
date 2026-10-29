@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { ThumbnailImage } from "@/components/ui/OptimizedImage";
-import { Trash2, ShoppingBag, RefreshCw, TrendingUp, X, Bell, CheckCircle2, Loader2 } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, RefreshCw, TrendingUp, X, Bell, CheckCircle2, Loader2 } from "lucide-react";
 import { useCartValidation } from "@/hooks/useCartValidation";
 import { Badge } from "@/components/ui/badge";
 import { APP_CONFIG } from "@/config/app";
@@ -15,7 +15,7 @@ interface CartItemsStepProps {
 }
 
 export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
-  const { items, removeItem, totalPrice, shippingFee, pricesUpdated, dismissPriceUpdate } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, shippingFee, pricesUpdated, dismissPriceUpdate } = useCart();
 
 
   // Cart validation to check stock availability
@@ -115,7 +115,9 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
 
         <div className="space-y-4 overflow-y-auto max-h-[calc(100dvh-260px)] scrollbar-hide">
           {items.map((item) => {
-            const isUnavailable = unavailableProductIds.has(item.productId);
+            const stockIssue = validation?.unavailableItems.find((result) => result.itemId === item.id);
+            const isUnavailable = !!stockIssue;
+            const stockLimit = stockIssue?.availableQuantity ?? item.availableQuantity ?? 1;
             return (
               <Card
                 key={item.id}
@@ -175,7 +177,7 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                             )}
                             {isUnavailable && (
                               <Badge variant="destructive" className="text-xs">
-                                Sold Out
+                                {stockIssue?.currentStatus === "insufficient_stock" ? `Only ${stockLimit} available` : "Sold Out"}
                               </Badge>
                             )}
                           </div>
@@ -193,16 +195,28 @@ export const CartItemsStep: React.FC<CartItemsStepProps> = ({ onNext }) => {
                       </div>
 
                       {/* Price */}
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
                         <p
                           className={`text-lg font-bold ${isUnavailable ? "text-gray-500" : "text-gray-900"
                             }`}
                         >
-                          ₹{item.price}
+                          ₹{item.price * item.quantity}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          Qty: {item.quantity}
-                        </p>
+                        <div className="flex items-center gap-0" aria-label={`Quantity for ${item.productName}`}>
+                          <Button variant="ghost" size="icon" className="h-11 w-11 p-0 hover:bg-transparent"
+                            aria-label={`Decrease quantity of ${item.productName}`}
+                            disabled={item.quantity <= 1 || isValidating}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 sm:h-9 sm:w-9"><Minus className="h-3.5 w-3.5" /></span>
+                          </Button>
+                          <span className="min-w-4 text-center text-xs font-medium" aria-live="polite">{item.quantity}</span>
+                          <Button variant="ghost" size="icon" className="h-11 w-11 p-0 hover:bg-transparent"
+                            aria-label={`Increase quantity of ${item.productName}`}
+                            disabled={(isUnavailable && stockIssue?.currentStatus !== "insufficient_stock") || isValidating || item.quantity >= stockLimit}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 sm:h-9 sm:w-9"><Plus className="h-3.5 w-3.5" /></span>
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

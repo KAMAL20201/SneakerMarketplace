@@ -125,16 +125,18 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
       // key → fresh price
       const priceMap = new Map<string, number>();
+      const stockMap = new Map<string, number>();
 
       if (variantItems.length > 0) {
         const variantIds = [...new Set(variantItems.map((i) => i.variantId!))];
         const { data } = await supabase
           .from("product_variant_sizes")
-          .select("variant_id, size_value, price")
+          .select("variant_id, size_value, price, quantity, is_sold")
           .in("variant_id", variantIds);
 
         data?.forEach((row) => {
           priceMap.set(`v:${row.variant_id}:${row.size_value}`, row.price);
+          stockMap.set(`v:${row.variant_id}:${row.size_value}`, row.is_sold ? 0 : row.quantity ?? 1);
         });
       }
 
@@ -142,11 +144,12 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         const listingIds = [...new Set(legacyItems.map((i) => i.productId))];
         const { data } = await supabase
           .from("product_listing_sizes")
-          .select("listing_id, size_value, price")
+          .select("listing_id, size_value, price, quantity, is_sold")
           .in("listing_id", listingIds);
 
         data?.forEach((row) => {
           priceMap.set(`l:${row.listing_id}:${row.size_value}`, row.price);
+          stockMap.set(`l:${row.listing_id}:${row.size_value}`, row.is_sold ? 0 : row.quantity ?? 1);
         });
       }
 
@@ -164,18 +167,23 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       let anyChanged = false;
+      let pricingChanged = false;
       const updatedItems = currentItems.map((item) => {
         const key = item.variantId
           ? `v:${item.variantId}:${item.size}`
           : `l:${item.productId}:${item.size}`;
         const freshPrice = priceMap.get(key);
+        const availableQuantity = stockMap.get(key) ?? 1;
+        const stockChanged = availableQuantity !== item.availableQuantity;
         const freshShipping = shippingMap.get(item.productId);
         const priceChanged = freshPrice !== undefined && freshPrice !== item.price;
         const shippingChanged = freshShipping !== undefined && freshShipping !== item.shippingCharges;
-        if (priceChanged || shippingChanged) {
+        if (priceChanged || shippingChanged || stockChanged) {
           anyChanged = true;
+          pricingChanged ||= priceChanged || shippingChanged;
           return {
             ...item,
+            availableQuantity,
             ...(priceChanged ? { price: freshPrice } : {}),
             ...(shippingChanged ? { shippingCharges: freshShipping } : {}),
           };
@@ -184,8 +192,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (anyChanged) {
-        setItems(updatedItems);
-        setPricesUpdated(true);
+        setItems((latestItems) => latestItems.map((item) => {
+          const refreshed = updatedItems.find((updated) => updated.id === item.id);
+          return refreshed ? { ...refreshed, quantity: item.quantity } : item;
+        }));
+        if (pricingChanged) setPricesUpdated(true);
       }
     } catch (err) {
       console.error("Failed to refresh cart prices:", err);
@@ -199,7 +210,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
     // intentionally only runs once after initial load, not on every items update
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+  }, [isLoaded, isOpen]);
 
   const addToCart = (item: any) => {
     // Check if item already exists in cart (by productId, sellerId, and size)
@@ -225,11 +236,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateQuantity = (id: string, quantity: number) => {
+    if (!Number.isInteger(quantity)) return;
     if (quantity <= 0) {
       removeItem(id);
     } else {
       setItems(
-        items.map((item) => (item.id === id ? { ...item, quantity } : item))
+        (currentItems) => currentItems.map((item) => (item.id === id
+          ? { ...item, quantity: Math.max(1, Math.min(quantity, item.availableQuantity ?? 1)) }
+          : item))
       );
     }
   };

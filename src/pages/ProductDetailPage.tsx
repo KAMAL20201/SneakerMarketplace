@@ -811,6 +811,7 @@ export default function ProductDetailPage() {
       sellerName: seller?.display_name,
       sellerEmail: seller?.email,
       quantity: 1,
+      availableQuantity: availableSizes.find((size) => size.size_value === selectedSize)?.quantity ?? 1,
       variantId: selectedVariantId ?? null,
       variantName: selectedVariant?.color_name ?? null,
       isInstantShip: isCurrentSelectionInstantShip(),

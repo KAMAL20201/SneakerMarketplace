@@ -3,6 +3,8 @@ import { supabase } from "./supabase";
 
 export interface StockValidationResult {
   productId: string;
+  itemId?: string;
+  availableQuantity?: number;
   isAvailable: boolean;
   currentStatus: string;
   productName?: string;
@@ -135,36 +137,27 @@ export class StockValidationService {
       products?.map((p) => [p.id, { status: p.status, title: p.title }]) || []
     );
 
-    // Fetch sold sizes for all legacy multi-size products in cart
-    const { data: soldSizes } = await supabase
+    const { data: sizes, error: sizesError } = await supabase
       .from("product_listing_sizes")
-      .select("listing_id, size_value, is_sold")
-      .in("listing_id", productIds)
-      .eq("is_sold", true);
+      .select("listing_id, size_value, is_sold, quantity")
+      .in("listing_id", productIds);
+    if (sizesError) throw new Error("Failed to validate size stock");
+    const sizeStock = new Map((sizes || []).map((size) => [
+      `${size.listing_id}::${size.size_value}`, size.is_sold ? 0 : size.quantity ?? 1,
+    ]));
 
-    const soldSizeSet = new Set(
-      (soldSizes || []).map((s) => `${s.listing_id}::${s.size_value}`)
-    );
-
-    // Fetch sold variant sizes for all variant-based cart items (one batch query)
-    const variantIds = [
-      ...new Set(
-        cartItems
-          .map((item) => item.variantId)
-          .filter((id): id is string => !!id)
-      ),
-    ];
-    const soldVariantSizeSet = new Set<string>();
+    const variantIds = [...new Set(cartItems.map((item) => item.variantId)
+      .filter((id): id is string => !!id))];
+    const variantStock = new Map<string, number>();
     if (variantIds.length > 0) {
-      const { data: soldVariantSizes } = await supabase
+      const { data: sizes, error: variantError } = await supabase
         .from("product_variant_sizes")
-        .select("variant_id, size_value")
-        .in("variant_id", variantIds)
-        .eq("is_sold", true);
-
-      (soldVariantSizes || []).forEach((s) =>
-        soldVariantSizeSet.add(`${s.variant_id}::${s.size_value}`)
-      );
+        .select("variant_id, size_value, is_sold, quantity")
+        .in("variant_id", variantIds);
+      if (variantError) throw new Error("Failed to validate variant stock");
+      sizes?.forEach((size) => variantStock.set(
+        `${size.variant_id}::${size.size_value}`, size.is_sold ? 0 : size.quantity ?? 1,
+      ));
     }
 
     const unavailableItems: StockValidationResult[] = [];
@@ -176,6 +169,7 @@ export class StockValidationService {
       if (!productInfo || productInfo.status !== "active") {
         unavailableItems.push({
           productId: item.productId,
+          itemId: item.id,
           isAvailable: false,
           currentStatus: productInfo?.status || "not_found",
           productName: productInfo?.title,
@@ -183,30 +177,23 @@ export class StockValidationService {
         continue;
       }
 
-      // Check variant-based size availability (new listings)
-      if (item.variantId) {
-        const variantSizeKey = `${item.variantId}::${item.size}`;
-        if (soldVariantSizeSet.has(variantSizeKey)) {
-          unavailableItems.push({
-            productId: item.productId,
-            isAvailable: false,
-            currentStatus: "sold",
-            productName: productInfo.title,
-          });
-          continue;
-        }
-      } else {
-        // Check legacy per-size availability
-        const sizeKey = `${item.productId}::${item.size}`;
-        if (soldSizeSet.has(sizeKey)) {
-          unavailableItems.push({
-            productId: item.productId,
-            isAvailable: false,
-            currentStatus: "sold",
-            productName: productInfo.title,
-          });
-          continue;
-        }
+      const availableQuantity = item.variantId
+        ? variantStock.get(`${item.variantId}::${item.size}`) ?? 1
+        : sizeStock.get(`${item.productId}::${item.size}`) ?? 1;
+      const requestedQuantity = cartItems.filter((candidate) =>
+        candidate.productId === item.productId && candidate.size === item.size &&
+        (candidate.variantId ?? null) === (item.variantId ?? null)
+      ).reduce((total, candidate) => total + candidate.quantity, 0);
+      if (!Number.isInteger(item.quantity) || item.quantity < 1 || requestedQuantity > availableQuantity) {
+        unavailableItems.push({
+          productId: item.productId,
+          itemId: item.id,
+          availableQuantity,
+          isAvailable: false,
+          currentStatus: availableQuantity === 0 ? "sold" : "insufficient_stock",
+          productName: productInfo.title,
+        });
+        continue;
       }
 
       availableItems.push({

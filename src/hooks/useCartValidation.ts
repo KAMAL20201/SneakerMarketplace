@@ -68,6 +68,10 @@ export function useCartValidation(
     }
   }, [cartItems]);
 
+  useEffect(() => {
+    setValidation(null);
+  }, [cartItems]);
+
   // Auto-validate on mount and when cart changes (if enabled)
   useEffect(() => {
     if (autoValidate) {

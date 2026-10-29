@@ -70,6 +70,8 @@ export interface CartItem {
   sellerName: string;
   sellerEmail: string;
   quantity: number;
+  /** Available stock for this exact size and variant. */
+  availableQuantity?: number;
   /** UUID of the selected product_variant (null for legacy listings) */
   variantId?: string | null;
   /** Display name of the selected variant e.g. "University Blue" */
@@ -321,7 +323,9 @@ export class OrderService {
       const failedItems: string[] = [];
 
       // Create orders for each item and notify sellers
-      for (const item of cartItems) {
+      for (const item of cartItems.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({ ...item, quantity: 1 }))
+      )) {
         // Double-check product availability (in case of race condition)
         // Pass size + variantId so variant-based listings are checked correctly
         const availability = await StockValidationService.checkProductAvailability(
@@ -475,7 +479,9 @@ export class OrderService {
       const orders: Order[] = [];
       const failedItems: string[] = [];
 
-      for (const item of cartItems) {
+      for (const item of cartItems.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({ ...item, quantity: 1 }))
+      )) {
         const availability =
           await StockValidationService.checkProductAvailability(item.productId, item.size, item.variantId);
 
