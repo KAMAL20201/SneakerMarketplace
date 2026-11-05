@@ -1,5 +1,6 @@
 import { lazy, useEffect, Suspense } from "react";
 import { ROUTE_NAMES } from "@/constants/enums";
+import { isDiwaliSaleLive } from "@/config/app";
 import CategorySection from "@/components/CategorySection";
 import WishlistSection from "@/components/WishlistSection";
 import BrandSpotlight from "@/components/BrandSpotlight";
@@ -22,6 +23,7 @@ const InstagramFeed = lazy(() => import("@/components/InstagramFeed"));
 // React Router route modules also export metadata and loaders.
 // eslint-disable-next-line react-refresh/only-export-components
 export function links() {
+  if (!isDiwaliSaleLive()) return [];
   return [
     {
       rel: "preload",

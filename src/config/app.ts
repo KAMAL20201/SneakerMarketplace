@@ -10,6 +10,9 @@ export const APP_CONFIG = {
   // Remove or set to "false" when the current account is active.
   ORDERS_PAUSED: import.meta.env.VITE_ORDERS_PAUSED === "true",
 
+  // Diwali homepage banner runs through 30 Oct 2026 (IST).
+  DIWALI_SALE_ENDS_AT: "2026-10-31T00:00:00+05:30",
+
   // App metadata
   APP_NAME: "The Plug Market",
   APP_DESCRIPTION:
@@ -26,3 +29,6 @@ export const APP_CONFIG = {
     facebook: "#",
   },
 };
+
+export const isDiwaliSaleLive = (now: Date = new Date()): boolean =>
+  now < new Date(APP_CONFIG.DIWALI_SALE_ENDS_AT);

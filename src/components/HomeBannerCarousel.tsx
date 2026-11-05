@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import DiwaliBanner from "@/components/DiwaliBanner";
+import { isDiwaliSaleLive } from "@/config/app";
 
 interface Banner {
   id: string;
@@ -24,7 +25,10 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [visible, setVisible] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
-  const slideCount = banners.length + 1;
+  const [showDiwali] = useState<boolean>(() => isDiwaliSaleLive());
+  const diwaliSlides = showDiwali ? 1 : 0;
+  const slideCount = banners.length + diwaliSlides;
+  const hasSlides = slideCount > 0;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -39,7 +43,8 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
       preference.removeEventListener("change", updatePreference);
       observer.disconnect();
     };
-  }, []);
+    // The section mounts only once there is a slide to show.
+  }, [hasSlides]);
 
   useEffect(() => {
     // Deferred loader data adds slides without blocking or remounting the local banner.
@@ -112,6 +117,8 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
     touchStartX.current = null;
   };
 
+  if (!hasSlides) return null;
+
   return (
     <section ref={sectionRef} className="md:pb-4" aria-label="Homepage promotions" aria-roledescription="carousel">
       {/* Each slide is absolutely positioned — avoids iOS Safari flex/min-w-full bug */}
@@ -120,7 +127,7 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div
+        {showDiwali && <div
           className="absolute inset-0"
           inert={current !== 0}
           aria-hidden={current !== 0}
@@ -132,9 +139,11 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
           }}
         >
           <DiwaliBanner active={current === 0} paused={paused || reducedMotion} />
-        </div>
+        </div>}
         {banners.map((banner, i) => {
-          const offset = i + 1 - current;
+          const offset = i + diwaliSlides - current;
+          // Without the Diwali slide, the first database banner is the LCP image.
+          const isFirstSlide = i + diwaliSlides === 0;
           const isActive = offset === 0;
           const img = (
             <picture className="w-full h-full">
@@ -149,9 +158,9 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
                 alt="Promotional banner"
                 className="w-full h-full object-cover"
                 draggable={false}
-                loading="lazy"
-                fetchPriority="low"
-                decoding="async"
+                loading={isFirstSlide ? "eager" : "lazy"}
+                fetchPriority={isFirstSlide ? "high" : "low"}
+                decoding={isFirstSlide ? "sync" : "async"}
                 width={1200}
                 height={600}
               />
@@ -221,7 +230,7 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
             ))}
           </div>
         )}
-        <button
+        {(showDiwali || slideCount > 1) && <button
           type="button"
           onClick={() => setPaused(!paused)}
           aria-label={paused ? "Resume banner animations" : "Pause banner animations"}
@@ -229,7 +238,7 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
           className="absolute bottom-2 right-2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/50"
         >
           {paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}
-        </button>
+        </button>}
       </div>
     </section>
   );
