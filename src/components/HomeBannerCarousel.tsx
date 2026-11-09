@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { Link } from "react-router";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import DiwaliBanner from "@/components/DiwaliBanner";
 
 interface Banner {
   id: string;
@@ -24,7 +23,7 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [visible, setVisible] = useState(true);
   const sectionRef = useRef<HTMLElement>(null);
-  const slideCount = banners.length + 1;
+  const slideCount = banners.length;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -42,7 +41,7 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
   }, []);
 
   useEffect(() => {
-    // Deferred loader data adds slides without blocking or remounting the local banner.
+    // Resolve deferred promotional slides from the home loader.
     if (initialBanners !== undefined) {
       let cancelled = false;
       Promise.resolve(initialBanners)
@@ -106,11 +105,13 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
+    if (touchStartX.current === null || slideCount <= 1) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 40) go(diff > 0 ? "next" : "prev");
     touchStartX.current = null;
   };
+
+  if (slideCount === 0) return null;
 
   return (
     <section ref={sectionRef} className="md:pb-4" aria-label="Homepage promotions" aria-roledescription="carousel">
@@ -120,21 +121,9 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div
-          className="absolute inset-0"
-          inert={current !== 0}
-          aria-hidden={current !== 0}
-          style={{
-            transform: `translateX(${-current * 100}%)`,
-            opacity: current === 0 ? 1 : 0,
-            transition: reducedMotion ? "none" : "transform 500ms ease, opacity 400ms ease",
-            zIndex: current === 0 ? 1 : 0,
-          }}
-        >
-          <DiwaliBanner active={current === 0} paused={paused || reducedMotion} />
-        </div>
+        {/* Diwali promotion disabled; DiwaliBanner is retained for reuse. */}
         {banners.map((banner, i) => {
-          const offset = i + 1 - current;
+          const offset = i - current;
           const isActive = offset === 0;
           const img = (
             <picture className="w-full h-full">
@@ -149,8 +138,8 @@ const HomeBannerCarousel = ({ initialBanners }: Props) => {
                 alt="Promotional banner"
                 className="w-full h-full object-cover"
                 draggable={false}
-                loading="lazy"
-                fetchPriority="low"
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "low"}
                 decoding="async"
                 width={1200}
                 height={600}

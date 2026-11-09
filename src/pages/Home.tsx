@@ -19,21 +19,6 @@ import FAQSection from "@/components/FAQSection";
 // Lazy-loaded: JS chunk + 3MB video assets deferred until component mounts
 const InstagramFeed = lazy(() => import("@/components/InstagramFeed"));
 
-// React Router route modules also export metadata and loaders.
-// eslint-disable-next-line react-refresh/only-export-components
-export function links() {
-  return [
-    {
-      rel: "preload",
-      as: "image",
-      href: "/images/diwali/neptune.webp",
-      imageSrcSet: "/images/diwali/neptune-small.webp 400w, /images/diwali/neptune.webp 800w",
-      imageSizes: "(max-width: 767px) 65vw, 34vw",
-      fetchpriority: "high",
-    },
-  ];
-}
-
 // eslint-disable-next-line react-refresh/only-export-components
 export function meta() {
   return [
@@ -62,8 +47,7 @@ export function meta() {
 }
 
 // ── Server Loader ─────────────────────────────────────────────────────────────
-// The first banner uses local assets. Stream every database query so it cannot
-// delay the initial HTML, including the remaining promotional slides.
+// Stream home data so database queries do not delay the initial HTML.
 // eslint-disable-next-line react-refresh/only-export-components
 export async function loader() {
   const ssrSupabase = createClient(
