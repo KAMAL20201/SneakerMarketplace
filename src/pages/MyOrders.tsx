@@ -625,6 +625,7 @@ const MyOrders = () => {
         const q = search.trim().toLowerCase();
         return (
           o.id.toLowerCase().includes(q) ||
+          (o.product_listings?.title ?? "").toLowerCase().includes(q) ||
           (o.buyer_name ?? "").toLowerCase().includes(q) ||
           (o.shipping_address?.city ?? "").toLowerCase().includes(q)
         );
@@ -723,7 +724,8 @@ const MyOrders = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
             <Input
               className="pl-9 rounded-2xl bg-white/60 border-gray-200 focus:border-purple-400"
-              placeholder="Search by order ID, name, or city…"
+              placeholder="Search product, order ID, buyer, or city…"
+              aria-label="Search orders by product name, order ID, buyer name, or city"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
             />
